@@ -196,6 +196,10 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             self.close_connection = True
             return self._send(400, {"ok": False, "error": "bad Content-Length"})
+        if length < 0:
+            # rfile.read(-1) would read to EOF without limit (code review of 2026-11-12)
+            self.close_connection = True
+            return self._send(400, {"ok": False, "error": "bad Content-Length"})
         if length > MAX_BODY:
             self.close_connection = True
             return self._send(413, {"ok": False, "error": "body too large"})

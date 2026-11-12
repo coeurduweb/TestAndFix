@@ -194,9 +194,16 @@ export function IssueCard({ f, extra, defaultOpen = false }: { f: Finding; extra
       <button type="button" className="todo__row" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
         {k === 'lost' ? <span aria-hidden /> : <span className={`dot dot--${k}`} aria-hidden />}
         <span className="todo__t">{f.title}</span>
-        {f.axis ? <span className={`axis-tag axis-tag--${f.axis}`}>{t(AXIS_LABEL[f.axis])}</span> : <span aria-hidden />}
+        {f.outOfReach ? (
+          <span className="axis-tag">{t('chez {service}', { service: f.outOfReach })}</span>
+        ) : f.axis ? (
+          <span className={`axis-tag axis-tag--${f.axis}`}>{t(AXIS_LABEL[f.axis])}</span>
+        ) : (
+          <span aria-hidden />
+        )}
         <span className={`todo__pts${f.penalty > 0 && k !== 'lost' ? ` todo__pts--${k}` : ''}`}>
-          {f.penalty > 0 ? `−${fmtPenalty(f.penalty)}` : '0'}
+          {/* advice costs no point (2026-11-12): no "0" in front of it */}
+          {f.penalty > 0 ? `−${fmtPenalty(f.penalty)}` : f.impact === 'advice' ? '' : '0'}
           <span className="visually-hidden"> {t('point')}</span>
         </span>
         <span className="todo__chev" aria-hidden />
@@ -240,6 +247,14 @@ export function IssueCard({ f, extra, defaultOpen = false }: { f: Finding; extra
   );
 }
 
+/**
+ * Advice in order of use: the domain's setup first (it serves every future message), then what is
+ * specific to this message; within each, what it would have cost (user, 2026-11-12: a signature image
+ * came before an unmonitored DMARC).
+ */
+export const byUsefulness = (a: Pick<Finding, 'axis' | 'advicePenalty' | 'penalty'>, b: Pick<Finding, 'axis' | 'advicePenalty' | 'penalty'>) =>
+  (a.axis === 'sender' ? 0 : 1) - (b.axis === 'sender' ? 0 : 1) || (b.advicePenalty ?? b.penalty) - (a.advicePenalty ?? a.penalty);
+
 type Group = { key: string; label: string; tone: 'out' | 'warn' | 'n'; note?: string; items: Finding[] };
 
 function groupsOf(findings: Finding[], title: string): { groups: Group[]; remarks: Finding[] } {
@@ -247,11 +262,15 @@ function groupsOf(findings: Finding[], title: string): { groups: Group[]; remark
   if (usesImpact(findings)) {
     // mail reports: what blocks delivery, what risks the spam folder, what only improves
     const of = (i: Finding['impact']) => findings.filter((f) => f.impact === i).sort(byPoints);
+    // advice: what the sender can do first, the most useful first (its former cost); then what only
+    // the sending service can do (user, 2026-11-12: "il faut que notre oeil se focalise sur les priorités")
+    const advice = of('advice').sort(byUsefulness);
     return {
       groups: [
         { key: 'blocking', label: t('Bloque la livraison'), tone: 'out' as const, items: of('blocking') },
         { key: 'spam', label: t("Risque d'indésirables"), tone: 'warn' as const, items: of('spam') },
-        { key: 'advice', label: t('Améliorations'), tone: 'n' as const, note: t('sans effet notable sur la livraison'), items: of('advice') },
+        { key: 'advice', label: t('Améliorations'), tone: 'n' as const, note: t('sans effet sur la note'), items: advice.filter((f) => !f.outOfReach) },
+        { key: 'theirs', label: t('Rien à faire de votre côté'), tone: 'n' as const, note: t('relève de votre service d’envoi'), items: advice.filter((f) => f.outOfReach) },
       ].filter((g) => g.items.length),
       remarks: findings.filter((f) => !f.impact),
     };

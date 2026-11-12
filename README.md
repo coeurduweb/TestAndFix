@@ -24,6 +24,8 @@ Online checkers tell you **that** something is wrong. TestAndFix tells you **why
   services and hosts** (Google Workspace, Microsoft 365, Brevo, Mailchimp, SendGrid, Amazon SES, Mailjet,
   Postmark, OVHcloud, cPanel, WordPress…). **528 SpamAssassin rules** are explained by name, with
   **1,461 references** to RFCs and provider documentation.
+- **The score measures delivery.** A mail test score reflects what decides whether this message reaches the
+  inbox; good-practice advice is listed separately and costs no point, so a repaired message scores 9 to 10.
 - **Your tests stay yours.** No daily quota, no public result page reachable by anyone who guesses an address.
   Results belong to the browser that ran them; you share a report only when you create a link.
 - **Measured live, from the source.** DNS answers are resolved from the root, without cache, and compared
@@ -66,6 +68,14 @@ Already received the message? Paste its headers or drop the `.eml`.
 One measurement for MX, SPF (include tree and the 10-lookup limit), DKIM selector discovery, DMARC, MTA-STS and
 TLS-RPT, BIMI, DNSSEC, SMTP servers, blocklists and the domain's registration. A score out of 10, then each
 finding with its explanation, its impact and the fix.
+
+### The Fix loop: test, fix, then watch the fix land
+
+Published a correction? Click **Monitor my fix** on the domain report. TestAndFix reads the records that matter
+for email (MX, SPF, DKIM selectors, DMARC, MTA-STS, TLS-RPT, BIMI, CAA) straight from the authoritative servers
+every 15 seconds, and runs the full scan again the moment they change. You then see what is fixed, what is
+new, the score before and after, and until what time resolvers may still serve the old answer (its TTL), with
+a link to follow the propagation.
 
 ### Whois and RDAP: registry and registrar, side by side
 

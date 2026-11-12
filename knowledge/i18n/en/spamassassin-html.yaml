@@ -39,7 +39,7 @@ sa.html_image_only_16:
     - Set a descriptive alt attribute on each image.
 sa.html_image_only_20:
   title: HTML message with an image and little text (1,600 to 2,000 bytes)
-  why: Images and 1,600 to 2,000 bytes of text. Still penalized at 1.5 points.
+  why: Images and 1,600 to 2,000 bytes of text.
   fix:
     - Add real text to the HTML (headline, paragraphs, call to action) instead of putting it in the image.
     - Aim for at least a few hundred words of real text; keep the images for illustration.

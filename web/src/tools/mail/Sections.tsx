@@ -49,7 +49,7 @@ function groupRow(
   const fs = given ?? (prefixes ? takeByPrefix(ctx.findings, prefixes, ctx.usedF) : []);
   if (prefixes) takeByPrefix(ctx.passed, prefixes, ctx.usedP);
   const ordered = sectionOrder(fs);
-  const dev = deviation && !ordered.some((f) => f.penalty > 0) ? deviation : groupDeviation(ordered, okText);
+  const dev = deviation && !ordered.some((f) => f.penalty > 0 || (f.advicePenalty ?? 0) > 0) ? deviation : groupDeviation(ordered, okText);
   const detail =
     ordered.length || extra ? (
       <>
@@ -129,7 +129,7 @@ function AuthRows({ ctx }: { ctx: Ctx }) {
         groupRow(ctx, { label: "DKIM", measured: t('aucune signature'), reference: t('signature valide de {domain}', { domain: from ?? t('votre domaine') }), findings: dkimFindings })
       ) : (
         sigs.map((s, i) => (
-          groupRow(ctx, { key: `${s.domain}-${s.selector}-${i}`, label: sub('DKIM', `d=${s.domain} s=${s.selector}`), measured: [s.result, s.keyBits ? t('{n} bits', { n: String(s.keyBits) }) : undefined, s.testing ? t('test') : undefined].filter(Boolean).join(' · '), reference: from ? t('pass, clé ≥ 1024 bits, d={domain}', { domain: from }) : t('pass, clé ≥ 1024 bits'), findings: forSig(i), deviation: ok(s.result === 'pass') })
+          groupRow(ctx, { key: `${s.domain}-${s.selector}-${i}`, label: sub('DKIM', `d=${s.domain} s=${s.selector}`), measured: [s.result, s.keyBits ? t('{n} bits', { n: String(s.keyBits) }) : undefined, s.testing ? t('test') : undefined].filter(Boolean).join(' · '), reference: from ? t('pass, clé de 2048 bits conseillée, d={domain}', { domain: from }) : t('pass, clé de 2048 bits conseillée'), findings: forSig(i), deviation: ok(s.result === 'pass') })
         ))
       )}
       {groupRow(ctx, { label: sub('DMARC', a.dmarc?.policyRecordName), measured: a.dmarc ? `${a.dmarc.result ?? 'none'}${a.dmarc.p ? ` (p=${a.dmarc.p})` : ''}` : t('non évalué'), reference: t('pass, p=quarantine ou reject'), prefixes: ['dmarc.'], deviation: ok(a.dmarc?.result === 'pass'), extra: a.dmarc?.record ? <CodeBlock code={a.dmarc.record} label={t('TXT de {name}', { name: a.dmarc.policyRecordName ?? `_dmarc.${from}` })} /> : undefined })}
@@ -374,12 +374,14 @@ export function sectionStatus(findings: Finding[], passed: number, unavailable =
   const out = findings.filter((f) => f.penalty > 0 && deviationOf(f).kind === 'out').length;
   const warn = findings.filter((f) => f.penalty > 0 && deviationOf(f).kind === 'warn').length;
   const lost = sumPenalty(findings);
+  // advice the sender can act on: "conforme" would contradict the rows below (2026-11-12)
+  const better = findings.filter((f) => f.impact === 'advice' && !f.outOfReach && (f.advicePenalty ?? 0) > 0).length;
   return (
     <>
       {out > 0 && <b>{t('{n} hors bornes', { n: out })}</b>}
       {out > 0 && warn > 0 && ' · '}
       {warn > 0 && <span className="mail-warn">{t('{n} à surveiller', { n: warn })}</span>}
-      {out + warn === 0 ? t('conforme') : ` · ${t(lost >= 2 ? '{n} pt perdus' : '{n} pt perdu', { n: fmtPenalty(lost) })}`}
+      {out + warn === 0 ? (better ? t('{n} à améliorer', { n: better }) : t('conforme')) : ` · ${lost >= 2 ? t('{n} pt perdus', { n: fmtPenalty(lost) }) : t('{n} pt perdu', { n: fmtPenalty(lost) })}`}
       {` · ${plural(total, 'contrôle', 'contrôles')}`}
     </>
   );

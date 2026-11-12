@@ -39,7 +39,7 @@ sa.html_image_only_16:
     - "Versehen Sie jedes Bild mit einem aussagekräftigen alt-Attribut."
 sa.html_image_only_20:
   title: "HTML-Nachricht mit Bild und wenig Text (1.600 bis 2.000 Byte)"
-  why: "Bilder und 1.600 bis 2.000 Byte Text. Auch hier noch mit 1,5 Punkten bestraft."
+  why: "Bilder und 1.600 bis 2.000 Byte Text."
   fix:
     - "Fügen Sie echten Text in das HTML ein (Titel, Absätze, Handlungsaufforderung), statt ihn ins Bild zu setzen."
     - "Peilen Sie mindestens einige hundert Wörter echten Text an; behalten Sie die Bilder zur Illustration."

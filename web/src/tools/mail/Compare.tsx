@@ -50,7 +50,7 @@ export function CompareSection({ currentId, otherId, closeTo }: { currentId: str
         <ArrowRight aria-hidden />
         <span className="mr-compare__score mr-compare__score--now">{fmtScore(c.b.score)}</span>
         <span className={`mr-compare__delta ${d > 0 ? 'is-up' : d < 0 ? 'is-down' : ''}`}>
-          {d > 0 ? t(d >= 2 ? '+{d} points' : '+{d} point', { d: fmtScore(d) }) : d < 0 ? t(d <= -2 ? '{d} points' : '{d} point', { d: fmtScore(d) }) : t('note inchangée')}
+          {d > 0 ? (d >= 2 ? t('+{d} points', { d: fmtScore(d) }) : t('+{d} point', { d: fmtScore(d) })) : d < 0 ? (d <= -2 ? t('{d} points', { d: fmtScore(d) }) : t('{d} point', { d: fmtScore(d) })) : t('note inchangée')}
         </span>
       </div>
       <p className="mr-compare__ref">

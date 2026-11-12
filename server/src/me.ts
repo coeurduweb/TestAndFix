@@ -42,7 +42,7 @@ export function normaliseCode(input: unknown): string | undefined {
 
 // Failed link attempts (wrong, expired, used or own code), sliding one-minute window, per IP and for
 // the whole server. A success does NOT reset the counter (2026-11-11 review: a success between
-// guesses gave unlimited guesses). req.ip is the address nginx saw (trustProxy: 1 in app.ts).
+// guesses gave unlimited guesses). req.ip is the address the proxy saw (trustOneHop in app.ts; `trustProxy: 1` is not used, see there).
 export const MAX_FAILED_PER_IP = 5;
 export const MAX_FAILED_GLOBAL = 60;
 const MAX_TRACKED_IPS = 10_000;

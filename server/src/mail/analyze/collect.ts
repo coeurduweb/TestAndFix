@@ -126,6 +126,12 @@ export class Collector {
     return this.byId.has(id);
   }
 
+  /** Take a finding out (a limit of the measurement rather than something to improve). */
+  remove(id: string) {
+    this.byId.delete(id);
+    this.varsById.delete(id);
+  }
+
   pass(id: string, family: string, title: string, detail?: string, section?: SectionId) {
     if (this.passed.some((p) => p.id === id)) return;
     this.passed.push({ id, family, title, detail, section: section ?? sectionOf(family) });

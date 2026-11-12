@@ -173,6 +173,8 @@ export class ImapReceiver {
           const key = `${validity}:${m.uid}`;
           if (!this.done.has(key)) {
             this.done.add(key);
+            // only guards against a second pass before \Seen lands: the latest keys are enough (code review of 2026-11-12)
+            if (this.done.size > 5000) this.done.delete(this.done.values().next().value as string);
             this.process(m.source);
           }
           await client.messageFlagsAdd(String(m.uid), ['\\Seen'], { uid: true });

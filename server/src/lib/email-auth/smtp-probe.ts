@@ -2,7 +2,7 @@
 // The probe never sends MAIL FROM: it says hello, upgrades to TLS, says hello again and quits.
 import net from 'node:net';
 import tls from 'node:tls';
-import { reverseName } from '../net.js';
+import { isPublicIp, reverseName } from '../net.js';
 import { issue, lookupAddresses, lookupMx, lookupType, pass, type Analysis, type Issue, type Resolver } from './common.js';
 import type { PassedCheck } from '../../tools/types.js';
 import { t, msg } from '../../i18n.js';
@@ -321,7 +321,15 @@ export async function analyzeSmtp(dns: Resolver, domain: string, opts: SmtpAnaly
   if (!mx.length) return { issues, passed, data };
   const targets = mx.flatMap((m) => m.ips.slice(0, 2).map((ip) => ({ host: m.host, ip }))).slice(0, opts.maxTargets ?? 6);
   const probe = opts.probe ?? probeSmtp;
-  data.probes = await Promise.all(targets.map((t) => probe(t.host, t.ip, opts)));
+  // Never connect to a private, loopback or link-local address: an MX pointed at one would make this
+  // server talk to its own network (code review of 2026-11-12). Every other outbound path refuses them.
+  data.probes = await Promise.all(
+    targets.map((tg) =>
+      isPublicIp(tg.ip)
+        ? probe(tg.host, tg.ip, opts)
+        : Promise.resolve<SmtpProbe>({ host: tg.host, ip: tg.ip, port: 25, status: 'error', error: t('adresse non publique : non contactée'), extensions: [], starttls: false, transcript: [] }),
+    ),
+  );
   const ok = data.probes.filter((p) => p.status === 'ok');
   if (!ok.length) {
     issues.push(issue('mx.unreachable', { domain }, { evidence: data.probes.map((p) => `${p.host} (${p.ip}) : ${p.error}`).join('\n') }));

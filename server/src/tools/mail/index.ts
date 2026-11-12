@@ -15,6 +15,8 @@ import { MailService, summary, type MailServiceOptions } from '../../mail/servic
 import { startSmtp, type SmtpHandle } from '../../mail/smtp.js';
 import { ImapReceiver } from '../../mail/imap.js';
 import { mailBus, type MailEvent } from '../../mail/events.js';
+import { parseRaw, walk } from '../../mail/mime.js';
+import { intParam } from '../../lib/params.js';
 import { spamdPing } from '../../mail/spamd.js';
 import { receptionHealth, SELFTEST_LABEL } from '../../mail/selftest.js';
 import type { MailReport } from '../../mail/analyze/index.js';
@@ -148,6 +150,33 @@ function sharedMessage(db: DB, token: string): MessageRow | undefined {
 export function maskAddress(text: string, addressId: string): string {
   if (!/^t-[a-z0-9]+$/.test(addressId)) return text;
   return text.replace(new RegExp(addressId, 'gi'), 't-' + '0'.repeat(addressId.length - 2));
+}
+
+/**
+ * The raw source of a shared message with the test address masked everywhere, also inside base64 and
+ * quoted-printable parts (code review of 2026-11-12: a plain-text replacement left the live address in
+ * encoded parts, readable by whoever has the share link once decoded).
+ */
+export function maskRaw(raw: Buffer, addressId: string): Buffer {
+  if (!/^t-[a-z0-9]+$/.test(addressId)) return raw;
+  let text = maskAddress(raw.toString('latin1'), addressId);
+  const id = new RegExp(addressId, 'i');
+  const parsed = parseRaw(Buffer.from(text, 'latin1'));
+  walk(parsed.root, (p) => {
+    if (p.children.length || !p.body.length || !id.test(p.decoded.toString('latin1'))) return;
+    const before = p.body.toString('latin1');
+    let after: string;
+    if (p.cte === 'base64') {
+      const masked = maskAddress(p.decoded.toString('latin1'), addressId);
+      after = (Buffer.from(masked, 'latin1').toString('base64').match(/.{1,76}/g) ?? []).join('\r\n') + '\r\n';
+    } else if (p.cte === 'quoted-printable') {
+      // soft line breaks may split the address: join the lines, then mask (letters, digits and "-" stay literal)
+      after = maskAddress(before.replace(/=\r?\n/g, ''), addressId);
+    } else return;
+    const at = text.indexOf(before);
+    if (at >= 0) text = text.slice(0, at) + after + text.slice(at + before.length);
+  });
+  return Buffer.from(text, 'latin1');
 }
 
 function sendRaw(reply: FastifyReply, m: MessageRow) {
@@ -295,7 +324,7 @@ function register(app: FastifyInstance, ctx: ToolContext) {
   app.get<{ Params: { token: string } }>('/api/shared/:token/raw', async (req, reply) => {
     const m = sharedMessage(db, req.params.token);
     if (!m) return reply.code(404).send({ error: 'not_found' });
-    const raw = Buffer.from(maskAddress(Buffer.from(m.raw).toString('latin1'), m.address_id), 'latin1');
+    const raw = maskRaw(Buffer.from(m.raw), m.address_id);
     return sendRaw(reply, { ...m, raw });
   });
 
@@ -316,8 +345,8 @@ function register(app: FastifyInstance, ctx: ToolContext) {
       q: q.q?.trim() || undefined,
       from: ts(q.from),
       to: ts(q.to),
-      limit: q.limit ? Number(q.limit) : undefined,
-      offset: q.offset ? Number(q.offset) : undefined,
+      limit: intParam(q.limit, 50, 1, 200),
+      offset: intParam(q.offset, 0, 0, 1_000_000),
     });
     return { total, items: items.map(summary) };
   });

@@ -5,6 +5,7 @@ import { InvalidInputError, normalizeDomain } from '../../lib/email-auth/common.
 import { actionDns, respond, store } from '../../lib/email-auth/report.js';
 import { openSse } from '../../lib/sse.js';
 import { SECTIONS, scanDomain } from './scan.js';
+import { domainFingerprint, parseSelectors } from './fingerprint.js';
 
 export const tool: ServerTool = {
   id: 'domain',
@@ -13,6 +14,13 @@ export const tool: ServerTool = {
       respond(reply, async () => {
         const domain = normalizeDomain(req.params.domain);
         return store(ctx, await scanDomain(actionDns(ctx), domain, { ehloName: ctx.config.mail.domain, makeSession: () => ctx.dns() }));
+      }),
+    );
+    // Fix loop: the records that decide the domain's email, as the authoritative servers serve them now
+    app.get<{ Params: { domain: string }; Querystring: { selectors?: string } }>('/api/domain/:domain/fingerprint', (req, reply) =>
+      respond(reply, async () => {
+        const domain = normalizeDomain(req.params.domain);
+        return domainFingerprint(ctx.dns(), domain, parseSelectors(req.query.selectors));
       }),
     );
     app.get<{ Params: { domain: string } }>('/api/domain/:domain/stream', async (req, reply) => {

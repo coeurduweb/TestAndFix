@@ -99,6 +99,15 @@ class AgentTest(unittest.TestCase):
         self.assertEqual(self.req("POST", "/flush", {"dns": "yes"}, self.AUTH)[0], 400)
         self.assertEqual(self.calls, [])
 
+    def test_negative_content_length_refused(self):
+        import socket
+        s = socket.create_connection(("127.0.0.1", self.port), timeout=5)
+        s.sendall(b"POST /flush HTTP/1.1\r\nHost: x\r\nContent-Length: -1\r\n\r\nxxxx")
+        head = s.recv(200).decode("latin1")
+        s.close()
+        self.assertTrue(head.startswith("HTTP/1.0 400") or head.startswith("HTTP/1.1 400"), head)
+        self.assertEqual(self.calls, [])
+
     def test_rate_limit(self):
         self.assertEqual(self.req("POST", "/flush", {}, self.AUTH)[0], 200)
         st, hd, body = self.req("POST", "/flush", {}, self.AUTH)

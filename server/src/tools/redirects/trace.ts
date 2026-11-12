@@ -253,6 +253,10 @@ export async function traceChain(input: string, o: TraceOptions = {}): Promise<T
   const jar = o.cookies === false ? undefined : new CookieJar();
   const extra = o.headers ?? [];
   const userCookie = extra.find(([k]) => k.toLowerCase() === 'cookie')?.[1];
+  // Credentials typed by the user go only to the origin they were typed for, as a browser does on a
+  // cross-origin redirect (code review of 2026-11-12: they were sent on to any third party).
+  const startOrigin = new URL(start).origin;
+  const CREDENTIALS = new Set(['authorization', 'proxy-authorization', 'cookie']);
   const t0 = performance.now();
   const hops: Hop[] = [];
   const seen = new Set<string>();
@@ -266,11 +270,12 @@ export async function traceChain(input: string, o: TraceOptions = {}): Promise<T
       break;
     }
     const fromJar = jar?.header(url);
-    const cookie = [userCookie, fromJar?.value].filter(Boolean).join('; ') || undefined;
+    const sameOrigin = new URL(url).origin === startOrigin;
+    const cookie = [sameOrigin ? userCookie : undefined, fromJar?.value].filter(Boolean).join('; ') || undefined;
     const headers: [string, string][] = [
       ['User-Agent', ua.value],
       ...ua.headers.filter(([k]) => !extra.some(([e]) => e.toLowerCase() === k.toLowerCase())).map(([k, v]): [string, string] => [k, v === ACCEPT_LANGUAGE_OF_READER ? browserAcceptLanguage() : v]),
-      ...extra.filter(([k]) => k.toLowerCase() !== 'cookie'),
+      ...extra.filter(([k]) => k.toLowerCase() !== 'cookie' && (sameOrigin || !CREDENTIALS.has(k.toLowerCase()))),
       ...(cookie ? ([['Cookie', cookie]] as [string, string][]) : []),
     ];
     const key = `${method} ${url} ${cookie ?? ''}`;

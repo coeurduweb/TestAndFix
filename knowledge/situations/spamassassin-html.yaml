@@ -126,7 +126,7 @@
   sa_rules:
   - HTML_IMAGE_ONLY_20
   title: Message HTML avec image et peu de texte (1 600 à 2 000 octets)
-  why: Images et 1 600 à 2 000 octets de texte. Encore pénalisé à 1,5 point.
+  why: Images et 1 600 à 2 000 octets de texte.
   fix:
   - Ajoutez du vrai texte dans le HTML (titre, paragraphes, appel à l'action) au lieu de le mettre dans
     l'image.

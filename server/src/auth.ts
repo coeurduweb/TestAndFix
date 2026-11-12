@@ -70,9 +70,22 @@ export function isAuthenticated(req: FastifyRequest): boolean {
   return checkToken(req.cookies?.[COOKIE]);
 }
 
-/** Login attempts per IP, sliding one-minute window. */
+/**
+ * Failed logins, sliding one-minute window, per IP and for the whole server, with a bounded map
+ * (code review of 2026-11-12: the per-IP map grew without limit and a spread-out guesser had no
+ * ceiling against the single shared password; same rules as the link codes in me.ts). The global cap
+ * can make a real user wait up to a minute during an attack: accepted, as for the link codes.
+ */
 const attempts = new Map<string, number[]>();
 const MAX_ATTEMPTS = 5;
+export const MAX_FAILED_LOGINS_GLOBAL = 60;
+const MAX_TRACKED_LOGIN_IPS = 10_000;
+let failedLogins: number[] = [];
+
+export function resetLoginAttempts() {
+  attempts.clear();
+  failedLogins = [];
+}
 
 export function registerAuth(app: FastifyInstance, db: DB = getDb()) {
   app.get('/api/auth/status', async (req) => ({
@@ -84,8 +97,10 @@ export function registerAuth(app: FastifyInstance, db: DB = getDb()) {
     const ip = req.ip;
     const t = now();
     const recent = (attempts.get(ip) ?? []).filter((x) => t - x < 60_000);
-    if (recent.length >= MAX_ATTEMPTS) {
-      const wait = Math.ceil((60_000 - (t - recent[0])) / 1000);
+    failedLogins = failedLogins.filter((x) => t - x < 60_000);
+    if (recent.length >= MAX_ATTEMPTS || failedLogins.length >= MAX_FAILED_LOGINS_GLOBAL) {
+      const oldest = recent.length >= MAX_ATTEMPTS ? recent[recent.length - MAX_ATTEMPTS] : failedLogins[failedLogins.length - MAX_FAILED_LOGINS_GLOBAL];
+      const wait = Math.max(1, Math.ceil((60_000 - (t - oldest)) / 1000));
       return reply.code(429).send({ error: 'too_many_attempts', retryAfter: wait });
     }
     if (!passwordConfigured()) {
@@ -93,7 +108,13 @@ export function registerAuth(app: FastifyInstance, db: DB = getDb()) {
     }
     if (!passwordMatches(String(req.body?.password ?? ''))) {
       recent.push(t);
+      failedLogins.push(t);
+      attempts.delete(ip); // re-inserted last: the map is then ordered by last failure
       attempts.set(ip, recent);
+      for (const k of attempts.keys()) {
+        if (attempts.size <= MAX_TRACKED_LOGIN_IPS) break;
+        attempts.delete(k);
+      }
       return reply.code(401).send({ error: 'wrong_password', remaining: MAX_ATTEMPTS - recent.length });
     }
     attempts.delete(ip);

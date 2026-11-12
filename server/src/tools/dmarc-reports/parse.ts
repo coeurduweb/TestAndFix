@@ -153,29 +153,50 @@ export interface ExtractedXml {
 const isGzip = (b: Uint8Array) => b.length > 2 && b[0] === 0x1f && b[1] === 0x8b;
 const isZip = (b: Uint8Array) => b.length > 4 && b[0] === 0x50 && b[1] === 0x4b && (b[2] === 3 || b[2] === 5) && (b[3] === 4 || b[3] === 6);
 
-/** Turn an uploaded file (xml, gz, zip, zip of gz) into XML documents. Never throws. */
-export function extractXml(name: string, buf: Buffer, depth = 0): ExtractedXml[] {
+/** At most this many documents per uploaded file. */
+export const MAX_DOCUMENTS = 500;
+
+/**
+ * Turn an uploaded file (xml, gz, zip, zip of gz) into XML documents. Never throws.
+ * One budget for the whole file, counted on the bytes really decompressed, nested archives included
+ * (code review of 2026-11-12: a zip of small gzip bombs passed a cap that only counted the zip's
+ * declared sizes, then each .gz expanded to 40 MB on its own).
+ */
+export function extractXml(name: string, buf: Buffer, depth = 0, budget = { bytes: MAX_XML_BYTES, docs: MAX_DOCUMENTS }): ExtractedXml[] {
   try {
     if (isGzip(buf)) {
-      const inner = zlib.gunzipSync(buf, { maxOutputLength: MAX_XML_BYTES });
-      return depth < 2 ? extractXml(name, inner, depth + 1) : [{ name, error: t('Archives imbriquées trop profondes.') }];
+      if (budget.bytes <= 0) throw new Error(t('zip trop volumineux une fois décompressé'));
+      let inner: Buffer;
+      try {
+        inner = zlib.gunzipSync(buf, { maxOutputLength: budget.bytes });
+      } catch (e) {
+        if ((e as { code?: string }).code === 'ERR_BUFFER_TOO_LARGE') throw new Error(t('zip trop volumineux une fois décompressé'));
+        throw e;
+      }
+      budget.bytes -= inner.length;
+      return depth < 2 ? extractXml(name, inner, depth + 1, budget) : [{ name, error: t('Archives imbriquées trop profondes.') }];
     }
     if (isZip(buf)) {
       if (depth >= 2) return [{ name, error: t('Archives imbriquées trop profondes.') }];
-      let total = 0;
+      let declared = 0;
       const files = unzipSync(new Uint8Array(buf), {
         filter: (f) => {
           if (f.name.endsWith('/') || f.name.startsWith('__MACOSX/') || /(^|\/)\.[^/]*$/.test(f.name)) return false;
-          total += f.originalSize;
-          if (total > MAX_XML_BYTES) throw new Error(t('zip trop volumineux une fois décompressé'));
+          declared += f.originalSize;
+          if (declared > budget.bytes) throw new Error(t('zip trop volumineux une fois décompressé'));
           return true;
         },
       });
       const out: ExtractedXml[] = [];
       const names = Object.keys(files);
       if (!names.length) return [{ name, error: t("L'archive ne contient aucun fichier.") }];
+      // the declared sizes can lie: count what was really decompressed
+      const real = names.reduce((n, k) => n + files[k].length, 0);
+      if (real > budget.bytes) throw new Error(t('zip trop volumineux une fois décompressé'));
+      budget.bytes -= real;
       for (const n of names) {
-        for (const e of extractXml(n, Buffer.from(files[n]), depth + 1)) out.push({ ...e, name: `${name}/${e.name}` });
+        if (--budget.docs < 0) throw new Error(t('trop de fichiers dans l’archive'));
+        for (const e of extractXml(n, Buffer.from(files[n]), depth + 1, budget)) out.push({ ...e, name: `${name}/${e.name}` });
       }
       return out;
     }

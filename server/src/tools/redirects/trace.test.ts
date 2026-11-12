@@ -121,6 +121,16 @@ describe('traceChain on a local site', () => {
     expect(sent.find(([k]) => k === 'X-Test')?.[1]).toBe('1');
   });
 
+  it('keeps typed credentials on the starting origin, like a browser', async () => {
+    const d = await run(`${H()}/www`, { headers: [['Authorization', 'Bearer secret'], ['Cookie', 'session=1'], ['X-Test', '1']] });
+    const [first, second] = d.hops.map((h) => h.exchange.requestHeaders);
+    expect(first.find(([k]) => k === 'Authorization')?.[1]).toBe('Bearer secret');
+    expect(first.find(([k]) => k === 'Cookie')?.[1]).toBe('session=1');
+    expect(second.find(([k]) => k === 'Authorization')).toBeUndefined();
+    expect(second.find(([k]) => k === 'Cookie')).toBeUndefined();
+    expect(second.find(([k]) => k === 'X-Test')?.[1]).toBe('1');
+  });
+
   it('every finding has its entry in the base', async () => {
     const all = await Promise.all(['/chain', '/loop-a', '/to-private', '/to-404', '/meta', '/js', '/refresh', '/www', '/big'].map((p) => run(`${H()}${p}`)));
     for (const d of all) for (const i of analyzeTrace(d).issues) expect(explain(i).fallback, i.id).toBeFalsy();

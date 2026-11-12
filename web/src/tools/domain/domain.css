@@ -432,3 +432,100 @@
 .dm-report .field__hint {
   overflow-wrap: anywhere;
 }
+
+/* ---------- Fix loop: test, fix, then see the fix land ---------- */
+.fix-loop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3) var(--s5);
+  padding: var(--s4) var(--s5);
+  position: relative;
+}
+.fix-loop__lead {
+  flex: 1 1 24rem;
+  min-width: 0;
+  display: grid;
+  gap: var(--s2);
+}
+.fix-loop__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+.fix-loop__text {
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  text-wrap: pretty;
+}
+.fix-loop__text.mono,
+.fix-loop__text .mono {
+  font-size: 12.5px;
+}
+.fix-loop .btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+.fix-loop--live {
+  padding-left: calc(var(--s5) + 14px);
+}
+.fix-loop__pulse {
+  position: absolute;
+  left: var(--s4);
+  top: calc(var(--s4) + 0.45em);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--lab);
+  box-shadow: 0 0 0 0 color-mix(in oklch, var(--lab) 60%, transparent);
+  animation: fix-pulse 1.6s var(--ease-out) infinite;
+}
+@keyframes fix-pulse {
+  to {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fix-loop__pulse {
+    animation: none;
+  }
+}
+.fix-loop__score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+.fix-loop__score svg {
+  width: 0.9em;
+  height: 0.9em;
+}
+.fix-loop__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: var(--fs-sm);
+}
+.fix-loop__item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.fix-loop__item svg {
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  transform: translateY(2px);
+}
+.fix-loop__item--ok svg {
+  color: var(--in);
+}
+.fix-loop__item--new svg {
+  color: var(--out);
+}

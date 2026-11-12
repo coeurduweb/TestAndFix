@@ -64,7 +64,9 @@ describe('DNSBL', () => {
     );
     const sbl = r.findings.find((f) => f.id === 'blacklist.spamhaus_sbl');
     expect(sbl?.evidence).toContain('127.0.0.2');
-    expect(r.findings.some((f) => f.id === 'blacklist.query_blocked')).toBe(true);
+    // a list that refused the query is a limit of the measurement, not an improvement (2026-11-12)
+    expect(r.findings.some((f) => f.id === 'blacklist.query_blocked')).toBe(false);
+    expect((r.data.limits as { check: string }[]).some((l) => l.check === 'Listes de blocage')).toBe(true);
   });
 });
 
@@ -77,7 +79,8 @@ describe('Received chain', () => {
     ]);
     expect(hops.map((h) => h.index)).toEqual([1, 2, 3]);
     expect(hops[1]).toMatchObject({ ip: '209.85.221.54', fromPtr: 'mail-wr1-f54.google.com', tls: true, delaySec: 4 });
-    expect(hops[0].tls).toBe(false);
+    // the origin stamp ("by … with SMTP id", no from clause) is not a network transfer: no TLS verdict
+    expect(hops[0].tls).toBeNull();
     expect(findOrigin(hops, ['imap.hebergeur.fr'])?.ip).toBe('209.85.221.54');
   });
 });

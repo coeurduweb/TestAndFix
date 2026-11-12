@@ -24,6 +24,9 @@ Les outils en ligne disent **qu'il** y a un problème. TestAndFix dit **pourquoi
   d'envoi et hébergeurs** (Google Workspace, Microsoft 365, Brevo, Mailchimp, SendGrid, Amazon SES, Mailjet,
   Postmark, OVHcloud, cPanel, WordPress…). **528 règles SpamAssassin** sont expliquées par leur nom, avec
   **1 461 références** aux RFC et aux documentations des fournisseurs.
+- **La note mesure la livraison.** La note d'un test de mail reflète ce qui décide de l'arrivée de ce message
+  en boîte de réception ; les conseils de bonne pratique sont listés à part et ne coûtent aucun point : un message
+  réparé obtient de 9 à 10.
 - **Vos tests restent à vous.** Pas de quota quotidien, pas de page de résultat publique accessible à
   quiconque devine une adresse. Les résultats appartiennent au navigateur qui les a lancés ; un rapport ne se
   partage que si vous créez un lien.
@@ -72,6 +75,15 @@ Message déjà reçu ? Collez ses en-têtes ou déposez le `.eml`.
 Une seule mesure pour MX, SPF (arbre des include et limite des 10 requêtes), découverte des sélecteurs DKIM,
 DMARC, MTA-STS et TLS-RPT, BIMI, DNSSEC, serveurs SMTP, listes de blocage et enregistrement du domaine. Une
 note sur 10, puis chaque constat avec son explication, son effet et sa correction.
+
+### La boucle Fix : tester, corriger, puis voir la correction arriver
+
+Vous avez publié une correction ? Cliquez sur **Surveiller ma correction** dans le rapport du domaine.
+TestAndFix relit les enregistrements qui comptent pour le mail (MX, SPF, sélecteurs DKIM, DMARC, MTA-STS,
+TLS-RPT, BIMI, CAA) directement sur les serveurs qui font autorité, toutes les 15 secondes, et refait la mesure
+complète dès qu'ils changent. Vous voyez alors ce qui est corrigé, ce qui est nouveau, la note avant et après,
+et jusqu'à quelle heure les résolveurs peuvent encore servir l'ancienne réponse (son TTL), avec un lien pour
+suivre la propagation.
 
 ### Whois et RDAP : le registre et le bureau d'enregistrement côte à côte
 

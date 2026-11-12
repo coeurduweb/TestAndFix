@@ -19,6 +19,10 @@ export interface Finding {
   section?: string;
   /** mail reports only: what this finding does to delivery, and which side it is on */
   impact?: 'blocking' | 'spam' | 'advice';
+  /** Mail reports: what an advice finding would cost if it counted; it costs no point (since 2026-11-12). */
+  advicePenalty?: number;
+  /** Mail reports: advice only this service can act on (its server, its webmail's markup). */
+  outOfReach?: string;
   axis?: 'sender' | 'message';
 }
 

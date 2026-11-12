@@ -34,8 +34,10 @@ export function sectionOrder<F extends Pick<Finding, 'penalty' | 'severity' | 't
 export const sumPenalty = (fs: Pick<Finding, 'penalty'>[]) => Math.round(fs.reduce((n, f) => n + Math.max(0, f.penalty), 0) * 10) / 10;
 
 /** Deviation of a row that groups several findings: the sum of their points, red if one is severe. */
-export function groupDeviation(fs: Pick<Finding, 'penalty' | 'severity'>[], okText = t('conforme')): Deviation {
+export function groupDeviation(fs: Pick<Finding, 'penalty' | 'severity' | 'advicePenalty'>[], okText = t('conforme')): Deviation {
   const lost = sumPenalty(fs);
+  // advice costs no point but is not "conforme": it is worth improving (2026-11-12, DKIM 1024 bits and p=none showed "conforme")
+  if (lost <= 0 && fs.some((f) => (f.advicePenalty ?? 0) > 0)) return { kind: 'info', text: t('à améliorer') };
   if (lost <= 0) return fs.length ? { kind: 'info', text: t('noté') } : { kind: 'ok', text: okText };
   const severe = fs.some((f) => f.penalty > 0 && (f.severity === 'critical' || f.severity === 'high'));
   return { kind: severe ? 'out' : 'warn', direction: 'down', text: fmtPenalty(lost), label: t('Retire {n} point de la note', { n: fmtPenalty(lost) }) };
@@ -280,8 +282,11 @@ export function previewDocument(html: string, opts: { remote: boolean; inline?: 
   const csp = `default-src 'none'; img-src ${img}; style-src 'unsafe-inline'${opts.remote ? ' https: http:' : ''}; font-src data:${opts.remote ? ' https: http:' : ''}; media-src 'none'; form-action 'none'`;
   const head = `<meta http-equiv="Content-Security-Policy" content="${csp}"><meta name="color-scheme" content="light"><base target="_blank"><style>html{background:Canvas;color:CanvasText}body{margin:12px}img[data-check-blocked]{outline:1px dashed GrayText;outline-offset:-1px}img[data-check-blocked]:not([width]):not([height]){min-width:24px;min-height:24px}</style>`;
   // CSP meta must come before anything the document loads
-  if (/<head[^>]*>/i.test(body)) return body.replace(/<head[^>]*>/i, (m) => `${m}${head}`);
-  if (/<html[^>]*>/i.test(body)) return body.replace(/<html[^>]*>/i, (m) => `${m}<head>${head}</head>`);
+  // <head> itself, not <header> (code review of 2026-11-12: the CSP landed inside a <header>, where it is ignored)
+  const headTag = /<head(?:\s[^>]*)?>/i;
+  const htmlTag = /<html(?:\s[^>]*)?>/i;
+  if (headTag.test(body)) return body.replace(headTag, (m) => `${m}${head}`);
+  if (htmlTag.test(body)) return body.replace(htmlTag, (m) => `${m}<head>${head}</head>`);
   return `<!DOCTYPE html><html><head>${head}</head><body>${body}</body></html>`;
 }
 
@@ -589,7 +594,7 @@ export function fmtWhen(ts: number | undefined, now = Date.now()): string {
 }
 
 type Imp = NonNullable<Finding['impact']>;
-type AxisF = Pick<Finding, 'penalty'> & { impact?: Imp; axis?: 'sender' | 'message' };
+type AxisF = Pick<Finding, 'penalty' | 'outOfReach'> & { impact?: Imp; axis?: 'sender' | 'message' };
 
 /** Client mirror of indicatorsOf (server/src/mail/analyze/impact.ts), for a report sent without them. */
 export function indicatorsFrom(findings: AxisF[]): Indicators | undefined {
@@ -597,7 +602,7 @@ export function indicatorsFrom(findings: AxisF[]): Indicators | undefined {
   const sum = (axis: 'sender' | 'message'): AxisSummary => {
     const fs = findings.filter((f) => f.axis === axis);
     const n = (i: Imp) => fs.filter((f) => f.impact === i).length;
-    const out = { lost: Math.round(fs.reduce((t, f) => t + Math.max(0, f.penalty), 0) * 10) / 10, blocking: n('blocking'), spam: n('spam'), advice: n('advice') };
+    const out = { lost: Math.round(fs.reduce((t, f) => t + Math.max(0, f.penalty), 0) * 10) / 10, blocking: n('blocking'), spam: n('spam'), advice: fs.filter((f) => f.impact === 'advice' && !f.outOfReach).length };
     return { ...out, status: out.blocking ? 'blocking' : out.spam ? 'spam' : out.advice ? 'advice' : 'ok' };
   };
   const sender = sum('sender');
@@ -629,6 +634,8 @@ export function keyChecks(r: MailReport): { sender: KeyCheck[]; message: KeyChec
     // a report made before the impact field: the severity says it
     if (mine.some((f) => !f.impact && (f.severity === 'critical' || f.severity === 'high'))) return 'out';
     if (mine.some((f) => !f.impact && f.severity === 'medium')) return 'warn';
+    // worth improving (advice the sender can act on): not green, not an alarm (2026-11-12, DKIM 1024 bits was green)
+    if (base === 'ok' && fs.some((f) => families.includes(f.family) && f.impact === 'advice' && !f.outOfReach && (f.advicePenalty ?? 0) > 0)) return 'n';
     return base;
   };
   const a = d.auth;
@@ -702,11 +709,13 @@ export interface Headline {
 }
 
 /** The verdict in two sentences: what blocks delivery, then what risks the spam folder. */
-export function headlineOf(findings: Pick<Finding, 'title' | 'penalty' | 'impact'>[], ind: Indicators): Headline {
+export function headlineOf(findings: Pick<Finding, 'title' | 'penalty' | 'impact' | 'advicePenalty' | 'outOfReach' | 'axis'>[], ind: Indicators): Headline {
   const of = (i: Imp) => findings.filter((f) => f.impact === i).sort((a, b) => b.penalty - a.penalty);
   const blocking = of('blocking');
   const spam = of('spam');
-  const advice = of('advice').filter((f) => f.penalty > 0);
+  // advice costs no point since 2026-11-12 (the score measures delivery): its former cost is advicePenalty
+  // what the sender can act on, the most useful first (advice costs no point since 2026-11-12)
+  const advice = of('advice').filter((f) => !f.outOfReach && (f.penalty > 0 || (f.advicePenalty ?? 0) > 0)).sort((a, b) => (a.axis === 'sender' ? 0 : 1) - (b.axis === 'sender' ? 0 : 1) || (b.advicePenalty ?? b.penalty) - (a.advicePenalty ?? a.penalty));
   if (ind.verdict === 'blocking' && blocking.length) {
     const top = lowerFirst(blocking[0].title);
     return {
@@ -729,7 +738,7 @@ export function headlineOf(findings: Pick<Finding, 'title' | 'penalty' | 'impact
     tone: 'good',
     mood: t('Rien de bloquant ni de suspect'),
     main: t('Rien ne bloque la livraison.'),
-    rest: advice.length ? tn(advice.length, '{n} amélioration possible, sans effet notable sur la livraison.', '{n} améliorations possibles, sans effet notable sur la livraison.') : t('Aucun point à reprendre.'),
+    rest: advice.length ? tn(advice.length, 'Une amélioration possible\u00a0: {top}.', '{n} améliorations possibles, d’abord\u00a0: {top}.', { top: lowerFirst(advice[0].title) }) : t('Aucun point à reprendre de votre côté.'),
   };
 }
 

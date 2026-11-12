@@ -80,7 +80,9 @@ export function parseHops(receivedTopFirst: string[]): Hop[] {
       helo: (entry ? getClientHelo(entry) : false) || undefined,
       by: e.by?.value,
       with: e.with?.value?.split(/\s+/)[0],
-      tls: tls.tls,
+      // "Received: by host with SMTP id" without a from clause is the stamp of the origin, not a network
+      // transfer: no TLS verdict (user, 2026-11-12: Gmail's own stamp showed as a plaintext hop)
+      tls: !e.from?.value && !ip ? null : tls.tls,
       tlsDetail: tls.detail,
       for: e.for?.value?.replace(/^<|>$/g, ''),
       at: toIso(e.timestamp),

@@ -60,6 +60,10 @@ export interface Finding {
   fallback?: boolean;
   /** Mail reports only, set by classifyFindings. */
   impact?: Impact;
+  /** Mail reports: what an advice finding would cost if it counted (it does not, see mail/analyze/index.ts). */
+  advicePenalty?: number;
+  /** Mail reports: advice only the named service can act on (its server, its webmail's markup). */
+  outOfReach?: string;
   axis?: Axis;
 }
 
@@ -149,7 +153,7 @@ export function fill(text: string | undefined, vars: Vars): string {
       // "L'IP {ip}" with an unknown IP must not read "L'IP l'IP d'envoi": after its own noun, only the complement
       const after = AFTER_NOUN[currentLang()]?.[k];
       if (after && new RegExp(`(?:^|[\\s'’])${after[0]} $`, 'i').test(all.slice(Math.max(0, at - 24), at))) return after[1];
-      return t(PLACEHOLDER_WORDS[k] ?? 'votre valeur');
+      return t(PLACEHOLDER_WORDS[k] ?? UNKNOWN_VALUE);
     })
     .trim();
 }
@@ -177,6 +181,8 @@ const AFTER_NOUN: Partial<Record<string, Record<string, [string, string]>>> = {
     list_name: ['list', 'in question'],
   },
 };
+
+const UNKNOWN_VALUE = msg('votre valeur');
 
 /** French msgids, translated through i18n/server.<lang>.json. */
 const PLACEHOLDER_WORDS: Record<string, string> = {

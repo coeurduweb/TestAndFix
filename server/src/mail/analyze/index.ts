@@ -1,7 +1,7 @@
 // Mail test analysis: one received message in, one CheckResult out (score /10, findings with
 // their personalised fix, passed checks, unavailable sources, and the detailed data).
 import { simpleParser, type AddressObject } from 'mailparser';
-import { scoreOf, sortFindings } from '../../knowledge/engine.js';
+import { scoreOf, situationForSaRule, sortFindings } from '../../knowledge/engine.js';
 import { detectProviders, type DetectedProvider } from '../../lib/provider.js';
 import type { CheckResult } from '../../tools/types.js';
 import { bodyParts, firstHeader, headerValues, parseRaw } from '../mime.js';
@@ -16,9 +16,9 @@ import { runBlacklists, runSpamassassin } from './reputation.js';
 import { BULK_ESP } from './thresholds.js';
 import { isPublicIp } from '../../lib/net.js';
 import { runCompliance, runUnsubscribe } from './unsubscribe.js';
-import { classifyFindings, indicatorsOf, type Indicators } from './impact.js';
+import { classifyFindings, indicatorsOf, markOutOfReach, type Indicators } from './impact.js';
 import type { AnalyzeDeps, AnalyzeInput, MessageFacts, StepContext } from './types.js';
-import { msg, t } from '../../i18n.js';
+import { locale, msg, t } from '../../i18n.js';
 
 export type { AnalyzeDeps, AnalyzeInput } from './types.js';
 
@@ -333,7 +333,44 @@ export async function analyzeMessage(input: AnalyzeInput, deps: AnalyzeDeps): Pr
     });
   const compliance = sc.data.compliance as { isBulk?: boolean; requirements?: { id: string; ok: boolean | null; scope: string }[] } | undefined;
   const failingRequirements = (compliance?.requirements ?? []).filter((r) => r.ok === false && (r.scope === 'all' || compliance?.isBulk)).map((r) => r.id);
-  classifyFindings(c.findings, { failingRequirements, saOverThreshold: !!sa?.isSpam });
+  const saRules = (sc.data.spamassassin as { rules?: { name: string; score: number }[] } | undefined)?.rules ?? [];
+  const ruleScore = new Map(saRules.map((r) => [situationForSaRule(r.name)?.id ?? `sa.${r.name.toLowerCase()}`, r.score]));
+  classifyFindings(c.findings, {
+    failingRequirements,
+    saOverThreshold: !!sa?.isSpam,
+    sa: sa?.available && typeof sa.score === 'number' && typeof sa.threshold === 'number' ? { total: sa.score, threshold: sa.threshold, ruleScore } : undefined,
+  });
+  // A list that could not be queried is a limit of the measurement, not something to improve.
+  const blocked = c.findings.find((x) => x.id === 'blacklist.query_blocked');
+  if (blocked) {
+    c.limit(t('Listes de blocage'), [blocked.title, blocked.evidence].filter(Boolean).join(' : '));
+    c.remove(blocked.id);
+  }
+  markOutOfReach(c.findings, facts);
+  // a SpamAssassin rule kept as advice says why it does not count here
+  if (sa?.available && typeof sa.score === 'number' && typeof sa.threshold === 'number')
+    for (const f of c.findings)
+      if (f.family === 'spamassassin' && f.impact === 'advice' && ruleScore.has(f.id))
+        f.evidence = [
+          f.evidence,
+          ((v) =>
+            sa.score! >= 2
+              ? t('Sans effet ici : SpamAssassin donne {total} points au message entier, pour un seuil de {threshold}.', v)
+              : t('Sans effet ici : SpamAssassin donne {total} point au message entier, pour un seuil de {threshold}.', v))({
+            total: new Intl.NumberFormat(locale(), { maximumFractionDigits: 1 }).format(sa.score),
+            threshold: new Intl.NumberFormat(locale(), { maximumFractionDigits: 1 }).format(sa.threshold),
+          }),
+        ].filter(Boolean).join('\n');
+  // The score measures the delivery of THIS message: advice (domain hygiene, good practice) is listed
+  // but costs no point. Decision of the user, 2026-11-12: « J'avais l'habitude d'avoir entre 9 et 10/10
+  // lorsque je réparais les mails » (a repaired Gmail message scored 8.6, 1.0 of it on advice). Do not
+  // put advice back into the score; the points it would cost stay visible as `advicePenalty`.
+  for (const f of c.findings) {
+    if (f.impact === 'advice' && f.penalty > 0) {
+      f.advicePenalty = f.penalty;
+      f.penalty = 0;
+    }
+  }
   // the SpamAssassin verdict belongs to the side that carries most of its points
   const over = c.findings.find((f) => f.id === 'spamassassin.over_threshold');
   if (over) {

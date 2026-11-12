@@ -1,6 +1,7 @@
 // Unified history of one notebook (owner.ts): tool results and mail tests of the retention window.
 // A row of another notebook (or a legacy row without notebook) answers like a missing one.
 import type { ServerTool } from '../types.js';
+import { intParam, likeContains } from '../../lib/params.js';
 
 interface Row {
   id: string;
@@ -16,8 +17,8 @@ export const tool: ServerTool = {
   register(app, ctx) {
     app.get<{ Querystring: { tool?: string; q?: string; limit?: string; offset?: string } }>('/api/history', async (req) => {
       const owner = req.owner?.ownerId ?? null;
-      const limit = Math.min(200, Math.max(1, Number(req.query.limit ?? 50)));
-      const offset = Math.max(0, Number(req.query.offset ?? 0));
+      const limit = intParam(req.query.limit, 50, 1, 200);
+      const offset = intParam(req.query.offset, 0, 0, 1_000_000);
       const where: string[] = [];
       const args: unknown[] = [];
       if (req.query.tool) {
@@ -25,8 +26,8 @@ export const tool: ServerTool = {
         args.push(req.query.tool);
       }
       if (req.query.q) {
-        where.push('input LIKE ?');
-        args.push(`%${req.query.q.toLowerCase()}%`);
+        where.push("input LIKE ? ESCAPE '\\'");
+        args.push(likeContains(req.query.q.toLowerCase()));
       }
       const results = ctx.db
         .prepare(

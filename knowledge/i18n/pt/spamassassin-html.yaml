@@ -39,7 +39,7 @@ sa.html_image_only_16:
     - "Preencha um atributo alt descritivo em cada imagem."
 sa.html_image_only_20:
   title: "Mensagem HTML com imagem e pouco texto (1.600 a 2.000 bytes)"
-  why: "Imagens e 1.600 a 2.000 bytes de texto. Ainda penalizado em 1,5 ponto."
+  why: "Imagens e 1.600 a 2.000 bytes de texto."
   fix:
     - "Adicione texto real no HTML (título, parágrafos, chamada para ação), em vez de colocá-lo na imagem."
     - "Almeje pelo menos algumas centenas de palavras de texto real; mantenha as imagens para ilustração."

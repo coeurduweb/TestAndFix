@@ -102,6 +102,13 @@ describe('parsing', () => {
     const bad = extractXml('bad.gz', Buffer.concat([zlib.gzipSync(g).subarray(0, 40), Buffer.from('garbage')]));
     expect(bad[0].error).toMatch(/illisible/);
   });
+  it('counts one budget for nested archives: a zip of small gzip bombs is refused, not inflated', () => {
+    const bomb = zlib.gzipSync(Buffer.alloc(15 * 1024 * 1024, 0x20)); // 15 MB of spaces, a few KB compressed
+    const zip = Buffer.from(zipSync(Object.fromEntries(Array.from({ length: 5 }, (_, i) => [`r${i}.xml.gz`, bomb]))));
+    const out = extractXml('bombs.zip', zip);
+    expect(out.some((o) => /volumineux/.test(o.error ?? ''))).toBe(true);
+    expect(out.filter((o) => o.xml).length).toBe(0);
+  });
 });
 
 describe('HTTP routes', () => {

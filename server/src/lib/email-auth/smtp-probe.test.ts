@@ -37,7 +37,7 @@ describe('SMTP probe (local server)', () => {
 });
 
 describe('SMTP analysis', () => {
-  const dns = new FakeDns({ 'example.fr': { MX: [{ preference: 10, exchange: 'mx.example.fr' }] }, 'mx.example.fr': { A: ['192.0.2.25'] } });
+  const dns = new FakeDns({ 'example.fr': { MX: [{ preference: 10, exchange: 'mx.example.fr' }] }, 'mx.example.fr': { A: ['8.8.4.4'] } }); // the probe is a stub: nothing is sent
   it('says "non vérifiable depuis cette machine" when port 25 is filtered', async () => {
     const a = await analyzeSmtp(dns, 'example.fr', { reachability: async () => ({ reachable: false, detail: 'délai dépassé' }) });
     expect(a.issues).toEqual([]);
@@ -49,6 +49,14 @@ describe('SMTP analysis', () => {
     });
     const a = await analyzeSmtp(dns, 'example.fr', { reachability: async () => ({ reachable: true, detail: 'ok' }), probe });
     expect(a.issues.map((i) => i.id)).toEqual(['tls.mx_no_starttls']);
+  });
+  it('never connects to a private address an MX points to', async () => {
+    const asked: string[] = [];
+    const probe = async (host: string, ip: string): Promise<SmtpProbe> => (asked.push(ip), { host, ip, port: 25, status: 'ok', extensions: [], starttls: true, transcript: [] });
+    const inner = new FakeDns({ 'evil.example': { MX: [{ preference: 10, exchange: 'mx.evil.example' }] }, 'mx.evil.example': { A: ['10.0.0.5', '127.0.0.1'] } });
+    const a = await analyzeSmtp(inner, 'evil.example', { reachability: async () => ({ reachable: true, detail: 'ok' }), probe });
+    expect(asked).toEqual([]);
+    expect(a.data.probes.map((p) => [p.ip, p.status, p.error])).toEqual([['10.0.0.5', 'error', 'adresse non publique : non contactée'], ['127.0.0.1', 'error', 'adresse non publique : non contactée']]);
   });
   it('is honest about this machine (live)', async () => {
     const a = await analyzeSmtp(new GuardedResolver(new ResolveSession(), () => new ResolveSession()), 'gmail.com', { timeoutMs: 4000 });

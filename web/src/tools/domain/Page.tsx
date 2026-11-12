@@ -13,6 +13,7 @@ import { fmtMs } from '../../lib/format';
 import { msg, rich, t } from '../../lib/i18n';
 import type { Finding } from '../../lib/types';
 import { useEventStream } from '../../lib/useEventStream';
+import { FixLoop } from './FixLoop';
 import { MetricTable } from './MetricTable';
 import { Issues, SkeletonCards, ToolEmpty, useRecent } from './common';
 import type { DkimData, MxData, ScanSection, SectionId } from './model';
@@ -214,6 +215,15 @@ export default function DomainScanPage() {
         }
       />
       <>
+        {!nx && (
+          <FixLoop
+            domain={domain}
+            result={state.result}
+            selectors={((state.sections.dkim?.data as DkimData | null)?.keys ?? []).map((k) => k.selector)}
+            done={done}
+            restart={restart}
+          />
+        )}
         {broken && (
           <Notice tone="error" title={received ? t('La mesure s’est interrompue en route') : t('Mesure impossible')}>
             {state.error ?? (received ? t('{n} sections sur {total} sont arrivées : elles restent affichées, sans note globale.', { n: received, total: state.order.length }) : t('Le serveur de TestAndFix n’a pas répondu au flux de mesure. Vérifiez qu’il tourne, puis relancez.'))}{' '}

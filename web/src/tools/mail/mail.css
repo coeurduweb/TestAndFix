@@ -228,7 +228,8 @@
   font-stretch: 100%;
   letter-spacing: -0.025em;
   text-wrap: balance;
-  overflow-wrap: break-word;
+  /* anywhere, not break-word: a long DNS name must also shrink the grid column (phone, 2026-11-12) */
+  overflow-wrap: anywhere;
 }
 .mr-headline em {
   font-style: normal;

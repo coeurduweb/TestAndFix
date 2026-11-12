@@ -260,6 +260,8 @@ export class MailService {
       report.resultId = id;
       const rd = this.receiver.get(id) ?? (previous?.data?.receiverDomains as string[] | undefined);
       if (rd) report.data.receiverDomains = rd;
+      // kept in the report from now on: a re-analysis reads it there (code review of 2026-11-12: the map only grew)
+      this.receiver.delete(id);
       if (previous) report.data.previous = { score: previous.score, measuredAt: previous.measuredAt };
       updateMessage(this.ctx.db, id, {
         status: 'done',

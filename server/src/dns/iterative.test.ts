@@ -40,3 +40,11 @@ describe('servers that reject EDNS (live)', () => {
     expect(r.answers.filter((a) => a.type === 'A').length).toBeGreaterThan(0);
   });
 });
+
+describe('name-server addresses', () => {
+  it('never asks a name server on a private, loopback or reserved address (glue or resolved)', () => {
+    const usable = (ip: string) => (new ResolveSession() as unknown as { usable(ip: string): boolean }).usable(ip);
+    expect(['10.0.0.53', '127.0.0.1', '172.17.0.1', '192.168.1.1', '169.254.169.254', '::ffff:10.0.0.1'].map(usable)).toEqual([false, false, false, false, false, false]);
+    expect(usable('8.8.8.8')).toBe(true);
+  });
+});

@@ -171,6 +171,10 @@ describe('preview', () => {
     expect(open).toContain('src="https://t.example/p.gif"');
     expect(open).toContain('img-src data: https: http:');
     expect(previewDocument('<p>x</p>', { remote: false })).toMatch(/^<!DOCTYPE html><html><head><meta http-equiv/);
+    // a <header> is not the <head>: the CSP must still be in a real head, before the content
+    const withHeader = previewDocument('<html><body><header class="top"><style>@import "https://t.example/x.css"</style></header></body></html>', { remote: false });
+    expect(withHeader).toMatch(/^<html><head><meta http-equiv="Content-Security-Policy"/);
+    expect(withHeader.indexOf('Content-Security-Policy')).toBeLessThan(withHeader.indexOf('<header'));
   });
 });
 
@@ -266,7 +270,10 @@ describe('Signal report helpers', () => {
     // the first letter is lowered only when the second is lowercase: an acronym stays as written
     expect(b).toMatchObject({ tone: 'bad', main: '2 points bloquent la livraison, d’abord\u00a0: DKIM absent.' });
     expect(b.rest).toBe('Un autre peut le faire classer en indésirables.');
-    expect(headlineOf([g('Doctype', 0.1, 'advice')], ind('ok'))).toMatchObject({ tone: 'good', rest: '1 amélioration possible, sans effet notable sur la livraison.' });
+    // the verdict names the most useful thing the sender can do; what only the service can do is left out
+    const adv = (title: string, worth: number, outOfReach?: string) => ({ title, penalty: 0, impact: 'advice' as const, advicePenalty: worth, outOfReach });
+    expect(headlineOf([adv('Doctype absent', 0.1, 'Gmail'), adv('DKIM de 1024 bits', 0.3), adv('Rapports DMARC absents', 0.3)], ind('ok'))).toMatchObject({ tone: 'good', rest: '2 améliorations possibles, d’abord\u00a0: DKIM de 1024 bits.' });
+    expect(headlineOf([adv('Doctype absent', 0.1, 'Gmail')], ind('ok')).rest).toBe('Aucun point à reprendre de votre côté.');
     for (const h of [b, headlineOf([], ind('ok'))]) expect(`${h.mood}${h.main}${h.rest}`).not.toMatch(/[\u2014\u2013]/);
   });
 

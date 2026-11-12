@@ -3,6 +3,7 @@
 // root -> TLD -> zone itself. A ResolveSession memoizes delegations for the duration of ONE
 // user action only (a domain scan, a mail analysis) and is then discarded.
 import net from 'node:net';
+import ipaddr from 'ipaddr.js';
 import { query, type DnsAnswer, type DnsResponse, type RRType } from './client.js';
 
 export const ROOT_SERVERS: Record<string, string> = {
@@ -70,6 +71,14 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+/** Public unicast address (IPv4-mapped IPv6 judged as IPv4). Local copy of lib/net isPublicIp: lib/net imports this module. */
+function isPublicAddress(ip: string): boolean {
+  if (!ipaddr.isValid(ip)) return false;
+  let a = ipaddr.parse(ip);
+  if (a.kind() === 'ipv6' && (a as ipaddr.IPv6).isIPv4MappedAddress()) a = (a as ipaddr.IPv6).toIPv4Address();
+  return a.range() === 'unicast';
+}
+
 export interface SessionOptions {
   timeoutMs?: number;
   /** Max servers tried per zone before giving up. */
@@ -102,8 +111,13 @@ export class ResolveSession {
     return '';
   }
 
+  /**
+   * A name-server address worth asking: the right family, and public. Glue or a resolved address
+   * pointing at a private, loopback or reserved network would make the server query its own network
+   * (code review of 2026-11-12; tools/dns refuses such a `server` typed by hand).
+   */
   private usable(ip: string) {
-    return net.isIPv4(ip) || (this.opts.ipv6 && net.isIPv6(ip));
+    return (net.isIPv4(ip) || (!!this.opts.ipv6 && net.isIPv6(ip))) && isPublicAddress(ip);
   }
 
   private async serverIps(ns: NameServer, depth: number, chain: ReadonlySet<string> = new Set()): Promise<string[]> {
@@ -114,7 +128,7 @@ export class ResolveSession {
     } catch {
       ns.ips = [];
     }
-    return ns.ips;
+    return ns.ips.filter((ip) => this.usable(ip));
   }
 
   /** Ask the servers of `zone` about name/type, trying them in random order. */
