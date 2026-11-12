@@ -1,0 +1,170 @@
+infrastructure.shared_ip:
+  title: "A mensagem sai de um IP compartilhado de {provider}"
+  why: "Sua reputação de IP é compartilhada com os outros clientes de {provider}. É uma vantagem para um volume baixo ou irregular, e um risco se um vizinho enviar de forma inadequada. Já a reputação do seu domínio continua sendo sua."
+  fix:
+    - "Para um volume modesto, mantenha o IP compartilhado: um IP dedicado sem volume regular tem uma reputação mais difícil de construir."
+    - "Se você envia muito e com regularidade, informe-se sobre a oferta de IP dedicado de {provider}."
+    - "Em todo caso, autentique {domain} (DKIM alinhado) para que a reputação do domínio não dependa do IP."
+  fix_by_provider:
+    postmark: "O Postmark reserva IPs dedicados para contas que enviam pelo menos 300.000 mensagens por mês."
+    sendgrid: "O SendGrid atribui um IP dedicado a partir dos planos Pro (Email API) e Advanced (Marketing Campaigns)."
+    brevo: "O plano Enterprise da Brevo inclui um IP dedicado; outros podem ser adicionados como opção."
+    amazon_ses: "O SES oferece IPs dedicados padrão ou gerenciados (managed), cobrados à parte."
+    mailchimp: "O IP dedicado é uma opção paga, atribuída a critério do Mailchimp."
+    hubspot: "Sem o módulo Dedicated IP ou Transactional Email, os envios de marketing passam pelos IPs compartilhados do HubSpot."
+infrastructure.ipv6_not_in_spf:
+  title: "O servidor enviou por IPv6 ({ip}), endereço ausente do SPF"
+  why: "Seu SPF autoriza o IPv4 do servidor, mas esta mensagem saiu pelo IPv6 dele. Dependendo do caminho da rede, suas mensagens passam ou falham no SPF, o que torna o problema difícil de entender."
+  fix:
+    - "Adicione ip6:{ip} (ou o prefixo /64 do servidor) ao seu SPF."
+    - "Verifique se esse IPv6 também tem reverse DNS e um registro AAAA correspondente."
+    - "Caso contrário, configure o servidor para enviar somente por IPv4."
+  fix_by_provider:
+    postfix: "Para forçar o IPv4: smtp_address_preference = ipv4 ou inet_protocols = ipv4 no main.cf, depois postfix reload."
+infrastructure.web_server_mail:
+  title: "A mensagem foi enviada pelo servidor web, sem passar pelo seu serviço de e-mail"
+  why: "Seu site envia diretamente pela função mail() do servidor. O endereço de retorno é o do servidor ({envelope_domain}), sem SPF alinhado nem DKIM de {domain}: essas mensagens (formulários, pedidos, senhas) costumam cair no spam."
+  fix:
+    - "Faça o site enviar pelo servidor SMTP autenticado do seu serviço de e-mail ou por um serviço de envio transacional."
+    - "Use como remetente um endereço de {domain} que realmente exista."
+    - "Refaça o teste: SPF e DKIM devem passar para {domain}."
+  fix_by_provider:
+    wordpress: "Instale uma extensão SMTP, informe o servidor SMTP do seu serviço de e-mail (porta 587 em TLS ou 465 em SSL) com uma conta de {domain} e envie uma mensagem de teste pela extensão."
+    cpanel: "Se você continuar na hospedagem, crie uma caixa de e-mail de {domain} no cPanel e faça o site enviar pelo SMTP autenticado dela. O cPanel informa que o DKIM pode não assinar o e-mail enviado pelo PHP em algumas configurações."
+    o2switch: "Crie um endereço de {domain} no cPanel e use-o no SMTP autenticado do seu site. A o2switch indica include:spf.jabatus.fr como único SPF para os seus serviços."
+infrastructure.dns_inconsistent:
+  title: "Os servidores DNS de {domain} não dão todos a mesma resposta"
+  why: "Dependendo do servidor DNS consultado, os destinatários veem sua configuração nova ou a antiga. Seus resultados de SPF, DKIM ou DMARC mudam de uma mensagem para outra sem motivo aparente."
+  fix:
+    - "Compare a lista de servidores de nomes declarados no registrador com a do seu provedor de DNS atual, e remova os do provedor antigo."
+    - "Se você gerencia servidores secundários, incremente o número de série da zona e verifique se a transferência de zona funciona."
+    - "Refaça o teste: todos os servidores devem devolver o mesmo registro."
+infrastructure.dns_lame_server:
+  title: "Um servidor DNS declarado para {domain} não responde corretamente"
+  why: "Parte das consultas a {domain} cai em um servidor que não responde. Os destinatários recebem então erros temporários e atrasam ou avaliam mal as suas mensagens."
+  fix:
+    - "Identifique o servidor com problema indicado pelo teste."
+    - "Remova-o da lista de servidores de nomes no registrador, ou peça para ele ser configurado para servir a zona de {domain}."
+infrastructure.cname_at_apex:
+  title: "A raiz de {domain} é um alias CNAME"
+  why: "Um CNAME na raiz impede publicar nela um MX ou um SPF. Dependendo do servidor DNS, esses registros são ignorados ou é o CNAME que é ignorado: seu e-mail funciona de forma aleatória."
+  fix:
+    - "Substitua o CNAME da raiz por registros A e AAAA, ou pela função de achatamento do seu provedor de DNS (ALIAS, ANAME, CNAME flattening)."
+    - "Depois publique normalmente MX e TXT (SPF) na raiz."
+  fix_by_provider:
+    cloudflare_dns: "A Cloudflare resolve um CNAME colocado na raiz em endereços (CNAME flattening). Verifique depois se MX e TXT estão publicados e servidos na raiz."
+infrastructure.mail_host_proxied:
+  title: "O servidor de e-mail de {domain} está oculto atrás do proxy da Cloudflare"
+  why: "O endereço do seu MX é o do proxy web da Cloudflare, que não transporta e-mails. As mensagens para {domain}, inclusive as respostas e as recusas, não podem ser entregues."
+  fix:
+    - "No Cloudflare, abra o registro A ou AAAA do nome indicado no MX."
+    - "Mude-o para DNS only (nuvem cinza) e verifique se ele aponta para o IP real do servidor de e-mail."
+  fix_by_provider:
+    cloudflare_dns: "DNS, Records: clique no registro, desative Proxy status (DNS only) e salve."
+infrastructure.domain_expiring:
+  title: "O domínio {domain} expira em menos de 30 dias"
+  why: "Ao expirar, o domínio deixa de funcionar: e-mail, site e autenticação caem ao mesmo tempo, e o domínio pode ser recomprado por terceiros."
+  fix:
+    - "Renove o domínio no seu registrador."
+    - "Ative a renovação automática e verifique se a forma de pagamento cadastrada está válida."
+infrastructure.open_relay:
+  title: "O servidor {value} de {domain} é um relay aberto"
+  why: "Qualquer pessoa pode enviar spam pelo seu servidor. Ele será incluído nas listas de bloqueio em poucas horas, e todos os seus envios legítimos serão recusados."
+  fix:
+    - "Restrinja imediatamente o relay a redes de confiança e a usuários autenticados."
+    - "Verifique a fila e exclua as mensagens de spam pendentes."
+    - "Depois verifique as listas de bloqueio e solicite as remoções necessárias."
+  fix_by_provider:
+    postfix: "Em main.cf: smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination, e mynetworks limitado a 127.0.0.0/8 [::1]/128, depois postfix reload."
+    exim: "Verifique se a hostlist relay_from_hosts contém apenas localhost e se a ACL de RCPT recusa destinatários não locais sem autenticação."
+infrastructure.smtp_banner_mismatch:
+  title: "O servidor MX de {domain} se apresenta com outro nome ({value})"
+  why: "O servidor se apresenta com um nome diferente do seu MX e do seu reverse DNS. Não bloqueia, mas costuma ser o mesmo nome que ele usa no HELO ao enviar, onde pesa sobre as suas mensagens."
+  fix:
+    - "Dê ao servidor um nome único, usado em todos os lugares: banner, HELO, reverse DNS e registro A."
+  fix_by_provider:
+    postfix: "O banner usa $myhostname (smtpd_banner): defina myhostname com o nome do MX."
+infrastructure.ns_single:
+  title: "{domain} tem apenas um servidor de nomes"
+  why: "Se esse servidor cair, nenhum nome de {domain} responde: site, MX, SPF, DKIM e DMARC desaparecem juntos, e as mensagens endereçadas a você acabam voltando com erro."
+  fix:
+    - "Peça ao seu provedor de DNS a lista dos servidores de nomes dele: a maioria fornece pelo menos dois."
+    - "No seu registrador, declare pelo menos dois servidores de nomes para {domain}."
+    - "Se você gerencia seu próprio servidor DNS, adicione um servidor secundário em outro prestador, alimentado por transferência de zona."
+infrastructure.ns_unresolvable:
+  title: "Um servidor de nomes de {domain} não tem endereço"
+  why: "O servidor {value} está declarado para {domain}, mas o nome dele não fornece nenhum endereço IP: os resolvedores não conseguem consultá-lo. Eles perdem tempo tentando, e, se for o único válido, o domínio inteiro deixa de responder."
+  fix:
+    - "No seu registrador, compare a lista de servidores de nomes de {domain} com a que o seu provedor de DNS informa, e corrija o nome de {value}."
+    - "Se {value} for um nome do seu próprio domínio (ns1.{domain}), declare o endereço IP dele no registrador (registro de glue)."
+    - "Se esse servidor não existir mais, remova-o da delegação."
+infrastructure.ns_same_network:
+  title: "Todos os servidores de nomes de {domain} estão na mesma rede"
+  why: "Os servidores compartilham a rede {value}: uma falha ou um ataque nessa rede os derruba todos ao mesmo tempo, e {domain} deixa de responder em qualquer lugar. A RFC 2182 pede servidores secundários dispersos em redes diferentes."
+  fix:
+    - "Se o seu provedor de DNS anuncia um serviço anycast distribuído, este controle pode ser ignorado."
+    - "Caso contrário, adicione um servidor de nomes em outro prestador (serviço de DNS secundário alimentado por transferência de zona)."
+    - "Declare esse servidor no seu registrador e na zona de {domain}."
+infrastructure.ns_parent_child_mismatch:
+  title: "Os servidores de nomes declarados no registro e na zona de {domain} são diferentes"
+  why: "O registro de domínios e a zona {domain} não listam os mesmos servidores. Dependendo do resolvedor, as respostas vêm de uma lista ou da outra: uma alteração feita em apenas um provedor só é vista por parte dos destinatários."
+  fix:
+    - "Veja as duas listas exibidas nos detalhes: a do registro (pai) e a da zona."
+    - "Decida qual provedor de DNS vale como referência e alinhe a lista no seu registrador e os registros NS da zona com os servidores dele."
+    - "Se você acabou de trocar de provedor, remova os servidores antigos dos dois lados, e mantenha a zona antiga atualizada até o TTL dos NS expirar."
+infrastructure.soa_missing:
+  title: "Nenhum SOA legível para a zona {domain}"
+  why: "Nenhum servidor de nomes devolveu o registro SOA de {domain}. Os servidores declarados provavelmente não servem a zona: as respostas DNS do domínio (MX, SPF, DKIM) ficam incertas ou ausentes."
+  fix:
+    - "No seu provedor de DNS, verifique se a zona {domain} existe e está ativa."
+    - "Compare os servidores de nomes declarados no registrador com os que o provedor atribuiu a você."
+    - "No seu próprio servidor, verifique se a zona foi carregada sem erro (log do servidor DNS) e recarregue-a."
+infrastructure.soa_serial_mismatch:
+  title: "Os servidores de {domain} não têm a mesma versão da zona"
+  why: "Os números de série SOA são diferentes ({value}): um servidor não recebeu a última alteração. Dependendo do servidor consultado, os destinatários veem a versão antiga ou a nova dos seus registros."
+  fix:
+    - "Se a zona acabou de ser alterada, execute a verificação novamente em alguns minutos."
+    - "Se a diferença persistir, verifique se o serial foi aumentado no servidor principal na última alteração."
+    - "Verifique se a transferência de zona para os secundários está permitida e funcionando (log do servidor, NOTIFY), ou peça uma sincronização ao seu provedor de DNS."
+infrastructure.caa_missing:
+  title: "Nenhum registro CAA para {domain}"
+  why: "Sem CAA, qualquer autoridade certificadora pode emitir um certificado para {domain}. Não é um erro, mas é uma proteção a menos contra um certificado obtido de forma fraudulenta para o seu site ou o seu servidor de e-mail."
+  fix:
+    - "Levante as autoridades que realmente emitem seus certificados (site, MX, política MTA-STS): o emissor aparece em cada certificado."
+    - "Publique um registro CAA issue por autoridade, na raiz de {domain}."
+    - "Opcionalmente, adicione um iodef para ser avisado de um pedido recusado."
+infrastructure.caa_unknown_critical:
+  title: "Um registro CAA crítico desconhecido bloqueia os certificados de {domain}"
+  why: "A tag {value} está marcada como crítica (flag 128) e não é uma tag reconhecida: as autoridades certificadoras devem então recusar qualquer emissão. A renovação dos seus certificados (site, MX, MTA-STS) vai falhar."
+  fix:
+    - "Na zona DNS de {domain}, localize o registro CAA cuja tag é {value}."
+    - "Corrija o erro de digitação se for issue, issuewild ou iodef, ou volte a flag para 0."
+    - "Exclua o registro se ele não servir para nada."
+infrastructure.domain_expired:
+  title: "O domínio {domain} expirou"
+  why: "A data de expiração ({value}) já passou. O registrador pode suspender o domínio a qualquer momento: site, e-mail e autenticação caem juntos, e depois o domínio acaba excluído e aberto à recompra por terceiros."
+  fix:
+    - "Renove {domain} no seu registrador imediatamente: em geral, a renovação ainda é possível por algum tempo após a expiração."
+    - "Verifique se o e-mail do titular e a forma de pagamento cadastrados estão válidos, para receber os próximos avisos."
+    - "Ative a renovação automática."
+infrastructure.domain_hold:
+  title: "O domínio {domain} está suspenso (hold)"
+  why: "O status {value} tira {domain} do DNS: nenhum nome do domínio responde, nem o site, nem os MX, nem o SPF. As mensagens endereçadas a você voltam com erro, e seus envios falham na autenticação."
+  fix:
+    - "Entre em contato com seu registrador: ele conhece o motivo do status (inadimplência, litígio, exclusão solicitada)."
+    - "Procure na sua caixa de entrada uma mensagem do registrador, em geral um pedido de verificação dos dados do titular, e siga o link."
+    - "Para serverHold, aplicado pelo registro, passe também pelo seu registrador: é ele que faz a ligação com o registro."
+infrastructure.domain_pending_delete:
+  title: "O domínio {domain} está em processo de exclusão"
+  why: "O status {value} indica que {domain} será excluído e depois colocado à venda novamente. O domínio já não funciona, e, depois de apagado, qualquer pessoa poderá registrá-lo, receber seus e-mails e enviar em seu nome."
+  fix:
+    - "Entre em contato com seu registrador sem demora: em redemptionPeriod, a restauração é possível, em geral paga."
+    - "Só com pendingDelete, a restauração não é mais possível: prepare-se para registrar o domínio de novo assim que ele for liberado, ou para migrar seus endereços."
+    - "Depois que o domínio for recuperado, ative a renovação automática."
+infrastructure.domain_not_registered:
+  title: "O domínio {domain} não está registrado"
+  why: "O registro de domínios não conhece {domain}: ele não existe ou foi excluído. Nenhum endereço desse domínio pode receber mensagens ou ser autenticado, e qualquer pessoa pode registrá-lo."
+  fix:
+    - "Verifique a grafia do domínio digitado."
+    - "Se o domínio era seu, entre em contato com seu registrador e registre-o de novo o quanto antes, se ainda estiver livre."
+    - "Se for um link recebido por mensagem, não o acesse: qualquer pessoa pode registrar este domínio e publicar nele a página que quiser."

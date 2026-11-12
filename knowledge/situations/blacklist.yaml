@@ -1,0 +1,583 @@
+# Famille blacklist : listes de blocage DNS (DNSBL, RFC 5782) qui visent l'IP d'envoi {ip},
+# le domaine expéditeur ou les domaines des liens. Une entrée par liste majeure : l'effet
+# réel dépend du nombre de destinataires qui l'utilisent, d'où des pénalités différentes.
+# Le moteur remplit {list_name} et {delist_url} ; les liens de délistage ci-dessous sont ceux
+# publiés par les opérateurs, relevés le 2026-11-10.
+# Ne jamais conclure à une inscription sur un code d'erreur (voir blacklist.query_blocked).
+
+- id: blacklist.spamhaus_sbl
+  family: blacklist
+  severity: critical
+  penalty: 2.5
+  detect:
+    signal: "dnsbl.query(ip, 'zen.spamhaus.org') contains 127.0.0.2"
+    notes: "Spamhaus SBL : IP ou plages identifiées comme malveillantes (spam, hébergement de spam). Spamhaus demande d'interroger la zone combinée zen.spamhaus.org, pas les sous-zones séparément."
+  sa_rules: [RCVD_IN_SBL]
+  title: "L'IP {ip} est inscrite sur Spamhaus SBL"
+  why: >
+    Spamhaus est la liste la plus utilisée par les serveurs de messagerie. Une inscription SBL
+    fait rejeter vos messages par une grande partie des destinataires, souvent dès la
+    connexion.
+  fix:
+    - "Consultez la fiche de l'IP {ip} sur {delist_url} pour lire la raison et le numéro de dossier SBL."
+    - "Supprimez la cause : compte compromis, formulaire détourné, liste d'adresses achetée."
+    - "Contactez votre hébergeur ou fournisseur d'accès : selon Spamhaus, la demande de retrait d'une inscription SBL doit venir du fournisseur responsable de l'IP. Le retrait est gratuit."
+    - "Si {ip} est une IP partagée d'un service d'envoi ({provider}), prévenez son support : l'IP ne vous appartient pas et c'est à lui de traiter l'inscription."
+  references:
+    - https://www.spamhaus.org/blocklists/spamhaus-blocklist/
+    - https://www.spamhaus.org/faqs/dnsbl-usage/
+    - https://check.spamhaus.org/
+    - https://www.rfc-editor.org/rfc/rfc5782
+
+- id: blacklist.spamhaus_css
+  family: blacklist
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "dnsbl.query(ip, 'zen.spamhaus.org') contains 127.0.0.3"
+    notes: "Spamhaus CSS : sous-ensemble de la SBL (pas de zone séparée), détection automatique d'envois de spam. Les inscriptions expirent normalement trois jours après la dernière détection."
+  sa_rules: [RCVD_IN_SBL_CSS]
+  title: "L'IP {ip} est inscrite sur Spamhaus CSS"
+  why: >
+    Spamhaus a détecté automatiquement du spam venant de {ip}. Tant que l'inscription dure,
+    une grande partie des destinataires refuse vos messages.
+  fix:
+    - "Cherchez la source : un compte de messagerie piraté, un site web qui envoie (formulaire, extension), ou un HELO et un reverse DNS mal configurés qui ressemblent à ceux d'un robot."
+    - "Corrigez la cause avant toute demande, sinon l'IP est réinscrite immédiatement."
+    - "Demandez le retrait sur {delist_url} (le retrait par vous-même est limité en nombre) ou attendez l'expiration, normalement trois jours après la dernière détection."
+  references:
+    - https://www.spamhaus.org/blocklists/combined-spam-sources/
+    - https://check.spamhaus.org/
+
+- id: blacklist.spamhaus_xbl
+  family: blacklist
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "dnsbl.query(ip, 'zen.spamhaus.org') contains 127.0.0.4"
+    notes: "Spamhaus XBL (données CBL) : IP qui montrent des signes de compromission (machine infectée, proxy ouvert). Expiration automatique une fois l'activité arrêtée ; check.spamhaus.org est le seul lieu de retrait."
+  sa_rules: [RCVD_IN_XBL]
+  title: "L'IP {ip} est inscrite sur Spamhaus XBL (machine compromise)"
+  why: >
+    Spamhaus a vu {ip} se comporter comme une machine infectée. Vos messages sont refusés par
+    de nombreux destinataires, et le problème dépasse la messagerie : un appareil de votre
+    réseau est probablement contrôlé par un tiers.
+  fix:
+    - "Lisez sur {delist_url} le type d'infection détecté et l'heure de la dernière détection."
+    - "Analysez les ordinateurs, serveurs et objets connectés derrière {ip}, et changez les mots de passe des comptes de messagerie."
+    - "Si {ip} est un serveur, bloquez en sortie le port 25 pour tout processus autre que le logiciel de messagerie."
+    - "Une fois la machine nettoyée, demandez le retrait sur {delist_url}."
+  references:
+    - https://www.spamhaus.org/blocklists/exploits-blocklist/
+    - https://check.spamhaus.org/
+
+- id: blacklist.spamhaus_pbl
+  family: blacklist
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dnsbl.query(ip, 'zen.spamhaus.org') contains any of [127.0.0.10, 127.0.0.11]"
+    notes: "Spamhaus PBL : plages d'utilisateurs finaux d'où le courrier ne devrait pas partir directement vers le destinataire. Ce n'est pas une sanction. 127.0.0.10 = plage déclarée par le fournisseur d'accès, 127.0.0.11 = plage déclarée par Spamhaus."
+  sa_rules: [RCVD_IN_PBL]
+  title: "L'IP {ip} appartient à une plage résidentielle (Spamhaus PBL)"
+  why: >
+    Votre serveur envoie directement depuis une connexion grand public ou une plage que son
+    propriétaire réserve aux utilisateurs finaux. Beaucoup de destinataires refusent ces
+    envois, même si vous n'avez rien fait de mal.
+  fix:
+    - "Envoyez par le serveur SMTP authentifié de votre messagerie ou de votre fournisseur d'accès (port 587 ou 465) au lieu de livrer directement."
+    - "Si {ip} est une IP fixe d'un vrai serveur de messagerie avec reverse DNS correct, vous pouvez demander son exclusion sur {delist_url} ; elle est valable un an et n'est possible que si la politique du réseau l'autorise."
+    - "Pour plusieurs adresses, c'est le fournisseur d'accès propriétaire de la plage qui doit demander le retrait."
+  fix_by_provider:
+    postfix: "Réglez relayhost = [smtp.votre-fournisseur]:587 avec smtp_sasl_auth_enable = yes et smtp_tls_security_level = encrypt, puis postfix reload."
+    wordpress: "Installez une extension SMTP et envoyez par le serveur SMTP de votre messagerie au lieu de la fonction mail() du serveur."
+  references:
+    - https://www.spamhaus.org/blocklists/policy-blocklist/
+    - https://check.spamhaus.org/
+
+- id: blacklist.spamhaus_drop
+  family: blacklist
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "dnsbl.query(ip, 'zen.spamhaus.org') contains 127.0.0.9"
+    notes: "Spamhaus DROP : plages entièrement contrôlées par des acteurs malveillants (renvoyé avec 127.0.0.2 depuis le 1er juin 2016)."
+  sa_rules: [RCVD_IN_SBL]
+  title: "L'IP {ip} appartient à une plage Spamhaus DROP"
+  why: >
+    Spamhaus considère toute la plage de {ip} comme contrôlée par des acteurs malveillants.
+    Aucun réglage de votre côté ne rendra cette IP utilisable pour la messagerie.
+  fix:
+    - "Cessez d'envoyer depuis cette IP."
+    - "Changez d'hébergeur ou de service d'envoi et vérifiez la nouvelle IP avant de l'utiliser."
+  references:
+    - https://www.spamhaus.org/faqs/dnsbl-usage/
+    - https://check.spamhaus.org/
+
+- id: blacklist.spamhaus_dbl_sender
+  family: blacklist
+  severity: critical
+  penalty: 2.5
+  detect:
+    signal: "any(dnsbl.query_domain(d, 'dbl.spamhaus.org') in [127.0.1.2, 127.0.1.4, 127.0.1.5, 127.0.1.6] for d in [domain, envelope_domain, dkim_domain])"
+    notes: "Spamhaus DBL ne liste que des domaines. 127.0.1.2 spam, 127.0.1.4 hameçonnage, 127.0.1.5 logiciel malveillant, 127.0.1.6 centre de commande de botnet. 127.0.1.255 signifie qu'une IP a été interrogée par erreur, pas une inscription."
+  sa_rules: [URIBL_DBL_SPAM, URIBL_DBL_PHISH, URIBL_DBL_MALWARE, URIBL_DBL_BOTNETCC]
+  title: "Le domaine {domain} est inscrit sur Spamhaus DBL"
+  why: >
+    Votre domaine lui-même est jugé associé au spam ou à une fraude. Changer d'IP ne sert à
+    rien : tout message qui contient {domain}, dans l'adresse ou dans un lien, est refusé ou
+    classé en spam par les destinataires qui utilisent la DBL.
+  fix:
+    - "Consultez la fiche du domaine sur {delist_url}."
+    - "Cherchez la cause : site piraté qui héberge des pages d'hameçonnage, campagne envoyée à des adresses non consenties, redirections ouvertes."
+    - "Une fois la cause supprimée, demandez le retrait sur {delist_url}. Spamhaus indique jusqu'à 24 heures de traitement et ne garantit pas le retrait."
+  references:
+    - https://www.spamhaus.org/faqs/domain-blocklist/
+    - https://check.spamhaus.org/
+
+- id: blacklist.spamhaus_dbl_abused
+  family: blacklist
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "any(dnsbl.query_domain(h, 'dbl.spamhaus.org') in [127.0.1.102, 127.0.1.103, 127.0.1.104, 127.0.1.105, 127.0.1.106] for h in [domain] + message.link_hosts)"
+    notes: "Codes 127.0.1.102 à 106 : domaine légitime détourné (spam, redirection, hameçonnage, logiciel malveillant, centre de commande). Spamhaus liste alors le nom d'hôte précis."
+  sa_rules: [URIBL_DBL_ABUSE_SPAM, URIBL_DBL_ABUSE_REDIR, URIBL_DBL_ABUSE_PHISH, URIBL_DBL_ABUSE_MALW, URIBL_DBL_ABUSE_BOTCC]
+  title: "Un nom de {domain} est inscrit sur Spamhaus DBL comme site détourné"
+  why: >
+    Spamhaus considère que votre domaine est légitime mais qu'une partie de votre site est
+    utilisée par des tiers, par exemple une page piratée ou une redirection ouverte. Les
+    messages qui pointent vers ce nom sont filtrés.
+  fix:
+    - "Identifiez sur {delist_url} le nom d'hôte inscrit et le type d'abus."
+    - "Nettoyez le site (mise à jour du CMS et des extensions, suppression des fichiers ajoutés) ou fermez la redirection ouverte."
+    - "Demandez le retrait sur {delist_url} une fois la correction en ligne."
+  fix_by_provider:
+    wordpress: "Mettez à jour WordPress, le thème et toutes les extensions, supprimez les comptes administrateurs inconnus et lancez une analyse antivirus du site avant de demander le retrait."
+  references:
+    - https://www.spamhaus.org/faqs/domain-blocklist/
+    - https://check.spamhaus.org/
+
+- id: blacklist.barracuda
+  family: blacklist
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dnsbl.query(ip, 'b.barracudacentral.org') contains 127.0.0.2"
+    notes: "Barracuda Reputation Block List (BRBL), utilisée par les passerelles Barracuda et par d'autres filtres."
+  sa_rules: []
+  title: "L'IP {ip} est inscrite sur Barracuda (BRBL)"
+  why: >
+    Les entreprises protégées par une passerelle Barracuda refusent vos messages. C'est
+    fréquent chez les clients professionnels, donc pénalisant pour un envoi B2B.
+  fix:
+    - "Supprimez la cause de l'envoi suspect (compte piraté, liste non consentie, volume soudain)."
+    - "Remplissez le formulaire https://www.barracudacentral.org/rbl/removal-request avec l'IP {ip}, une adresse de contact valable et l'explication de la correction."
+    - "N'envoyez qu'une seule demande : Barracuda ignore les demandes multiples et indique un traitement en général sous 12 heures."
+  references:
+    - https://www.barracudacentral.org/rbl/removal-request
+    - https://www.barracudacentral.org/lookups
+
+- id: blacklist.spamcop
+  family: blacklist
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "dnsbl.query(ip, 'bl.spamcop.net') contains 127.0.0.2"
+    notes: "SpamCop (Cisco) liste les IP ayant envoyé des messages signalés par ses utilisateurs ; retrait automatique 24 heures après le dernier signalement."
+  sa_rules: [RCVD_IN_BL_SPAMCOP_NET]
+  title: "L'IP {ip} est inscrite sur SpamCop"
+  why: >
+    Des destinataires ont signalé vos messages comme spam. Tant que les signalements
+    continuent, des serveurs qui utilisent SpamCop refusent vos envois.
+  fix:
+    - "Vérifiez sur https://www.spamcop.net/bl.shtml la date du dernier signalement."
+    - "Retirez des envois les adresses qui n'ont pas donné leur accord et rendez le lien de désinscription visible."
+    - "Attendez : SpamCop retire l'IP automatiquement 24 heures après le dernier signalement et demande de ne pas écrire pour un retrait anticipé."
+  references:
+    - https://www.spamcop.net/bl.shtml
+    - https://www.spamcop.net/fom-serve/cache/298.html
+
+- id: blacklist.uceprotect_level1
+  family: blacklist
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dnsbl.query(ip, 'dnsbl-1.uceprotect.net') contains 127.0.0.2"
+    notes: "UCEPROTECT niveau 1 : une seule IP (/32) ayant touché leurs pièges à spam. Expiration automatique 7 jours après le dernier message reçu par ces pièges. Un retrait immédiat payant existe ; il est facultatif."
+  sa_rules: []
+  title: "L'IP {ip} est inscrite sur UCEPROTECT niveau 1"
+  why: >
+    Votre IP a envoyé à une adresse piège d'UCEPROTECT. Peu de grands fournisseurs utilisent
+    cette liste, mais certains serveurs d'entreprise la consultent.
+  fix:
+    - "Nettoyez votre liste d'envoi : les adresses pièges viennent souvent de fichiers anciens ou achetés."
+    - "Vérifiez qu'aucun compte ou site n'envoie à votre insu depuis {ip}."
+    - "Attendez l'expiration automatique, 7 jours après la dernière détection. Le retrait payant n'est pas nécessaire."
+  references:
+    - https://www.uceprotect.net/en/index.php?m=3&s=3
+    - https://www.uceprotect.net/en/rblcheck.php
+
+- id: blacklist.uceprotect_level2
+  family: blacklist
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "dnsbl.query(ip, 'dnsbl-2.uceprotect.net') contains 127.0.0.2 && dnsbl.query(ip, 'dnsbl-1.uceprotect.net') == NXDOMAIN"
+    notes: "UCEPROTECT niveau 2 : toute l'allocation réseau de l'hébergeur est inscrite à cause d'autres IP voisines. Votre IP n'est pas en cause. Retrait automatique quand les critères ne sont plus remplis ; seul le fournisseur peut le demander."
+  sa_rules: []
+  title: "Le réseau de {ip} est inscrit sur UCEPROTECT niveau 2"
+  why: >
+    Ce n'est pas votre IP qui est visée mais le bloc d'adresses de votre hébergeur, à cause de
+    voisins. L'effet est limité aux rares serveurs qui utilisent ce niveau.
+  fix:
+    - "Ne payez pas de retrait : la demande ne peut venir que de votre fournisseur, et l'inscription tombe d'elle-même."
+    - "Signalez l'inscription à votre hébergeur pour qu'il traite les clients en cause."
+    - "Si vos envois sont importants, demandez à votre hébergeur une IP dans un autre bloc ou passez par un service d'envoi."
+  references:
+    - https://www.uceprotect.net/en/index.php?m=3&s=4
+    - https://www.uceprotect.net/en/index.php?m=7&s=7
+
+- id: blacklist.uceprotect_level3
+  family: blacklist
+  severity: info
+  penalty: 0.1
+  detect:
+    signal: "dnsbl.query(ip, 'dnsbl-3.uceprotect.net') contains 127.0.0.2 && dnsbl.query(ip, 'dnsbl-1.uceprotect.net') == NXDOMAIN"
+    notes: "UCEPROTECT niveau 3 : toutes les IP d'un numéro de système autonome (ASN), c'est-à-dire de tout l'hébergeur. UCEPROTECT écrit que les demandes de retrait des clients finaux sont inutiles."
+  sa_rules: []
+  title: "L'hébergeur de {ip} est inscrit en entier sur UCEPROTECT niveau 3"
+  why: >
+    Toutes les adresses de votre hébergeur sont inscrites, la vôtre comme celles de millions
+    d'autres. Très peu de serveurs bloquent sur ce niveau : l'effet sur vos envois est en
+    général nul.
+  fix:
+    - "N'entreprenez aucune démarche de retrait et ne payez rien : seul l'hébergeur peut agir."
+    - "Gardez cette information si un destinataire précis vous refuse en citant UCEPROTECT, et transmettez-la-lui."
+  references:
+    - https://www.uceprotect.net/en/index.php?m=3&s=5
+    - https://www.uceprotect.net/en/index.php?m=7&s=8
+
+- id: blacklist.sorbs_closed
+  family: blacklist
+  severity: info
+  penalty: 0
+  detect:
+    signal: "bounce.text ~ /sorbs/i || user_report.list ~ /sorbs/i"
+    notes: "SORBS a cessé de fonctionner en juin 2024 (fermeture par Proofpoint rapportée par la presse ; le domaine sorbs.net ne résout plus au 2026-11-10). Notre moteur ne l'interroge pas ; l'entrée sert à expliquer un rejet ou un rapport tiers qui la cite."
+  sa_rules: []
+  title: "SORBS est fermée : une inscription citée ne vaut plus rien"
+  why: >
+    La liste SORBS ne fonctionne plus. Un outil ou un serveur qui la cite encore utilise une
+    configuration obsolète : la cause réelle d'un éventuel rejet est ailleurs.
+  fix:
+    - "Ignorez toute « inscription SORBS » signalée par un outil de test."
+    - "Si un destinataire vous rejette en citant SORBS, signalez à son administrateur que la liste est fermée et qu'il doit la retirer de sa configuration."
+  references:
+    - https://www.theregister.com/2024/06/07/sorbs_closed
+
+- id: blacklist.psbl
+  family: blacklist
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dnsbl.query(ip, 'psbl.surriel.com') contains 127.0.0.2"
+    notes: "PSBL (Passive Spam Block List) : IP ayant écrit à des pièges à spam. Retrait libre et immédiat par n'importe qui."
+  sa_rules: [RCVD_IN_PSBL]
+  title: "L'IP {ip} est inscrite sur PSBL"
+  why: >
+    Votre IP a envoyé à des adresses pièges. Des filtres SpamAssassin ajoutent des points à
+    vos messages tant que l'inscription dure.
+  fix:
+    - "Nettoyez votre liste d'envoi des adresses anciennes ou non consenties."
+    - "Retirez l'IP vous-même sur https://psbl.org/remove : c'est gratuit et immédiat, mais elle sera réinscrite si les envois aux pièges continuent."
+  references:
+    - https://psbl.org/
+    - https://psbl.org/remove
+
+- id: blacklist.mailspike
+  family: blacklist
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dnsbl.query(ip, 'bl.mailspike.net') contains 127.0.0.2 || dnsbl.query(ip, 'bl.mailspike.net') in [127.0.0.10, 127.0.0.11, 127.0.0.12]"
+    notes: "Mailspike : réputation d'IP. Retrait automatique annoncé en 6 à 36 heures ; les inscriptions liées à une vague de spam distribuée (botnet) ne tombent qu'après traitement de l'infection."
+  sa_rules: [RCVD_IN_MSPIKE_BL, RCVD_IN_MSPIKE_ZBI, RCVD_IN_MSPIKE_L5, RCVD_IN_MSPIKE_L4, RCVD_IN_MSPIKE_L3]
+  title: "L'IP {ip} a une mauvaise réputation chez Mailspike"
+  why: >
+    Mailspike juge que {ip} envoie du courrier indésirable. SpamAssassin et d'autres filtres
+    ajoutent des points à vos messages.
+  fix:
+    - "Vérifiez l'IP et le motif sur https://mailspike.io/ip_verify."
+    - "Supprimez la cause (volume soudain, adresses invalides, machine infectée)."
+    - "Utilisez le formulaire de retrait de la même page si l'inscription ne tombe pas d'elle-même dans les 36 heures."
+  references:
+    - https://mailspike.io/ip_verify
+
+- id: blacklist.spamrats_dyna
+  family: blacklist
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dnsbl.query(ip, key + '.dyna.spamrats.com') contains 127.0.0.36"
+    notes: "SpamRATS RATS-Dyna (code 127.0.0.36) : IP dont le reverse DNS ressemble à une connexion dynamique ou grand public. Interrogation par clé personnelle, les résolveurs ouverts sont refusés."
+  sa_rules: []
+  title: "L'IP {ip} est inscrite sur SpamRATS Dyna (IP d'allure dynamique)"
+  why: >
+    Le reverse DNS de {ip} ({ptr}) ressemble à celui d'un abonné grand public. Les serveurs
+    qui utilisent SpamRATS refusent ces envois directs.
+  fix:
+    - "Demandez à votre hébergeur un reverse DNS personnalisé, par exemple mail.{domain}, qui ne contienne ni l'IP ni des mots comme dynamic ou pool."
+    - "Si l'IP est réellement une connexion grand public, envoyez par un serveur SMTP authentifié."
+    - "Demandez ensuite le retrait sur https://www.spamrats.com/removal.php."
+  references:
+    - https://www.spamrats.com/lists.php
+    - https://www.spamrats.com/removal.php
+
+- id: blacklist.spamrats_noptr
+  family: blacklist
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dnsbl.query(ip, key + '.noptr.spamrats.com') contains 127.0.0.37"
+    notes: "SpamRATS RATS-NoPtr (code 127.0.0.37) : IP sans reverse DNS."
+  sa_rules: []
+  title: "L'IP {ip} est inscrite sur SpamRATS NoPtr (pas de reverse DNS)"
+  why: >
+    {ip} n'a pas de reverse DNS. SpamRATS l'inscrit pour cette seule raison, et les grands
+    fournisseurs pénalisent aussi ce défaut.
+  fix:
+    - "Faites configurer par votre hébergeur un reverse DNS pour {ip}, par exemple mail.{domain}, et créez l'enregistrement A correspondant."
+    - "Demandez ensuite le retrait sur https://www.spamrats.com/removal.php."
+  references:
+    - https://www.spamrats.com/lists.php
+    - https://www.spamrats.com/removal.php
+
+- id: blacklist.spamrats_spam
+  family: blacklist
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "dnsbl.query(ip, key + '.spam.spamrats.com') contains 127.0.0.38"
+    notes: "SpamRATS RATS-Spam (code 127.0.0.38) : IP vue en train d'envoyer du spam."
+  sa_rules: []
+  title: "L'IP {ip} est inscrite sur SpamRATS Spam"
+  why: >
+    SpamRATS a observé du spam venant de {ip}. Les serveurs qui utilisent cette liste
+    refusent vos envois.
+  fix:
+    - "Cherchez la source des envois : compte piraté, formulaire détourné, liste non consentie."
+    - "Une fois la cause supprimée, demandez le retrait sur https://www.spamrats.com/removal.php (ou par la page de contact si le retrait automatique n'est pas proposé)."
+  references:
+    - https://www.spamrats.com/lists.php
+    - https://www.spamrats.com/removal.php
+
+- id: blacklist.surbl
+  family: blacklist
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "any(dnsbl.query_domain(d, 'multi.surbl.org') & (8|16|32|64|128) for d in [domain] + message.link_domains)"
+    notes: "SURBL : domaines vus dans le corps des messages indésirables. Masque de bits : 8 PH (hameçonnage), 16 MW (logiciel malveillant), 32 CT, 64 ABUSE, 128 CR. Une réponse 127.0.0.1 signifie un accès bloqué, pas une inscription."
+  sa_rules: [URIBL_ABUSE_SURBL, URIBL_PH_SURBL, URIBL_MW_SURBL, URIBL_CT_SURBL, URIBL_CR_SURBL, URIBL_DM_SURBL]
+  title: "Un domaine cité dans le message est inscrit sur SURBL ({value})"
+  why: >
+    Un lien du message pointe vers un domaine que SURBL associe au spam ou à la fraude. Les
+    filtres qui analysent les liens classent le message en spam, quelle que soit la
+    réputation de votre IP.
+  fix:
+    - "Repérez le domaine concerné ({value}) et vérifiez sur https://www.surbl.org/surbl-analysis la catégorie d'inscription."
+    - "S'il ne vous appartient pas (raccourcisseur, lien d'affiliation, image hébergée ailleurs), retirez-le du message."
+    - "S'il vous appartient, nettoyez le site puis demandez le retrait par le formulaire de la même page."
+  references:
+    - https://www.surbl.org/lists
+    - https://www.surbl.org/surbl-analysis
+
+- id: blacklist.uribl_black
+  family: blacklist
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "any(dnsbl.query_domain(d, 'multi.uribl.com') & 2 for d in [domain] + message.link_domains)"
+    notes: "URIBL liste les domaines qui apparaissent dans le spam, pas les expéditeurs. 127.0.0.2 = liste noire. 127.0.0.1 = requête bloquée (volume ou résolveur public), pas une inscription."
+  sa_rules: [URIBL_BLACK]
+  title: "Un domaine cité dans le message est sur la liste noire URIBL ({value})"
+  why: >
+    Un domaine présent dans le message figure sur la liste noire d'URIBL. SpamAssassin et
+    d'autres filtres ajoutent alors un score important au message.
+  fix:
+    - "Vérifiez le domaine ({value}) sur https://lookup.uribl.com."
+    - "Retirez du message les liens vers ce domaine s'il ne vous appartient pas."
+    - "S'il vous appartient, corrigez la cause puis demandez le retrait sur https://admin.uribl.com (connexion requise)."
+  references:
+    - https://uribl.com/about.shtml
+    - https://lookup.uribl.com
+
+- id: blacklist.uribl_grey_red
+  family: blacklist
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "any(dnsbl.query_domain(d, 'multi.uribl.com') & (4|8) for d in [domain] + message.link_domains)"
+    notes: "URIBL grey (127.0.0.4) et red (127.0.0.8) : listes de moindre gravité que la liste noire."
+  sa_rules: [URIBL_GREY, URIBL_RED]
+  title: "Un domaine cité dans le message est sur une liste secondaire d'URIBL ({value})"
+  why: >
+    Un domaine du message figure sur une liste URIBL de moindre gravité. L'effet est faible,
+    mais il s'ajoute aux autres signaux défavorables.
+  fix:
+    - "Vérifiez le domaine ({value}) et la liste concernée sur https://lookup.uribl.com."
+    - "Si ce domaine est le vôtre, assurez-vous que vos envois ne vont qu'à des personnes qui les ont demandés, puis demandez le retrait sur https://admin.uribl.com."
+  references:
+    - https://uribl.com/about.shtml
+    - https://lookup.uribl.com
+
+- id: blacklist.abusix
+  family: blacklist
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: "abusix.listed(ip) == true"
+    notes: "Abusix Mail Intelligence : interrogation par clé. Les inscriptions expirent en général 5,2 jours après le dernier événement observé ; retrait avec confirmation par courriel."
+  sa_rules: []
+  title: "L'IP {ip} est inscrite chez Abusix Mail Intelligence"
+  why: >
+    Abusix a observé un comportement indésirable depuis {ip}. Les serveurs et filtres qui
+    utilisent ses données refusent ou pénalisent vos messages.
+  fix:
+    - "Consultez le motif sur https://lookup.abusix.com/."
+    - "Supprimez la cause, puis demandez le retrait sur la même page (une confirmation par courriel est demandée)."
+    - "Sans demande, l'inscription expire en général 5,2 jours après le dernier événement."
+  references:
+    - https://docs.abusix.com/docs/abusix-mail/delisting-overview
+    - https://lookup.abusix.com/
+
+- id: blacklist.invaluement
+  family: blacklist
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: "invaluement.listed(ip) == true || invaluement.uri_listed(domain) == true"
+    notes: "Invaluement (ivmSIP, ivmSIP/24 pour les IP, ivmURI pour les domaines), service payant utilisé par des filtres professionnels."
+  sa_rules: []
+  title: "{list_name} : l'IP {ip} ou le domaine {domain} est inscrit chez Invaluement"
+  why: >
+    Invaluement est utilisée par des filtres d'entreprise. Une inscription y fait rejeter vos
+    messages chez ces clients.
+  fix:
+    - "Vérifiez le motif sur https://www.invaluement.com/research/."
+    - "Corrigez la cause puis demandez le retrait sur https://www.invaluement.com/removal/."
+  references:
+    - https://www.invaluement.com/
+    - https://www.invaluement.com/removal/
+
+- id: blacklist.microsoft_banned_ip
+  family: blacklist
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "bounce.code matches /5[.]7[.](60[6-9]|6[1-4][0-9])/ && bounce.text ~ /banned sending IP/i"
+    notes: "Rejet Microsoft 365 « 550 5.7.606-649 Access denied, banned sending IP ». S'applique quand l'utilisateur fournit le message de rejet reçu. Pour 5.7.511, le portail ne fonctionne pas : il faut écrire à delist@microsoft.com."
+  sa_rules: []
+  title: "Microsoft bloque l'IP {ip}"
+  why: >
+    Microsoft refuse les messages de {ip} pour tous les domaines hébergés chez Microsoft 365.
+    Une part importante des destinataires professionnels ne reçoit plus vos envois.
+  fix:
+    - "Corrigez d'abord la cause (compte piraté, liste non consentie, volume anormal)."
+    - "Ouvrez https://sender.office.com, saisissez une adresse de contact et l'IP {ip}, puis cliquez sur le lien de confirmation reçu et sur Delist IP."
+    - "Comptez jusqu'à 24 heures, parfois davantage, avant que le blocage soit levé."
+    - "Si le rejet indique 5.7.511, transférez le message de rejet à delist@microsoft.com."
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/external-senders-use-the-delist-portal-to-unblock-yourself
+
+- id: blacklist.query_blocked
+  family: blacklist
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dnsbl.response in [127.255.255.252, 127.255.255.254, 127.255.255.255] (Spamhaus) || (dnsbl.zone in ['multi.uribl.com', 'multi.surbl.org'] && dnsbl.response == 127.0.0.1) || dnsbl.response == 127.0.1.255"
+    notes: "Codes d'erreur, pas d'inscription. Spamhaus : 127.255.255.254 requête via résolveur public, 127.255.255.255 trop de requêtes, 127.255.255.252 erreur de nom de zone. URIBL et SURBL : 127.0.0.1 = accès bloqué. La RFC 5782 §5 interdit aux listes IPv4 de contenir 127.0.0.1. Faux positif classique des outils de test qui passent par 8.8.8.8 ou 1.1.1.1."
+  sa_rules: [RCVD_IN_ZEN_BLOCKED, RCVD_IN_ZEN_BLOCKED_OPENDNS, URIBL_BLOCKED, URIBL_DBL_BLOCKED, SURBL_BLOCKED]
+  title: "La liste {list_name} n'a pas pu être interrogée"
+  why: >
+    La liste a refusé notre requête au lieu de répondre. Cela ne dit rien de {ip} ni de
+    {domain} : ce contrôle n'a simplement pas eu lieu pour cette liste.
+  fix:
+    - "Aucune action de votre part. Si un autre outil vous annonce une inscription avec ce code, il s'agit d'une fausse alerte."
+    - "Pour vérifier vous-même, utilisez la page de consultation de la liste : {delist_url}."
+  references:
+    - https://www.spamhaus.org/faqs/dnsbl-usage/
+    - https://uribl.com/about.shtml
+    - https://www.surbl.org/lists
+    - https://www.rfc-editor.org/rfc/rfc5782#section-5
+
+# Fiches génériques ajoutées le 2026-11-10 : listes sans fiche propre (catalogue
+# research/dnsbl.json), pour une IP, un domaine, ou une cible quelconque du scanner de
+# domaine. Pénalité de la fiche : celle d'une liste de poids « minor ». Le code passe sa
+# propre gravité selon le poids de la liste dans le vérificateur d'IP et pour les listes
+# « minor » ou « info » du vérificateur de lien ; dans l'analyse d'un message reçu, il ne la
+# passe qu'au texte de repli, et c'est alors la pénalité de la fiche qui s'applique.
+# Ne pas citer de zone entre apostrophes dans detect.signal : tools/domain/infra.ts choisit
+# la fiche d'une liste en y cherchant le nom de la zone.
+
+- id: blacklist.ip_listed
+  family: blacklist
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dnsbl.ip_listed(ip) && no_specific_situation(dnsbl.zone)"
+    notes: "L'IP figure sur une liste qui n'a pas de fiche propre. L'effet dépend du nombre de destinataires qui consultent cette liste : les listes majeures (Spamhaus, Barracuda, SpamCop...) ont leur propre fiche."
+  sa_rules: []
+  title: "L'IP {ip} est inscrite sur {list_name}"
+  why: >
+    Les serveurs de réception qui consultent {list_name} refusent ou classent en spam les
+    messages venus de {ip}. Une liste inscrit une adresse quand elle y observe des envois
+    abusifs ou l'activité d'une machine compromise.
+  fix:
+    - "Ouvrez la page de la liste ({delist_url}) : elle indique en général la raison et la date de l'inscription."
+    - "Corrigez la cause avant toute demande : compte de messagerie piraté, formulaire de site abusé, liste de contacts achetée ou sans consentement, serveur mal configuré."
+    - "Demandez le retrait selon la procédure de la liste ; certaines retirent seules l'adresse après une période sans nouvel abus."
+    - "Si {ip} appartient à votre service d'envoi ou à votre hébergeur, transmettez-lui l'inscription : c'est à lui de demander le retrait."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5782
+
+- id: blacklist.domain_listed
+  family: blacklist
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dnsbl.domain_listed(domain) && no_specific_situation(dnsbl.zone)"
+    notes: "Le domaine figure sur une liste de domaines (RHSBL) sans fiche propre. Les listes Spamhaus DBL, SURBL et URIBL ont leurs fiches. Quand la liste classe le domaine en hameçonnage ou logiciel malveillant, le vérificateur de lien passe la gravité à critical."
+  sa_rules: []
+  title: "Le domaine {domain} est inscrit sur {list_name}"
+  why: >
+    Les filtres qui consultent {list_name} rejettent ou classent en spam les messages qui
+    utilisent {domain}, comme expéditeur ou dans un lien. Les causes habituelles sont des
+    envois non sollicités, ou un site piraté qui héberge une page malveillante.
+  fix:
+    - "Ouvrez la page de la liste ({delist_url}) pour connaître la raison de l'inscription."
+    - "Si le site de {domain} a été piraté, nettoyez-le et changez les mots de passe d'accès à l'hébergement."
+    - "Si des envois en sont la cause, arrêtez ceux qui partent vers des adresses sans consentement."
+    - "Demandez ensuite le retrait selon la procédure de la liste."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5782
+
+- id: blacklist.listed
+  family: blacklist
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dnsbl.listed(target) && no_specific_situation(dnsbl.zone)"
+    notes: "Scanner de domaine : une IP de {domain} (MX, site) ou le domaine lui-même figure sur une liste sans fiche propre. {value} est la cible inscrite. Les listes de poids « info » sont ramenées à info 0 par le code."
+  sa_rules: []
+  title: "{value} est inscrit sur {list_name}"
+  why: >
+    Des serveurs de réception consultent {list_name} avant d'accepter un message. Tant que
+    {value} y figure, les messages qui en dépendent peuvent être classés en spam ou refusés.
+  fix:
+    - "Ouvrez la page de la liste ({delist_url}) pour connaître la raison et la date de l'inscription."
+    - "Trouvez la cause et corrigez-la : compte piraté, formulaire abusé, envoi sans consentement, site compromis."
+    - "Demandez ensuite le retrait selon la procédure de la liste."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5782

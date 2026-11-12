@@ -1,0 +1,317 @@
+sa.html_message:
+  title: "Die Nachricht enthält HTML"
+  why: "Information: Die Nachricht hat einen HTML-Teil. Der Wert ist null, das ist der Normalfall für einen Newsletter."
+  fix:
+    - "Nichts zu korrigieren. Fügen Sie dem HTML immer eine Textversion (multipart/alternative) bei."
+sa.html_mime_no_html_tag:
+  title: "HTML-Nachricht ohne html-Tag"
+  why: "Die Nachricht enthält nur HTML, und dieses HTML hat nicht einmal ein <html>-Tag. Es ist ein Fragment, das unverändert eingefügt wurde, wie es Skripte und manche Editoren erzeugen."
+  fix:
+    - "Senden Sie ein vollständiges Dokument: <!DOCTYPE html>, <html>, <head> mit meta charset, <body>."
+    - "Fügen Sie einen Textteil hinzu."
+sa.html_image_only_04:
+  title: "HTML-Nachricht fast ohne Text, mit Bild (0 bis 400 Byte Text)"
+  why: "Das HTML enthält ein oder mehrere Bilder und weniger als 400 Byte Text: Die Nachricht ist praktisch ein Plakat. Filter lesen Bilder nicht, und genau darauf beruht die Technik von Bild-Spam. Häufiger Fall: ein aus Canva exportierter Flyer, der in den Nachrichtentext eingefügt wurde."
+  fix:
+    - "Fügen Sie echten Text in das HTML ein (Titel, Absätze, Handlungsaufforderung), statt ihn ins Bild zu setzen."
+    - "Peilen Sie mindestens einige hundert Wörter echten Text an; behalten Sie die Bilder zur Illustration."
+    - "Versehen Sie jedes Bild mit einem aussagekräftigen alt-Attribut."
+sa.html_image_only_08:
+  title: "HTML-Nachricht mit Bild und sehr wenig Text (400 bis 800 Byte)"
+  why: "Bilder und 400 bis 800 Byte Text: Der Hauptinhalt steckt im Bild. Abzug von mehr als 1,5 Punkten."
+  fix:
+    - "Fügen Sie echten Text in das HTML ein (Titel, Absätze, Handlungsaufforderung), statt ihn ins Bild zu setzen."
+    - "Peilen Sie mindestens einige hundert Wörter echten Text an; behalten Sie die Bilder zur Illustration."
+    - "Versehen Sie jedes Bild mit einem aussagekräftigen alt-Attribut."
+sa.html_image_only_12:
+  title: "HTML-Nachricht mit Bild und wenig Text (800 bis 1.200 Byte)"
+  why: "Bilder und 800 bis 1.200 Byte Text. Mehr als 2 Punkte: Das ist die am stärksten bestrafte Klasse, typisch für Newsletter aus einem großen Banner und zwei Textzeilen."
+  fix:
+    - "Fügen Sie echten Text in das HTML ein (Titel, Absätze, Handlungsaufforderung), statt ihn ins Bild zu setzen."
+    - "Peilen Sie mindestens einige hundert Wörter echten Text an; behalten Sie die Bilder zur Illustration."
+    - "Versehen Sie jedes Bild mit einem aussagekräftigen alt-Attribut."
+sa.html_image_only_16:
+  title: "HTML-Nachricht mit Bild und wenig Text (1.200 bis 1.600 Byte)"
+  why: "Bilder und 1.200 bis 1.600 Byte Text. Das Verhältnis von Text zu Bildern bleibt gering."
+  fix:
+    - "Fügen Sie echten Text in das HTML ein (Titel, Absätze, Handlungsaufforderung), statt ihn ins Bild zu setzen."
+    - "Peilen Sie mindestens einige hundert Wörter echten Text an; behalten Sie die Bilder zur Illustration."
+    - "Versehen Sie jedes Bild mit einem aussagekräftigen alt-Attribut."
+sa.html_image_only_20:
+  title: "HTML-Nachricht mit Bild und wenig Text (1.600 bis 2.000 Byte)"
+  why: "Bilder und 1.600 bis 2.000 Byte Text. Auch hier noch mit 1,5 Punkten bestraft."
+  fix:
+    - "Fügen Sie echten Text in das HTML ein (Titel, Absätze, Handlungsaufforderung), statt ihn ins Bild zu setzen."
+    - "Peilen Sie mindestens einige hundert Wörter echten Text an; behalten Sie die Bilder zur Illustration."
+    - "Versehen Sie jedes Bild mit einem aussagekräftigen alt-Attribut."
+sa.html_image_only_24:
+  title: "HTML-Nachricht mit Bild und wenig Text (2.000 bis 2.400 Byte)"
+  why: "Bilder und 2.000 bis 2.400 Byte Text. Ein Absatz mehr reicht oft, um aus dieser Klasse herauszukommen."
+  fix:
+    - "Fügen Sie echten Text in das HTML ein (Titel, Absätze, Handlungsaufforderung), statt ihn ins Bild zu setzen."
+    - "Peilen Sie mindestens einige hundert Wörter echten Text an; behalten Sie die Bilder zur Illustration."
+    - "Versehen Sie jedes Bild mit einem aussagekräftigen alt-Attribut."
+sa.html_image_only_28:
+  title: "HTML-Nachricht mit Bild und wenig Text (2.400 bis 2.800 Byte)"
+  why: "Bilder und 2.400 bis 2.800 Byte Text. Die letzte spürbar bestrafte Klasse."
+  fix:
+    - "Fügen Sie echten Text in das HTML ein (Titel, Absätze, Handlungsaufforderung), statt ihn ins Bild zu setzen."
+    - "Peilen Sie mindestens einige hundert Wörter echten Text an; behalten Sie die Bilder zur Illustration."
+    - "Versehen Sie jedes Bild mit einem aussagekräftigen alt-Attribut."
+sa.html_image_only_32:
+  title: "HTML-Nachricht mit Bild und etwas Text (2.800 bis 3.200 Byte)"
+  why: "Bilder und 2.800 bis 3.200 Byte Text. Symbolischer Wert: Die Nachricht ist knapp aus den Schwellen heraus."
+  fix:
+    - "Fügen Sie echten Text in das HTML ein (Titel, Absätze, Handlungsaufforderung), statt ihn ins Bild zu setzen."
+    - "Peilen Sie mindestens einige hundert Wörter echten Text an; behalten Sie die Bilder zur Illustration."
+    - "Versehen Sie jedes Bild mit einem aussagekräftigen alt-Attribut."
+sa.html_image_ratio_02:
+  title: "Sehr wenig Text im Verhältnis zur Fläche der Bilder"
+  why: "Der Text ist im Vergleich zur Fläche der deklarierten Bilder winzig. Symbolischer Wert, aber der Indikator kündigt die Regeln HTML_IMAGE_ONLY an."
+  fix:
+    - "Fügen Sie HTML-Text hinzu oder verkleinern Sie die deklarierten Abmessungen der Bilder (width, height)."
+sa.html_image_ratio_04:
+  title: "Wenig Text im Verhältnis zur Fläche der Bilder"
+  why: "Das Verhältnis von Text zur Fläche der Bilder ist gering. Symbolischer Wert."
+  fix:
+    - "Fügen Sie HTML-Text hinzu oder verkleinern Sie die deklarierten Abmessungen der Bilder (width, height)."
+sa.html_image_ratio_06:
+  title: "Verhältnis von Text zu Bildern ziemlich gering"
+  why: "Das Verhältnis von Text zur Fläche der Bilder ist immer noch gering. Symbolischer Wert."
+  fix:
+    - "Fügen Sie HTML-Text hinzu oder verkleinern Sie die deklarierten Abmessungen der Bilder (width, height)."
+sa.html_image_ratio_08:
+  title: "Verhältnis von Text zu Bildern etwas gering"
+  why: "Das Verhältnis von Text zur Fläche der Bilder liegt knapp unter der Schwelle. Symbolischer Wert."
+  fix:
+    - "Fügen Sie HTML-Text hinzu oder verkleinern Sie die deklarierten Abmessungen der Bilder (width, height)."
+sa.html_short_link_img_1:
+  title: "Sehr kurzes HTML mit anklickbarem Bild"
+  why: "Das HTML ist kleiner als 1 KB und enthält ein anklickbares Bild. Das ist das Format „Klicken Sie auf das Plakat“ von Spam. Hier ist der Wert symbolisch, aber zusammen mit einem verkürzten Link wiegt es 2 Punkte (SHORTENER_SHORT_IMG)."
+  fix:
+    - "Fügen Sie Text um das anklickbare Bild herum hinzu und einen gleichwertigen Textlink."
+sa.html_short_link_img_2:
+  title: "Kurzes HTML mit anklickbarem Bild"
+  why: "Das HTML ist 1 bis 1,5 KB groß und enthält ein anklickbares Bild. Symbolischer Wert."
+  fix:
+    - "Fügen Sie Text um das anklickbare Bild herum hinzu und einen gleichwertigen Textlink."
+sa.html_short_link_img_3:
+  title: "Ziemlich kurzes HTML mit anklickbarem Bild"
+  why: "Das HTML ist 1,5 bis 2 KB groß und enthält ein anklickbares Bild. Geringer Abzug."
+  fix:
+    - "Fügen Sie Text um das anklickbare Bild herum hinzu und einen gleichwertigen Textlink."
+sa.html_font_low_contrast:
+  title: "Textfarbe zu nah am Hintergrund"
+  why: "Ein Teil des Textes hat fast dieselbe Farbe wie sein Hintergrund und ist daher unsichtbar oder unleserlich. Spammer verstecken so Text, um Filter zu täuschen. In einem Newsletter kommt das oft von weißem Text auf einem Hintergrundbild, das SpamAssassin nicht sieht, oder von einem versteckten Preheader in der Hintergrundfarbe."
+  fix:
+    - "Deklarieren Sie eine Hintergrundfarbe (bgcolor oder background-color) auf der Zelle, die den hellen Text enthält, zusätzlich zum Hintergrundbild."
+    - "Blenden Sie den Preheader mit display:none und mso-hide:all aus, statt ihn in der Hintergrundfarbe zu gestalten."
+sa.html_font_size_huge:
+  title: "Sehr große HTML-Schrift (24 und mehr)"
+  why: "Die Nachricht verwendet eine sehr große Schriftgröße. Symbolischer Wert: eine Information über einen sehr betonten Stil."
+  fix:
+    - "Nichts zwingend Erforderliches. Behalten Sie sehr große Größen für einen kurzen Titel."
+sa.html_font_size_large:
+  title: "Große HTML-Schrift (18 bis 24)"
+  why: "Die Nachricht verwendet eine große Schriftgröße. Information ohne Wirkung."
+  fix:
+    - "Nichts zu korrigieren."
+sa.html_font_face_bad:
+  title: "Ungültiger HTML-Schriftname"
+  why: "Ein <font face=\"...\">-Tag enthält einen Wert, der kein Schriftname ist (Ziffern, Sonderzeichen). Symbolischer Wert."
+  fix:
+    - "Verwenden Sie einfache Schriftnamen, durch Kommas getrennt: Arial, Helvetica, sans-serif."
+sa.t_kam_html_font_invalid:
+  title: "Ungültige HTML-Farbe"
+  why: "Ein Farbattribut (color, bgcolor) enthält einen unlesbaren Wert: fehlendes #, Code mit 5 Ziffern, unbekannter Name. Testregel ohne Gewicht, aber sie fließt in kombinierte Regeln ein (CONTENT_AFTER_HTML)."
+  fix:
+    - "Schreiben Sie Farben vollständig im Hexadezimalformat mit dem Rautenzeichen: #1a3c6e."
+sa.html_obfuscate_05_10:
+  title: "5 bis 10 % der HTML-Tags zerschneiden Wörter"
+  why: "Tags werden mitten in Wörter eingefügt (Pro<b>mo</b>tion). Spammer tun das, um Schlüsselwörter zu verbergen; ein Editor, der einen Stil auf einen Wortteil anwendet, erzeugt denselben Effekt."
+  fix:
+    - "Suchen Sie Wörter, die durch Tags (<span>, <b>, <font>) mitten im Wort getrennt sind, und bereinigen Sie das HTML."
+    - "Stammt das HTML aus einem Copy-and-paste aus Word oder Google Docs, fügen Sie den Text ohne Formatierung ein und setzen Sie die Stile danach neu."
+sa.html_obfuscate_10_20:
+  title: "10 bis 20 % der HTML-Tags zerschneiden Wörter"
+  why: "Ein merklicher Anteil der Tags zerschneidet Wörter. Geringer Abzug."
+  fix:
+    - "Suchen Sie Wörter, die durch Tags (<span>, <b>, <font>) mitten im Wort getrennt sind, und bereinigen Sie das HTML."
+    - "Stammt das HTML aus einem Copy-and-paste aus Word oder Google Docs, fügen Sie den Text ohne Formatierung ein und setzen Sie die Stile danach neu."
+sa.html_obfuscate_20_30:
+  title: "20 bis 30 % der HTML-Tags zerschneiden Wörter"
+  why: "Etwa jeder vierte Tag zerschneidet ein Wort. Abzug von 2 Punkten."
+  fix:
+    - "Suchen Sie Wörter, die durch Tags (<span>, <b>, <font>) mitten im Wort getrennt sind, und bereinigen Sie das HTML."
+    - "Stammt das HTML aus einem Copy-and-paste aus Word oder Google Docs, fügen Sie den Text ohne Formatierung ein und setzen Sie die Stile danach neu."
+sa.html_obfuscate_90_100:
+  title: "Fast alle HTML-Tags zerschneiden Wörter"
+  why: "Nahezu alle Tags stehen mitten in Wörtern: absichtliche Verschleierungstechnik oder sehr fehlerhaft erzeugtes HTML. 2 Punkte."
+  fix:
+    - "Suchen Sie Wörter, die durch Tags (<span>, <b>, <font>) mitten im Wort getrennt sind, und bereinigen Sie das HTML."
+    - "Stammt das HTML aus einem Copy-and-paste aus Word oder Google Docs, fügen Sie den Text ohne Formatierung ein und setzen Sie die Stile danach neu."
+sa.html_tag_balance_body:
+  title: "Öffnende und schließende body-Tags unausgewogen"
+  why: "Es fehlt ein </body> oder es gibt ein <body> zu viel, oft weil eine Vorlage in eine andere eingefügt wurde. Geringer Abzug."
+  fix:
+    - "Behalten Sie nur ein Paar <body>...</body>; entfernen Sie die Tags aus eingefügten Blöcken."
+sa.html_tag_balance_head:
+  title: "Öffnende und schließende head-Tags unausgewogen"
+  why: "Das HTML enthält ein <head> ohne </head> oder umgekehrt. Typischer Fall einer Vorlage, die von einem CMS in Stücke zerlegt wurde. Knapp ein Punkt."
+  fix:
+    - "Schließen Sie das head-Tag vor <body> und prüfen Sie das fertig erzeugte HTML, nicht die Vorlage."
+sa.html_tag_balance_center:
+  title: "Unausgewogene center-Tags"
+  why: "Das HTML enthält <center>-Tags, die nicht korrekt geschlossen werden. SpamAssassin sieht darin schlecht erzeugtes Spam-HTML und fügt 3,5 Punkte hinzu. Der Fall tritt bei alten Newsletter-Vorlagen auf."
+  fix:
+    - "Ersetzen Sie <center>-Tags durch align=\"center\" an Tabellen oder durch text-align:center im Stil."
+    - "Andernfalls prüfen Sie, dass jedes <center> sein </center> hat."
+sa.html_extra_close:
+  title: "Zu viele schließende Tags im HTML"
+  why: "Das HTML schließt Tags, die nie geöffnet wurden. Symbolischer Wert, aber die Darstellung kann in Outlook unvorhersehbar sein."
+  fix:
+    - "Lassen Sie das HTML durch einen Validator laufen und entfernen Sie verwaiste schließende Tags."
+sa.html_text_invisible_font:
+  title: "Text durch Farbe oder Schriftgröße unsichtbar"
+  why: "Mehrere Textblöcke sind wegen ihrer Farbe oder Größe unsichtbar. Symbolischer Wert, aber ein Signal für Filtervergiftung."
+  fix:
+    - "Entfernen Sie unnötigen versteckten Text. Für einen Preheader verwenden Sie einen einzigen mit display:none ausgeblendeten Block."
+sa.html_text_invisible_style:
+  title: "Viel per CSS versteckter Text und weitere Spam-Merkmale"
+  why: "Die Nachricht enthält mehr als fünf Elemente, die mit display:none oder visibility:hidden ausgeblendet sind, kombiniert mit einem weiteren Mangel. Newsletter-Editoren blenden mobile oder Desktop-Blöcke so aus, was allein ausreichen kann, die Schwelle zu überschreiten, wenn der Versand auch ein Infrastrukturproblem hat."
+  fix:
+    - "Reduzieren Sie die Zahl der ausgeblendeten Blöcke: ein einziger Preheader und begrenzte mobile Varianten."
+    - "Beheben Sie den anderen Mangel, der die Regel begleitet (oft das fehlende Reverse DNS)."
+sa.html_nonelement_30_40:
+  title: "30 bis 40 % der HTML-Tags sind nicht standardisiert"
+  why: "Ein großer Teil der Tags ist kein Standard-HTML. Office-Tags (<o:p>, <v:...>), die aus Word eingefügt oder für Outlook erzeugt werden, sind oft die Ursache. Symbolischer Wert."
+  fix:
+    - "Bereinigen Sie aus Word eingefügtes HTML und beschränken Sie Outlook-spezifische Tags auf bedingte Blöcke."
+sa.html_comment_saved_url:
+  title: "Das HTML ist eine gespeicherte Webseite"
+  why: "Das HTML enthält den Kommentar „saved from url“, den Internet Explorer beim Speichern einer Webseite einfügt. Eine Webseite unverändert zu versenden ist eine Methode von Spammern."
+  fix:
+    - "Entfernen Sie den Kommentar <!-- saved from url=... --> am Dateianfang."
+    - "Erstellen Sie die Nachricht mit einem E-Mail-Editor statt aus einer gespeicherten Webseite."
+sa.html_title_subj_diff:
+  title: "Der HTML-Titel ist viel länger als der Betreff"
+  why: "Das <title>-Tag des HTML ist mehr als 3,5-mal so lang wie der Betreff. Das passiert, wenn die Vorlage einen langen, generischen Titel behält („Newsletter des Unternehmens, Ausgabe November und Neuigkeiten“). Mehr als 2 Punkte."
+  fix:
+    - "Setzen Sie in <title> denselben Text wie im Betreff oder einen kurzen Titel."
+    - "Prüfen Sie im Versandtool, ob sich der Titel der Vorlage mit dem Betreff der Kampagne füllt."
+sa.html_short_center:
+  title: "Sehr kurzes HTML, mit center-Tag zentriert"
+  why: "Ein HTML mit weniger als 384 Byte, mit <center> zentriert. Format minimalistischen Spams. Mäßiger Abzug."
+  fix:
+    - "Fügen Sie echten Inhalt hinzu und ersetzen Sie <center> durch Stil."
+sa.html_off_page:
+  title: "HTML-Element außerhalb der Seite platziert"
+  why: "Ein Element ist mindestens -100 px oben oder links positioniert und damit außerhalb des Bildschirms. Technik für verstecktem Text, auch von manchen Vorlagen für den Preheader genutzt."
+  fix:
+    - "Blenden Sie den Preheader mit display:none aus, statt mit einer negativen Positionierung."
+    - "Signieren Sie die Nachricht mit DKIM: Die Regel greift dann nicht mehr."
+sa.html_entity_ascii:
+  title: "ASCII-Text als HTML-Entitäten geschrieben"
+  why: "Gewöhnliche Buchstaben werden als Entitäten (&#80;&#114;&#111;...) statt als Text geschrieben. Verfahren zur Verschleierung von Wörtern; manche Generatoren kodieren so auch alle E-Mail-Adressen."
+  fix:
+    - "Schreiben Sie den Text im Klartext in UTF-8. Kodieren Sie nur die Zeichen als Entitäten, die es verlangen (&amp;, &lt;)."
+sa.html_embeds:
+  title: "HTML mit eingebettetem Objekt"
+  why: "Das HTML enthält ein <embed>-, <object>- oder <applet>-Tag. Kein gängiges Mailprogramm zeigt es an. Symbolischer Wert."
+  fix:
+    - "Ersetzen Sie das eingebettete Video oder die Animation durch ein anklickbares Bild, das auf die Seite verlinkt, die sie hostet."
+sa.html_attach:
+  title: "HTML-Anhang"
+  why: "Die Nachricht hängt eine HTML-Datei an. Phishing nutzt das, um eine gefälschte Anmeldeseite außerhalb der Linkfilter anzuzeigen. Symbolischer Wert, aber viele Gateways blockieren solche Anhänge."
+  fix:
+    - "Stellen Sie den Inhalt in den Nachrichtentext oder in ein PDF oder bieten Sie einen Link zu Ihrer Website an."
+sa.html_charset_faraway:
+  title: "HTML-Zeichensatz einer unerwarteten Sprache"
+  why: "Das HTML deklariert einen asiatischen oder kyrillischen Zeichensatz, obwohl der Testserver nur bestimmte Sprachen akzeptiert. Die Regel greift nur, wenn der Server ok_locales eingeschränkt hat."
+  fix:
+    - "Deklarieren Sie <meta charset=\"utf-8\"> und kodieren Sie die gesamte Nachricht in UTF-8."
+sa.html_shrt_cmnt_obfu_many:
+  title: "Viele kurze HTML-Kommentare mitten in Wörtern"
+  why: "Kurze HTML-Kommentare sind mitten in Wörter eingefügt, eine Technik zur Verschleierung von Schlüsselwörtern."
+  fix:
+    - "Entfernen Sie HTML-Kommentare aus dem Nachrichtentext, zumindest jene, die an Text kleben."
+sa.obfuscating_comment:
+  title: "HTML-Kommentare, die Wörter zerschneiden"
+  why: "Ein HTML-Kommentar steht zwischen zwei Buchstaben (Gra<!-- -->tis). Manche Editoren lassen Formatierungskommentare mitten im Text stehen."
+  fix:
+    - "Entfernen Sie HTML-Kommentare, die an Text kleben; behalten Sie nur die bedingten Kommentare von Outlook zwischen Blöcken."
+sa.many_span_in_text:
+  title: "Viele span-Tags in Wörtern eingefügt"
+  why: "span-Tags öffnen und schließen sich mitten in Wörtern. Visuelle Editoren erzeugen das, wenn man Farbe oder Fettung einzelner Buchstaben ändert. Knapp 2,5 Punkte."
+  fix:
+    - "Bereinigen Sie den Text: Wenden Sie Stile auf ganze Wörter an, nicht auf Wortteile."
+    - "Fügen Sie den Text ohne Formatierung in den Editor ein und setzen Sie die Stile danach neu."
+sa.content_after_html:
+  title: "Inhalt nach dem schließenden html-Tag, mit weiteren Merkmalen"
+  why: "Nach </html> steht Text. Spammer setzen dort zufälligen Text, um Filter zu täuschen; ein Werkzeug, das nach dem Dokument eine Fußzeile oder ein Pixel anfügt, tut dasselbe."
+  fix:
+    - "Platzieren Sie den gesamten Inhalt (Fußzeile, Tracking-Pixel, Pflichtangaben) vor </body></html>."
+sa.content_after_html_weak:
+  title: "Inhalt nach dem schließenden html-Tag"
+  why: "Auf </html> folgt Text, oft eine Signatur oder ein Hinweis, den der ausgehende Server oder ein Virenscanner hinzugefügt hat. 1 Punkt."
+  fix:
+    - "Wenn Ihr Server eine Fußzeile anfügt, konfigurieren Sie ihn so, dass sie vor </body> eingefügt wird, oder deaktivieren Sie das."
+    - "Andernfalls verschieben Sie in der Vorlage jeden Inhalt, der nach </html> steht."
+sa.mixed_href_case:
+  title: "Attribut href mit gemischter Groß- und Kleinschreibung"
+  why: "Links sind mal als <a href=, mal als <A HREF= oder <a HREF= geschrieben. Diese Mischung stammt von HTML, das aus unterschiedlichen Quellen zusammengesetzt wurde, oder von Spam-Software. Knapp 2 Punkte."
+  fix:
+    - "Schreiben Sie alle Tags und Attribute in Kleinbuchstaben; ein HTML-Formatierer tut das automatisch."
+sa.mixed_img_case:
+  title: "img-Tag mit gemischter Groß- und Kleinschreibung"
+  why: "Ein Bild-Tag ist mit gemischter Schreibweise geschrieben (<Img). Ein Zeichen für von Hand gebautes oder von Spam-Software verändertes HTML."
+  fix:
+    - "Schreiben Sie <img in Kleinbuchstaben."
+sa.ac_div_bonanza:
+  title: "Zehn oder mehr leere div-Tags hintereinander"
+  why: "Das HTML enthält mindestens zehn <div>-Tags hintereinander, oft leer. Symbolischer Wert: ein Überbleibsel des Layouts eines Editors."
+  fix:
+    - "Entfernen Sie leere div-Tags; verwenden Sie Abstände über Ränder oder Tabellenabstand."
+sa.ac_br_bonanza:
+  title: "Dreißig oder mehr Zeilenumbrüche hintereinander"
+  why: "Das HTML enthält mindestens dreißig <br> hintereinander. Technik, um Text aus dem Sichtbereich zu schieben, oder Layout aus Zeilenumbrüchen. Symbolischer Wert."
+  fix:
+    - "Ersetzen Sie Folgen von <br> durch einen Abstand im CSS (padding, margin)."
+sa.long_invisible_text:
+  title: "Langer Block mit verstecktem Text"
+  why: "Die Nachricht enthält einen langen unsichtbaren Textblock. Spammer setzen Text hinein, um Bayes-Filter zu „vergiften“."
+  fix:
+    - "Entfernen Sie unnötige ausgeblendete Textblöcke; ein Preheader soll aus einem Satz bestehen."
+sa.word_invis:
+  title: "Ein unsichtbar gemachtes Wort"
+  why: "Ein Wort ist durch eine Schriftgröße von null oder eine transparente Farbe versteckt. Das ist eine Verschleierungstechnik, aber auch Newsletter-Vorlagen nutzen sie für den Abstand des Preheaders. 3 Punkte."
+  fix:
+    - "Entfernen Sie Elemente mit font-size:0 oder color:transparent, die Text enthalten."
+    - "Für den Preheader verwenden Sie display:none; für den Abstand &zwnj;&nbsp; in einem ausgeblendeten Block."
+sa.t_remote_image:
+  title: "Die Nachricht lädt ein entferntes Bild"
+  why: "Die Nachricht zeigt ein Bild, das auf einem externen Server gehostet ist, ohne Abotext. Testregel ohne Gewicht: nur ein Hinweis."
+  fix:
+    - "Nichts zwingend Erforderliches. Ergänzen Sie einen Text, der erklärt, warum der Empfänger die Nachricht erhält."
+sa.dc_image_spam_html:
+  title: "Möglicher Bild-Spam (HTML)"
+  why: "Die Nachricht enthält ein großes Bild, fast keinen Text und keinen Link. Profil von Spam-Bildern, die ihren Text in einem GIF anzeigen."
+  fix:
+    - "Stellen Sie den Text als HTML bereit und fügen Sie mindestens einen Link zu Ihrer Website hinzu."
+sa.dc_image_spam_text:
+  title: "Möglicher Bild-Spam mit wenig Text"
+  why: "Ein großes Bild, fast kein Text und kein Link. Dasselbe Profil wie bei DC_IMAGE_SPAM_HTML."
+  fix:
+    - "Fügen Sie echten Text und einen Link zu Ihrer Website hinzu."
+sa.long_img_uri:
+  title: "Bildadresse mit sehr langer Kennung"
+  why: "Ein Bild wird von einer Adresse geladen, die ein Segment mit 45 oder mehr Zeichen enthält, wie Spionage-Pixel. Versandtools erzeugen Adressen dieser Art. Geringer Abzug."
+  fix:
+    - "Hosten Sie die Bilder der Nachricht unter lesbaren Adressen Ihrer Domain."
+sa.uri_img_wp_redir:
+  title: "Bild über den Bildproxy von WordPress.com ausgeliefert"
+  why: "Ein Bild läuft über i0.wp.com oder i2.wp.com, den Bildbeschleunigungsdienst von Jetpack. Spammer nutzen diesen Proxy, um die Herkunft ihrer Bilder zu verbergen: SpamAssassin vergibt einen Punkt. Das passiert, wenn ein Newsletter die Bilder eines WordPress-Beitrags übernimmt, während Jetpack aktiv ist."
+  fix:
+    - "Verwenden Sie die direkte Adresse des Bildes auf Ihrer Website (https://{domain}/wp-content/uploads/...)."
+  fix_by_provider:
+    wordpress: "Deaktivieren Sie den Bildbeschleuniger (Site Accelerator) von Jetpack oder kopieren Sie die Originaladresse des Bildes aus der Mediathek."

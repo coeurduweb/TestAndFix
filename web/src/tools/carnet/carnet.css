@@ -1,0 +1,307 @@
+/* Mon carnet (Signal). Tokens only: surfaces, tags, dots and buttons come from signal.css. */
+.cn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+}
+.cn .page-head {
+  /* components.css still draws the v2 rule under the head: cancelled here, as on the history page */
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+.cn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4);
+  align-items: start;
+}
+@media (max-width: 64rem) {
+  .cn-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cn-card {
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+  padding: var(--s5);
+  scroll-margin-top: calc(52px + var(--s4));
+}
+@media (max-width: 40rem) {
+  .cn-card {
+    padding: var(--s4);
+  }
+}
+.cn-note {
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  max-width: 62ch;
+}
+
+/* ---------- devices ---------- */
+.cn-devices,
+.cn-opts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.cn-dev + .cn-dev,
+.cn-opt + .cn-opt {
+  border-top: 1px solid var(--rule);
+}
+.cn-dev__row,
+.cn-opt__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--s3);
+  align-items: center;
+  min-height: 52px;
+  padding: var(--s2) 0;
+}
+.cn-opt__row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: var(--s3) 0;
+}
+.cn-dev__icon {
+  width: 18px;
+  height: 18px;
+  color: var(--ink-3);
+}
+.cn-dev__main,
+.cn-opt__main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.cn-dev__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.cn-dev__sub,
+.cn-opt__text {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.cn-opt__title {
+  font-weight: 650;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+@media (max-width: 40rem) {
+  .cn-opt__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cn-opt__row .btn {
+    justify-self: start;
+    min-height: 44px;
+  }
+  .cn-dev__row .btn {
+    min-height: 44px;
+  }
+}
+
+/* the in-place confirmation of a destructive action */
+.cn-ask {
+  display: grid;
+  gap: var(--s3);
+  margin: 0 0 var(--s3);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--radius-sm);
+  background: var(--paper-2);
+  box-shadow: var(--edge);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.cn-ask strong {
+  color: var(--ink);
+}
+.cn-ask__btns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+@media (max-width: 40rem) {
+  .cn-ask__btns .btn {
+    min-height: 44px;
+  }
+}
+
+/* ---------- link code ---------- */
+.cn-code {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s5);
+  align-items: center;
+}
+.cn-code--expired {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s3);
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+}
+@media (max-width: 30rem) {
+  .cn-code {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    text-align: center;
+  }
+  .cn-code .cn-ask__btns {
+    justify-content: center;
+  }
+}
+/* a QR code reads best dark on white, in both themes: the mail tile colour (always white) */
+.cn-qr {
+  width: 9.5rem;
+  aspect-ratio: 1;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--mail-bg);
+  box-shadow: var(--edge);
+}
+.cn-qr__svg,
+.cn-qr__svg svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.cn-code__side {
+  display: grid;
+  gap: var(--s2);
+  min-width: 0;
+}
+.cn-code__label {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+.cn-code__value {
+  font-family: var(--font-mono);
+  font-size: clamp(1.75rem, 4.5vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cn-code__left {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.cn-code__left .live {
+  font-size: var(--fs-xs);
+}
+
+.cn-join {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s2) var(--s3);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--rule);
+}
+.cn-join .field {
+  flex: 0 1 16rem;
+  min-width: 0;
+}
+.cn-join > .btn {
+  /* aligned with the input, under its label */
+  margin-top: calc(var(--fs-sm) * 1.5 + 6px);
+}
+.cn-join__input {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+@media (max-width: 40rem) {
+  .cn-join > .btn {
+    margin-top: 0;
+    width: 100%;
+    min-height: 44px;
+  }
+  .cn-join .field {
+    flex: 1 1 100%;
+  }
+}
+
+/* ---------- news and the arrival by link ---------- */
+.cn-done {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.cn-done strong {
+  color: var(--ink);
+}
+.cn-news {
+  padding: var(--s3) var(--s4);
+}
+.cn-news > span:nth-child(2) {
+  flex: 1;
+}
+/* joining another notebook: its devices first, then the choice (JoinFlow) */
+.cn-join--flow {
+  display: block;
+}
+.cn-flow {
+  display: grid;
+  gap: var(--s3);
+  min-width: 0;
+}
+.cn-flow--top {
+  padding: var(--s5);
+}
+@media (max-width: 40rem) {
+  .cn-flow--top {
+    padding: var(--s4);
+  }
+}
+.cn-flow__devices {
+  max-width: 36rem;
+  padding: 0 var(--s3);
+  border-radius: var(--radius-sm);
+  background: var(--paper-2);
+  box-shadow: var(--edge);
+}
+.cn-flow__devices .cn-dev__row {
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 44px;
+}
+.cn-flow__says {
+  max-width: 62ch;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+.cn-flow__warn {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  max-width: 62ch;
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+}
+.cn-flow__warn svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin-top: 1px;
+  color: var(--ink-3);
+}
+
+.cn-limits {
+  max-width: 82ch;
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+.cn-limits strong {
+  color: var(--ink-2);
+}

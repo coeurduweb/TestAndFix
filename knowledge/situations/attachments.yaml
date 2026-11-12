@@ -1,0 +1,293 @@
+# Famille attachments : pièces jointes.
+# Liste des types bloqués par Gmail : support.google.com/mail/answer/6590 (consultée le 2026-11-10 ;
+# Google précise qu'elle évolue). Limite de 25 Mo pour les comptes Gmail personnels :
+# support.google.com/mail/answer/6584 (consultée le 2026-11-10).
+
+- id: attachments.dangerous_extension
+  family: attachments
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "attachments.any(a => a.extension in config.gmail_blocked_extensions)"
+    notes: "Extensions bloquées par Gmail au 2026-11-10 : .ade .adp .apk .appx .appxbundle .bat .cab .chm .cmd .com .cpl .diagcab .diagcfg .diagpkg .dll .dmg .ex .ex_ .exe .hta .img .ins .iso .isp .jar .jnlp .js .jse .lib .lnk .mde .mjs .msc .msi .msix .msixbundle .msp .mst .nsh .pif .ps1 .scr .sct .shb .sys .vb .vbe .vbs .vhd .vxd .wsc .wsf .wsh .xll."
+  sa_rules: []
+  title: "Une pièce jointe est d'un type bloqué par Gmail"
+  why: >
+    Le fichier {value} est d'un type que Gmail refuse pour des raisons de sécurité. Le message sera
+    rejeté par Gmail et très probablement par la plupart des autres messageries.
+  fix:
+    - "Retirez la pièce jointe."
+    - "Déposez le fichier sur un espace de téléchargement de {domain} ou sur un service de partage, et mettez le lien dans le message."
+    - "Ne renommez pas l'extension pour contourner le blocage : Gmail inspecte aussi le contenu des archives."
+  references:
+    - https://support.google.com/mail/answer/6590
+    - https://support.microsoft.com/en-us/office/blocked-attachments-in-outlook-434752e1-02d3-4e90-9124-8b81e49a8519
+
+- id: attachments.archive_with_dangerous
+  family: attachments
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "attachments.archives.any(z => z.entries.any(e => e.extension in config.gmail_blocked_extensions))"
+    notes: "Gmail bloque les types interdits même compressés ou placés dans une archive (zip, tgz...)."
+  sa_rules: []
+  title: "Une archive jointe contient un fichier de type bloqué"
+  why: >
+    L'archive jointe contient {value}, un type de fichier interdit. Gmail ouvre les archives et bloque
+    les types interdits qu'elles contiennent : le message sera refusé.
+  fix:
+    - "Retirez l'archive du message."
+    - "Partagez le fichier par un lien de téléchargement depuis {domain}."
+  references:
+    - https://support.google.com/mail/answer/6590
+
+- id: attachments.encrypted_archive
+  family: attachments
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "attachments.archives.any(z => z.is_encrypted)"
+    notes: "Gmail n'autorise pas les archives protégées par mot de passe qui contiennent des archives. Les filtres ne pouvant pas inspecter une archive chiffrée, elle est un vecteur classique de logiciel malveillant."
+  sa_rules: []
+  title: "Une archive jointe est protégée par mot de passe"
+  why: >
+    L'archive {value} est chiffrée : aucun filtre ne peut vérifier son contenu. Gmail refuse les
+    archives protégées qui contiennent d'autres archives, et les autres filtres les traitent comme
+    suspectes.
+  fix:
+    - "Envoyez les fichiers sans archive chiffrée, en pièces jointes ordinaires si leur type est accepté."
+    - "Pour des documents confidentiels, déposez-les dans un espace sécurisé avec authentification et envoyez seulement le lien."
+  references:
+    - https://support.google.com/mail/answer/6590
+
+- id: attachments.double_extension
+  family: attachments
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "attachments.any(a => a.filename ~ /\\.(pdf|docx?|xlsx?|jpe?g|png|txt)\\.[a-z0-9]{2,5}$/i && a.extension in config.risky_extensions)"
+    notes: "Nom de fichier à double extension (facture.pdf.exe) qui masque le vrai type quand l'extension finale est cachée par le système."
+  sa_rules: []
+  title: "Une pièce jointe a une double extension"
+  why: >
+    Le fichier {value} imite un document mais son extension réelle est la dernière. C'est la ruse la
+    plus classique pour faire ouvrir un programme : les filtres la bloquent.
+  fix:
+    - "Renommez le fichier avec une seule extension, celle de son vrai format."
+    - "Si le fichier est vraiment un programme, ne l'envoyez pas par e-mail : mettez un lien de téléchargement."
+  example_bad: "facture_2026.pdf.exe"
+  example_good: "facture_2026.pdf"
+  references:
+    - https://support.google.com/mail/answer/6590
+
+- id: attachments.filename_bidi_override
+  family: attachments
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "attachments.any(a => a.filename.contains_any([U+202E, U+202D, U+2066, U+2067, U+2068]))"
+    notes: "Caractère de contrôle bidirectionnel (U+202E RIGHT-TO-LEFT OVERRIDE) qui inverse l'affichage de la fin du nom. Unicode TR36 décrit ce risque."
+  sa_rules: []
+  title: "Le nom d'une pièce jointe contient un caractère qui inverse son affichage"
+  why: >
+    Le nom du fichier contient un caractère invisible qui fait apparaître l'extension à l'envers,
+    pour qu'un programme ressemble à un document. Cette technique est traitée comme malveillante.
+  fix:
+    - "Renommez le fichier en le retapant au clavier, sans le copier."
+    - "Vérifiez le type réel du fichier avant de l'envoyer."
+  references:
+    - https://www.unicode.org/reports/tr36/
+    - https://www.unicode.org/reports/tr9/
+
+- id: attachments.office_macro
+  family: attachments
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "attachments.any(a => a.extension in ['docm','xlsm','pptm','dotm','xltm','xlam','ppsm'] || a.ole.has_vba || a.ooxml.has('vbaProject.bin'))"
+    notes: "Document Office contenant des macros VBA. Gmail bloque les documents aux macros malveillantes ; Microsoft bloque par défaut les macros des fichiers venus d'Internet."
+  sa_rules: []
+  title: "Un document Office joint contient des macros"
+  why: >
+    Le fichier {value} contient des macros. Les macros sont un vecteur majeur de logiciels
+    malveillants : Gmail bloque celles qu'il juge malveillantes, et Office les désactive par défaut
+    sur les fichiers reçus d'Internet.
+  fix:
+    - "Enregistrez le document sans macros : Fichier > Enregistrer sous, format .docx, .xlsx ou .pptx."
+    - "Si le destinataire n'a pas besoin de modifier le document, envoyez-le en PDF."
+  references:
+    - https://support.google.com/mail/answer/6590
+    - https://learn.microsoft.com/en-us/microsoft-365-apps/security/internet-macros-blocked
+
+- id: attachments.html_attachment
+  family: attachments
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "attachments.any(a => a.extension in ['html','htm','shtml','xhtml','svg','mht','mhtml'] || a.content_type ~ /text\\/html|image\\/svg/i)"
+    notes: "Pièce jointe HTML ou SVG : elle s'ouvre dans le navigateur et peut afficher un faux formulaire de connexion hors de portée des filtres de liens. Format très utilisé pour l'hameçonnage."
+  sa_rules: []
+  title: "Une page HTML est jointe au message"
+  why: >
+    Le fichier {value} s'ouvre dans le navigateur comme une page web. Ce format sert surtout à
+    l'hameçonnage par faux formulaire : les filtres le traitent avec une forte méfiance.
+  fix:
+    - "Mettez le contenu dans le corps du message ou publiez-le sur une page de {domain} et envoyez le lien."
+    - "Si c'est un document à conserver, envoyez-le en PDF."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: attachments.pdf_active_content
+  family: attachments
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "attachments.pdfs.any(p => p.has_any(['/JavaScript','/JS','/Launch','/EmbeddedFile','/OpenAction','/AA']) && p.active_content_is_executable)"
+    notes: "PDF contenant du JavaScript, une action de lancement ou un fichier intégré. La norme ISO 32000 décrit ces objets ; leur présence dans un PDF envoyé par e-mail est rare et suspecte."
+  sa_rules: []
+  title: "Un PDF joint contient du code ou une action automatique"
+  why: >
+    Le PDF {value} contient du JavaScript, une action à l'ouverture ou un fichier caché. Un document
+    ordinaire n'en a pas besoin : les filtres le traitent comme potentiellement malveillant.
+  fix:
+    - "Régénérez le PDF depuis le document source avec l'option d'export standard, sans formulaire dynamique."
+    - "Ou imprimez-le en PDF (« Microsoft Print to PDF » ou « Enregistrer au format PDF ») : le code et les fichiers intégrés disparaissent."
+  references:
+    - https://pdfa.org/resource/iso-32000-pdf/
+
+- id: attachments.pdf_with_links
+  family: attachments
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "attachments.pdfs.any(p => p.links.count > 0 && body.visible_text.words < config.min_body_words)"
+    notes: "PDF dont les liens échappent à l'analyse des liens du corps, joint à un message court. Profil de l'hameçonnage par document."
+  sa_rules: []
+  title: "Le message renvoie vers des liens cachés dans un PDF joint"
+  why: >
+    Le message est court et les liens sont dans le PDF {value}. Placer les liens dans une pièce jointe
+    est une façon connue d'échapper à l'analyse des liens : certains filtres en tiennent compte.
+  fix:
+    - "Mettez les liens importants dans le corps du message, sur {domain}."
+    - "Ajoutez quelques phrases qui expliquent ce que contient le document."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: attachments.too_large
+  family: attachments
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "attachments.total_bytes > config.gmail_attachment_limit || message.size_bytes > config.orange_max_message_size"
+    notes: "Google : « For personal Gmail accounts, the limit is 25 MB » (page sur la taille des pièces jointes, qui ne précise ni le sens envoi ou réception, ni l'unité exacte) ; au-delà, Gmail remplace la pièce jointe par un lien Google Drive à l'envoi. Orange : 45 Mo au plus par message. L'encodage base64 augmente la taille d'environ un tiers (RFC 2045 §6.8 : 3 octets deviennent 4 caractères)."
+  sa_rules: []
+  title: "Le message est trop lourd pour être reçu par certaines messageries"
+  why: >
+    Le message pèse {value}, pièces jointes comprises après encodage. Google indique une limite de
+    25 Mo de pièces jointes pour les comptes Gmail personnels, et Orange accepte 45 Mo au plus par
+    message : au-delà, le message risque d'être refusé.
+  fix:
+    - "Retirez les pièces jointes lourdes et mettez à la place un lien de téléchargement."
+    - "Compressez les PDF (export en qualité « web » ou « écran ») et redimensionnez les photos."
+    - "Gardez en tête que l'encodage pour l'envoi augmente la taille d'environ un tiers."
+  fix_by_provider:
+    google_workspace: "Insérez les fichiers lourds avec le bouton Google Drive de la fenêtre de rédaction plutôt qu'en pièce jointe."
+    microsoft_365: "Dans Outlook, joignez le fichier depuis OneDrive et choisissez Partager le lien plutôt que Joindre une copie."
+  references:
+    - https://support.google.com/mail/answer/6584
+    - https://postmaster.orange.fr/
+    - https://www.rfc-editor.org/rfc/rfc2045#section-6.8
+
+- id: attachments.large
+  family: attachments
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "attachments.total_bytes > config.large_attachment_bytes && attachments.total_bytes <= config.gmail_attachment_limit"
+    notes: "Pièces jointes lourdes mais sous les limites connues. Seuil interne."
+  sa_rules: []
+  title: "Les pièces jointes sont lourdes"
+  why: >
+    Les pièces jointes pèsent {value}. Le message passe, mais il remplit la boîte du destinataire et
+    se télécharge lentement sur mobile. Sur un envoi groupé, il multiplie le volume transmis.
+  fix:
+    - "Compressez les documents et redimensionnez les images avant de les joindre."
+    - "Pour un envoi à plusieurs destinataires, préférez un lien de téléchargement."
+  references:
+    - https://support.google.com/mail/answer/6584
+
+- id: attachments.type_mismatch
+  family: attachments
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "attachments.any(a => magic_type(a.bytes) != type_from_extension(a.extension) && !compatible(magic_type(a.bytes), a.extension))"
+    notes: "Type réel du fichier (signature binaire) différent de celui annoncé par l'extension ou le Content-Type."
+  sa_rules: []
+  title: "Le type réel d'une pièce jointe ne correspond pas à son nom"
+  why: >
+    Le fichier {value} porte une extension qui ne correspond pas à son contenu réel. Les filtres
+    vérifient la signature des fichiers et traitent cet écart comme une tentative de déguisement.
+  fix:
+    - "Ouvrez le fichier avec le logiciel qui l'a créé et réenregistrez-le dans le format annoncé."
+    - "Vérifiez que votre application ne renomme pas les fichiers au moment de les joindre."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2046#section-4.5.1
+
+- id: attachments.no_filename
+  family: attachments
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "attachments.any(a => a.disposition == 'attachment' && a.filename == null)"
+    notes: "RFC 2183 : le paramètre filename de Content-Disposition suggère un nom ; sans lui, les clients affichent « noname » ou « ATT00001 »."
+  sa_rules: []
+  title: "Une pièce jointe n'a pas de nom de fichier"
+  why: >
+    Le destinataire verra un fichier « noname » ou « ATT00001 » sans savoir l'ouvrir. Une pièce jointe
+    sans nom est aussi un indice de message fabriqué à la main.
+  fix:
+    - "Donnez un nom explicite à chaque pièce jointe dans votre code, par exemple facture-2026-11.pdf."
+    - "Laissez la bibliothèque d'envoi écrire Content-Disposition avec le paramètre filename, encodé selon la RFC 2231 s'il a des accents."
+  example_good: "Content-Disposition: attachment; filename=\"facture-2026-11.pdf\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2183
+    - https://www.rfc-editor.org/rfc/rfc2231
+
+- id: attachments.winmail_dat
+  family: attachments
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "attachments.any(a => a.content_type ~ /application\\/ms-tnef/i || a.filename ~ /^winmail\\.dat$/i)"
+    notes: "Format TNEF propre à Outlook et Exchange, illisible hors des clients Microsoft."
+  sa_rules: []
+  title: "Le message contient un fichier winmail.dat"
+  why: >
+    Outlook a envoyé le message au format TNEF. Hors des clients Microsoft, le destinataire ne voit
+    qu'un fichier winmail.dat illisible, et vos vraies pièces jointes sont dedans.
+  fix:
+    - "Dans Outlook, Fichier > Options > Courrier > Composer des messages : choisissez HTML au lieu de Texte enrichi."
+    - "Ne mettez pas le texte enrichi sur un contact précis dans ses propriétés."
+  fix_by_provider:
+    microsoft_365: "Dans Exchange Online PowerShell, désactivez TNEF vers l'extérieur : Set-RemoteDomain Default -TNEFEnabled $false."
+  references:
+    - https://learn.microsoft.com/en-us/exchange/mail-flow/content-conversion/tnef-conversion
+
+- id: attachments.attachment_without_body
+  family: attachments
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "attachments.any && body.visible_text.trim().length < config.min_text_chars"
+    notes: "Pièce jointe seule, sans texte d'accompagnement : profil des envois de logiciels malveillants (fausse facture, faux colis)."
+  sa_rules: []
+  title: "La pièce jointe est envoyée sans texte d'accompagnement"
+  why: >
+    Le message ne contient qu'une pièce jointe et presque aucun texte. C'est exactement le format des
+    fausses factures piégées : les filtres et les destinataires s'en méfient.
+  fix:
+    - "Ajoutez quelques phrases : qui vous êtes, ce que contient le fichier, pourquoi vous l'envoyez."
+    - "Ajoutez une signature avec le nom de l'entreprise et un moyen de contact."
+  references:
+    - https://support.google.com/mail/answer/81126

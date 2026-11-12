@@ -1,0 +1,672 @@
+# Famille dmarc : politique DMARC du domaine visible {domain}, publiée en TXT sur
+# _dmarc.{domain} ou héritée du domaine organisationnel.
+# Norme de référence : RFC 9989 (mai 2026), qui remplace la RFC 7489 avec les RFC 9990
+# (rapports agrégés) et 9991 (rapports d'échec). Changements utiles ici : pct, rf et ri
+# supprimés, t= (test) et np= (sous-domaines inexistants) ajoutés, psd= ajouté, liste des
+# suffixes publics remplacée par une remontée de l'arbre DNS.
+# Attention : la documentation BIMI de Gmail exige encore pct=100 (relevé le 2026-11-10) ;
+# ne pas conseiller de retirer un pct=100 existant si le domaine vise BIMI.
+
+- id: dmarc.missing
+  family: dmarc
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dmarc.record == null && dmarc.org_record == null"
+    notes: "Aucun enregistrement DMARC ni sur _dmarc.{domain} ni sur le domaine organisationnel. Gmail exige DMARC (p=none suffit) au-delà de 5 000 messages par jour vers ses comptes ; Yahoo l'exige des envois en nombre ; Outlook.com l'exige au-delà de 5 000 messages par jour depuis le 5 mai 2025."
+  sa_rules: [DMARC_MISSING]
+  title: "Le domaine {domain} n'a pas de politique DMARC"
+  why: >
+    Sans DMARC, n'importe qui peut usurper {domain} sans être bloqué, et vous ne recevez
+    aucun rapport sur les envois faits en votre nom. Gmail, Yahoo et Outlook.com exigent
+    DMARC des expéditeurs en nombre et dirigent les autres vers le spam ou les rejettent.
+  fix:
+    - "Créez une adresse pour recevoir les rapports, par exemple dmarc@{domain}."
+    - "Publiez un TXT sur _dmarc.{domain} : v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+    - "Lisez les rapports pendant quelques semaines, corrigez les services non authentifiés, puis passez à p=quarantine puis p=reject."
+  fix_by_provider:
+    google_workspace: "Ajoutez le TXT _dmarc chez votre hébergeur DNS (pas dans la console Google). Google conseille de commencer par p=none et d'attendre 48 heures après la mise en place de SPF ou DKIM."
+    microsoft_365: "Ajoutez le TXT _dmarc chez votre hébergeur DNS. Pour le domaine onmicrosoft.com, le DMARC se crée dans le centre d'administration Microsoft 365."
+    ovh: "Zone DNS, Ajouter une entrée, type DMARC (formulaire dédié) ou TXT, sous-domaine _dmarc. OVHcloud conseille p=none et l'analyse des rapports pendant plusieurs semaines."
+    o2switch: "o2switch ne documente pas DMARC : dans cPanel, Zone Editor, ajoutez un TXT de nom _dmarc.{domain}."
+    cpanel: "Email, Email Deliverability, Manage, section DMARC : Install the Suggested Record (cPanel 124 et plus récent). cPanel indique que DMARC demande un SPF et un DKIM valides."
+    plesk: "Sites Web et domaines, DNS : ajoutez ou vérifiez le TXT _dmarc.{domain} ; selon la configuration du serveur, Plesk peut déjà en avoir créé un."
+    ionos: "Domaine, roue dentée, DNS, Ajouter un enregistrement, TXT, nom d'hôte _dmarc. N'utilisez pas les valeurs p=rejet ou p=quarantaine qui figurent dans certains exemples en français : seules none, quarantine et reject sont valides."
+    gandi: "Ajoutez le TXT _dmarc ; Gandi donne l'exemple p=reject et prévient qu'il peut bloquer les messages transférés : commencez par p=none."
+    infomaniak: "Manager, Sécurité globale : l'assistant DMARC crée l'enregistrement (mode simple ou avancé)."
+    zoho: "Ajoutez le TXT _dmarc chez votre hébergeur DNS en vous aidant de la page DMARC de l'aide Zoho Mail."
+    proton: "Settings, All settings, Domain names, Review, onglet DMARC : recopiez l'enregistrement proposé ; Proton recommande ensuite p=quarantine."
+    brevo: "Brevo exige un DMARC. Valeur donnée : v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com. Si un DMARC existe déjà, ajoutez seulement ; rua=mailto:rua@dmarc.brevo.com à la fin et gardez un seul enregistrement."
+    mailchimp: "La procédure Account & billing, Domains inclut un TXT _dmarc dont la valeur est affichée dans vos instructions."
+    sendgrid: "L'authentification de domaine de SendGrid propose le TXT _dmarc v=DMARC1; p=none;."
+    amazon_ses: "AWS conseille de commencer par p=none puis de passer à quarantine et reject ; pour un alignement SPF, configurez un MAIL FROM personnalisé."
+    postmark: "Postmark recommande DMARC quel que soit le volume, en commençant par p=none."
+    sparkpost: "Sur la plateforme Bird, un DMARC est exigé avant tout envoi ; valeur minimale donnée : v=DMARC1; p=none; rua=mailto:dmarc-agg@dmarc.bird.com;"
+    hubspot: "Settings, Content, Domains & URLs, Email Sending : HubSpot génère la valeur du TXT _dmarc à publier."
+    cloudflare_dns: "Email, DMARC Management, Enable : Cloudflare crée l'enregistrement ou y ajoute son adresse rua (domaine racine seulement, fonction en bêta)."
+  example_good: "_dmarc.{domain}. IN TXT \"v=DMARC1; p=none; rua=mailto:dmarc@{domain}\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-5.1
+    - https://support.google.com/mail/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+    - https://substrate.office.com/ip-domain-management-snds/Postmaster/Policies
+    - https://knowledge.workspace.google.com/admin/security/set-up-dmarc
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dmarc-configure
+    - https://docs.ovhcloud.com/fr/guides/web-cloud/domains/dns-zone-dmarc
+    - https://support.cpanel.net/hc/en-us/articles/4408631837975
+    - https://www.ionos.fr/assistance/domaines/configurer-les-serveurs-de-messagerie-et-les-enregistrements-associes/configurer-un-enregistrement-dmarc-pour-un-domaine/
+    - https://docs.gandi.net/en/gandimail/common_operations/enable_antispoofing_tools.html
+    - https://www.infomaniak.com/fr/support/faq/1552/gerer-les-enregistrements-dmarc
+    - https://www.zoho.com/mail/help/adminconsole/dmarc-policy.html
+    - https://proton.me/support/anti-spoofing-custom-domain
+    - https://help.brevo.com/hc/en-us/articles/14925263522578
+    - https://mailchimp.com/help/about-email-authentication/
+    - https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dmarc.html
+    - https://postmarkapp.com/support/article/1093-why-do-emails-sent-through-postmark-fail-spf-alignment
+    - https://bird.com/docs/guides/email/dkim-spf-dmarc
+    - https://developers.cloudflare.com/dmarc-management/enable/
+
+- id: dmarc.subdomain_no_policy
+  family: dmarc
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "domain != org_domain(domain) && dmarc.record == null && dmarc.org_record == null"
+    notes: "Le message part d'un sous-domaine ({domain}) ; ni ce sous-domaine ni son domaine organisationnel ne publient de DMARC. RFC 9989 §4.10.1 : la politique est cherchée sur le domaine de l'auteur, puis sur le domaine organisationnel par remontée de l'arbre DNS."
+  sa_rules: [DMARC_MISSING]
+  title: "Ni {domain} ni son domaine principal ne publient de DMARC"
+  why: >
+    Vous envoyez depuis un sous-domaine, mais aucune politique DMARC ne le couvre. Les
+    exigences de Gmail, Yahoo et Outlook.com ne sont pas remplies et le sous-domaine peut
+    être usurpé.
+  fix:
+    - "Publiez un DMARC sur le domaine principal : _dmarc.<domaine principal> avec p=none et rua=, qui couvre aussi tous ses sous-domaines."
+    - "Si le sous-domaine {domain} doit avoir sa propre politique, publiez en plus un TXT sur _dmarc.{domain}."
+    - "Ajoutez sp= pour régler la politique des sous-domaines existants, et np= pour celle des sous-domaines qui n'existent pas."
+  example_good: "_dmarc.exemple.fr. IN TXT \"v=DMARC1; p=none; sp=none; np=reject; rua=mailto:dmarc@exemple.fr\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.10.1
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.multiple_records
+  family: dmarc
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "count(r for r in dns.TXT('_dmarc.' + domain) if r starts with 'v=DMARC1') > 1"
+    notes: "RFC 9989 §4.10 : si plusieurs enregistrements DMARC sont trouvés pour un même nom, ils sont tous écartés (la RFC 7489 aboutissait au même résultat). Cas typique : un outil d'emailing a ajouté son propre DMARC au lieu d'ajouter son adresse rua au vôtre."
+  sa_rules: [DMARC_MISSING]
+  title: "Le domaine {domain} publie plusieurs enregistrements DMARC"
+  why: >
+    Avec deux DMARC, les destinataires les ignorent tous les deux : {domain} se retrouve sans
+    politique ni rapports, comme s'il n'avait pas de DMARC.
+  fix:
+    - "Relevez les deux enregistrements sur _dmarc.{domain}."
+    - "Fusionnez-les en un seul : une seule valeur p=, et toutes les adresses de rapports réunies dans rua= séparées par une virgule."
+    - "Supprimez l'autre enregistrement."
+  fix_by_provider:
+    brevo: "Brevo demande de garder un seul DMARC : ajoutez rua=mailto:rua@dmarc.brevo.com à la liste rua= de votre enregistrement existant au lieu d'en créer un second."
+  example_bad: "v=DMARC1; p=none; rua=mailto:dmarc@{domain}  et  v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com"
+  example_good: "v=DMARC1; p=none; rua=mailto:dmarc@{domain},mailto:rua@dmarc.brevo.com"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.10
+    - https://help.brevo.com/hc/en-us/articles/14925263522578
+
+- id: dmarc.syntax_invalid
+  family: dmarc
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "any(r ~ /dmarc/i for r in dns.TXT('_dmarc.' + domain)) && count(r for r in dns.TXT('_dmarc.' + domain) if r starts with 'v=DMARC1') == 0"
+    notes: "RFC 9989 §4.7 : v=DMARC1 doit être la première balise, valeur sensible à la casse ; sinon l'enregistrement entier est ignoré. Erreurs courantes : v=dmarc1, espace ou guillemet initial, p= placé avant v=, deux-points au lieu du signe égal."
+  sa_rules: [DMARC_MISSING]
+  title: "L'enregistrement DMARC de {domain} est ignoré (syntaxe)"
+  why: >
+    Votre enregistrement ne commence pas exactement par v=DMARC1. Les destinataires le
+    traitent comme s'il n'existait pas : aucune politique, aucun rapport.
+  fix:
+    - "Faites commencer l'enregistrement par v=DMARC1; en respectant les majuscules."
+    - "Séparez les balises par des points-virgules et utilisez le signe égal (p=none, pas p:none)."
+    - "Publiez : {suggested_record}."
+  example_bad: "p=none; v=DMARC1; rua=mailto:dmarc@{domain}"
+  example_good: "v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.policy_invalid
+  family: dmarc
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "dmarc.record != null && (dmarc.p == null || dmarc.p not in ['none', 'quarantine', 'reject'] || (dmarc.sp != null && dmarc.sp not in ['none', 'quarantine', 'reject']) || (dmarc.np != null && dmarc.np not in ['none', 'quarantine', 'reject']))"
+    notes: "RFC 9989 §4.10.1 : sans p= valide (ou avec sp= ou np= invalide), le destinataire applique p=none si rua= contient au moins une adresse valide, et sinon n'applique pas DMARC. Exemple réel : p=rejet ou p=quarantaine, traductions qui figurent dans des exemples en français."
+  sa_rules: []
+  title: "La politique DMARC de {domain} a une valeur invalide"
+  why: >
+    La valeur de p= (ou sp=, np=) n'est pas reconnue. Votre politique stricte n'est pas
+    appliquée : au mieux le destinataire se contente de p=none, au pire il ignore votre DMARC.
+  fix:
+    - "Utilisez seulement none, quarantine ou reject, en anglais et en minuscules."
+    - "Publiez : {suggested_record}."
+  example_bad: "v=DMARC1; p=rejet; rua=mailto:dmarc@{domain}"
+  example_good: "v=DMARC1; p=reject; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.10.1
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.record_at_apex
+  family: dmarc
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "any(r starts with 'v=DMARC1' for r in dns.TXT(domain)) && dmarc.record == null"
+    notes: "Le DMARC est publié à la racine de {domain} au lieu du nom _dmarc.{domain} : il n'est jamais lu."
+  sa_rules: [DMARC_MISSING]
+  title: "Le DMARC de {domain} est publié au mauvais endroit"
+  why: >
+    Les destinataires cherchent DMARC sur _dmarc.{domain}. L'enregistrement placé à la racine
+    du domaine n'est jamais lu, donc {domain} est traité comme sans DMARC.
+  fix:
+    - "Créez le même TXT avec le nom _dmarc (l'interface ajoute souvent .{domain} elle-même)."
+    - "Supprimez l'enregistrement v=DMARC1 de la racine."
+  example_bad: "{domain}. IN TXT \"v=DMARC1; p=none\""
+  example_good: "_dmarc.{domain}. IN TXT \"v=DMARC1; p=none; rua=mailto:dmarc@{domain}\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.10.1
+
+- id: dmarc.policy_none
+  family: dmarc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dmarc.effective_policy == 'none'"
+    notes: "p=none est un mode d'observation (Monitoring Mode, RFC 9989 §3.2.12) : accepté par Gmail, Yahoo et Outlook.com comme minimum, mais il ne protège pas le domaine contre l'usurpation."
+  sa_rules: [DMARC_NONE]
+  title: "La politique DMARC de {domain} est en observation (p=none)"
+  why: >
+    p=none remplit le minimum exigé par Gmail, Yahoo et Outlook.com, mais ne demande aucun
+    traitement des messages frauduleux : un usurpateur peut encore utiliser {domain}.
+  fix:
+    - "Analysez les rapports reçus sur l'adresse rua= pour repérer les services légitimes non authentifiés."
+    - "Corrigez-les (SPF ou DKIM alignés), puis passez à p=quarantine, et enfin à p=reject."
+    - "Pour une montée progressive, la RFC 9989 propose t=y (la politique est appliquée un cran en dessous) plutôt que pct=."
+  example_good: "v=DMARC1; p=quarantine; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-5.1.7
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.policy_none_stale
+  family: dmarc
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dmarc.effective_policy == 'none' && history.dmarc.first_seen_with_same_policy < now - 180 days"
+    notes: "Détection par l'historique de l'outil : même politique p=none observée depuis plus de six mois sur ce domaine. Seuil choisi par l'outil, pas par une norme."
+  sa_rules: [DMARC_NONE]
+  title: "{domain} est en p=none depuis plus de six mois"
+  why: >
+    L'observation sert à préparer un passage à une politique active. Après six mois, les
+    rapports suffisent en général pour décider, et {domain} reste usurpable tant que vous
+    n'avancez pas.
+  fix:
+    - "Vérifiez dans les rapports DMARC que vos services d'envoi passent SPF ou DKIM aligné."
+    - "Passez à p=quarantine, éventuellement avec t=y pendant quelques semaines."
+    - "Si les rapports ne montrent pas de rejet légitime, passez à p=reject."
+  example_good: "v=DMARC1; p=quarantine; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-5.1.7
+
+- id: dmarc.pct_partial
+  family: dmarc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dmarc.pct != null && dmarc.pct > 0 && dmarc.pct < 100 && dmarc.p in ['quarantine', 'reject']"
+    notes: "RFC 9989 Annexe A.6 : pct= est supprimé car mal appliqué pour les valeurs autres que 0 et 100. Les destinataires qui suivent la RFC 9989 l'ignorent. Gmail exige pct=100 pour BIMI."
+  sa_rules: []
+  title: "La politique DMARC de {domain} ne vise qu'une partie des messages (pct={value})"
+  why: >
+    pct= devait appliquer la politique à un pourcentage des messages, mais il a été supprimé
+    de la norme faute d'être appliqué de façon fiable. Le résultat varie selon le
+    destinataire, et le logo BIMI de Gmail est refusé tant que pct n'est pas à 100.
+  fix:
+    - "Supprimez pct= (ou mettez pct=100 si vous préparez BIMI pour Gmail)."
+    - "Pour une phase de test, utilisez t=y à la place : la politique est alors appliquée un niveau en dessous."
+  example_bad: "v=DMARC1; p=quarantine; pct=25; rua=mailto:dmarc@{domain}"
+  example_good: "v=DMARC1; p=quarantine; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#appendix-A.6
+    - https://knowledge.workspace.google.com/admin/security/set-up-bimi
+
+- id: dmarc.pct_zero
+  family: dmarc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dmarc.pct == 0 && dmarc.p in ['quarantine', 'reject']"
+    notes: "RFC 9989 Annexe A.6 : pct=0 était utilisé comme signal de test ; son équivalent est désormais t=y."
+  sa_rules: []
+  title: "La politique DMARC de {domain} est neutralisée (pct=0)"
+  why: >
+    Avec pct=0, la politique quarantine ou reject n'est appliquée à aucun message. Vous
+    affichez une politique stricte qui ne protège pas {domain}.
+  fix:
+    - "Si vous testez encore, remplacez pct=0 par t=y, la balise prévue par la RFC 9989."
+    - "Si les tests sont terminés, supprimez pct=0."
+  example_bad: "v=DMARC1; p=reject; pct=0"
+  example_good: "v=DMARC1; p=reject; t=y; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#appendix-A.6
+
+- id: dmarc.testing_flag
+  family: dmarc
+  severity: info
+  penalty: 0.1
+  detect:
+    signal: "dmarc.t == 'y' && dmarc.p in ['quarantine', 'reject']"
+    notes: "RFC 9989 §4.7 : t=y demande d'appliquer la politique un niveau en dessous (quarantine devient none, reject devient quarantine)."
+  sa_rules: []
+  title: "La politique DMARC de {domain} est en mode test (t=y)"
+  why: >
+    Votre politique est appliquée un cran en dessous de ce qui est affiché. C'est voulu
+    pendant une transition, mais la protection reste partielle.
+  fix:
+    - "Une fois les rapports satisfaisants, retirez t=y pour appliquer pleinement p={value}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.sp_weaker
+  family: dmarc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dmarc.p in ['quarantine', 'reject'] && dmarc.sp != null && strength(dmarc.sp) < strength(dmarc.p)"
+    notes: "sp= plus faible que p= : les sous-domaines existants de {domain} restent usurpables. RFC 9989 §4.7 : sp= s'applique aux sous-domaines existants, np= aux sous-domaines inexistants."
+  sa_rules: []
+  title: "Les sous-domaines de {domain} ont une politique DMARC plus faible (sp=)"
+  why: >
+    Votre domaine principal est protégé, mais sp= laisse ses sous-domaines en politique
+    plus faible. Un usurpateur peut envoyer depuis factures.{domain} sans être bloqué.
+  fix:
+    - "Vérifiez dans les rapports qu'aucun sous-domaine légitime n'échoue à DMARC."
+    - "Alignez sp= sur p=, ou supprimez sp= pour que les sous-domaines héritent de p=."
+    - "Ajoutez np=reject pour bloquer les sous-domaines qui n'existent pas."
+  example_bad: "v=DMARC1; p=reject; sp=none; rua=mailto:dmarc@{domain}"
+  example_good: "v=DMARC1; p=reject; np=reject; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.np_absent
+  family: dmarc
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dmarc.p in ['quarantine', 'reject'] && dmarc.np == null && strength(dmarc.sp or dmarc.p) < strength('reject')"
+    notes: "RFC 9989 §4.7 (repris de la RFC 9091) : np= règle les sous-domaines qui n'existent pas dans le DNS ; à défaut, sp= puis p= s'appliquent."
+  sa_rules: []
+  title: "{domain} ne bloque pas explicitement ses sous-domaines inexistants (np=)"
+  why: >
+    Les usurpateurs inventent souvent des sous-domaines qui n'existent pas. La balise np=reject
+    les bloque sans toucher à vos vrais sous-domaines.
+  fix:
+    - "Ajoutez np=reject à votre enregistrement DMARC."
+  example_good: "v=DMARC1; p=quarantine; np=reject; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.rua_missing
+  family: dmarc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dmarc.record != null && dmarc.rua == []"
+    notes: "RFC 9989 §4.7 : sans rua=, les destinataires ne doivent pas envoyer de rapports agrégés."
+  sa_rules: []
+  title: "Le DMARC de {domain} ne demande aucun rapport (rua= absent)"
+  why: >
+    Sans rua=, vous ne savez pas qui envoie en votre nom ni quels services échouent. Il est
+    alors impossible de passer sans risque à une politique plus stricte.
+  fix:
+    - "Créez une adresse dédiée, par exemple dmarc@{domain}, ou utilisez celle d'un service d'analyse de rapports."
+    - "Ajoutez rua=mailto:cette adresse à votre enregistrement."
+  fix_by_provider:
+    cloudflare_dns: "Email, DMARC Management, Enable ajoute une adresse rua de Cloudflare et affiche les rapports dans le tableau de bord."
+    brevo: "Vous pouvez ajouter rua=mailto:rua@dmarc.brevo.com, l'adresse indiquée par Brevo."
+  example_bad: "v=DMARC1; p=none"
+  example_good: "v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+    - https://www.rfc-editor.org/rfc/rfc9990
+
+- id: dmarc.rua_invalid_uri
+  family: dmarc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "any(not (u starts with 'mailto:' || u starts with 'https:') for u in dmarc.rua + dmarc.ruf)"
+    notes: "Les adresses de rapports sont des URI : mailto: obligatoire devant une adresse électronique. Les destinataires qui envoient des rapports doivent prendre en charge mailto: (RFC 9989 §4.7) ; une adresse nue est ignorée."
+  sa_rules: []
+  title: "Une adresse de rapports DMARC de {domain} est mal écrite"
+  why: >
+    Une adresse sans mailto: n'est pas comprise : vous ne recevez pas les rapports, et si
+    p= est lui aussi invalide, votre DMARC n'est pas appliqué du tout.
+  fix:
+    - "Préfixez chaque adresse par mailto: et séparez-les par des virgules sans espace."
+    - "Publiez : {suggested_record}."
+  example_bad: "v=DMARC1; p=none; rua=dmarc@{domain}"
+  example_good: "v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.6
+
+- id: dmarc.rua_external_unauthorized
+  family: dmarc
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "any(org_domain(domain_of(u)) != org_domain(domain) && dns.TXT(domain + '._report._dmarc.' + domain_of(u)) has no 'v=DMARC1' && dns.TXT('*._report._dmarc.' + domain_of(u)) has no 'v=DMARC1' for u in dmarc.rua)"
+    notes: "RFC 9990 §4 : quand l'adresse de rapports est dans un autre domaine, le destinataire vérifie que ce domaine accepte les rapports via un TXT v=DMARC1 sur {domain}._report._dmarc.<domaine de l'adresse>. Sans lui, les rapports ne sont pas envoyés à cette adresse."
+  sa_rules: []
+  title: "L'adresse de rapports DMARC externe de {domain} n'a pas autorisé ces rapports"
+  why: >
+    Vos rapports sont envoyés vers un autre domaine qui n'a pas publié son accord. Les
+    destinataires refusent donc de les envoyer : vous ne recevez rien.
+  fix:
+    - "Demandez au propriétaire du domaine de l'adresse rua= de publier le TXT {domain}._report._dmarc.<son domaine> avec la valeur v=DMARC1 (les services d'analyse le font en général pour vous)."
+    - "Ou utilisez une adresse de {domain} qui redirige vers l'adresse externe."
+  example_good: "{domain}._report._dmarc.analyse.example. IN TXT \"v=DMARC1\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9990#section-4
+    - https://www.rfc-editor.org/rfc/rfc9989#section-11.6
+
+- id: dmarc.ruf_present
+  family: dmarc
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dmarc.ruf != []"
+    notes: "Les rapports d'échec (RFC 9991) peuvent contenir le contenu des messages ; RFC 9989 §11.6 rappelle qu'ils contiennent des données plus sensibles que les rapports agrégés. Peu de grands fournisseurs les envoient."
+  sa_rules: []
+  title: "Le DMARC de {domain} demande des rapports d'échec détaillés (ruf=)"
+  why: >
+    Les rapports ruf= peuvent contenir des extraits de messages et des adresses personnelles.
+    Ils sont rarement envoyés et l'adresse qui les reçoit doit être protégée.
+  fix:
+    - "Gardez ruf= seulement si quelqu'un les traite réellement, et assurez-vous que l'adresse est à l'abri."
+    - "Sinon retirez ruf= et la balise fo= qui l'accompagne."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9991
+    - https://www.rfc-editor.org/rfc/rfc9989#section-11.6
+
+- id: dmarc.fo_without_ruf
+  family: dmarc
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dmarc.fo != null && dmarc.ruf == []"
+    notes: "RFC 9989 §4.7 : fo= est ignoré sans ruf=."
+  sa_rules: []
+  title: "La balise fo= du DMARC de {domain} est sans effet"
+  why: >
+    fo= règle les rapports d'échec, mais aucune adresse ruf= n'est indiquée : la balise ne
+    sert à rien.
+  fix:
+    - "Retirez fo= ou ajoutez une adresse ruf= si vous voulez vraiment ces rapports."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.obsolete_tags
+  family: dmarc
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dmarc.ri != null || dmarc.rf != null"
+    notes: "RFC 9989 Annexe C.5.2 : ri= et rf= sont supprimés. Sans effet nuisible ; les destinataires à jour les ignorent."
+  sa_rules: []
+  title: "Le DMARC de {domain} contient des balises supprimées (ri=, rf=)"
+  why: >
+    Ces balises n'existent plus dans la norme actuelle. Elles ne gênent pas, mais allongent
+    l'enregistrement pour rien.
+  fix:
+    - "Retirez ri= et rf= de l'enregistrement."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#appendix-C.5.2
+
+- id: dmarc.unknown_tags
+  family: dmarc
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "any(tag not in ['v', 'p', 'sp', 'np', 'adkim', 'aspf', 'fo', 'rua', 'ruf', 't', 'psd', 'pct', 'ri', 'rf'] for tag in dmarc.tags)"
+    notes: "RFC 9989 §4.7 : les balises inconnues sont ignorées. Une faute de frappe (polcy=, rau=) fait donc perdre silencieusement le réglage voulu."
+  sa_rules: []
+  title: "Le DMARC de {domain} contient une balise inconnue"
+  why: >
+    Une balise mal orthographiée est ignorée sans message d'erreur : le réglage que vous
+    pensiez avoir fait n'existe pas.
+  fix:
+    - "Corrigez l'orthographe de la balise signalée par le test."
+    - "Publiez : {suggested_record}."
+  example_bad: "v=DMARC1; p=none; rau=mailto:dmarc@{domain}"
+  example_good: "v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.psd_misused
+  family: dmarc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dmarc.psd == 'y' && not is_public_suffix_operator(domain)"
+    notes: "RFC 9989 §4.7 : psd=y est réservé aux opérateurs de suffixes publics (registres). Sur un domaine ordinaire, il fausse la détermination du domaine organisationnel et donc l'alignement."
+  sa_rules: []
+  title: "Le DMARC de {domain} se déclare suffixe public (psd=y)"
+  why: >
+    psd=y est réservé aux registres de domaines. Sur votre domaine, il peut faire croire aux
+    destinataires que {domain} et ses sous-domaines sont des organisations distinctes, ce qui
+    casse l'alignement de vos sous-domaines d'envoi.
+  fix:
+    - "Retirez psd=y, ou remplacez-le par psd=n si vous voulez affirmer que {domain} est votre domaine organisationnel."
+  example_bad: "v=DMARC1; p=reject; psd=y"
+  example_good: "v=DMARC1; p=reject; psd=n"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.10
+
+- id: dmarc.strict_alignment_breaks
+  family: dmarc
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "dmarc.result == fail && ((dmarc.adkim == 's' && dkim.relaxed_aligned == true) || (dmarc.aspf == 's' && spf.relaxed_aligned == true))"
+    notes: "Le message aurait passé DMARC en alignement relâché (sous-domaine du même domaine organisationnel) mais adkim=s ou aspf=s exige l'égalité exacte. Cas typique : Return-Path em1234.{domain} chez SendGrid, mg.{domain} chez Mailgun, bounce sur sous-domaine chez SES. AWS précise que l'alignement SPF de SES suppose de ne pas utiliser aspf=s."
+  sa_rules: []
+  title: "L'alignement strict du DMARC de {domain} fait échouer ce message"
+  why: >
+    Votre service d'envoi utilise un sous-domaine de {domain}, ce qui suffit en alignement
+    relâché. Avec adkim=s ou aspf=s, ce sous-domaine ne compte plus et le message échoue à
+    DMARC.
+  fix:
+    - "Retirez adkim=s et aspf=s (le mode relâché r est la valeur par défaut)."
+    - "Ou faites signer DKIM exactement avec d={domain} si vous tenez à l'alignement strict."
+  fix_by_provider:
+    amazon_ses: "AWS indique que l'alignement SPF d'un MAIL FROM personnalisé suppose de ne pas régler aspf=s."
+    google_workspace: "L'exemple de la documentation Google contient adkim=s; aspf=s : ne le recopiez pas tel quel si un service tiers envoie depuis un sous-domaine."
+  example_bad: "v=DMARC1; p=reject; adkim=s; aspf=s; rua=mailto:dmarc@{domain}"
+  example_good: "v=DMARC1; p=reject; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.4
+    - https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dmarc.html
+    - https://knowledge.workspace.google.com/admin/security/set-up-dmarc
+
+- id: dmarc.fail_reject
+  family: dmarc
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "dmarc.result == fail && dmarc.effective_policy == 'reject' && dmarc.t != 'y'"
+    notes: "Ni SPF ni DKIM ne passent en étant alignés sur {domain}, et {domain} demande le rejet. Le message n'arriverait pas chez la plupart des destinataires."
+  sa_rules: [DMARC_REJECT]
+  title: "Ce message échoue à DMARC et {domain} demande son rejet"
+  why: >
+    Aucune authentification alignée sur {domain} ne passe, et votre politique p=reject
+    demande de refuser ces messages. Chez Gmail, Yahoo ou Outlook.com, ce message serait
+    rejeté.
+  fix:
+    - "Identifiez le service qui a envoyé ce message ({provider}, IP {ip})."
+    - "Authentifiez {domain} dans ce service : DKIM avec d={domain} en priorité, et SPF aligné si le service le permet."
+    - "Si ce service ne doit pas envoyer pour {domain}, la politique fait son travail : ne l'assouplissez pas."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-5.3.5
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.4
+
+- id: dmarc.fail_quarantine
+  family: dmarc
+  severity: critical
+  penalty: 2.5
+  detect:
+    signal: "dmarc.result == fail && ((dmarc.effective_policy == 'quarantine' && dmarc.t != 'y') || (dmarc.effective_policy == 'reject' && dmarc.t == 'y'))"
+    notes: "Échec DMARC avec une politique effective de mise en quarantaine (p=quarantine, ou p=reject avec t=y)."
+  sa_rules: [DMARC_QUAR]
+  title: "Ce message échoue à DMARC et {domain} demande sa mise en quarantaine"
+  why: >
+    Aucune authentification alignée sur {domain} ne passe. Votre politique demande de traiter
+    ces messages comme suspects : ils finissent en spam chez la plupart des destinataires.
+  fix:
+    - "Identifiez le service qui a envoyé ce message ({provider}, IP {ip})."
+    - "Configurez DKIM avec d={domain} dans ce service, et SPF aligné si possible."
+    - "Refaites le test : DMARC doit indiquer pass."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-5.3.5
+
+- id: dmarc.fail_none
+  family: dmarc
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "dmarc.result == fail && (dmarc.effective_policy == 'none' || (dmarc.effective_policy == 'quarantine' && dmarc.t == 'y'))"
+    notes: "Échec DMARC sans politique appliquée. Yahoo écrit pour les envois en nombre « DMARC must pass » ; Gmail exige des envois en nombre que le From soit aligné avec SPF ou DKIM, sous peine de spam ou de rejet 5.7.26."
+  sa_rules: [DMARC_NONE]
+  title: "Ce message échoue à DMARC (politique p=none)"
+  why: >
+    Votre politique ne demande rien, mais l'échec est visible : Gmail exige l'alignement des
+    envois en nombre et Yahoo exige que DMARC passe. Ce message risque le dossier spam et
+    vous ne pourrez jamais durcir la politique sans corriger ce flux.
+  fix:
+    - "Identifiez le service ({provider}, IP {ip}) et authentifiez {domain} dans ce service (DKIM avec d={domain})."
+    - "Vérifiez dans les rapports DMARC qu'aucun autre service n'est dans le même cas."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-5.3.5
+    - https://support.google.com/mail/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+
+- id: dmarc.temperror
+  family: dmarc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dmarc.result == temperror"
+    notes: "RFC 9989 §4.10.1 : le traitement d'une erreur DNS est laissé au destinataire, qui peut livrer ou différer le message (4xx). À confirmer par un second test."
+  sa_rules: []
+  title: "Le DMARC de {domain} n'a pas pu être lu (erreur DNS temporaire)"
+  why: >
+    Le destinataire n'a pas pu lire votre politique. Selon lui, le message est retardé ou
+    traité sans DMARC.
+  fix:
+    - "Refaites le test pour confirmer que l'erreur se répète."
+    - "Vérifiez que tous les serveurs de noms de {domain} répondent et que la signature DNSSEC est valide."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.10.1
+
+# Fiches ajoutées le 2026-11-10 pour les situations du vérificateur DMARC qui n'avaient
+# qu'un texte de repli.
+
+- id: dmarc.duplicate_tag
+  family: dmarc
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "count(t for t in dmarc.tags if t.name == X) > 1"
+    notes: "RFC 9989 §4.7 : DMARC reprend la syntaxe tag=valeur de DKIM, dont la RFC 6376 §3.2 dit qu'une balise répétée rend toute la liste invalide. Un destinataire strict ignore donc l'enregistrement entier ; d'autres retiennent une des deux valeurs. {value} est la balise répétée."
+  sa_rules: []
+  title: "La balise {value} apparaît deux fois dans le DMARC de {domain}"
+  why: >
+    Une balise répétée rend l'enregistrement invalide selon la syntaxe que DMARC reprend de
+    DKIM. Selon le destinataire, votre DMARC est ignoré en entier ou une seule des deux
+    valeurs est retenue : vous ne savez plus quelle politique s'applique.
+  fix:
+    - "Ouvrez l'enregistrement TXT _dmarc.{domain} chez votre hébergeur DNS."
+    - "Gardez une seule occurrence de {value}, avec la valeur voulue. Pour plusieurs adresses de rapports, mettez-les dans une seule balise rua= séparées par une virgule."
+    - "Enregistrement corrigé proposé : {suggested_record}."
+  example_bad: "v=DMARC1; p=none; rua=mailto:dmarc@{domain}; rua=mailto:rua@dmarc.brevo.com"
+  example_good: "v=DMARC1; p=none; rua=mailto:dmarc@{domain},mailto:rua@dmarc.brevo.com"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.2
+
+- id: dmarc.inherited
+  family: dmarc
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dns.TXT('_dmarc.' + domain) has no DMARC record && dmarc.found_at == '_dmarc.' + org_domain(domain)"
+    notes: "RFC 9989 §4.10.1 : sans enregistrement sur le domaine de l'auteur, la politique est cherchée par remontée de l'arbre DNS jusqu'au domaine organisationnel. Pour un sous-domaine, c'est alors sp= qui s'applique, ou p= à défaut, et np= pour un sous-domaine qui n'existe pas. {value} est le domaine organisationnel."
+  sa_rules: []
+  title: "{domain} applique la politique DMARC de {value}"
+  why: >
+    Aucun enregistrement sur _dmarc.{domain} : les destinataires appliquent celui de {value},
+    avec sa balise sp= (ou p= à défaut). C'est le fonctionnement normal de DMARC pour un
+    sous-domaine ; il suffit de savoir quelle politique en découle.
+  fix:
+    - "Rien à faire si la politique de {value} convient aussi à {domain}."
+    - "Pour une politique propre à {domain}, par exemple p=none le temps de mettre en place un nouvel outil d'envoi, publiez un TXT sur _dmarc.{domain} commençant par v=DMARC1."
+    - "Pour régler tous les sous-domaines à la fois, ajustez plutôt sp= dans l'enregistrement de {value}."
+  example_good: "_dmarc.{domain}. IN TXT \"v=DMARC1; p=quarantine; rua=mailto:dmarc@{value}\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.10.1
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.invalid_tag_value
+  family: dmarc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "any(!valid(t.value) for t in dmarc.tags if t.name not in ['v', 'p', 'sp', 'np'])"
+    notes: "RFC 9989 §4.7 : les erreurs de syntaxe dans le reste de l'enregistrement sont écartées au profit de la valeur par défaut, ou ignorées. Les valeurs de p, sp et np relèvent de dmarc.policy_invalid, celle de v de dmarc.syntax_invalid. {value} donne la balise, sa valeur et l'erreur."
+  sa_rules: []
+  title: "Valeur invalide dans le DMARC de {domain} : {value}"
+  why: >
+    Les destinataires ignorent une valeur qu'ils ne comprennent pas et appliquent la valeur
+    par défaut de la balise. Le réglage que vous pensiez avoir fait (alignement, options de
+    rapport) n'existe donc pas.
+  fix:
+    - "Ouvrez l'enregistrement TXT _dmarc.{domain} chez votre hébergeur DNS."
+    - "Corrigez la balise signalée : adkim et aspf acceptent r ou s, fo accepte 0, 1, d ou s séparés par deux-points."
+    - "Enregistrement corrigé proposé : {suggested_record}."
+  example_bad: "v=DMARC1; p=none; adkim=strict; rua=mailto:dmarc@{domain}"
+  example_good: "v=DMARC1; p=none; adkim=s; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+
+- id: dmarc.strict_alignment
+  family: dmarc
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dmarc.adkim == 's' || dmarc.aspf == 's'"
+    notes: "RFC 9989 §3.2.10.2 : en alignement strict, le domaine authentifié doit être identique au domaine de l'auteur ; un sous-domaine ne suffit plus. Information : le cas où un message échoue réellement pour cette raison relève de dmarc.strict_alignment_breaks. {value} liste adkim=s et aspf=s."
+  sa_rules: []
+  title: "Le DMARC de {domain} demande un alignement strict ({value})"
+  why: >
+    Avec un alignement strict, un message signé ou envoyé avec un sous-domaine de {domain}
+    échoue à DMARC. Or beaucoup d'outils d'envoi utilisent un sous-domaine pour l'adresse de
+    retour (em…, mg., bounce.) : le strict leur retire l'alignement SPF.
+  fix:
+    - "Gardez le strict seulement si tous vos envois utilisent exactement {domain}, en DKIM (d=) comme en adresse de retour."
+    - "Sinon, retirez adkim=s et aspf=s : le mode relâché (r) est la valeur par défaut."
+    - "Vérifiez dans vos rapports DMARC qu'aucune source légitime n'échoue avant de conserver le strict."
+  example_bad: "v=DMARC1; p=reject; adkim=s; aspf=s; rua=mailto:dmarc@{domain}"
+  example_good: "v=DMARC1; p=reject; rua=mailto:dmarc@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-3.2.10.2
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.7

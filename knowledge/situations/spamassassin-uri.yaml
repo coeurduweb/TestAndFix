@@ -1,0 +1,663 @@
+# Famille spamassassin, groupe uri. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/uri.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.uri_try_3ld
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(URI_TRY_3LD)
+    notes: 'score SA 4.0.x : 0.742 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri : hôte commençant
+      par try, start, get, save, check, act, compare, join, learn, request, visit ou my suivi d''un sous-domaine
+      en .com ou .net (avec exceptions : list-manage, adobe, slack...), hors Errors-To, Alibaba, Apple,
+      .edu, References.'
+  sa_rules:
+  - URI_TRY_3LD
+  title: Lien vers un sous-domaine d'appel à l'action (try., get., check., join., my.…)
+  why: Un lien pointe vers un hôte en .com ou .net dont le nom commence par try, start, get, save, check,
+    act, compare, join, learn, request, visit ou my (get.offre-exemple.com, check.monservice.com). Les
+    spammeurs créent ces sous-domaines d'appel à l'action ; un service légitime qui en utilise un est
+    pénalisé aussi.
+  fix:
+  - Faites pointer les liens vers votre domaine principal (www.{domain}) ou un chemin (/essai) plutôt
+    que vers un sous-domaine qui commence par l'un de ces mots.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_try_usme
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URI_TRY_USME)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri : hôte try/start/get/save/check/act/compare/join/learn/request/visit/my...
+      en .us, .me, .mobi ou .club, sans DKIM.'
+  sa_rules:
+  - URI_TRY_USME
+  title: Lien « try » ou « get » vers une extension .us, .me, .mobi ou .club
+  why: Un lien d'appel à l'action pointe vers un domaine en .us, .me, .mobi ou .club, extensions souvent
+    utilisées par les spammeurs.
+  fix:
+  - Utilisez des liens vers votre domaine principal et signez le message en DKIM (la règle ne s'applique
+    pas aux messages signés).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_optout_3ld
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URI_OPTOUT_3LD)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m,^https?://(?:quit|bye|remove|exit|leave|disallow|halt|stop|end|herego|out|discontinue)\d*\.[^/]+\.(?:com|net)\b,i.'
+  sa_rules:
+  - URI_OPTOUT_3LD
+  title: Lien de désinscription sur un sous-domaine du type « remove » ou « stop »
+  why: Le lien de désinscription pointe vers un hôte du type remove.exemple.com ou stop.exemple.net. Motif
+    repéré chez les spammeurs qui changent de domaine à chaque campagne.
+  fix:
+  - Hébergez la page de désinscription sur votre domaine ou celui de votre outil d'envoi, avec un chemin
+    (/desinscription).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_optout_usme
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URI_OPTOUT_USME)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m,^https?://(?:quit|bye|remove|exit|leave|...)\d*\.[^/]+\.(?:us|me|mobi|club)\b,i.
+      Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - URI_OPTOUT_USME
+  title: Lien de désinscription « remove » ou « stop » en .us, .me, .mobi ou .club
+  why: Le lien de désinscription pointe vers un sous-domaine d'arrêt dans une extension souvent abusée.
+  fix:
+  - Utilisez le lien de désinscription natif de votre outil d'envoi.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_novowel
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(URI_NOVOWEL)
+    notes: 'score SA 4.0.x : 0.5 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m%^https?://[^/?&#]*[bcdfgjklmnpqrstvwxz]{7}(?!.{8,32}awstrack\.me).{8,32}%i
+      : 7 consonnes consécutives dans le nom d''hôte.'
+  sa_rules:
+  - URI_NOVOWEL
+  title: Lien vers un nom d'hôte avec une longue suite de consonnes
+  why: Un lien pointe vers un hôte qui contient sept consonnes d'affilée, comme les domaines générés au
+    hasard. Les domaines de suivi des outils d'envoi (identifiants codés) le déclenchent parfois.
+  fix:
+  - Configurez un domaine de suivi personnalisé lisible (clic.{domain}) dans votre outil d'envoi.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_uri_tests.cf
+- id: sa.uri_hex
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(URI_HEX)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m%^https?://[^/?&#]*\b(?![0-9a-f]{0,12}[a-f]{3})[0-9a-f]{6,}\b%i.'
+  sa_rules:
+  - URI_HEX
+  title: Lien vers un nom d'hôte avec une longue suite hexadécimale
+  why: Le nom d'hôte d'un lien contient au moins six caractères hexadécimaux (a1b2c3), typique des sous-domaines
+    générés. Pénalité faible.
+  fix:
+  - Utilisez des noms d'hôte lisibles dans les liens, notamment pour le suivi des clics.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_uri_tests.cf
+- id: sa.numeric_http_addr
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(NUMERIC_HTTP_ADDR)
+    notes: 'score SA 4.0.x : 1.242 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m{^https?://[\d.]+(?:[:/?#]|$)}i.'
+  sa_rules:
+  - NUMERIC_HTTP_ADDR
+  title: Lien vers une adresse IP au lieu d'un nom de domaine
+  why: Un lien pointe vers une adresse IP (http://203.0.113.10/...). Aucun site sérieux ne fait cela dans
+    un e-mail, et les filtres de liens ne peuvent rien vérifier. Plus d'un point.
+  fix:
+  - Remplacez l'IP par le nom de domaine du site.
+  - Pour un lien de test ou de recette laissé dans un modèle, remplacez-le par l'adresse de production.
+  example_bad: http://203.0.113.10/promo
+  example_good: https://www.exemple.fr/promo
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_uri_tests.cf
+- id: sa.normal_http_to_ip
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(NORMAL_HTTP_TO_IP)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m{^https?://(?!10\.|127\.|169\.254\.|172\.(?:1[6-9]|2\d|3[01])\.|192\.168\.)\d+\.\d+\.\d+\.\d+\b}i.'
+  sa_rules:
+  - NORMAL_HTTP_TO_IP
+  title: Lien vers une adresse IPv4 publique
+  why: Un lien pointe vers une adresse IP publique. Score symbolique, mais NUMERIC_HTTP_ADDR se déclenche
+    en général en même temps.
+  fix:
+  - Utilisez un nom de domaine dans les liens.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_uri_tests.cf
+- id: sa.https_http_mismatch
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(HTTPS_HTTP_MISMATCH)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_https_http_mismatch(''1'',
+      ''10'') : de 1 à 9 liens, dont au moins un a un texte visible https://domaineA alors que href pointe
+      vers un domaine B différent.'
+  sa_rules:
+  - HTTPS_HTTP_MISMATCH
+  title: Le texte d'un lien affiche un autre domaine que sa destination
+  why: Un lien affiche https://www.exemple.fr mais mène en réalité vers un autre domaine. C'est la technique
+    de base de l'hameçonnage ; une newsletter dont les liens passent par un domaine de suivi tout en affichant
+    l'adresse finale en clair la déclenche aussi.
+  fix:
+  - 'N''écrivez pas une adresse https:// comme texte de lien : mettez un libellé (« Voir la boutique »).'
+  - Ou configurez le suivi des clics sur un sous-domaine de {domain} pour que le domaine affiché et le
+    domaine réel concordent.
+  example_bad: <a href="https://trk.outil-envoi.com/c/123">https://www.exemple.fr</a>
+  example_good: <a href="https://trk.outil-envoi.com/c/123">Voir la boutique</a>
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_phishing.cf
+- id: sa.http_escaped_host
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(HTTP_ESCAPED_HOST)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : uri /^https?:\/\/[^\/\s\?\&\#\'']*%[0-9a-fA-F][0-9a-fA-F]/
+      hors %20 et %3C/%3E suivis d''une URL.'
+  sa_rules:
+  - HTTP_ESCAPED_HOST
+  title: Nom d'hôte d'un lien encodé en %
+  why: Le nom d'hôte d'un lien contient des caractères encodés (%2E au lieu d'un point), procédé pour
+    masquer la vraie destination. Pénalité faible.
+  fix:
+  - Écrivez le nom d'hôte en clair ; seuls les paramètres après ? peuvent être encodés.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_uri_tests.cf
+- id: sa.http_excessive_escapes
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTTP_EXCESSIVE_ESCAPES)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : uri /^https?:\/\/\S*%(?:3\d|[46][1-9a-f]|[57][\da])/i
+      : lettres ou chiffres encodés en %.'
+  sa_rules:
+  - HTTP_EXCESSIVE_ESCAPES
+  title: Lien avec des encodages % inutiles
+  why: Un lien encode des lettres ou des chiffres ordinaires (%61 pour a). Score symbolique.
+  fix:
+  - N'encodez dans les liens que les caractères qui l'exigent (espaces, accents, &).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_uri_tests.cf
+- id: sa.weird_port
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(WEIRD_PORT)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m{https?://[^/?\s]+?:\d+(?<!:80)(?<!:443)(?<!:8080)(?:/|\s|$)}
+      : port autre que 80, 443 ou 8080.'
+  sa_rules:
+  - WEIRD_PORT
+  title: Lien avec un port inhabituel
+  why: Un lien précise un port réseau inhabituel (https://exemple.fr:8443/). Souvent un lien de préproduction
+    ou d'administration oublié. Score symbolique.
+  fix:
+  - Utilisez l'adresse publique du site sans numéro de port.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_uri_tests.cf
+- id: sa.uri_truncated
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URI_TRUNCATED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uri_truncated()
+      : une URL dépasse 8 192 caractères, ou le nombre d''URL dépasse les limites d''analyse.'
+  sa_rules:
+  - URI_TRUNCATED
+  title: Un lien a été tronqué pendant l'analyse
+  why: 'Un lien dépasse 8 192 caractères ou le message contient trop de liens : SpamAssassin n''a pas
+    tout analysé. Score symbolique, mais un lien de cette taille est anormal.'
+  fix:
+  - Raccourcissez les liens trop longs (paramètres de suivi en excès) et limitez le nombre de liens.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.uri_data
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URI_DATA)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri /^data:(?!image\/)[a-z]/i,
+      hors réseau de confiance, liste, List-Unsubscribe et enveloppe égale au From.'
+  sa_rules:
+  - URI_DATA
+  title: 'Lien en data: (contenu embarqué dans l''adresse)'
+  why: 'Un lien utilise le schéma data: pour embarquer un document (souvent du HTML) dans l''adresse elle-même.
+    C''est une technique d''hameçonnage pour afficher une fausse page sans serveur.'
+  fix:
+  - Remplacez ce lien par un lien vers une page hébergée sur votre site.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_wpadmin
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(URI_WPADMIN)
+    notes: 'score SA 4.0.x : 1.373 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri m,/wp-admin/\w+/,i.'
+  sa_rules:
+  - URI_WPADMIN
+  title: Lien vers l'administration d'un WordPress
+  why: Un lien pointe dans /wp-admin/ d'un site WordPress. Les hameçonnages hébergent leurs fausses pages
+    dans des WordPress piratés ; un lien d'administration dans une newsletter est aussi une erreur.
+  fix:
+  - Remplacez le lien par l'adresse publique de la page (sans /wp-admin/).
+  fix_by_provider:
+    wordpress: Copiez le lien depuis le bouton « Voir » de l'article et non depuis l'écran d'édition.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_wp_hacked
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(URI_WP_HACKED)
+    notes: 'score SA 4.0.x : 2.627 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri /wp-content/...\.(php|html?)
+      ou /wp-includes/...\.(php|html?), hors liste, Errors-To, relais smtp, fil de discussion et message
+      authentifié.'
+  sa_rules:
+  - URI_WP_HACKED
+  title: Lien vers un fichier PHP ou HTML dans wp-content ou wp-includes
+  why: 'Un lien pointe vers un fichier .php ou .html dans wp-content ou wp-includes. Ces répertoires ne
+    contiennent normalement que des images et des scripts internes : c''est le chemin type d''une page
+    déposée par un pirate. Plus de 2,5 points.'
+  fix:
+  - 'Si le lien vous appartient, vérifiez ce fichier : s''il n''a rien à faire là, le site est compromis.'
+  - Pour un lien légitime vers un document, utilisez l'adresse de la page publique ou d'un PDF dans uploads.
+  - 'Authentifiez le message (SPF ou DKIM) : la règle ne s''applique pas aux messages authentifiés.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_php_redir
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URI_PHP_REDIR)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri m;/redirect\.php\?;i,
+      sans Return-Path VERP ni relais mta.'
+  sa_rules:
+  - URI_PHP_REDIR
+  title: Lien qui passe par redirect.php
+  why: Un lien passe par un script redirect.php qui renvoie vers une autre adresse. Les redirections ouvertes
+    de sites tiers servent à masquer des destinations malveillantes.
+  fix:
+  - Mettez l'adresse de destination directement dans le lien.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.url_shortener_disabled
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(URL_SHORTENER_DISABLED)
+    notes: 'score SA 4.0.x : 2 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m,^https://(?:bitly\.com/a/blocked|tinyurl\.com/app/nospam),
+      : le lien raccourci, une fois déplié, mène à la page de blocage de Bitly ou TinyURL. Dépend du plugin
+      DecodeShortURLs, non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur
+      de test l''active.'
+  sa_rules:
+  - URL_SHORTENER_DISABLED
+  title: Lien raccourci désactivé pour abus
+  why: Un lien raccourci a été suspendu par le service de raccourcissement pour abus. Le lecteur arrivera
+    sur une page d'avertissement, et SpamAssassin ajoute 2 points.
+  fix:
+  - Remplacez le lien raccourci par l'adresse complète de la page.
+  - 'N''utilisez pas de raccourcisseur public dans un e-mail : il est partagé avec des spammeurs.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_url_shortener.cf
+- id: sa.url_shortener_chained
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URL_SHORTENER_CHAINED)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : short_url_chained()
+      : un lien raccourci se déplie vers un autre lien raccourci. Dépend du plugin DecodeShortURLs, non
+      chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - URL_SHORTENER_CHAINED
+  title: Lien raccourci qui renvoie vers un autre raccourcisseur
+  why: Un lien raccourci mène à un autre lien raccourci. L'enchaînement sert à masquer la destination
+    finale. Score symbolique, mais les filtres de liens le notent.
+  fix:
+  - Utilisez l'adresse finale directement, sans raccourcisseur.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_url_shortener.cf
+- id: sa.t_short_shortner
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_SHORT_SHORTNER)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : corps ou HTML
+      de moins de 512 octets && __URL_SHORTENER (plugin DecodeShortURLs ou, à défaut, expression régulière
+      sur la même liste : bit.ly, tinyurl.com, t.co, goo.gl, youtu.be, amzn.to, eepurl.com, wp.me, lnkd.in...).
+      Règle de test T_. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_SHORT_SHORTNER
+  title: Message court contenant surtout un lien raccourci
+  why: Le message tient en quelques mots et un lien raccourci. La liste de SpamAssassin compte aussi youtu.be,
+    amzn.to, wp.me ou eepurl.com (Mailchimp). Profil type d'un spam ou d'un message de compte piraté.
+    Règle de test sans poids.
+  fix:
+  - Ajoutez du contexte au message et utilisez l'adresse complète de la page.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_urlshort.cf
+- id: sa.redir_url_chained
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(REDIR_URL_CHAINED)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : redir_url_chained()
+      (plugin Redirectors) : une URL de redirection mène à un autre redirecteur. Dépend du plugin Redirectors,
+      non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - REDIR_URL_CHAINED
+  title: Lien redirigé vers d'autres redirecteurs
+  why: Un lien passe par plusieurs services de redirection successifs. Score symbolique, mais c'est un
+    moyen classique de cacher une destination.
+  fix:
+  - Limitez la chaîne à un seul passage (le suivi de votre outil d'envoi) puis l'adresse finale.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_url_redirectors.cf
+- id: sa.redir_url_loop
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(REDIR_URL_LOOP)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : redir_url_loop() (plugin
+      Redirectors). Dépend du plugin Redirectors, non chargé par défaut dans SpamAssassin 4.0 : la règle
+      n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - REDIR_URL_LOOP
+  title: Lien redirigé qui boucle sur lui-même
+  why: Un lien de redirection revient vers lui-même. Le lecteur n'atteindra jamais la page.
+  fix:
+  - Testez le lien dans un navigateur et corrigez la redirection.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_url_redirectors.cf
+- id: sa.redir_url_maxchain
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(REDIR_URL_MAXCHAIN)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : redir_url_maxchain()
+      (plugin Redirectors) : le nombre maximal de redirections suivies est dépassé. Dépend du plugin Redirectors,
+      non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - REDIR_URL_MAXCHAIN
+  title: Lien avec trop de redirections
+  why: Le lien passe par tant de redirections que l'analyse s'est arrêtée. Les navigateurs aussi peuvent
+    abandonner.
+  fix:
+  - Réduisez le nombre de redirections entre le lien du message et la page finale.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_url_redirectors.cf
+- id: sa.gb_google_obfur
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(GB_GOOGLE_OBFUR)
+    notes: 'score SA 4.0.x : 0.75 (sa-update r1939780, jeu réseau + Bayes). Teste : uri /^https:\/\/www\.google\.[a-z]{2,3}\/url\?sa=t&rct=j&q=&esrc=s&source=web&cd=...&url=https?:\/\/.../
+      : lien copié depuis une page de résultats Google.'
+  sa_rules:
+  - GB_GOOGLE_OBFUR
+  title: Lien masqué derrière une redirection Google
+  why: Le lien est une adresse google.com/url?...&url=... copiée depuis une page de résultats Google.
+    Elle cache la vraie destination et les spammeurs l'utilisent pour contourner les listes noires.
+  fix:
+  - Ouvrez le lien, puis copiez l'adresse réelle de la page dans la barre du navigateur.
+  example_bad: https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=1&url=https://www.exemple.fr/
+  example_good: https://www.exemple.fr/
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/gbechis/20_misc.cf
+- id: sa.uri_google_proxy
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URI_GOOGLE_PROXY)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri m;^https?://(?:[^/]+\.)?googleusercontent\.com/proxy/;i,
+      hors relais Google, Message-ID hexadécimal et X-Campaignid. Pas de ligne score : valeur par défaut
+      de SpamAssassin.'
+  sa_rules:
+  - URI_GOOGLE_PROXY
+  title: Lien qui passe par le proxy d'images de Google
+  why: Un lien ou une image passe par googleusercontent.com/proxy/, l'adresse que Gmail donne aux images
+    qu'il met en cache. Elle apparaît quand on copie une image depuis un message reçu dans Gmail.
+  fix:
+  - Réinsérez les images depuis leur fichier d'origine ou leur adresse sur votre site.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_dq_unsub
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URI_DQ_UNSUB)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri m;^[a-z]+://(?:\d+\.){3}\d+/.*unsubscribe;i.
+      Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - URI_DQ_UNSUB
+  title: Lien de désinscription vers une adresse IP
+  why: Le lien de désinscription pointe vers une adresse IP. Les destinataires et les filtres n'ont aucun
+    moyen d'identifier l'expéditeur.
+  fix:
+  - Hébergez la désinscription sous un nom de domaine (le vôtre ou celui de l'outil d'envoi).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.spoof_com2com
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SPOOF_COM2COM)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri m{^https?://(?:\w+\.)+?com\.(?!s3.amazonaws.com|psmtp.com)(?:\w+\.)+?com\b}i.'
+  sa_rules:
+  - SPOOF_COM2COM
+  title: Lien avec .com au milieu et à la fin du nom d'hôte
+  why: Le nom d'hôte du type banque.com.autre-site.com imite un domaine connu. Score symbolique, mais
+    c'est un motif d'usurpation.
+  fix:
+  - 'Évitez les sous-domaines qui contiennent « .com » : utilisez le domaine réel.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_uri_tests.cf
+- id: sa.spoof_com2oth
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SPOOF_COM2OTH)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m{^https?://(?:\w+\.)+?com\.(?!...)(?:\w+\.){2}}i.'
+  sa_rules:
+  - SPOOF_COM2OTH
+  title: Lien avec .com au milieu du nom d'hôte
+  why: Le nom d'hôte contient « .com. » au milieu (exemple.com.site.fr). Score symbolique.
+  fix:
+  - Utilisez un nom d'hôte sans « .com » intermédiaire.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_uri_tests.cf
+- id: sa.long_hex_uri
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(LONG_HEX_URI)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri m,/[0-9a-f]{128},
+      : segment de 128 caractères hexadécimaux, hors corps de moins de 1 024 octets et images S3.'
+  sa_rules:
+  - LONG_HEX_URI
+  title: Lien avec une très longue suite hexadécimale
+  why: Un lien contient un identifiant hexadécimal de 128 caractères. Les liens de suivi personnalisés
+    par destinataire en génèrent parfois. 1 point.
+  fix:
+  - Si c'est le lien de suivi de votre outil, utilisez un identifiant plus court ou un domaine de suivi
+    personnalisé.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uppercase_uri
+  family: spamassassin
+  severity: high
+  penalty: 1.4
+  detect:
+    signal: spamassassin.hit(UPPERCASE_URI)
+    notes: 'score SA 4.0.x : 2.749 (sa-update r1939780, jeu réseau + Bayes). Teste : uri m;^[^:A-Z]+[A-Z][a-zA-Z]*://;
+      : majuscule après une minuscule dans le schéma (hTTp://, htTPS://).'
+  sa_rules:
+  - UPPERCASE_URI
+  title: Protocole de lien écrit avec une casse inhabituelle
+  why: Le début d'un lien mélange minuscules et majuscules (hTTps://). Procédé pour contourner des filtres
+    naïfs. Près de 3 points.
+  fix:
+  - Écrivez https:// en minuscules dans tous les liens.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/khopesh/20_khop_experimental.cf
+- id: sa.uri_excess_slashes
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(URI_EXCESS_SLASHES)
+    notes: 'score SA 4.0.x : 2.5 (sa-update r1939780, jeu réseau + Bayes). Teste : meta rawbody m;https?:///+;i,
+      message non multipart.'
+  sa_rules:
+  - URI_EXCESS_SLASHES
+  title: Lien avec trop de barres obliques après le protocole
+  why: Un lien commence par https:/// (trois barres ou plus). Les navigateurs le corrigent, les filtres
+    y voient une tentative de contournement. 2,5 points.
+  fix:
+  - 'Corrigez le lien : https:// suivi directement du domaine.'
+  - Vérifiez la variable de modèle qui construit le lien (domaine vide, barre en trop).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.body_uri_only
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(BODY_URI_ONLY)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : moins de 3
+      lignes de texte et au moins un lien, sans authentification, DKIM, liste ni fil de discussion.'
+  sa_rules:
+  - BODY_URI_ONLY
+  title: Le corps du message n'est qu'un lien
+  why: Le message se réduit à un lien ou à une image cliquable. Score symbolique, mais c'est le profil
+    des messages envoyés depuis des comptes piratés.
+  fix:
+  - Ajoutez une ou deux phrases qui expliquent le lien et signez le message en DKIM.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.mxg_email_frag
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(MXG_EMAIL_FRAG)
+    notes: 'score SA 4.0.x : 0.099 (sa-update r1939780, jeu réseau + Bayes). Teste : uri_detail raw =~
+      /^http.*\#adresse@domaine/ : adresse e-mail dans le fragment de l''URL.'
+  sa_rules:
+  - MXG_EMAIL_FRAG
+  title: 'Lien contenant une adresse e-mail après #'
+  why: 'Un lien contient une adresse e-mail après le #. Les hameçonnages s''en servent pour préremplir
+    une fausse page de connexion. Pénalité faible.'
+  fix:
+  - Passez l'identifiant du destinataire par un paramètre opaque, pas son adresse e-mail en clair.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/fkento/20_misc.cf
+- id: sa.tracker_id
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(TRACKER_ID)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : body /^[a-z0-9]{6,24}[-_a-z0-9]{12,36}[a-z0-9]{6,24}\s*\z/is
+      : un paragraphe ne contient qu''une longue chaîne alphanumérique.'
+  sa_rules:
+  - TRACKER_ID
+  title: Paragraphe réduit à un identifiant de suivi
+  why: Un paragraphe du message n'est qu'un code aléatoire, comme ceux que les spammeurs ajoutent pour
+    rendre chaque message unique. Pénalité faible.
+  fix:
+  - Retirez les identifiants techniques visibles dans le texte ; placez-les dans les liens ou les en-têtes.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.uri_firebaseapp
+  family: spamassassin
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: spamassassin.hit(URI_FIREBASEAPP)
+    notes: 'score SA 4.0.x : 2.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri m,://[^./]+\.firebaseapp\.com/,
+      ou m,://[^./]+\.web\.app/,.'
+  sa_rules:
+  - URI_FIREBASEAPP
+  title: Lien vers une application hébergée sur firebaseapp.com ou web.app
+  why: Un lien mène à une application hébergée chez Firebase. Ces hébergements gratuits servent beaucoup
+    aux pages d'hameçonnage, d'où près de 3 points même pour une application légitime.
+  fix:
+  - Associez un domaine personnalisé à l'application Firebase et utilisez-le dans les liens.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.t_pds_other_bad_tld
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_PDS_OTHER_BAD_TLD)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uri_host_listed(''SUSP_URI_NTLD'')
+      : un lien pointe vers .icu, .online, .work, .date, .top, .fun, .life, .review, .bid, .stream, .gdn,
+      .click, .world, .fit, .ooo, .faith, .buzz, .trade, .cyou, .vip ou .xyz. Règle de test T_. Pas de
+      ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_PDS_OTHER_BAD_TLD
+  title: Lien vers une extension de domaine peu fiable
+  why: Un lien pointe vers une extension que les règles classent comme peu fiable. Règle de test sans
+    poids, mais d'autres filtres pénalisent ces extensions.
+  fix:
+  - Si c'est votre domaine, envisagez une extension plus répandue pour les liens des campagnes.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_ntld.cf
+- id: sa.shortener_short_img
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(SHORTENER_SHORT_IMG)
+    notes: 'score SA 4.0.x : 2.042 (sa-update r1939780, jeu réseau + Bayes). Teste : meta __URL_SHORTENER
+      && HTML_SHORT_LINK_IMG_1 (HTML de moins de 1 024 octets avec image cliquable). __URL_SHORTENER vaut
+      short_url() si DecodeShortURLs est chargé, sinon une expression régulière sur la même liste de raccourcisseurs.'
+  sa_rules:
+  - SHORTENER_SHORT_IMG
+  title: HTML court avec image cliquable et lien raccourci
+  why: Le message est un HTML minuscule avec une image cliquable vers un lien raccourci. Combinaison typique
+    du spam. Plus de 2 points.
+  fix:
+  - Remplacez le lien raccourci par l'adresse complète et ajoutez du texte au message.
+  - 'Attention : youtu.be, amzn.to, wp.me et eepurl.com comptent comme raccourcisseurs ; utilisez les
+    adresses longues.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf

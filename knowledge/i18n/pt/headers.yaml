@@ -1,0 +1,272 @@
+headers.message_id_missing:
+  title: "A mensagem não tem o cabeçalho Message-ID"
+  why: "O Gmail exige um Message-ID válido em cada mensagem. Sem ele, a mensagem parece um envio fabricado por um script, e a conversa não pode ser reconstituída no destinatário."
+  fix:
+    - "Deixe o servidor de envio adicionar o Message-ID, em vez de montar os cabeçalhos à mão no seu código."
+    - "Se o seu script escrever os cabeçalhos, acrescente uma linha Message-ID no formato <identificador-unico@{domain}>."
+    - "Envie um novo teste e verifique se o cabeçalho aparece uma única vez."
+  fix_by_provider:
+    wordpress: "Envie por SMTP autenticado com uma extensão como WP Mail SMTP ou FluentSMTP: o PHPMailer gera então o Message-ID. Não acrescente um Message-ID vazio no array $headers de wp_mail()."
+    postfix: "O Postfix acrescenta o Message-ID que faltar nas mensagens enviadas localmente. Para as mensagens repassadas pela rede, acrescente always_add_missing_headers = yes no main.cf e execute postfix reload."
+headers.message_id_malformed:
+  title: "O Message-ID não segue a sintaxe <identificador@domínio>"
+  why: "Um Message-ID malformado indica um cabeçalho escrito à mão. Alguns filtros o consideram um indício de spam, e as respostas podem não se vincular à conversa certa."
+  fix:
+    - "Escreva o Message-ID entre < >, com uma parte à esquerda única, um @ e um nome de domínio à direita."
+    - "Não coloque espaços nem acentos no identificador."
+    - "O mais simples: remova a linha do seu código e deixe o servidor de envio gerá-la."
+headers.message_id_localhost:
+  title: "O Message-ID termina em localhost ou em um nome não qualificado"
+  why: "Um Message-ID com @localhost mostra que o servidor que montou a mensagem não conhece o próprio nome. É a assinatura habitual de scripts e de servidores mal configurados."
+  fix:
+    - "Dê ao servidor de envio um nome completo, por exemplo mail.{domain}, que seja resolvido no DNS."
+    - "No seu código, monte a parte direita do Message-ID com {domain} em vez do nome da máquina."
+  fix_by_provider:
+    postfix: "No main.cf, defina myhostname = mail.{domain} e mydomain = {domain}, depois execute postfix reload."
+    wordpress: "O Message-ID do PHPMailer usa o nome do servidor web. Acrescente um filtro phpmailer_init que defina $phpmailer->Hostname = '{domain}', ou use uma extensão SMTP."
+headers.date_missing:
+  title: "O cabeçalho Date está ausente"
+  why: "Date é um dos dois cabeçalhos obrigatórios de qualquer e-mail. Sem ele, a mensagem não está em conformidade com a RFC 5322, que o Gmail e o Yahoo exigem que seja respeitada, e ela será mal classificada na caixa de entrada."
+  fix:
+    - "Deixe o servidor de envio adicionar o cabeçalho Date, em vez de escrevê-lo você mesmo."
+    - "Se o seu código o gerar, use o formato RFC 5322, com o fuso em +hhmm."
+  fix_by_provider:
+    postfix: "Acrescente always_add_missing_headers = yes no main.cf se as mensagens chegarem de outra máquina sem Date, depois execute postfix reload."
+    wordpress: "Use uma extensão SMTP: o PHPMailer acrescenta o cabeçalho Date. Não o remova no filtro wp_mail."
+headers.date_future:
+  title: "A data da mensagem está no futuro"
+  why: "Uma data adiantada coloca a mensagem no topo da caixa de entrada por horas. Os filtros conhecem esse truque e o penalizam. No seu teste, a diferença medida foi de {value}."
+  fix:
+    - "Sincronize o relógio do servidor que gera a mensagem com NTP (chrony ou systemd-timesyncd)."
+    - "Verifique o fuso horário declarado na sua aplicação: uma hora local seguida de +0000 produz esse deslocamento."
+headers.date_too_old:
+  title: "A data da mensagem é muito antiga"
+  why: "A mensagem traz uma data anterior em {value} à sua recepção. Ela aparecerá enterrada na caixa do destinatário, e os filtros costumam ver aí uma mensagem reenviada ou uma fila travada."
+  fix:
+    - "Verifique se o cabeçalho Date é calculado no momento do envio, e não no momento da criação do rascunho ou do modelo."
+    - "Sincronize o relógio do servidor com NTP."
+    - "Se as mensagens ficarem muito tempo na fila, procure a causa nos logs do servidor de envio."
+headers.date_malformed:
+  title: "O cabeçalho Date não está no formato padrão"
+  why: "Uma data ilegível é substituída pela hora de recebimento, ou interpretada de forma errada. Os filtros veem essa malformação como indício de uma ferramenta de envio improvisada."
+  fix:
+    - "Escreva a data no formato: dia abreviado em inglês, vírgula, dia, mês abreviado em inglês, ano, hora, fuso em +hhmm."
+    - "Não escreva o mês em francês, nem use fuso com letras como CEST."
+    - "Em PHP, use date('r') ou DateTime::RFC2822 em vez de um formato próprio."
+headers.date_timezone_inconsistent:
+  title: "O fuso horário de Date não corresponde à hora real do envio"
+  why: "A hora indicada em Date e a registrada pelo primeiro servidor diferem em {value}. O destinatário vê uma hora errada, e esse desvio é um indício conhecido pelos filtros."
+  fix:
+    - "Defina o fuso horário da sua aplicação (por exemplo Europe/Paris) em vez de forçar +0000."
+    - "Em PHP, defina date.timezone no php.ini ou chame date_default_timezone_set('Europe/Paris') antes de gerar o cabeçalho."
+headers.from_missing:
+  title: "A mensagem não tem remetente (From)"
+  why: "From é obrigatório. Sem ele, o DMARC não tem nenhum domínio para verificar: a maioria dos grandes webmails rejeita a mensagem ou a classifica diretamente como spam."
+  fix:
+    - "Adicione um cabeçalho From com um endereço do seu domínio, por exemplo contato@{domain}."
+    - "Na sua ferramenta de envio, preencha o campo Remetente ou Endereço de envio da campanha ou do formulário."
+  fix_by_provider:
+    wordpress: "No WP Mail SMTP ou no FluentSMTP, preencha From Email com um endereço de {domain} e marque a opção que força esse endereço em todos os envios."
+headers.from_multiple:
+  title: "O cabeçalho From contém vários endereços ou aparece várias vezes"
+  why: "O Google pede um único endereço em From. Vários endereços impedem o DMARC de saber qual domínio verificar: a mensagem costuma ser rejeitada."
+  fix:
+    - "Mantenha apenas um endereço em From, o de {domain}."
+    - "Coloque os outros endereços em Reply-To ou em Cc, se devem receber as respostas."
+    - "Verifique se o seu código não acrescenta um segundo From ao que a biblioteca de envio já fornece."
+headers.from_no_display_name:
+  title: "O remetente não tem nome de exibição"
+  why: "O destinatário vê apenas o endereço bruto, muitas vezes cortado no celular. Um remetente reconhecível é menos denunciado como spam."
+  fix:
+    - "Acrescente um nome de exibição antes do endereço: o nome da sua empresa ou da pessoa que escreve."
+    - "Se o nome tiver vírgula, ponto ou caracteres acentuados, coloque-o entre aspas retas."
+  fix_by_provider:
+    mailchimp: "Na campanha, clique em From e preencha Name com o nome da sua empresa."
+    wordpress: "No WP Mail SMTP, preencha From Name e marque Force From Name."
+headers.from_display_name_has_address:
+  title: "O nome de exibição contém outro endereço de e-mail diferente do remetente real"
+  why: "O nome de exibição mostra {value}, mas o endereço real está em {domain}. É a técnica de falsificação mais difundida: os filtros antiphishing a penalizam severamente."
+  fix:
+    - "Substitua o nome de exibição por um nome sem endereço: o nome da sua empresa ou da pessoa."
+    - "Se quiser que as respostas cheguem a outro endereço, use Reply-To, e não o nome de exibição."
+headers.from_display_name_brand_spoof:
+  title: "O nome de exibição usa uma marca conhecida que não é a sua"
+  why: "O nome de exibição cita {value}, mas a mensagem parte de {domain}. Os filtros antiphishing comparam esse nome com o domínio real e classificam esse tipo de mensagem como tentativa de falsificação."
+  fix:
+    - "Use o nome da sua própria empresa no nome de exibição."
+    - "Se você envia em nome dessa marca, envie a partir do domínio dela, com SPF, DKIM e DMARC configurados por ela."
+headers.reply_to_other_domain:
+  title: "As respostas vão para um domínio diferente do remetente"
+  why: "A mensagem vem de {domain}, mas as respostas irão para {value}. Esse padrão é frequente em phishing: alguns filtros o penalizam, sobretudo se o domínio de resposta for recente."
+  fix:
+    - "Se não for intencional, remova Reply-To ou coloque um endereço de {domain}."
+    - "Se for intencional (atendimento terceirizado), crie um endereço em {domain} que redirecione para esse serviço."
+  fix_by_provider:
+    mailchimp: "Na campanha, seção From, verifique o endereço indicado: o Mailchimp também o usa como endereço de resposta."
+    wordpress: "Verifique o campo Reply-To da sua extensão de formulário (Contact Form 7, WPForms, Gravity Forms): é ali que costuma entrar o endereço do visitante, o que é normal em uma notificação interna."
+headers.reply_to_freemail:
+  title: "As respostas vão para um e-mail gratuito"
+  why: "A mensagem parte de {domain}, mas pede que se responda a um endereço {value}. É o padrão típico da fraude do falso fornecedor: os filtros o identificam e o punem."
+  fix:
+    - "Crie um endereço de resposta em {domain} e use-o em Reply-To."
+    - "Se você recebe seu e-mail em um serviço gratuito, redirecione o endereço de {domain} para ele, em vez de expor o endereço gratuito."
+headers.sender_inconsistent:
+  title: "O cabeçalho Sender aponta para um domínio diferente de From"
+  why: "O Outlook então exibe “{value} em nome de {domain}”, o que preocupa o destinatário e aumenta as denúncias como spam."
+  fix:
+    - "Remova o cabeçalho Sender se o remetente real for mesmo {domain}."
+    - "Se a sua ferramenta de envio o acrescentar, configure um domínio de envio autenticado em {domain}: a maioria das ferramentas então remove Sender."
+headers.return_path_other_domain:
+  title: "O endereço de retorno (Return-Path) está em outro domínio"
+  why: "Os retornos de entrega vão para {envelope_domain}, e não para {domain}. É normal com uma ferramenta de envio, mas então o SPF não pode alinhar com {domain}: só o DKIM pode validar o DMARC."
+  fix:
+    - "Na sua ferramenta de envio, configure um domínio de retorno personalizado (muitas vezes chamado de Return-Path, bounce domain ou MAIL FROM) em um subdomínio de {domain}."
+    - "Publique o registro CNAME ou MX que a ferramenta indicar para esse subdomínio."
+  fix_by_provider:
+    sendgrid: "Settings > Sender Authentication > Authenticate Your Domain: o assistente cria um subdomínio de retorno em {domain}."
+    amazon_ses: "No console do SES, identidade {domain} > Custom MAIL FROM domain: escolha um subdomínio e depois publique o MX e o TXT do SPF indicados."
+    mailgun: "O domínio de envio declarado no Mailgun deve ser um subdomínio de {domain} (por exemplo mg.{domain}): ele então serve de Return-Path."
+headers.to_missing:
+  title: "A mensagem não tem destinatário visível (To)"
+  why: "Sem To, a mensagem parece enviada em cópia oculta para uma lista. É um indício clássico de envio em massa não solicitado para os filtros."
+  fix:
+    - "Envie uma mensagem por destinatário, com o endereço dele em To."
+    - "Para uma lista, use uma ferramenta de envio que personalize To para cada contato, em vez de usar cópia oculta."
+headers.to_undisclosed:
+  title: "O destinatário exibido é “undisclosed-recipients”"
+  why: "Este rótulo indica um envio em grupo com cópia oculta. Os filtros o tratam como envio em massa sem personalização, muitas vezes classificado como spam."
+  fix:
+    - "Não coloque seus contatos em Cco para um envio coletivo: use uma ferramenta de newsletter que endereça cada mensagem a um único destinatário."
+    - "Para poucos destinatários, faça uma mala direta (mesclagem) pelo seu e-mail."
+headers.subject_missing:
+  title: "A mensagem não tem assunto"
+  why: "Uma mensagem sem assunto raramente é aberta e costuma ser denunciada como spam. Combinada a um corpo vazio, ela é classificada como spam de alta confiança pelos filtros da Microsoft quando essa opção está ativa."
+  fix:
+    - "Adicione um assunto que resuma a mensagem em poucas palavras."
+    - "Verifique se o seu modelo ou formulário preenche a variável do assunto."
+headers.subject_empty:
+  title: "O assunto da mensagem está vazio"
+  why: "O cabeçalho Subject existe, mas não contém nada. Quase sempre é uma variável de modelo não preenchida, e a mensagem aparece como “(sem assunto)” para o destinatário."
+  fix:
+    - "Verifique a variável que alimenta o assunto no seu modelo ou código."
+    - "Preveja um assunto padrão para quando a variável estiver vazia."
+headers.subject_all_caps:
+  title: "O assunto está escrito em maiúsculas"
+  why: "Um assunto em caixa alta é percebido como agressivo e está entre os critérios históricos dos filtros antispam. Ele também aumenta as denúncias pelos destinatários."
+  fix:
+    - "Reescreva o assunto em minúsculas, com letra maiúscula no início da frase e nos nomes próprios."
+    - "Para destacar uma palavra, coloque-a no início do assunto em vez de escrevê-la em maiúsculas."
+headers.subject_emoji_excess:
+  title: "O assunto contém muitos emojis"
+  why: "O assunto tem {value} emojis. Acima de um ou dois, eles fazem a mensagem parecer uma promoção agressiva e são exibidos mal em alguns clientes."
+  fix:
+    - "Mantenha um único emoji, no início ou no fim do assunto, se ele tiver sentido."
+    - "Verifique se o assunto continua compreensível sem o emoji."
+headers.subject_encoding_broken:
+  title: "O assunto contém acentos mal codificados"
+  why: "Os acentos do assunto não estão codificados segundo a RFC 2047. O destinatário pode ver caracteres estranhos como Ã©, e os filtros contam essa malformação contra você."
+  fix:
+    - "Deixe sua biblioteca de envio codificar o assunto: passe a ela uma string UTF-8 sem codificá-la você mesmo."
+    - "Em PHP com mail(), codifique o assunto com mb_encode_mimeheader($sujet, 'UTF-8', 'B'), ou, melhor ainda, passe a usar o PHPMailer."
+    - "Não corte uma palavra codificada no meio de um caractere multibyte."
+headers.subject_fake_reply:
+  title: "O assunto começa com RE: ou TR: sem ser uma resposta de verdade"
+  why: "Fazer parecer que existe uma conversa anterior é uma técnica conhecida de phishing. Os filtros verificam a presença de In-Reply-To e References e punem a imitação."
+  fix:
+    - "Remova RE:, TR: ou FWD: do assunto de uma primeira mensagem."
+    - "Para uma resposta de verdade, use a função Responder do seu e-mail, que acrescenta In-Reply-To e References."
+headers.x_mailer_phpmailer:
+  title: "Os cabeçalhos revelam um envio a partir de um script PHP"
+  why: "O cabeçalho {value} mostra que a mensagem sai diretamente de um script PHP. Scripts PHP invadidos são uma grande fonte de spam: alguns filtros acrescentam pontos só por esse indício."
+  fix:
+    - "Envie por SMTP autenticado para um servidor de e-mail real, em vez de usar a função mail()."
+    - "Oculte o cabeçalho X-Mailer do PHPMailer dando a ele o valor de um espaço."
+    - "Desative mail.add_x_header no php.ini para remover X-PHP-Originating-Script."
+  fix_by_provider:
+    wordpress: "Acrescente em uma extensão própria: add_action('phpmailer_init', function($m){ $m->XMailer = ' '; }); depois configure o WP Mail SMTP ou o FluentSMTP para enviar por SMTP autenticado."
+    cpanel: "No MultiPHP INI Editor, defina mail.add_x_header como Off para o domínio."
+headers.x_mailer_bulk_tool:
+  title: "A mensagem é enviada com um software associado ao spam"
+  why: "O cabeçalho X-Mailer indica {value}, um software de envio em massa muito usado por spammers. Os filtros reconhecem sua assinatura e penalizam todas as mensagens que ele produz."
+  fix:
+    - "Use uma plataforma de envio reconhecida, que cuide da autenticação, dos cancelamentos de inscrição e dos retornos."
+    - "Se mantiver esse software, remova o cabeçalho X-Mailer nas configurações dele, mas saiba que a assinatura dele continua reconhecível no restante da mensagem."
+headers.duplicate_single_instance:
+  title: "Um cabeçalho que deve ser único aparece várias vezes"
+  why: "O cabeçalho {value} aparece mais de uma vez. O Gmail exige que esses cabeçalhos apareçam uma só vez: uma duplicação torna a mensagem não conforme e pode provocar uma rejeição."
+  fix:
+    - "Procure no seu código ou na sua extensão o ponto em que {value} é acrescentado uma segunda vez."
+    - "Se um relay acrescentar o cabeçalho que já existe, remova-o da sua aplicação e deixe o relay cuidar disso."
+headers.received_too_many:
+  title: "A mensagem atravessou um número incomum de servidores"
+  why: "A mensagem traz {value} cabeçalhos Received. Uma cadeia tão longa costuma indicar um laço de redirecionamento ou um relay mal configurado, e um servidor acaba rejeitando a mensagem."
+  fix:
+    - "Liste os servidores nos cabeçalhos Received, de baixo para cima, para identificar o que se repete."
+    - "Elimine os redirecionamentos em cadeia entre caixas ou entre domínios, e faça a mensagem sair diretamente do seu servidor de envio."
+  fix_by_provider:
+    postfix: "O Postfix rejeita além de hopcount_limit (postconf hopcount_limit mostra o valor). Procure o laço em vez de aumentar esse limite."
+headers.precedence_bulk:
+  title: "O cabeçalho Precedence classifica a mensagem como envio em massa"
+  why: "Precedence: {value} indica um envio em massa. Em uma mensagem transacional (fatura, senha), ele empurra a mensagem para as abas de promoções ou para o spam."
+  fix:
+    - "Remova Precedence das mensagens transacionais."
+    - "Para impedir respostas automáticas, use Auto-Submitted: auto-generated, definido pela RFC 3834."
+headers.mime_version_missing:
+  title: "O cabeçalho MIME-Version está ausente"
+  why: "Sem MIME-Version, o cliente pode ignorar as partes HTML, os anexos e a codificação dos acentos. Os filtros veem aí uma mensagem fabricada sem biblioteca de envio."
+  fix:
+    - "Acrescente a linha MIME-Version: 1.0 nos cabeçalhos."
+    - "Melhor ainda: use uma biblioteca de envio (PHPMailer, Symfony Mailer, Nodemailer, a biblioteca de e-mail do Python) que monte os cabeçalhos MIME corretamente."
+headers.charset_missing:
+  title: "O conjunto de caracteres não está declarado"
+  why: "O texto contém acentos, mas nenhum charset é indicado: o cliente supõe ASCII e exibe caracteres estranhos no lugar das letras acentuadas."
+  fix:
+    - "Declare o conjunto de caracteres no Content-Type de cada parte de texto: charset=UTF-8."
+    - "Na parte HTML, acrescente também <meta charset='utf-8'> no head."
+headers.charset_mismatch:
+  title: "O conjunto de caracteres declarado não corresponde ao texto"
+  why: "A parte está declarada como {value}, mas seus bytes estão em outra codificação. Os acentos aparecem mal e os filtros de conteúdo leem um texto deformado."
+  fix:
+    - "Salve seus modelos em UTF-8 e declare charset=UTF-8."
+    - "Se o seu banco de dados estiver em latin1, converta o texto para UTF-8 antes de inseri-lo na mensagem."
+headers.line_too_long:
+  title: "Uma linha da mensagem ultrapassa 998 caracteres"
+  why: "A linha mais longa mede {value} caracteres. Acima de 998, os servidores podem cortar a linha de forma aleatória, o que quebra o HTML, invalida a assinatura DKIM ou faz a mensagem ser rejeitada."
+  fix:
+    - "Codifique a parte HTML em quoted-printable ou base64: essas codificações produzem linhas curtas."
+    - "Ou insira quebras de linha no HTML, entre as tags, antes do envio."
+  fix_by_provider:
+    wordpress: "Use uma extensão SMTP: o PHPMailer escolhe automaticamente quoted-printable quando uma linha é longa demais."
+headers.8bit_without_8bitmime:
+  title: "Conteúdo de 8 bits é enviado sem anunciá-lo ao servidor"
+  why: "A mensagem contém bytes de 8 bits, mas o servidor de envio não os declarou (BODY=8BITMIME). Um relay rigoroso pode rejeitar a mensagem ou estragar os acentos."
+  fix:
+    - "Codifique as partes de texto em quoted-printable ou base64: a mensagem fica em 7 bits e passa em qualquer lugar."
+    - "Ou verifique se o seu servidor de envio anuncia BODY=8BITMIME quando transmite 8 bits."
+  fix_by_provider:
+    postfix: "O Postfix converte para 7 bits quando o servidor remoto não anuncia 8BITMIME (disable_mime_output_conversion = no, valor padrão). Verifique se essa configuração não foi alterada."
+headers.cte_inconsistent:
+  title: "A codificação de transferência declarada não corresponde ao conteúdo"
+  why: "Uma parte declarada como {value} contém dados que não respeitam essa codificação. O cliente pode exibir um texto ilegível, e os filtros veem uma mensagem mal construída."
+  fix:
+    - "Deixe sua biblioteca de envio escolher o Content-Transfer-Encoding, em vez de forçá-lo."
+    - "Se a parte contiver acentos, declare quoted-printable ou base64 e codifique de fato o conteúdo."
+    - "Nunca declare base64 ou quoted-printable em uma parte multipart."
+headers.raw_8bit_in_headers:
+  title: "Cabeçalhos contêm caracteres acentuados não codificados"
+  why: "O cabeçalho {value} contém bytes não ASCII brutos. Os clientes os exibem de forma imprevisível, e alguns servidores rejeitam a mensagem."
+  fix:
+    - "Passe os nomes de exibição e os assuntos acentuados à sua biblioteca de envio como string UTF-8: ela os codificará."
+    - "Para nomes de anexos, deixe a biblioteca aplicar a codificação RFC 2231."
+headers.headers_oversized:
+  title: "Os cabeçalhos da mensagem estão muito grandes"
+  why: "Os cabeçalhos pesam {value}. O Google pede que se evitem cabeçalhos excessivamente grandes: eles costumam denunciar cabeçalhos de rastreamento empilhados ou um laço de relay."
+  fix:
+    - "Liste os cabeçalhos X- acrescentados pelas suas ferramentas e remova os que não servem."
+    - "Verifique se nenhum cabeçalho é repetido a cada passagem por um relay."
+headers.bcc_visible:
+  title: "O cabeçalho Bcc está visível para o destinatário"
+  why: "Os endereços em cópia oculta foram transmitidos na mensagem recebida. Eles ficam expostos a todos os destinatários, o que é um problema de confidencialidade e parece um envio improvisado."
+  fix:
+    - "Não monte o cabeçalho Bcc à mão: passe os destinatários ocultos à biblioteca de envio, que os coloca apenas no envelope SMTP."
+    - "Para um envio coletivo, use uma ferramenta que endereça uma mensagem por destinatário."

@@ -1,0 +1,273 @@
+# Famille phishing : vérificateur de lien. Deux lecteurs possibles : la personne qui a reçu le
+# lien et se demande s'il est sûr, et le propriétaire du site visé par une alerte. Chaque
+# fiche commence par ce que doit faire le premier, puis donne la marche à suivre au second.
+# Variables : {url} (lien ou hôte concerné), {domain} (domaine concerné ou domaine officiel
+# de la marque imitée selon la fiche), {value} (mesure : type de menace, nombre de moteurs,
+# marque, nombre de sous-domaines...).
+# Une gravité critical rend le verdict « dangereux ». Pour phishing.virustotal,
+# phishing.urlhaus, phishing.brand_lookalike et phishing.credential_form, le code passe sa
+# propre gravité : la pénalité de la fiche n'est qu'une valeur par défaut.
+# Signalement en France : Phishing Initiative (sites) et Signal Spam (messages), cités par
+# Cybermalveillance.gouv.fr. Sources relues le 2026-11-10.
+
+- id: phishing.safe_browsing
+  family: phishing
+  severity: critical
+  penalty: 4.0
+  detect:
+    signal: "safebrowsing.lookup(url).matches != []"
+    notes: "Correspondance dans les listes Google Safe Browsing (hameçonnage et tromperie, logiciel malveillant, logiciel indésirable). {value} est le type de menace en clair."
+  sa_rules: []
+  title: "Google Safe Browsing classe ce lien comme dangereux ({value})"
+  why: >
+    Google a classé {url} dans ses listes de sites dangereux ({value}). Les navigateurs qui
+    utilisent Safe Browsing, dont Chrome, affichent une page d'alerte rouge sur cette
+    adresse, et un message qui contient ce lien est traité comme une menace.
+  fix:
+    - "N'ouvrez pas le lien et ne saisissez aucune information sur la page."
+    - "Si vous l'avez déjà fait, changez tout de suite le mot de passe concerné, partout où vous l'utilisez, et faites opposition auprès de votre banque si vous avez donné une carte."
+    - "Signalez le message à Signal Spam (https://www.signal-spam.fr/)."
+    - "Si le site est le vôtre, il a probablement été piraté : nettoyez toutes les pages concernées, puis dans Google Search Console ouvrez le rapport Problèmes de sécurité et cliquez sur Demander un examen."
+  references:
+    - https://developers.google.com/safe-browsing
+    - https://transparencyreport.google.com/safe-browsing/search
+    - https://support.google.com/webmasters/answer/9044101
+    - https://www.cybermalveillance.gouv.fr/tous-nos-contenus/fiches-reflexes/hameconnage-phishing
+
+- id: phishing.virustotal
+  family: phishing
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "virustotal.url.malicious >= 2 || (virustotal.url.malicious >= 1 && virustotal.url.suspicious >= 1) || virustotal.url.suspicious >= 2"
+    notes: "Gravité fixée par le code : 2 moteurs « malveillant » ou plus critical 3, sinon high 1,5. Seuils internes de l'outil. VirusTotal ne produit pas de verdict propre et ne peut pas modifier ceux des éditeurs."
+  sa_rules: []
+  title: "{value} moteur(s) de VirusTotal signalent ce lien comme malveillant"
+  why: >
+    Plusieurs moteurs de sécurité indépendants classent {url} comme dangereux. Un moteur
+    seul se trompe parfois ; quand plusieurs sont d'accord, il s'agit rarement d'une
+    erreur.
+  fix:
+    - "N'ouvrez pas le lien."
+    - "Si vous l'avez ouvert et saisi des informations, changez le mot de passe concerné et prévenez votre banque si vous avez donné une carte."
+    - "Si le site est le vôtre, ouvrez la fiche VirusTotal pour voir les moteurs concernés, nettoyez le site, puis relancez l'analyse."
+    - "Si un moteur se trompe, écrivez à son éditeur avec le lien de la fiche VirusTotal : VirusTotal ne modifie pas les verdicts lui-même."
+  references:
+    - https://docs.virustotal.com/docs/false-positive-contacts
+
+- id: phishing.virustotal_single
+  family: phishing
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "virustotal.url.malicious + virustotal.url.suspicious == 1"
+    notes: "Un seul moteur sur plusieurs dizaines signale le lien."
+  sa_rules: []
+  title: "Un seul moteur de VirusTotal signale ce lien"
+  why: >
+    Un moteur isolé se trompe souvent. Ce signal ne suffit pas à juger {url}, mais il
+    s'ajoute aux autres indices de ce rapport.
+  fix:
+    - "Ouvrez la fiche VirusTotal et regardez quel moteur signale le lien et avec quel verdict."
+    - "Si les autres contrôles de ce rapport sont bons et que le site est ancien et connu, c'est en général une fausse alerte."
+    - "Si le site est le vôtre, signalez la fausse alerte à l'éditeur du moteur concerné, avec le lien de la fiche VirusTotal."
+  references:
+    - https://docs.virustotal.com/docs/false-positive-contacts
+
+- id: phishing.urlhaus
+  family: phishing
+  severity: critical
+  penalty: 3.5
+  detect:
+    signal: "urlhaus.lookup(url).listed"
+    notes: "Gravité fixée par le code : lien encore en ligne critical 3,5, sinon high 1,5. URLhaus est exploité par abuse.ch et Spamhaus et recense les adresses qui distribuent des logiciels malveillants."
+  sa_rules: []
+  title: "Ce lien est recensé par URLhaus comme diffusant un logiciel malveillant"
+  why: >
+    URLhaus, tenu par abuse.ch et Spamhaus, recense les adresses qui distribuent des
+    logiciels malveillants. {url} y figure ({value}). Sa base est partagée avec des éditeurs
+    d'antivirus et de listes de blocage.
+  fix:
+    - "N'ouvrez pas le lien et ne téléchargez rien."
+    - "Si un fichier a déjà été ouvert, déconnectez le poste du réseau et lancez une analyse antivirus complète."
+    - "Si le site est le vôtre, supprimez le fichier malveillant et cherchez comment il a été déposé (extension vulnérable, mot de passe FTP volé), puis contactez abuse.ch par https://contact.abuse.ch/."
+  references:
+    - https://urlhaus.abuse.ch/about/
+    - https://www.cybermalveillance.gouv.fr/tous-nos-contenus/fiches-reflexes/hameconnage-phishing
+
+- id: phishing.urlhaus_host
+  family: phishing
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "!urlhaus.lookup(url).listed && urlhaus.host(host).online_count > 0"
+    notes: "Ce lien précis n'est pas recensé, mais d'autres adresses du même hôte le sont et sont encore en ligne ; {value} est leur nombre."
+  sa_rules: []
+  title: "Le site {domain} héberge d'autres liens malveillants recensés par URLhaus"
+  why: >
+    Ce lien précis n'est pas recensé, mais {value} autre(s) adresse(s) de {domain}
+    distribuent un logiciel malveillant en ce moment, ce qui indique un site piraté ou monté
+    pour une campagne.
+  fix:
+    - "Évitez ce site tant qu'il n'a pas été nettoyé, et ne téléchargez rien depuis lui."
+    - "Si le site est le vôtre, consultez la liste des adresses recensées sur URLhaus, supprimez les fichiers et corrigez la faille, puis contactez abuse.ch par https://contact.abuse.ch/."
+  references:
+    - https://urlhaus.abuse.ch/about/
+
+- id: phishing.openphish
+  family: phishing
+  severity: critical
+  penalty: 4.0
+  detect:
+    signal: "url in openphish.feed"
+    notes: "Adresse présente dans le flux public d'OpenPhish, téléchargé par l'outil."
+  sa_rules: []
+  title: "Ce lien figure dans la liste d'hameçonnage OpenPhish"
+  why: >
+    OpenPhish publie les pages d'hameçonnage qu'il a détectées. {url} en fait partie : la
+    page imite un service connu pour voler des identifiants ou des données de paiement.
+  fix:
+    - "N'ouvrez pas le lien et ne saisissez aucune information."
+    - "Si vous avez saisi un mot de passe, changez-le tout de suite sur le site officiel, partout où vous l'utilisez, et activez la double authentification."
+    - "Si vous avez donné une carte, faites opposition auprès de votre banque."
+    - "Signalez la page à Phishing Initiative (https://phishing-initiative.fr/contrib/) et le message à Signal Spam (https://www.signal-spam.fr/)."
+  references:
+    - https://openphish.com/
+    - https://www.cybermalveillance.gouv.fr/tous-nos-contenus/fiches-reflexes/hameconnage-phishing
+
+- id: phishing.openphish_host
+  family: phishing
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "url not in openphish.feed && any(host(u) == host(url) for u in openphish.feed)"
+    notes: "D'autres pages du même hôte figurent dans le flux OpenPhish."
+  sa_rules: []
+  title: "D'autres pages du site {domain} figurent dans la liste OpenPhish"
+  why: >
+    Cette adresse précise n'est pas dans la liste, mais d'autres pages de {domain} y sont.
+    Cela arrive quand un site sert de base à une campagne d'hameçonnage, ou quand il a été
+    piraté.
+  fix:
+    - "Méfiez-vous de toute page de ce site qui demande un mot de passe, un code ou un paiement."
+    - "Pour vous connecter à un service, tapez vous-même son adresse officielle dans le navigateur."
+    - "Si le site est le vôtre, cherchez les pages ajoutées à votre insu (souvent dans un dossier caché ou un sous-dossier inhabituel), supprimez-les et changez les mots de passe d'accès à l'hébergement."
+  references:
+    - https://openphish.com/
+
+- id: phishing.brand_lookalike
+  family: phishing
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "any(lookalike(host, brand) for host in chain.hosts for brand in brands) && !is_official(host, brand)"
+    notes: "Gravité fixée par le code : faute de frappe, nom en sous-domaine, caractères qui imitent ou mot d'hameçonnage high 2, simple inclusion du nom medium 0,7. Les homoglyphes en punycode relèvent de links.punycode_lookalike. {domain} est le domaine officiel de la marque."
+  sa_rules: []
+  title: "Le domaine {url} imite celui de {value}"
+  why: >
+    Le nom ressemble à celui de {value} sans lui appartenir : c'est la ficelle la plus
+    courante de l'hameçonnage, qui compte sur une lecture rapide de l'adresse. Le site
+    officiel est {domain}.
+  fix:
+    - "N'utilisez pas ce lien : tapez vous-même l'adresse officielle {domain} dans le navigateur, ou passez par l'application."
+    - "Si vous avez saisi un identifiant ou une carte sur cette page, changez le mot de passe sur {domain} et prévenez l'organisme concerné et votre banque."
+    - "Signalez l'adresse à Phishing Initiative (https://phishing-initiative.fr/contrib/)."
+  references:
+    - https://www.cybermalveillance.gouv.fr/tous-nos-contenus/fiches-reflexes/hameconnage-phishing
+
+- id: phishing.deep_subdomains
+  family: phishing
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "count(subdomain_labels(host)) >= 4"
+    notes: "Hôte de la chaîne avec au moins quatre niveaux au-dessus du domaine enregistrable (seuil interne de l'outil). {value} est ce nombre et {domain} le domaine enregistrable."
+  sa_rules: []
+  title: "L'adresse {url} empile {value} niveaux de sous-domaines"
+  why: >
+    Un nom fait de nombreux sous-domaines sert souvent à placer un nom connu au début de
+    l'adresse, là où on le lit, alors que le vrai propriétaire est à la fin : {domain}.
+  fix:
+    - "Lisez l'adresse de droite à gauche : le vrai propriétaire est {domain}, quel que soit le nom écrit au début."
+    - "Si {domain} n'est pas le service que vous attendez, ne saisissez rien sur la page."
+  example_bad: "https://connexion.banque.fr.verification.compte.{domain}/"
+  references:
+    - https://www.cybermalveillance.gouv.fr/tous-nos-contenus/fiches-reflexes/hameconnage-phishing
+
+- id: phishing.js_redirect
+  family: phishing
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "any(hop.next == 'js' for hop in chain.hops)"
+    notes: "Une page intermédiaire de la chaîne renvoie le visiteur ailleurs par un script ; {value} est le nombre de sauts de ce type."
+  sa_rules: []
+  title: "Le lien redirige par un script de la page"
+  why: >
+    La page {url} envoie le visiteur ailleurs par JavaScript au lieu d'une redirection
+    normale. Les filtres qui ne lisent pas les scripts ne voient pas la vraie destination :
+    la technique sert souvent à masquer une page d'hameçonnage.
+  fix:
+    - "Regardez la destination finale de la chaîne affichée dans ce rapport avant de faire confiance au lien."
+    - "Si le site est le vôtre, remplacez la redirection par script par une redirection HTTP 301 ou 302 configurée sur le serveur."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4
+
+- id: phishing.credential_form
+  family: phishing
+  severity: critical
+  penalty: 3.5
+  detect:
+    signal: "(page.password_form || page.card_form) && (domain_lookalike || title_brand_mismatch || domain_age < 30 days || host_is_ip || host_is_punycode)"
+    notes: "Formulaire qui demande un mot de passe ou une carte, sur un site qui présente au moins un signe d'usurpation. Le détail des signes figure dans la preuve."
+  sa_rules: []
+  title: "La page demande {value} sur un site qui se fait passer pour un autre"
+  why: >
+    La page finale contient un formulaire qui demande {value}, et le site présente des
+    signes d'usurpation. C'est la forme exacte d'une page d'hameçonnage : ce qui est saisi
+    part chez l'auteur de la page.
+  fix:
+    - "Ne saisissez rien sur cette page."
+    - "Si c'est déjà fait : changez le mot de passe sur le site officiel et partout où vous l'utilisez, activez la double authentification, et faites opposition auprès de votre banque si vous avez donné une carte."
+    - "Signalez la page à Phishing Initiative (https://phishing-initiative.fr/contrib/) et le message à Signal Spam (https://www.signal-spam.fr/)."
+  references:
+    - https://www.cybermalveillance.gouv.fr/tous-nos-contenus/fiches-reflexes/hameconnage-phishing
+    - https://phishing-initiative.eu/contrib/
+
+- id: phishing.form_on_page
+  family: phishing
+  severity: info
+  penalty: 0
+  detect:
+    signal: "(page.password_form || page.card_form) && no_impersonation_sign"
+    notes: "Formulaire de connexion ou de paiement sans autre signe d'usurpation : information seulement."
+  sa_rules: []
+  title: "La page finale demande {value}"
+  why: >
+    Aucun autre signe d'usurpation n'a été relevé, et beaucoup de sites légitimes ont une
+    page de connexion ou de paiement. Seule l'adresse dit si c'est le service que vous
+    attendez : ici {domain}.
+  fix:
+    - "Avant de saisir quoi que ce soit, vérifiez que le nom de domaine dans la barre d'adresse est bien celui du service attendu."
+    - "En cas de doute, ouvrez le service en tapant vous-même son adresse plutôt qu'en suivant le lien."
+  references:
+    - https://www.cybermalveillance.gouv.fr/tous-nos-contenus/fiches-reflexes/hameconnage-phishing
+
+- id: phishing.title_brand_mismatch
+  family: phishing
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "page.brands_in_title.any(b => !is_official(final_host, b)) && !(page.password_form || page.card_form)"
+    notes: "Le titre de la page nomme une marque connue à laquelle le domaine final n'appartient pas, sans formulaire sensible sur la page."
+  sa_rules: []
+  title: "Le titre de la page cite {value}, mais le site est {domain}"
+  why: >
+    Le titre de la page nomme une marque à laquelle le domaine n'appartient pas. C'est
+    normal pour un article ou un comparatif ; pour une page qui se présente comme celle de
+    {value}, c'est un signe d'usurpation.
+  fix:
+    - "Si la page se présente comme celle de {value}, n'y saisissez rien et passez par le site officiel de la marque."
+    - "Si la page vous redirige ensuite vers un formulaire, refaites la vérification sur cette nouvelle adresse."
+  references:
+    - https://www.cybermalveillance.gouv.fr/tous-nos-contenus/fiches-reflexes/hameconnage-phishing

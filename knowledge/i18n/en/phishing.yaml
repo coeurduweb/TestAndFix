@@ -1,0 +1,89 @@
+phishing.safe_browsing:
+  title: "Google Safe Browsing flags this link as dangerous ({value})"
+  why: "Google has listed {url} in its lists of dangerous sites ({value}). Browsers that use Safe Browsing, including Chrome, display a red warning page for this address, and a message that contains this link is treated as a threat."
+  fix:
+    - Do not open the link and do not enter any information on the page.
+    - If you already did, change the affected password right away, everywhere you use it, and if you gave your card details, contact your bank to block the card.
+    - Report the message to Signal Spam (https://www.signal-spam.fr/).
+    - "If the site is yours, it has probably been hacked: clean all the affected pages, then in Google Search Console open the Security issues report and click Request review."
+phishing.virustotal:
+  title: "{value} VirusTotal engine(s) flag this link as malicious"
+  why: Several independent security engines classify {url} as dangerous. A single engine sometimes gets it wrong; when several agree, it is rarely a mistake.
+  fix:
+    - Do not open the link.
+    - If you opened it and entered information, change the affected password and tell your bank if you gave your card details.
+    - If the site is yours, open its VirusTotal page to see which engines are involved, clean the site, then run the scan again.
+    - "If an engine is wrong, write to its publisher with the link to the VirusTotal page: VirusTotal does not change verdicts itself."
+phishing.virustotal_single:
+  title: One VirusTotal engine flags this link
+  why: An isolated engine often gets it wrong. This signal is not enough to judge {url}, but it adds to the other clues in this report.
+  fix:
+    - Open the VirusTotal page and look at which engine flags the link, and with what verdict.
+    - If the other checks in this report are good and the site is old and known, it is usually a false alarm.
+    - If the site is yours, report the false alarm to the publisher of the engine concerned, with the link to the VirusTotal page.
+phishing.urlhaus:
+  title: URLhaus lists this link as distributing malware
+  why: "URLhaus, run by abuse.ch and Spamhaus, lists the addresses that distribute malware. {url} is listed there ({value}). Its database is shared with antivirus vendors and blocklist operators."
+  fix:
+    - Do not open the link and do not download anything.
+    - If a file has already been opened, disconnect the computer from the network and run a full antivirus scan.
+    - If the site is yours, delete the malicious file and find out how it was uploaded (vulnerable extension, stolen FTP password), then contact abuse.ch at https://contact.abuse.ch/.
+phishing.urlhaus_host:
+  title: The site {domain} hosts other malicious links listed by URLhaus
+  why: This specific link is not listed, but {value} other address(es) on {domain} are distributing malware right now, which indicates a hacked site or one set up for a campaign.
+  fix:
+    - Avoid this site until it has been cleaned, and do not download anything from it.
+    - If the site is yours, review the list of addresses listed on URLhaus, delete the files and fix the vulnerability, then contact abuse.ch at https://contact.abuse.ch/.
+phishing.openphish:
+  title: This link appears in the OpenPhish phishing list
+  why: "OpenPhish publishes the phishing pages it has detected. {url} is one of them: the page imitates a known service to steal credentials or payment data."
+  fix:
+    - Do not open the link and do not enter any information.
+    - If you entered a password, change it right away on the official site, everywhere you use it, and turn on two-factor authentication.
+    - If you gave your card details, contact your bank to block the card.
+    - Report the page to Phishing Initiative (https://phishing-initiative.fr/contrib/) and the message to Signal Spam (https://www.signal-spam.fr/).
+phishing.openphish_host:
+  title: Other pages of the site {domain} appear in the OpenPhish list
+  why: This exact address is not on the list, but other pages of {domain} are. This happens when a site serves as the base for a phishing campaign, or when it has been hacked.
+  fix:
+    - Be wary of any page on this site that asks for a password, a code or a payment.
+    - To log in to a service, type its official address yourself in the browser.
+    - If the site is yours, look for pages added without your knowledge (often in a hidden folder or an unusual subfolder), delete them, and change the passwords used to access the hosting.
+phishing.brand_lookalike:
+  title: The domain {url} imitates that of {value}
+  why: "The name resembles that of {value} without belonging to it. This is the most common trick in phishing, which relies on a quick reading of the address. The official site is {domain}."
+  fix:
+    - "Do not use this link: type the official address {domain} in the browser yourself, or use the app."
+    - If you entered a login or a card on this page, change the password on {domain} and notify the organization concerned and your bank.
+    - Report the address to Phishing Initiative (https://phishing-initiative.fr/contrib/).
+phishing.deep_subdomains:
+  title: The address {url} stacks {value} levels of subdomains
+  why: "A name made of many subdomains is often used to place a known name at the start of the address, where it is read, while the real owner sits at the end: {domain}."
+  fix:
+    - "Read the address from right to left: the real owner is {domain}, whatever name is written at the start."
+    - If {domain} is not the service you expect, do not enter anything on the page.
+phishing.js_redirect:
+  title: The link redirects through a script on the page
+  why: "The page {url} sends the visitor elsewhere through JavaScript instead of a normal redirect. Filters that do not read scripts do not see the real destination: the technique is often used to hide a phishing page."
+  fix:
+    - Look at the final destination in the chain shown in this report before trusting the link.
+    - If the site is yours, replace the script redirect with an HTTP 301 or 302 redirect configured on the server.
+phishing.credential_form:
+  title: The page asks for {value} on a site that pretends to be another
+  why: "The final page contains a form asking for {value}, and the site shows signs of impersonation. This is the exact form of a phishing page: what is entered goes to the author of the page."
+  fix:
+    - Do not enter anything on this page.
+    - "If you already did: change the password on the official site and everywhere you use it, turn on two-factor authentication, and if you gave your card details, contact your bank to block the card."
+    - Report the page to Phishing Initiative (https://phishing-initiative.fr/contrib/) and the message to Signal Spam (https://www.signal-spam.fr/).
+phishing.form_on_page:
+  title: The final page asks for {value}
+  why: "No other sign of impersonation was found, and many legitimate sites have a login or payment page. Only the address shows whether this is the service you expect: here, {domain}."
+  fix:
+    - Before entering anything, check that the domain name in the address bar is the one of the expected service.
+    - If in doubt, open the service by typing its address yourself rather than following the link.
+phishing.title_brand_mismatch:
+  title: "The page title names {value}, but the site is {domain}"
+  why: The page title names a brand that the domain does not belong to. This is normal for an article or a comparison; for a page that presents itself as that of {value}, it is a sign of impersonation.
+  fix:
+    - If the page presents itself as that of {value}, do not enter anything there and go through the official site of the brand.
+    - If the page then redirects you to a form, repeat the check on this new address.

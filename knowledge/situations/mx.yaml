@@ -1,0 +1,286 @@
+# Famille mx : enregistrements MX du domaine expéditeur ({domain}) et du domaine
+# d'enveloppe ({envelope_domain}). Un domaine qui ne peut pas recevoir ne peut pas recevoir
+# les rejets ni les réponses, et plusieurs serveurs refusent les expéditeurs dont le domaine
+# n'a aucune destination de courrier valable.
+
+- id: mx.domain_nxdomain
+  family: mx
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "dns.rcode(domain) == NXDOMAIN"
+    notes: "Le domaine de l'adresse From n'existe pas dans le DNS. Ni SPF, ni DKIM, ni DMARC ne peuvent s'appliquer ; Postfix avec reject_unknown_sender_domain et la plupart des grands fournisseurs refusent ces messages."
+  sa_rules: []
+  title: "Le domaine expéditeur {domain} n'existe pas"
+  why: >
+    Le DNS répond que {domain} n'existe pas. Les destinataires ne peuvent ni vérifier
+    l'expéditeur ni lui répondre : la plupart rejettent le message, les autres le classent
+    en spam.
+  fix:
+    - "Vérifiez l'orthographe du domaine dans l'adresse d'expédition configurée dans votre logiciel ou votre service d'envoi."
+    - "Si le domaine est le bon, vérifiez chez votre registraire qu'il n'a pas expiré et que ses serveurs de noms (NS) sont bien déclarés."
+    - "Une fois le domaine résolu, publiez au minimum un MX, un SPF et un DMARC."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-5.1
+    - https://www.postfix.org/postconf.5.html#reject_unknown_sender_domain
+
+- id: mx.missing
+  family: mx
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dns.MX(domain) == [] && dns.rcode(domain) == NOERROR"
+    notes: "Sans MX, la RFC 5321 §5.1 prévoit un repli sur l'adresse A/AAAA du domaine (MX implicite). Le domaine reste joignable si un serveur SMTP écoute sur cette adresse, ce qui est rarement le cas d'un serveur web."
+  sa_rules: []
+  title: "Le domaine {domain} n'a pas d'enregistrement MX"
+  why: >
+    Sans MX, les réponses et les rejets adressés à {domain} sont envoyés au serveur web du
+    domaine, qui ne les accepte en général pas. Certains filtres pénalisent aussi un
+    expéditeur dont le domaine ne reçoit pas de courrier.
+  fix:
+    - "Si {domain} doit recevoir du courrier, ajoutez les MX donnés par votre fournisseur de messagerie."
+    - "Si {domain} ne doit jamais recevoir, publiez un Null MX (0 .) et faites envoyer vos messages avec une adresse Reply-To et un Return-Path sur un domaine qui reçoit."
+  fix_by_provider:
+    google_workspace: "Dans la console d'administration Google, suivez l'assistant de configuration des MX et copiez exactement la valeur proposée pour votre domaine."
+    microsoft_365: "Dans le centre d'administration Microsoft 365, Paramètres, Domaines, sélectionnez {domain} et ajoutez l'enregistrement MX indiqué dans l'onglet Enregistrements DNS."
+    cloudflare_dns: "Dans DNS, Records, ajoutez un enregistrement de type MX : nom @, serveur de messagerie et priorité donnés par votre fournisseur."
+  example_good: "{domain}. 3600 IN MX 10 mx1.fournisseur.example."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-5.1
+
+- id: mx.cname_target
+  family: mx
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(dns.CNAME(mx.host) != null for mx in dns.MX(domain))"
+    notes: "RFC 2181 §10.3 : la cible d'un MX ne doit pas être un alias (CNAME). RFC 5321 §5.1 tolère le cas côté expéditeur mais ce n'est pas garanti partout."
+  sa_rules: []
+  title: "Un MX de {domain} pointe vers un alias CNAME"
+  why: >
+    La cible d'un MX doit être un nom qui porte directement une adresse. Avec un CNAME,
+    certains serveurs refusent de livrer ou de vérifier votre domaine, et des messages vers
+    {domain} peuvent se perdre.
+  fix:
+    - "Identifiez la cible finale du CNAME (le nom qui porte l'enregistrement A)."
+    - "Remplacez dans le MX le nom alias par ce nom final, ou créez pour ce nom un enregistrement A au lieu du CNAME."
+    - "Gardez la même priorité et supprimez l'ancien MX."
+  example_bad: "{domain}. MX 10 mail.{domain}.  et  mail.{domain}. CNAME serveur.hebergeur.example."
+  example_good: "{domain}. MX 10 serveur.hebergeur.example."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2181#section-10.3
+    - https://www.rfc-editor.org/rfc/rfc5321#section-5.1
+
+- id: mx.ip_literal
+  family: mx
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "any(mx.host matches /^[0-9.]+[.]?$/ || mx.host contains ':' for mx in dns.MX(domain))"
+    notes: "Le champ exchange d'un MX est un nom de domaine (RFC 1035 §3.3.9). Une IP saisie à la place est lue comme le nom « 203.0.113.10. », qui n'existe pas."
+  sa_rules: []
+  title: "Un MX de {domain} contient une adresse IP au lieu d'un nom"
+  why: >
+    Un MX ne peut pas contenir d'adresse IP. La valeur est comprise comme un nom qui n'existe
+    pas : le courrier vers {domain} échoue ou passe au MX suivant, et les vérifications du
+    domaine expéditeur échouent.
+  fix:
+    - "Créez un nom pour le serveur, par exemple mx.{domain}, avec un enregistrement A vers l'adresse IP concernée."
+    - "Remplacez l'IP par ce nom dans l'enregistrement MX."
+  example_bad: "{domain}. MX 10 203.0.113.10"
+  example_good: "{domain}. MX 10 mx.{domain}.  et  mx.{domain}. A 203.0.113.10"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1035#section-3.3.9
+
+- id: mx.target_nxdomain
+  family: mx
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "dns.MX(domain) != [] && all(dns.addresses(mx.host) == [] for mx in dns.MX(domain))"
+    notes: "Aucun MX ne mène à une adresse : le domaine ne peut pas recevoir. Postfix reject_unknown_sender_domain refuse aussi l'expéditeur quand le MX est inutilisable."
+  sa_rules: []
+  title: "Les MX de {domain} pointent vers des noms qui n'existent pas"
+  why: >
+    Les serveurs annoncés dans les MX de {domain} n'ont aucune adresse. Plus aucun message ne
+    peut être livré à ce domaine et certains destinataires refusent vos envois parce que
+    l'adresse d'expédition paraît invalide.
+  fix:
+    - "Comparez les MX publiés avec ceux que votre fournisseur de messagerie indique aujourd'hui : ils changent parfois lors d'une migration."
+    - "Corrigez les noms erronés ou créez l'enregistrement A manquant du serveur cible."
+    - "Supprimez les MX d'un ancien fournisseur qui n'existent plus."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-5.1
+    - https://www.postfix.org/postconf.5.html#reject_unknown_sender_domain
+
+- id: mx.private_address
+  family: mx
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(addr in [127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, ::1, fc00::/7, fe80::/10] for addr in dns.addresses(mx.host))"
+    notes: "Adresses privées (RFC 1918), partagées (RFC 6598) ou de bouclage : injoignables depuis Internet."
+  sa_rules: []
+  title: "Un MX de {domain} pointe vers une adresse privée"
+  why: >
+    Le serveur de messagerie de {domain} est annoncé sur une adresse interne, injoignable
+    depuis Internet. Les messages vers ce domaine restent en file d'attente puis reviennent en
+    erreur.
+  fix:
+    - "Remplacez l'adresse interne par l'adresse publique du serveur dans l'enregistrement A du MX."
+    - "Si cette adresse privée sert à un DNS interne, séparez la vue interne de la zone publique."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1918
+    - https://www.rfc-editor.org/rfc/rfc6598
+
+- id: mx.unreachable
+  family: mx
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "all(smtp.connect(mx.host, 25).status in [timeout, refused] for mx in dns.MX(domain))"
+    notes: "Test de connexion TCP sur le port 25 de chaque MX, deux essais espacés. Un seul échec peut venir d'une coupure passagère."
+  sa_rules: []
+  title: "Aucun serveur MX de {domain} ne répond sur le port 25"
+  why: >
+    Les serveurs de réception de {domain} ne répondent pas. Les réponses et les rejets
+    adressés à ce domaine s'accumulent puis reviennent en erreur, et les vérifications par
+    rappel de certains destinataires échouent.
+  fix:
+    - "Vérifiez que le service SMTP tourne sur le serveur indiqué par le MX et qu'il écoute sur le port 25."
+    - "Vérifiez le pare-feu du serveur et celui de l'hébergeur : le port 25 entrant doit être ouvert."
+    - "Si le MX désigne un ancien serveur, remplacez-le par celui de votre fournisseur actuel."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-5.1
+
+- id: mx.null_mx_on_sending_domain
+  family: mx
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dns.MX(domain) == [{preference: 0, host: '.'}] || dns.MX(envelope_domain) == [{preference: 0, host: '.'}]"
+    notes: "RFC 7505 §4.1 et §4.2 : un domaine utilisé en MAIL FROM ou en From ne devrait pas publier de Null MX, et le serveur destinataire peut rejeter ce courrier (code 550 5.7.27)."
+  sa_rules: []
+  title: "{domain} déclare ne recevoir aucun courrier (Null MX) mais envoie"
+  why: >
+    Le Null MX annonce publiquement que {domain} ne reçoit pas de courrier. Un destinataire
+    peut alors refuser vos envois, et personne ne peut vous répondre ni vous renvoyer un rejet.
+  fix:
+    - "Si {domain} doit envoyer, supprimez le MX « 0 . » et publiez les MX de votre fournisseur de messagerie."
+    - "Si {domain} ne doit vraiment pas recevoir, utilisez pour l'enveloppe (Return-Path) un domaine qui reçoit, par exemple celui de votre service d'envoi, et ajoutez un Reply-To valable."
+  example_bad: "{domain}. MX 0 ."
+  example_good: "{domain}. MX 10 mx1.fournisseur.example."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7505#section-4.2
+
+- id: mx.null_mx_mixed
+  family: mx
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(mx.host == '.' for mx in dns.MX(domain)) && len(dns.MX(domain)) > 1"
+    notes: "RFC 7505 §3 : un domaine qui publie un Null MX ne doit publier aucun autre MX."
+  sa_rules: []
+  title: "{domain} mélange un Null MX et d'autres MX"
+  why: >
+    Le Null MX dit « ce domaine ne reçoit pas », les autres MX disent le contraire. Selon le
+    logiciel du destinataire, vos messages ou les réponses à {domain} seront traités de façon
+    imprévisible.
+  fix:
+    - "Décidez si {domain} reçoit du courrier."
+    - "S'il reçoit, supprimez l'enregistrement MX « 0 . » ; sinon, supprimez tous les autres MX."
+  example_bad: "{domain}. MX 0 .  et  {domain}. MX 10 mx1.fournisseur.example."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7505#section-3
+
+- id: mx.envelope_domain_cannot_receive
+  family: mx
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "envelope_domain != domain && dns.MX(envelope_domain) == [] && dns.addresses(envelope_domain) == []"
+    notes: "Le domaine du Return-Path n'a ni MX ni adresse : les rejets (bounces) ne peuvent pas lui être remis. Postfix reject_unknown_sender_domain refuse ces expéditeurs."
+  sa_rules: []
+  title: "Le domaine de retour {envelope_domain} ne peut pas recevoir les rejets"
+  why: >
+    Les avis de non-remise sont envoyés à l'adresse de retour (Return-Path). Si
+    {envelope_domain} n'a ni MX ni adresse, vous ne verrez jamais les adresses invalides de
+    votre liste, et plusieurs serveurs refusent directement le message.
+  fix:
+    - "Ajoutez à {envelope_domain} les MX de votre service d'envoi, ou l'enregistrement que celui-ci indique pour son domaine de retour personnalisé."
+    - "À défaut, utilisez comme Return-Path une adresse d'un domaine qui reçoit du courrier."
+  fix_by_provider:
+    postfix: "Le Return-Path reprend l'adresse d'enveloppe : vérifiez sender_canonical_maps et l'option -f de sendmail dans votre application."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.4
+    - https://www.postfix.org/postconf.5.html#reject_unknown_sender_domain
+
+- id: mx.postmaster_rejected
+  family: mx
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "smtp.rcpt(mx.primary, 'postmaster@' + domain).code >= 500"
+    notes: "RFC 5321 §4.5.1 : tout domaine qui reçoit du courrier doit accepter l'adresse postmaster. Test RCPT TO sans envoyer de message."
+  sa_rules: []
+  title: "L'adresse postmaster@{domain} est refusée"
+  why: >
+    Les opérateurs de messagerie et les listes noires contactent postmaster@{domain} en cas
+    de problème. Si cette adresse n'existe pas, vous ne serez pas prévenu, et plusieurs
+    procédures de délistage exigent qu'elle fonctionne.
+  fix:
+    - "Créez l'alias postmaster@{domain} (et abuse@{domain}) dans votre messagerie."
+    - "Faites-le pointer vers une boîte réellement lue."
+  fix_by_provider:
+    google_workspace: "Dans la console d'administration, ajoutez postmaster comme adresse alternative (alias) d'un utilisateur ou d'un groupe."
+    microsoft_365: "Dans le centre d'administration Exchange, ajoutez postmaster@{domain} comme adresse supplémentaire d'une boîte ou d'un groupe."
+    cpanel: "Dans Email, Redirecteurs, ajoutez postmaster@{domain} vers votre boîte principale."
+    postfix: "Ajoutez postmaster: votre-compte dans /etc/aliases puis lancez newaliases, ou une ligne dans virtual_alias_maps."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.5.1
+    - https://www.rfc-editor.org/rfc/rfc2142
+
+# Fiches ajoutées le 2026-11-10 pour les situations des vérificateurs MX et SMTP qui
+# n'avaient qu'un texte de repli.
+
+- id: mx.some_target_without_address
+  family: mx
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(no_address(mx.host) for mx in dns.MX(domain)) && !all(no_address(mx.host) for mx in dns.MX(domain))"
+    notes: "Au moins un MX, mais pas tous, désigne un nom sans adresse IPv4 ni IPv6. RFC 5321 §5.1 : le nom d'un MX doit renvoyer au moins une adresse. {value} liste les MX en cause ; le cas où aucun MX n'a d'adresse relève de mx.target_nxdomain."
+  sa_rules: []
+  title: "Un MX de {domain} n'a pas d'adresse IP"
+  why: >
+    Le serveur {value} est annoncé comme MX mais son nom ne donne aucune adresse. Les
+    expéditeurs le sautent après une requête inutile ; s'il a la priorité la plus forte, le
+    courrier ne tient plus que par les autres MX.
+  fix:
+    - "Dans la zone DNS de {domain}, repérez le MX qui désigne {value}."
+    - "Si ce serveur n'existe plus, supprimez ce MX."
+    - "S'il existe, créez l'enregistrement A (et AAAA s'il a une adresse IPv6) de {value}, ou corrigez la faute de frappe dans le MX."
+  example_bad: "{domain}. IN MX 10 mail.{domain}.  (mail.{domain} sans enregistrement A)"
+  example_good: "{domain}. IN MX 10 mail.{domain}.\nmail.{domain}. IN A 203.0.113.25"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-5.1
+
+- id: mx.host_unreachable
+  family: mx
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(smtp.connect(mx.ip, 25).status != ok for mx in dns.MX(domain)) && any(smtp.connect(mx.ip, 25).status == ok for mx in dns.MX(domain))"
+    notes: "Au moins un MX répond sur le port 25 et celui-ci non ; le cas où aucun ne répond relève de mx.unreachable. {value} est le nom du MX et {ip} l'adresse essayée. Un échec isolé peut venir d'une coupure passagère : relancer avant de conclure."
+  sa_rules: []
+  title: "Le MX {value} ne répond pas sur le port 25"
+  why: >
+    Les autres MX de {domain} répondent, mais pas {value} ({ip}). Les expéditeurs qui
+    tombent dessus attendent, puis essaient le MX suivant : le courrier arrive, mais avec
+    du retard.
+  fix:
+    - "Relancez le test pour écarter une coupure passagère."
+    - "Si l'échec se confirme, vérifiez que le service SMTP de {value} fonctionne et que le port 25 entrant est ouvert dans son pare-feu et chez son hébergeur."
+    - "Si ce serveur n'est plus utilisé, retirez son MX de la zone de {domain}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-5.1

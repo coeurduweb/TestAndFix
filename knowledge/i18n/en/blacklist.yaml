@@ -1,0 +1,197 @@
+blacklist.spamhaus_sbl:
+  title: "The IP {ip} is listed on Spamhaus SBL"
+  why: "Spamhaus is the list most used by mail servers. An SBL listing makes a large share of recipients reject your messages, often at connection time."
+  fix:
+    - "Look up the record for the IP {ip} at {delist_url} to read the reason and the SBL case number."
+    - "Remove the cause: compromised account, hijacked form, purchased address list."
+    - "Contact your host or internet provider: according to Spamhaus, the removal request for an SBL listing must come from the provider responsible for the IP. Removal is free."
+    - "If {ip} is a shared IP of a sending service ({provider}), notify its support: the IP does not belong to you, and it is up to them to handle the listing."
+blacklist.spamhaus_css:
+  title: "The IP {ip} is listed on Spamhaus CSS"
+  why: "Spamhaus automatically detected spam coming from {ip}. As long as the listing lasts, a large share of recipients refuse your messages."
+  fix:
+    - "Find the source: a hacked mail account, a website that sends (form, plugin), or a HELO and reverse DNS set up incorrectly in a way that looks like a bot."
+    - "Fix the cause before any request, otherwise the IP is listed again immediately."
+    - "Request removal at {delist_url} (self-service removal is limited in number) or wait for the listing to expire, normally three days after the last detection."
+blacklist.spamhaus_xbl:
+  title: "The IP {ip} is listed on Spamhaus XBL (compromised machine)"
+  why: "Spamhaus saw {ip} behaving like an infected machine. Many recipients reject your messages, and the problem goes beyond email: a device on your network is probably controlled by a third party."
+  fix:
+    - "Read at {delist_url} the type of infection detected and the time of the last detection."
+    - "Check the computers, servers and connected devices behind {ip}, and change the passwords of the email accounts."
+    - "If {ip} is a server, block outgoing port 25 for any process other than the mail software."
+    - "Once the machine is cleaned, request removal at {delist_url}."
+blacklist.spamhaus_pbl:
+  title: "The IP {ip} belongs to a residential range (Spamhaus PBL)"
+  why: "Your server sends directly from a consumer connection or from a range its owner reserves for end users. Many recipients refuse these messages, even if you have done nothing wrong."
+  fix:
+    - "Send through the authenticated SMTP server of your email or internet provider (port 587 or 465) instead of delivering directly."
+    - "If {ip} is a static IP of a real mail server with a correct reverse DNS, you can request its exclusion at {delist_url}. It is valid for one year and is only possible if the network policy allows it."
+    - "For several addresses, the internet provider that owns the range must request removal."
+  fix_by_provider:
+    postfix: "Set relayhost = [smtp.your-provider]:587 with smtp_sasl_auth_enable = yes and smtp_tls_security_level = encrypt, then run postfix reload."
+    wordpress: "Install an SMTP plugin and send through your email provider's SMTP server instead of the server's mail() function."
+blacklist.spamhaus_drop:
+  title: "The IP {ip} belongs to a Spamhaus DROP range"
+  why: "Spamhaus considers the whole range of {ip} to be controlled by malicious actors. No setting on your side will make this IP usable for email."
+  fix:
+    - "Stop sending from this IP."
+    - "Change host or sending service, and check the new IP before using it."
+blacklist.spamhaus_dbl_sender:
+  title: "The domain {domain} is listed on Spamhaus DBL"
+  why: "Your domain itself is considered associated with spam or fraud. Changing IP does not help: any message that contains {domain}, in the address or in a link, is rejected or filed as spam by recipients who use the DBL."
+  fix:
+    - "Look up the domain record at {delist_url}."
+    - "Find the cause: hacked site hosting phishing pages, campaign sent to addresses without consent, open redirects."
+    - "Once the cause is removed, request removal at {delist_url}. Spamhaus indicates processing can take up to 24 hours and does not guarantee removal."
+blacklist.spamhaus_dbl_abused:
+  title: "A hostname under {domain} is listed on Spamhaus DBL as an abused site"
+  why: "Spamhaus considers your domain legitimate, but part of your site is used by third parties, for example a hacked page or an open redirect. Messages that point to this name are filtered."
+  fix:
+    - "Identify the listed hostname and the type of abuse at {delist_url}."
+    - "Clean up the site (update the CMS and plugins, delete the added files) or close the open redirect."
+    - "Request removal at {delist_url} once the fix is online."
+  fix_by_provider:
+    wordpress: "Update WordPress, the theme and all plugins, delete unknown administrator accounts, and run an antivirus scan of the site before requesting removal."
+blacklist.barracuda:
+  title: "The IP {ip} is listed on Barracuda (BRBL)"
+  why: "Companies protected by a Barracuda gateway reject your messages. This is common with business customers, so it hurts B2B sending."
+  fix:
+    - "Remove the cause of the suspicious sending (hacked account, list without consent, sudden volume)."
+    - "Fill in the form https://www.barracudacentral.org/rbl/removal-request with the IP {ip}, a valid contact address and an explanation of the fix."
+    - "Send only one request: Barracuda ignores repeated requests and usually processes them within 12 hours."
+blacklist.spamcop:
+  title: "The IP {ip} is listed on SpamCop"
+  why: "Recipients reported your messages as spam. As long as reports continue, servers that use SpamCop reject your sending."
+  fix:
+    - "Check the date of the last report at https://www.spamcop.net/bl.shtml."
+    - "Remove from your sending the addresses that did not agree to it, and make the unsubscribe link visible."
+    - "Wait: SpamCop removes the IP automatically 24 hours after the last report, and asks that you do not write to request early removal."
+blacklist.uceprotect_level1:
+  title: "The IP {ip} is listed on UCEPROTECT level 1"
+  why: "Your IP sent to a UCEPROTECT spam trap address. Few large providers use this list, but some business servers check it."
+  fix:
+    - "Clean your sending list: spam trap addresses often come from old or purchased files."
+    - "Check that no account or site is sending from {ip} without your knowledge."
+    - "Wait for automatic expiry, 7 days after the last detection. Paid removal is not needed."
+blacklist.uceprotect_level2:
+  title: "The network of {ip} is listed on UCEPROTECT level 2"
+  why: "It is not your IP that is targeted but your host's address block, because of its neighbors. The effect is limited to the few servers that use this level."
+  fix:
+    - "Do not pay for removal: the request can only come from your provider, and the listing drops off by itself."
+    - "Report the listing to your host so that it can deal with the customers involved."
+    - "If your sending volume is high, ask your host for an IP in another block or use a sending service."
+blacklist.uceprotect_level3:
+  title: "The host of {ip} is listed in full on UCEPROTECT level 3"
+  why: "All the addresses of your host are listed, yours as well as those of millions of others. Very few servers block at this level: the effect on your sending is generally nil."
+  fix:
+    - "Take no removal steps and pay nothing: only the host can act."
+    - "Keep this information if a specific recipient refuses you while citing UCEPROTECT, and pass it on to them."
+blacklist.sorbs_closed:
+  title: "SORBS is shut down: a cited listing no longer counts for anything"
+  why: "The SORBS list no longer operates. A tool or server that still cites it uses an outdated configuration: the real cause of any rejection lies elsewhere."
+  fix:
+    - "Ignore any “SORBS listing” reported by a test tool."
+    - "If a recipient rejects you citing SORBS, tell their administrator that the list is closed and that they must remove it from their configuration."
+blacklist.psbl:
+  title: "The IP {ip} is listed on PSBL"
+  why: "Your IP sent to spam trap addresses. SpamAssassin filters add points to your messages as long as the listing lasts."
+  fix:
+    - "Clean your sending list of old addresses or addresses without consent."
+    - "Remove the IP yourself at https://psbl.org/remove: it is free and immediate, but it will be listed again if sends to the traps continue."
+blacklist.mailspike:
+  title: "The IP {ip} has a bad reputation at Mailspike"
+  why: "Mailspike judges that {ip} sends unwanted mail. SpamAssassin and other filters add points to your messages."
+  fix:
+    - "Check the IP and the reason at https://mailspike.io/ip_verify."
+    - "Remove the cause (sudden volume, invalid addresses, infected machine)."
+    - "Use the removal form on the same page if the listing does not drop off by itself within 36 hours."
+blacklist.spamrats_dyna:
+  title: "The IP {ip} is listed on SpamRATS Dyna (dynamic-looking IP)"
+  why: "The reverse DNS of {ip} ({ptr}) looks like that of a consumer subscriber. Servers that use SpamRATS refuse these direct sends."
+  fix:
+    - "Ask your host for a custom reverse DNS, for example mail.{domain}, that contains neither the IP nor words like dynamic or pool."
+    - "If the IP really is a consumer connection, send through an authenticated SMTP server."
+    - "Then request removal at https://www.spamrats.com/removal.php."
+blacklist.spamrats_noptr:
+  title: "The IP {ip} is listed on SpamRATS NoPtr (no reverse DNS)"
+  why: "{ip} has no reverse DNS. SpamRATS lists it for this reason alone, and the major providers also penalize this defect."
+  fix:
+    - "Have your host configure a reverse DNS for {ip}, for example mail.{domain}, and create the matching A record."
+    - "Then request removal at https://www.spamrats.com/removal.php."
+blacklist.spamrats_spam:
+  title: "The IP {ip} is listed on SpamRATS Spam"
+  why: "SpamRATS observed spam coming from {ip}. Servers that use this list reject your sending."
+  fix:
+    - "Find the source of the sending: hacked account, hijacked form, list without consent."
+    - "Once the cause is removed, request removal at https://www.spamrats.com/removal.php (or through the contact page if automatic removal is not offered)."
+blacklist.surbl:
+  title: "A domain cited in the message is listed on SURBL ({value})"
+  why: "A link in the message points to a domain that SURBL associates with spam or fraud. Filters that analyze links classify the message as spam, whatever the reputation of your IP."
+  fix:
+    - "Identify the domain concerned ({value}) and check its listing category at https://www.surbl.org/surbl-analysis."
+    - "If it does not belong to you (URL shortener, affiliate link, image hosted elsewhere), remove it from the message."
+    - "If it belongs to you, clean up the site, then request removal through the form on the same page."
+blacklist.uribl_black:
+  title: "A domain cited in the message is on the URIBL blacklist ({value})"
+  why: "A domain in the message is on the URIBL blacklist. SpamAssassin and other filters then add a high score to the message."
+  fix:
+    - "Check the domain ({value}) at https://lookup.uribl.com."
+    - "Remove from the message any links to this domain if it does not belong to you."
+    - "If it belongs to you, fix the cause, then request removal at https://admin.uribl.com (login required)."
+blacklist.uribl_grey_red:
+  title: "A domain cited in the message is on a secondary URIBL list ({value})"
+  why: "A domain in the message is on a URIBL list of lesser severity. The effect is small, but it adds to the other unfavorable signals."
+  fix:
+    - "Check the domain ({value}) and the list concerned at https://lookup.uribl.com."
+    - "If this domain is yours, make sure your sends go only to people who asked for them, then request removal at https://admin.uribl.com."
+blacklist.abusix:
+  title: "The IP {ip} is listed at Abusix Mail Intelligence"
+  why: "Abusix observed unwanted behavior from {ip}. Servers and filters that use its data reject or penalize your messages."
+  fix:
+    - "Check the reason at https://lookup.abusix.com/."
+    - "Remove the cause, then request removal on the same page (a confirmation by email is required)."
+    - "Without a request, the listing generally expires 5.2 days after the last event."
+blacklist.invaluement:
+  title: "{list_name}: the IP {ip} or the domain {domain} is listed at Invaluement"
+  why: "Invaluement is used by business filters. A listing there makes these customers reject your messages."
+  fix:
+    - "Check the reason at https://www.invaluement.com/research/."
+    - "Fix the cause, then request removal at https://www.invaluement.com/removal/."
+blacklist.microsoft_banned_ip:
+  title: "Microsoft blocks the IP {ip}"
+  why: "Microsoft refuses messages from {ip} for all domains hosted on Microsoft 365. A large share of business recipients no longer receive your sends."
+  fix:
+    - "Fix the cause first (hacked account, list without consent, abnormal volume)."
+    - "Open https://sender.office.com, enter a contact address and the IP {ip}, then click the confirmation link you receive and then Delist IP."
+    - "Allow up to 24 hours, sometimes longer, for the block to be lifted."
+    - "If the rejection shows 5.7.511, forward the rejection message to delist@microsoft.com."
+blacklist.query_blocked:
+  title: "The list {list_name} could not be queried"
+  why: "The list refused our request instead of answering. This says nothing about {ip} or {domain}: this check simply did not take place for this list."
+  fix:
+    - "No action is needed on your part. If another tool reports a listing with this code, it is a false alarm."
+    - "To check yourself, use the lookup page of the list: {delist_url}."
+blacklist.ip_listed:
+  title: "The IP {ip} is listed on {list_name}"
+  why: "Receiving servers that check {list_name} reject or file as spam the messages coming from {ip}. A list records an address when it observes abusive sending or the activity of a compromised machine."
+  fix:
+    - "Open the page of the list ({delist_url}): it generally states the reason and the date of the listing."
+    - "Fix the cause before any request: hacked mail account, abused site form, purchased or consentless contact list, misconfigured server."
+    - "Request removal following the procedure of the list. Some lists remove the address on their own after a period without new abuse."
+    - "If {ip} belongs to your sending service or your host, pass the listing on to them: it is up to them to request removal."
+blacklist.domain_listed:
+  title: "The domain {domain} is listed on {list_name}"
+  why: "Filters that check {list_name} reject or file as spam the messages that use {domain}, as sender or in a link. Common causes are unsolicited sending, or a hacked site hosting a malicious page."
+  fix:
+    - "Open the page of the list ({delist_url}) to find out the reason for the listing."
+    - "If the site of {domain} was hacked, clean it up and change the passwords for hosting access."
+    - "If sending is the cause, stop sending to addresses without consent."
+    - "Then request removal following the procedure of the list."
+blacklist.listed:
+  title: "{value} is listed on {list_name}"
+  why: "Receiving servers check {list_name} before accepting a message. As long as {value} is listed there, the messages that depend on it may be filed as spam or rejected."
+  fix:
+    - "Open the page of the list ({delist_url}) to find out the reason and the date of the listing."
+    - "Find the cause and fix it: hacked account, abused form, sending without consent, compromised site."
+    - "Then request removal following the procedure of the list."

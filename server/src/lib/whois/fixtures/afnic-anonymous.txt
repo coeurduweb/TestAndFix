@@ -1,0 +1,105 @@
+%%
+%% This is the AFNIC Whois server.
+%%
+%% complete date format: YYYY-MM-DDThh:mm:ssZ
+%%
+%% Rights restricted by copyright.
+%% See https://www.afnic.fr/en/domain-names-and-support/everything-there-is-to-know-about-domain-names/find-a-domain-name-or-a-holder-using-whois/
+%%
+%%
+
+domain:                        exemple-agence.fr
+status:                        ACTIVE
+eppstatus:                     clientTransferProhibited
+hold:                          NO
+holder-c:                      ANO00-FRNIC
+admin-c:                       ANO00-FRNIC
+tech-c:                        CTC1193630-FRNIC
+registrar:                     NETIM
+Expiry Date:                   2027-01-29T23:08:10Z
+created:                       2019-09-15T22:50:33Z
+last-update:                   2026-01-26T23:59:24.620125Z
+source:                        FRNIC
+
+nserver:                       ns1.netim.net
+nserver:                       ns2.netim.net
+nserver:                       ns3.netim.net
+source:                        FRNIC
+
+registrar:                     NETIM
+address:                       264
+address:                       Avenue Arthur Notebart
+address:                       59160 LILLE
+country:                       FR
+phone:                         +33.972307470
+fax-no:                        +33.359350374
+e-mail:                        support@netim.com
+website:                       https://www.netim.com/fr/nom-domaine/domaine-fr
+anonymous:                     No
+registered:                    2005-01-03T00:00:00Z
+source:                        FRNIC
+
+nic-hdl:                       ANO00-FRNIC
+type:                          PERSON
+contact:                       Ano Nymous
+registrar:                     NETIM
+changed:                       2026-03-12T14:47:41.752055Z
+anonymous:                     YES
+remarks:                       -------------- WARNING --------------
+remarks:                       While the registrar knows him/her,
+remarks:                       this person chose to restrict access
+remarks:                       to his/her personal data. So PLEASE,
+remarks:                       don't send emails to Ano Nymous. This
+remarks:                       address is bogus and there is no hope
+remarks:                       of a reply.
+remarks:                       -------------- WARNING --------------
+obsoleted:                     NO
+eppstatus:                     associated
+eppstatus:                     active
+eligstatus:                    ok
+eligsource:                    REGISTRAR
+eligdate:                      2026-03-12T14:47:41.752057Z
+reachstatus:                   not identified
+source:                        FRNIC
+
+nic-hdl:                       ANO00-FRNIC
+type:                          PERSON
+contact:                       Ano Nymous
+registrar:                     NETIM
+changed:                       2026-09-21T13:30:03.240025Z
+anonymous:                     YES
+remarks:                       -------------- WARNING --------------
+remarks:                       While the registrar knows him/her,
+remarks:                       this person chose to restrict access
+remarks:                       to his/her personal data. So PLEASE,
+remarks:                       don't send emails to Ano Nymous. This
+remarks:                       address is bogus and there is no hope
+remarks:                       of a reply.
+remarks:                       -------------- WARNING --------------
+obsoleted:                     NO
+eppstatus:                     associated
+eppstatus:                     active
+eligstatus:                    not identified
+reachstatus:                   not identified
+source:                        FRNIC
+
+nic-hdl:                       CTC1193630-FRNIC
+type:                          ORGANIZATION
+contact:                       ProxyDom
+address:                       155 rue du faubourg Saint Denis
+address:                       75010 PARIS
+country:                       FR
+phone:                         +33.972307477
+e-mail:                        tld@proxydom.net
+registrar:                     NETIM
+changed:                       2025-01-26T19:52:00.619359Z
+anonymous:                     NO
+obsoleted:                     NO
+eppstatus:                     associated
+eppstatus:                     active
+eligstatus:                    not identified
+reachstatus:                   not identified
+source:                        FRNIC
+
+>>> Last update of WHOIS database: 2026-11-12T09:52:27.376469Z <<<
+

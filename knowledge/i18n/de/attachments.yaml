@@ -1,0 +1,97 @@
+attachments.dangerous_extension:
+  title: Ein Anhang hat einen Typ, den Gmail blockiert
+  why: Die Datei {value} hat einen Typ, den Gmail aus Sicherheitsgründen ablehnt. Gmail wird die Nachricht abweisen, und die meisten anderen E-Mail-Dienste sehr wahrscheinlich auch.
+  fix:
+    - "Entfernen Sie den Anhang."
+    - "Legen Sie die Datei auf einem Download-Bereich von {domain} oder bei einem Dateifreigabedienst ab und fügen Sie den Link in die Nachricht ein."
+    - "Benennen Sie die Erweiterung nicht um, um die Sperre zu umgehen: Gmail prüft auch den Inhalt von Archiven."
+attachments.archive_with_dangerous:
+  title: Ein angehängtes Archiv enthält eine Datei mit blockiertem Typ
+  why: "Das angehängte Archiv enthält {value}, einen verbotenen Dateityp. Gmail öffnet Archive und blockiert die verbotenen Typen, die sie enthalten: Die Nachricht wird abgewiesen."
+  fix:
+    - "Entfernen Sie das Archiv aus der Nachricht."
+    - "Teilen Sie die Datei über einen Download-Link von {domain}."
+attachments.encrypted_archive:
+  title: Ein angehängtes Archiv ist mit einem Passwort geschützt
+  why: "Das Archiv {value} ist verschlüsselt: Kein Filter kann seinen Inhalt prüfen. Gmail lehnt passwortgeschützte Archive ab, die andere Archive enthalten, und andere Filter stufen sie als verdächtig ein."
+  fix:
+    - "Senden Sie die Dateien ohne verschlüsseltes Archiv, als normale Anhänge, sofern ihr Typ zugelassen ist."
+    - "Legen Sie vertrauliche Dokumente in einem gesicherten Bereich mit Anmeldung ab und senden Sie nur den Link."
+attachments.double_extension:
+  title: Ein Anhang hat eine doppelte Dateiendung
+  why: "Die Datei {value} sieht aus wie ein Dokument, aber ihre echte Endung ist die letzte. Das ist der klassische Trick, um ein Programm zum Öffnen zu bringen: Die Filter blockieren sie."
+  fix:
+    - "Benennen Sie die Datei mit nur einer Endung, der ihres echten Formats."
+    - "Wenn die Datei wirklich ein Programm ist, senden Sie sie nicht per E-Mail, sondern stellen Sie einen Download-Link bereit."
+attachments.filename_bidi_override:
+  title: Der Name eines Anhangs enthält ein Zeichen, das die Anzeige umkehrt
+  why: Der Dateiname enthält ein unsichtbares Zeichen, das die Endung rückwärts anzeigt, damit ein Programm wie ein Dokument aussieht. Diese Methode wird als schädlich eingestuft.
+  fix:
+    - "Benennen Sie die Datei um, indem Sie den Namen von Hand neu eintippen, statt ihn zu kopieren."
+    - "Prüfen Sie den tatsächlichen Typ der Datei, bevor Sie sie senden."
+attachments.office_macro:
+  title: Ein angehängtes Office-Dokument enthält Makros
+  why: "Die Datei {value} enthält Makros. Makros sind ein wichtiger Weg für Schadsoftware: Gmail blockiert die, die es als schädlich einstuft, und Office deaktiviert sie standardmäßig bei Dateien aus dem Internet."
+  fix:
+    - "Speichern Sie das Dokument ohne Makros: Datei > Speichern unter, Format .docx, .xlsx oder .pptx."
+    - "Wenn der Empfänger das Dokument nicht bearbeiten muss, senden Sie es als PDF."
+attachments.html_attachment:
+  title: Der Nachricht ist eine HTML-Seite angehängt
+  why: "Die Datei {value} öffnet sich im Browser wie eine Webseite. Dieses Format dient vor allem für Phishing mit gefälschten Formularen: Die Filter behandeln es mit großem Misstrauen."
+  fix:
+    - "Stellen Sie den Inhalt in den Nachrichtentext oder veröffentlichen Sie ihn auf einer Seite von {domain} und senden Sie den Link."
+    - "Wenn es ein Dokument ist, das aufbewahrt werden soll, senden Sie es als PDF."
+attachments.pdf_active_content:
+  title: Ein angehängtes PDF enthält Code oder eine automatische Aktion
+  why: "Das PDF {value} enthält JavaScript, eine Aktion beim Öffnen oder eine versteckte Datei. Ein gewöhnliches Dokument braucht das nicht: Die Filter behandeln es als potenziell schädlich."
+  fix:
+    - "Erzeugen Sie das PDF aus dem Quelldokument neu, mit der üblichen Exportoption und ohne dynamische Formulare."
+    - "Oder drucken Sie es als PDF („Microsoft Print to PDF“ oder „Als PDF sichern“): Der Code und die eingebetteten Dateien verschwinden."
+attachments.pdf_with_links:
+  title: Die Nachricht verweist auf Links, die in einem angehängten PDF versteckt sind
+  why: "Die Nachricht ist kurz, und die Links stehen im PDF {value}. Links in einen Anhang zu legen ist eine bekannte Methode, der Linkprüfung zu entgehen: Manche Filter berücksichtigen das."
+  fix:
+    - "Setzen Sie die wichtigen Links in den Nachrichtentext, auf {domain}."
+    - "Fügen Sie einige Sätze hinzu, die erklären, was das Dokument enthält."
+attachments.too_large:
+  title: Die Nachricht ist für manche E-Mail-Dienste zu groß
+  why: "Die Nachricht wiegt {value}, Anhänge nach der Kodierung eingerechnet. Google gibt für private Gmail-Konten ein Limit von 25 MB für Anhänge an, und Orange akzeptiert höchstens 45 MB pro Nachricht. Darüber hinaus wird die Nachricht womöglich abgewiesen."
+  fix:
+    - "Entfernen Sie schwere Anhänge und stellen Sie stattdessen einen Download-Link bereit."
+    - "Komprimieren Sie PDFs (Export in der Qualität „Web“ oder „Bildschirm“) und verkleinern Sie Fotos."
+    - "Denken Sie daran, dass die Kodierung für den Versand die Größe um etwa ein Drittel erhöht."
+  fix_by_provider:
+    google_workspace: "Fügen Sie schwere Dateien mit der Google-Drive-Schaltfläche im Verfassen-Fenster ein, statt sie als Anhang anzuhängen."
+    microsoft_365: "Hängen Sie in Outlook die Datei aus OneDrive an und wählen Sie Link freigeben statt Kopie anfügen."
+attachments.large:
+  title: Die Anhänge sind schwer
+  why: Die Anhänge wiegen {value}. Die Nachricht kommt durch, füllt aber das Postfach des Empfängers und wird auf dem Handy langsam geladen. Bei einem Versand an viele Empfänger vervielfacht sich das übertragene Datenvolumen.
+  fix:
+    - "Komprimieren Sie Dokumente und verkleinern Sie Bilder, bevor Sie sie anhängen."
+    - "Bei einem Versand an mehrere Empfänger sollten Sie einen Download-Link bevorzugen."
+attachments.type_mismatch:
+  title: Der tatsächliche Typ eines Anhangs passt nicht zu seinem Namen
+  why: "Die Datei {value} trägt eine Endung, die nicht zu ihrem tatsächlichen Inhalt passt. Die Filter prüfen die Signatur der Dateien und behandeln diese Abweichung als Versuch der Tarnung."
+  fix:
+    - "Öffnen Sie die Datei mit dem Programm, das sie erstellt hat, und speichern Sie sie im angekündigten Format neu."
+    - "Prüfen Sie, dass Ihre Anwendung die Dateien beim Anhängen nicht umbenennt."
+attachments.no_filename:
+  title: Ein Anhang hat keinen Dateinamen
+  why: "Der Empfänger sieht eine Datei „noname“ oder „ATT00001“, ohne zu wissen, wie er sie öffnen soll. Ein Anhang ohne Namen ist außerdem ein Hinweis darauf, dass die Nachricht von Hand gebaut wurde."
+  fix:
+    - "Geben Sie jedem Anhang in Ihrem Code einen aussagekräftigen Namen, zum Beispiel facture-2026-11.pdf."
+    - "Lassen Sie die Versandbibliothek den Header Content-Disposition mit dem Parameter filename schreiben, nach RFC 2231 kodiert, wenn der Name Umlaute oder Akzente enthält."
+attachments.winmail_dat:
+  title: Die Nachricht enthält eine Datei winmail.dat
+  why: Outlook hat die Nachricht im Format TNEF gesendet. Außerhalb der Microsoft-Programme sieht der Empfänger nur eine unlesbare Datei winmail.dat, und Ihre eigentlichen Anhänge stecken darin.
+  fix:
+    - "In Outlook wählen Sie unter Datei > Optionen > E-Mail > Nachrichten verfassen den Eintrag HTML statt Rich-Text."
+    - "Stellen Sie in den Eigenschaften eines bestimmten Kontakts kein Rich-Text ein."
+  fix_by_provider:
+    microsoft_365: "Deaktivieren Sie in Exchange Online PowerShell TNEF nach außen: Set-RemoteDomain Default -TNEFEnabled $false."
+attachments.attachment_without_body:
+  title: Der Anhang wird ohne Begleittext gesendet
+  why: "Die Nachricht enthält nur einen Anhang und fast keinen Text. Genau so sehen gefälschte Rechnungen mit Schadcode aus: Filter und Empfänger misstrauen ihnen."
+  fix:
+    - "Schreiben Sie einige Sätze dazu: wer Sie sind, was die Datei enthält und warum Sie sie senden."
+    - "Fügen Sie eine Signatur mit dem Namen des Unternehmens und einer Kontaktmöglichkeit hinzu."

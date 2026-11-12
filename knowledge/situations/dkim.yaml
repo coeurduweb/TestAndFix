@@ -1,0 +1,693 @@
+# Famille dkim : signatures DKIM (RFC 6376, mise à jour par RFC 8301 et RFC 8463).
+# {dkim_domain} est le domaine d= de la signature, {selector} son sélecteur s=, et la clé
+# publique se lit dans le TXT {selector}._domainkey.{dkim_domain}.
+# Procédures des fournisseurs relevées sur leur documentation officielle le 2026-11-10.
+
+- id: dkim.missing
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "message.headers('DKIM-Signature') == []"
+    notes: "Aucune signature DKIM. Gmail exige SPF ou DKIM de tous les expéditeurs et SPF et DKIM au-delà de 5 000 messages par jour ; Yahoo exige les deux pour les envois en nombre."
+  sa_rules: []
+  title: "Le message n'est pas signé avec DKIM"
+  why: >
+    Sans DKIM, rien ne prouve que le message vient de {domain} et qu'il n'a pas été modifié.
+    C'est aussi la seule authentification qui survit à un transfert : sans elle, DMARC
+    échoue dès que le SPF casse.
+  fix:
+    - "Activez la signature DKIM dans le service qui envoie ce message ({provider})."
+    - "Publiez dans le DNS de {domain} l'enregistrement fourni (TXT ou CNAME sur sélecteur._domainkey.{domain})."
+    - "Revenez dans l'interface du service pour lancer la vérification, puis refaites ce test."
+  fix_by_provider:
+    google_workspace: "Console d'administration Google, Menu > Apps > Google Workspace > Gmail > Authenticate email (libellés anglais de la documentation) : générez une clé de 2048 bits (préfixe de sélecteur google par défaut), publiez le TXT google._domainkey.{domain} chez votre hébergeur DNS, puis cliquez sur Start authentication."
+    microsoft_365: "Portail Microsoft Defender, Email & collaboration, Policies & rules, Threat policies, Email authentication settings, onglet DKIM : sélectionnez {domain}, activez le bouton ; la fenêtre d'erreur affiche les deux CNAME selector1._domainkey et selector2._domainkey à publier. Valeurs exactes aussi par Get-DkimSigningConfig -Identity {domain} | Format-List Selector1CNAME,Selector2CNAME."
+    ovh: "MX Plan : onglet Informations générales du domaine, badge rouge DKIM, Activer. Email Pro et Exchange : onglet Domaines associés, badge DKIM, Activer. Si la zone DNS n'est pas dans le même compte OVHcloud, publiez d'abord les deux CNAME affichés (de la forme ovhmo…-selector1._domainkey)."
+    o2switch: "DKIM est activé par défaut chez o2switch ; vérifiez dans cPanel, Email, Email Deliverability (ou Authentification), Gérer. Si votre DNS est ailleurs, recopiez le TXT default._domainkey.{domain} affiché."
+    cpanel: "Email, Email Deliverability, Manage, section DKIM : Generate Local DKIM Key si besoin, puis installez ou recopiez le TXT default._domainkey.{domain} (clé 2048 bits par défaut)."
+    plesk: "Websites & Domains, {domain}, onglet Mail, Mail Settings : cochez « Use DKIM spam protection system to sign outgoing email messages ». Avec un DNS externe, recopiez les enregistrements default._domainkey.{domain} et _domainkey.{domain}."
+    ionos: "Avec les serveurs DNS IONOS, DKIM est actif par défaut. Avec un DNS externe, publiez les CNAME indiqués par IONOS, dont s1-ionos._domainkey vers s1.dkim.ionos.com et s2-ionos._domainkey vers s2.dkim.ionos.com."
+    gandi: "Domain, {domain}, onglet Email, Settings & Security, Edit, activez « DKIM Signature » (DNS LiveDNS) ; avec un DNS externe, publiez les trois CNAME gm1._domainkey, gm2._domainkey et gm3._domainkey vers gm1.gandimail.net., gm2.gandimail.net. et gm3.gandimail.net."
+    infomaniak: "DKIM est activé par défaut si la zone DNS est chez Infomaniak. Sinon, Manager, Service Mail, Sécurité globale, DKIM donne l'enregistrement à publier."
+    zoho: "mailadmin.zoho.com, Domains, {domain}, Email Configuration, DKIM, Add : choisissez un sélecteur (par exemple zoho), publiez le TXT sélecteur._domainkey.{domain}, cliquez sur Verify puis activez la clé."
+    proton: "Settings, All settings, Domain names, Review, onglet DKIM : publiez les trois CNAME protonmail._domainkey, protonmail2._domainkey et protonmail3._domainkey avec les cibles affichées."
+    brevo: "Settings, Senders, Domains, IPs, Domains, Authenticate : publiez les CNAME brevo1._domainkey et brevo2._domainkey (clé 2048 bits) ou le TXT proposé (1024 bits) selon votre compte."
+    mailchimp: "Icône du profil, Account & billing, onglet Domains, Start authentication : publiez les deux CNAME affichés."
+    mailjet: "Account, Domains & Sender addresses, SPF/DKIM Authentication : publiez le TXT mailjet._domainkey.{domain} ; choisissez une clé 2048 bits (proposée par défaut)."
+    sendgrid: "Settings, Sender Authentication, Domain Authentication, Get Started : publiez les CNAME s1._domainkey et s2._domainkey (et em…) indiqués."
+    mailgun: "Sending, Domains : publiez le TXT de la clé (sélecteur indiqué, par exemple mx._domainkey) en 2048 bits, ou les CNAME pdk1._domainkey et pdk2._domainkey si vous activez Automatic Sender Security."
+    amazon_ses: "Console SES, Configuration, Identities, Create identity (Domain), Easy DKIM en RSA_2048_BIT : publiez les trois CNAME jeton._domainkey.{domain} en recopiant la cible affichée (elle dépend de la région)."
+    postmark: "Sender Signatures, votre domaine, DNS Settings : publiez le TXT dont le nom se termine par pm._domainkey.{domain}."
+    sparkpost: "Plateforme Bird : Email, Domains, publiez le TXT sélecteur._domainkey.{domain} affiché. API SparkPost classique : TXT du sélecteur indiqué (par exemple scph0820)."
+    hubspot: "Settings, Content, Domains & URLs, onglet Email Sending, Connect sending domain : publiez les deux CNAME générés."
+    cloudflare_dns: "Ajoutez les CNAME DKIM en mode DNS only (nuage gris) ; Brevo et HubSpot demandent aussi de désactiver l'aplatissement des CNAME (CNAME flattening) pour ces enregistrements."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376
+    - https://support.google.com/mail/answer/81126
+    - https://knowledge.workspace.google.com/admin/security/set-up-dkim
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dkim-configure
+    - https://docs.ovhcloud.com/fr/guides/web-cloud/domains/dns-zone-dkim
+    - https://faq.o2switch.fr/cpanel/emails/delivrabilite-spf-dkim/
+    - https://docs.cpanel.net/cpanel/email/email-deliverability-in-cpanel/
+    - https://docs.plesk.com/en-US/obsidian/customer-guide/email/enabling-dkim-email-signing.74718/
+    - https://www.ionos.fr/assistance/domaines/configurer-les-serveurs-de-messagerie-et-les-enregistrements-associes/authentification-des-e-mails-avec-dkim/
+    - https://docs.gandi.net/en/gandimail/common_operations/enable_antispoofing_tools.html
+    - https://www.infomaniak.com/fr/support/faq/841/gerer-les-enregistrements-dkim
+    - https://www.zoho.com/mail/help/adminconsole/dkim-configuration.html
+    - https://proton.me/support/anti-spoofing-custom-domain
+    - https://help.brevo.com/hc/en-us/articles/16045394674066-Troubleshooting-Domain-authentication
+    - https://mailchimp.com/help/set-up-email-domain-authentication/
+    - https://documentation.mailjet.com/hc/en-us/articles/360049641733-Authenticating-Domains-with-SPF-and-DKIM-A-Complete-Guide
+    - https://www.twilio.com/docs/sendgrid/ui/account-and-settings/how-to-set-up-domain-authentication
+    - https://documentation.mailgun.com/docs/mailgun/user-manual/domains/dkim_security
+    - https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dkim-easy.html
+    - https://postmarkapp.com/support/article/1091-how-do-i-set-up-dkim-for-postmark
+    - https://bird.com/docs/guides/email/dkim-spf-dmarc
+    - https://knowledge.hubspot.com/marketing-email/manage-email-authentication-in-hubspot
+
+- id: dkim.signature_invalid
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.result == fail && dkim.reason ~ /signature did not verify/i && dkim.body_hash_ok == true"
+    notes: "RFC 6376 §6.1.3 : le hachage du corps est bon mais la signature des en-têtes ne vérifie pas, PERMFAIL (signature did not verify). Causes : en-tête signé modifié en chemin (Subject préfixé par [EXTERNE], From réécrit), clé publiée qui ne correspond pas à la clé privée."
+  sa_rules: [DKIM_INVALID]
+  title: "La signature DKIM de {dkim_domain} ne se vérifie pas"
+  why: >
+    La signature existe mais ne correspond plus au message ou à la clé publiée. Pour le
+    destinataire, c'est comme si le message n'était pas signé, et un échec DKIM pèse plus
+    qu'une absence de signature.
+  fix:
+    - "Comparez la clé publiée sur {selector}._domainkey.{dkim_domain} avec celle que le service d'envoi indique : après une rotation de clé, l'ancienne est parfois restée en ligne."
+    - "Vérifiez si un logiciel modifie le message après la signature (antivirus sortant, ajout de mention légale, réécriture du sujet) et placez la signature après lui."
+    - "Envoyez un nouveau test directement depuis le service, sans intermédiaire, pour isoler la cause."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.3
+
+- id: dkim.body_hash_mismatch
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.result == fail && dkim.reason ~ /body hash/i"
+    notes: "RFC 6376 §6.1.3 : PERMFAIL (body hash did not verify). Le corps a été modifié après signature : pied de page ajouté par une liste de diffusion, signature d'entreprise, antivirus, réencodage des fins de ligne ou du jeu de caractères."
+  sa_rules: [DKIM_INVALID]
+  title: "Le corps du message a été modifié après la signature DKIM"
+  why: >
+    Le contenu reçu n'est plus celui qui a été signé par {dkim_domain}. La signature est donc
+    rejetée, et si le SPF ne passe pas non plus, DMARC échoue.
+  fix:
+    - "Repérez dans les en-têtes Received le serveur placé après la signature (liste de diffusion, passerelle antivirus, outil qui ajoute une mention légale)."
+    - "Faites signer le message après ce serveur, ou désactivez la modification du corps."
+    - "Utilisez la canonicalisation c=relaxed/relaxed, plus tolérante aux changements d'espaces et de fins de ligne."
+    - "Si la modification vient d'une liste de diffusion que vous ne gérez pas, ce cas relève d'ARC côté liste."
+  fix_by_provider:
+    microsoft_365: "Une règle de flux qui ajoute une clause de non-responsabilité modifie le corps : vérifiez qu'elle s'applique avant la signature DKIM de Microsoft 365, ou retirez-la pour ce flux."
+    postfix: "Si un milter de contenu (antivirus, disclaimer) tourne après OpenDKIM, inversez l'ordre dans smtpd_milters pour que OpenDKIM signe en dernier."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.3
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.4
+    - https://www.postfix.org/MILTER_README.html
+
+- id: dkim.key_not_found
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dns.TXT(selector + '._domainkey.' + dkim_domain).rcode == NXDOMAIN || dns.TXT(selector + '._domainkey.' + dkim_domain) == []"
+    notes: "RFC 6376 §6.1.2 : PERMFAIL (no key for signature). Clé jamais publiée, publiée sous un mauvais nom (domaine ajouté deux fois par l'interface : {selector}._domainkey.{dkim_domain}.{dkim_domain}), ou supprimée après un changement de fournisseur."
+  sa_rules: [DKIM_INVALID]
+  title: "La clé DKIM {selector}._domainkey.{dkim_domain} est introuvable"
+  why: >
+    Le message est signé, mais le destinataire ne trouve pas la clé publique pour vérifier.
+    La signature échoue et le message perd l'authentification DKIM.
+  fix:
+    - "Ouvrez l'interface du service d'envoi et relevez le nom et la valeur exacts de l'enregistrement DKIM."
+    - "Dans votre zone DNS, créez-le sous le nom {selector}._domainkey ; si l'interface ajoute le domaine automatiquement, ne le saisissez pas une seconde fois."
+    - "Vérifiez avec dig TXT {selector}._domainkey.{dkim_domain} puis relancez la vérification dans le service."
+  example_bad: "{selector}._domainkey.{dkim_domain}.{dkim_domain}"
+  example_good: "{selector}._domainkey.{dkim_domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.2
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.6.2.1
+
+- id: dkim.key_cname_dangling
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dns.CNAME(selector + '._domainkey.' + dkim_domain) != null && dns.TXT(dns.CNAME_target(selector + '._domainkey.' + dkim_domain)) == []"
+    notes: "Le sélecteur est délégué en CNAME au fournisseur, mais la cible n'existe pas : faute de frappe, compte fermé, ou domaine non encore validé chez le fournisseur."
+  sa_rules: [DKIM_INVALID]
+  title: "Le CNAME DKIM {selector}._domainkey.{dkim_domain} pointe dans le vide"
+  why: >
+    Votre DNS renvoie vers la clé du fournisseur, mais celui-ci ne la publie pas. La signature
+    ne peut pas être vérifiée et échoue.
+  fix:
+    - "Comparez la cible du CNAME avec la valeur affichée dans l'interface du fournisseur ({provider}) et corrigez-la caractère par caractère."
+    - "Vérifiez que le domaine est toujours actif et authentifié dans ce service."
+  fix_by_provider:
+    amazon_ses: "La cible des CNAME Easy DKIM dépend de la région : recopiez-la depuis la console SES, ne la reconstituez pas à la main."
+    microsoft_365: "Les cibles ont deux formats : l'ancien selector1-…._domainkey.<tenant>.onmicrosoft.com et le nouveau selector1-…._domainkey.<tenant>.<lettre>-v1.dkim.mail.microsoft pour les domaines ajoutés depuis mai 2025. Recopiez les valeurs données par Get-DkimSigningConfig."
+    cloudflare_dns: "Dans DNS, Records, éditez le CNAME et basculez le proxy sur DNS only."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.2
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dkim-configure
+    - https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dkim-easy.html
+    - https://developers.cloudflare.com/dns/proxy-status/
+
+- id: dkim.key_revoked
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.key.p == ''"
+    notes: "RFC 6376 §3.6.1 et §6.1.2 : p= vide signifie clé révoquée, PERMFAIL (key revoked). Arrive quand un fournisseur a fait tourner la clé mais que le logiciel signe encore avec l'ancien sélecteur."
+  sa_rules: [DKIM_INVALID]
+  title: "La clé DKIM {selector}._domainkey.{dkim_domain} est révoquée"
+  why: >
+    La clé publiée sous ce sélecteur est volontairement vide : elle a été retirée. Les
+    messages encore signés avec elle échouent au DKIM.
+  fix:
+    - "Configurez le serveur ou le service d'envoi pour signer avec le sélecteur actif."
+    - "Si la révocation est une erreur, republiez la clé publique correspondante sous {selector}._domainkey.{dkim_domain}."
+  example_bad: "v=DKIM1; k=rsa; p="
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.6.1
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.2
+
+- id: dkim.key_syntax_error
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.reason ~ /key syntax|bad key|base64/i || dkim.key.p == null"
+    notes: "RFC 6376 §6.1.2 : PERMFAIL (key syntax error). Causes courantes : clé coupée lors du copier-coller, guillemets ou espaces insérés au milieu de p=, chaînes de 255 caractères mal recollées, préfixe -----BEGIN PUBLIC KEY----- laissé."
+  sa_rules: [DKIM_INVALID]
+  title: "L'enregistrement de la clé DKIM {selector}._domainkey.{dkim_domain} est illisible"
+  why: >
+    La clé publique est mal saisie dans le DNS, si bien que personne ne peut vérifier vos
+    signatures : elles échouent toutes.
+  fix:
+    - "Recopiez la valeur depuis l'interface du service, sans retour à la ligne ni en-tête BEGIN/END."
+    - "Si votre interface DNS limite la longueur, saisissez la valeur en plusieurs chaînes de 255 caractères au plus, entre guillemets, sans espace ajoutée."
+    - "Vérifiez avec dig TXT {selector}._domainkey.{dkim_domain} que la clé apparaît d'un seul tenant après p=."
+  fix_by_provider:
+    cpanel: "Dans Email Deliverability, Manage, utilisez le bouton Copy ou l'affichage Split pour obtenir la clé déjà découpée."
+    mailjet: "Si votre hébergeur DNS refuse les valeurs longues, Mailjet propose de générer une clé de 1024 bits ; préférez découper la clé de 2048 bits en plusieurs chaînes."
+  example_bad: "v=DKIM1; k=rsa; p=-----BEGIN PUBLIC KEY----- MIIBIjANBg..."
+  example_good: "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.2
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.6.1
+
+- id: dkim.multiple_key_records
+  family: dkim
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "count(dns.TXT(selector + '._domainkey.' + dkim_domain)) > 1"
+    notes: "Plusieurs TXT sous le même sélecteur : le vérificateur peut lire le mauvais. RFC 6376 §3.6.2.2 laisse le comportement aux implémentations, ce qui donne des résultats aléatoires."
+  sa_rules: []
+  title: "Le sélecteur DKIM {selector} de {dkim_domain} porte plusieurs clés"
+  why: >
+    Deux clés publiées au même endroit : selon le destinataire, la vérification réussit ou
+    échoue, ce qui rend vos résultats imprévisibles.
+  fix:
+    - "Gardez sous {selector}._domainkey.{dkim_domain} uniquement la clé actuellement utilisée par le service."
+    - "Pour une rotation, utilisez un nouveau nom de sélecteur plutôt que deux clés sous le même nom."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.6.2.2
+
+- id: dkim.key_dns_temperror
+  family: dkim
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dkim.result == temperror"
+    notes: "RFC 6376 §6.1.2 : TEMPFAIL (key unavailable), délai DNS dépassé ou SERVFAIL. À confirmer par un second test."
+  sa_rules: []
+  title: "La clé DKIM de {dkim_domain} n'a pas pu être lue (erreur DNS temporaire)"
+  why: >
+    Le destinataire n'a pas obtenu la clé à temps. Selon lui, il retarde le message ou
+    l'évalue comme non signé.
+  fix:
+    - "Refaites le test pour confirmer que l'erreur se répète."
+    - "Vérifiez que tous les serveurs de noms de {dkim_domain} répondent et que la signature DNSSEC de la zone est valide."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.2
+
+- id: dkim.key_below_1024
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.key.type == rsa && dkim.key.bits < 1024"
+    notes: "RFC 8301 §3.2 : les vérificateurs MUST NOT considérer comme valide une signature RSA de moins de 1024 bits. Gmail et les grands fournisseurs l'ignorent."
+  sa_rules: [DKIM_INVALID]
+  title: "La clé DKIM {selector}._domainkey.{dkim_domain} est trop courte ({value} bits) et rejetée"
+  why: >
+    Une clé de moins de 1024 bits est cassable et la norme interdit de l'accepter. Vos
+    signatures sont traitées comme invalides.
+  fix:
+    - "Générez une nouvelle clé de 2048 bits dans le service d'envoi, sous un nouveau sélecteur."
+    - "Publiez-la, attendez sa propagation, puis basculez la signature sur ce sélecteur."
+    - "Supprimez ensuite l'ancienne clé."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8301#section-3.2
+
+- id: dkim.key_1024
+  family: dkim
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dkim.key.type == rsa && dkim.key.bits >= 1024 && dkim.key.bits < 2048"
+    notes: "RFC 8301 §3.2 : minimum 1024 bits (MUST), au moins 2048 recommandés (SHOULD). Encore accepté partout, mais considéré comme faible."
+  sa_rules: []
+  title: "La clé DKIM {selector}._domainkey.{dkim_domain} ne fait que {value} bits"
+  why: >
+    Une clé de 1024 bits est encore acceptée mais déconseillée : la norme recommande 2048
+    bits, et une clé faible expose {domain} à une falsification de ses signatures.
+  fix:
+    - "Créez une clé de 2048 bits sous un nouveau sélecteur, publiez-la puis basculez la signature dessus."
+    - "Conservez l'ancienne clé publiée quelques jours pour les messages en transit, puis retirez-la."
+  fix_by_provider:
+    google_workspace: "Dans Authenticate email, générez un nouvel enregistrement en choisissant 2048 bits, avec un nouveau préfixe de sélecteur si l'ancien est encore utilisé."
+    microsoft_365: "En PowerShell Exchange Online : Rotate-DkimSigningConfig -Identity {domain} -KeySize 2048 (la taille par défaut de New-DkimSigningConfig est 1024)."
+    sendgrid: "Les authentifications créées après mai 2021 sont déjà en 2048 bits ; pour les plus anciennes, créez une nouvelle authentification de domaine avec un sélecteur personnalisé autre que s1."
+    brevo: "La méthode par CNAME (brevo1/brevo2._domainkey) utilise 2048 bits, la méthode par TXT 1024 bits : passez aux CNAME si votre compte les propose."
+    mailjet: "Régénérez la clé en 2048 bits dans SPF/DKIM Authentication."
+    amazon_ses: "Dans l'identité, Authentication, modifiez Easy DKIM et choisissez RSA_2048_BIT."
+    postmark: "Postmark documente des clés de 1024 bits sans option 2048 : le choix dépend du fournisseur."
+    cpanel: "Générez une nouvelle clé avec Generate Local DKIM Key (2048 bits par défaut sur cPanel)."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8301#section-3.2
+    - https://knowledge.workspace.google.com/admin/security/set-up-dkim
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dkim-configure
+    - https://www.twilio.com/docs/sendgrid/ui/account-and-settings/migrating-to-2048-bit-domainkeys-identified-mail-dkim
+    - https://help.brevo.com/hc/en-us/articles/16045394674066-Troubleshooting-Domain-authentication
+    - https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dkim-easy.html
+    - https://postmarkapp.com/support/article/1091-how-do-i-set-up-dkim-for-postmark
+
+- id: dkim.rsa_sha1
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.signature.a == 'rsa-sha1'"
+    notes: "RFC 8301 §3.1 : rsa-sha1 MUST NOT être utilisé pour signer ni pour vérifier."
+  sa_rules: [DKIM_INVALID]
+  title: "La signature DKIM utilise l'algorithme rsa-sha1, interdit"
+  why: >
+    SHA-1 n'est plus considéré comme sûr et la norme interdit de vérifier ces signatures.
+    Votre signature est ignorée par les destinataires à jour.
+  fix:
+    - "Configurez le logiciel de signature en rsa-sha256 (a=rsa-sha256)."
+    - "Mettez-le à jour s'il ne propose pas cet algorithme."
+  fix_by_provider:
+    postfix: "Avec OpenDKIM, réglez SignatureAlgorithm rsa-sha256 dans opendkim.conf puis redémarrez le service."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8301#section-3.1
+
+- id: dkim.from_not_signed
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "'from' not in [lower(h) for h in dkim.signature.h]"
+    notes: "RFC 6376 §5.4 : l'en-tête From MUST être signé ; §6.1.1 : sinon le vérificateur ignore la signature, PERMFAIL (From field not signed)."
+  sa_rules: [DKIM_INVALID]
+  title: "La signature DKIM ne couvre pas l'en-tête From"
+  why: >
+    Une signature qui ne protège pas l'expéditeur affiché est rejetée par la norme : votre
+    message est considéré comme non signé.
+  fix:
+    - "Ajoutez From à la liste des en-têtes signés (paramètre h= ou équivalent du logiciel)."
+    - "Signez au minimum From, To, Subject, Date, Message-ID, MIME-Version et Content-Type."
+  fix_by_provider:
+    postfix: "Avec OpenDKIM, retirez From de OmitHeaders s'il y figure ; par défaut OpenDKIM signe From."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-5.4
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.1
+
+- id: dkim.from_not_oversigned
+  family: dkim
+  severity: info
+  penalty: 0.1
+  detect:
+    signal: "count(h for h in dkim.signature.h if lower(h) == 'from') == count(message.headers('From'))"
+    notes: "RFC 6376 §8.15 : un attaquant peut ajouter un second en-tête From non signé. Lister From une fois de plus qu'il n'apparaît (sur-signature) empêche cet ajout."
+  sa_rules: []
+  title: "L'en-tête From n'est pas sur-signé"
+  why: >
+    Sans sur-signature, un tiers peut ajouter un second From au message sans casser votre
+    signature. Ce n'est pas pénalisé aujourd'hui, mais c'est une protection simple.
+  fix:
+    - "Configurez le logiciel de signature pour lister From deux fois dans h= (from:from)."
+  fix_by_provider:
+    postfix: "Avec OpenDKIM, ajoutez From à OversignHeaders dans opendkim.conf."
+  example_good: "h=from:from:to:subject:date:message-id"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-8.15
+
+- id: dkim.length_tag
+  family: dkim
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dkim.signature.l != null"
+    notes: "RFC 6376 §8.2 : l= permet d'ajouter du contenu non signé après la longueur indiquée ; les vérificateurs peuvent ignorer les signatures qui l'utilisent."
+  sa_rules: []
+  title: "La signature DKIM limite la partie signée du corps (l=)"
+  why: >
+    Avec l=, un tiers peut ajouter du texte ou un lien à la fin de votre message sans casser
+    la signature. Certains destinataires ignorent donc ces signatures.
+  fix:
+    - "Désactivez l'option de longueur de corps dans le logiciel de signature pour signer le corps entier."
+  fix_by_provider:
+    postfix: "Avec OpenDKIM, laissez BodyLengthDB vide et ne réglez pas de longueur de corps."
+  example_bad: "DKIM-Signature: v=1; a=rsa-sha256; d={dkim_domain}; s={selector}; l=1200; ..."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-8.2
+
+- id: dkim.key_testing_flag
+  family: dkim
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "'y' in dkim.key.t"
+    notes: "RFC 6376 §3.6.1 : t=y dans l'enregistrement de clé signale que le domaine teste DKIM ; les vérificateurs MUST NOT traiter ces messages différemment de messages non signés."
+  sa_rules: []
+  title: "La clé DKIM {selector}._domainkey.{dkim_domain} est en mode test (t=y)"
+  why: >
+    Le drapeau t=y demande aux destinataires de traiter vos messages comme s'ils n'étaient
+    pas signés. Votre DKIM fonctionne, mais il ne vous rapporte rien.
+  fix:
+    - "Retirez t=y de l'enregistrement {selector}._domainkey.{dkim_domain} une fois les tests concluants."
+    - "Gardez les autres balises (v=DKIM1, k=rsa, p=) inchangées."
+  example_bad: "v=DKIM1; k=rsa; t=y; p=MIIBIjANBg..."
+  example_good: "v=DKIM1; k=rsa; p=MIIBIjANBg..."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.6.1
+
+- id: dkim.signature_expired
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.signature.x != null && dkim.signature.x < now"
+    notes: "RFC 6376 §6.1.1 : PERMFAIL (signature expired) si x= est dépassé. Une durée trop courte, ou un message resté longtemps en file d'attente, suffit."
+  sa_rules: [DKIM_INVALID]
+  title: "La signature DKIM a expiré avant la livraison (x=)"
+  why: >
+    La signature portait une date d'expiration déjà passée à l'arrivée. Elle est rejetée et
+    le message perd l'authentification DKIM.
+  fix:
+    - "Allongez la durée de validité des signatures (plusieurs jours au moins) ou supprimez x=."
+    - "Vérifiez l'heure du serveur de signature : une horloge en retard ou en avance fausse x= et t=."
+  fix_by_provider:
+    postfix: "Avec OpenDKIM, augmentez SignatureTTL ou mettez-le à 0 pour ne pas ajouter x=."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.1
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.5
+
+- id: dkim.timestamp_future
+  family: dkim
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dkim.signature.t != null && dkim.signature.t > now + 300"
+    notes: "RFC 6376 §3.5 : les vérificateurs MAY ignorer les signatures dont l'horodatage t= est dans le futur. Signe d'une horloge déréglée sur le serveur de signature."
+  sa_rules: []
+  title: "La signature DKIM est datée dans le futur"
+  why: >
+    L'horloge du serveur qui signe est en avance. Certains destinataires ignorent ces
+    signatures, et la même erreur d'horloge fausse les dates de vos messages.
+  fix:
+    - "Synchronisez l'horloge du serveur avec NTP (chrony ou systemd-timesyncd)."
+    - "Refaites le test et vérifiez la valeur t= de la signature."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.5
+
+- id: dkim.selector_invalid
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "not dkim.signature.s matches /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?([.][A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/"
+    notes: "RFC 6376 §3.1 : un sélecteur suit la syntaxe d'un nom DNS (lettres, chiffres, traits d'union, points). Une espace, un soulignement ou un caractère accentué rendent la clé introuvable."
+  sa_rules: [DKIM_INVALID]
+  title: "Le sélecteur DKIM « {selector} » contient des caractères invalides"
+  why: >
+    Le nom du sélecteur n'est pas un nom DNS valide, souvent à cause d'une espace copiée par
+    erreur. La clé ne peut pas être trouvée et la signature échoue.
+  fix:
+    - "Corrigez le sélecteur dans la configuration du logiciel de signature (lettres, chiffres et traits d'union seulement)."
+    - "Publiez la clé sous ce nom corrigé, suivi de ._domainkey.{dkim_domain}."
+  example_bad: "s=mail 2026"
+  example_good: "s=mail2026"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.1
+
+- id: dkim.auid_mismatch
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.signature.i != null && not domain_of(dkim.signature.i).endswith(dkim.signature.d)"
+    notes: "RFC 6376 §6.1.1 : le domaine de i= doit être d= ou un de ses sous-domaines, sinon PERMFAIL (domain mismatch)."
+  sa_rules: [DKIM_INVALID]
+  title: "Le champ i= de la signature DKIM n'appartient pas au domaine {dkim_domain}"
+  why: >
+    La signature annonce une identité i= hors du domaine signataire. La norme impose de la
+    rejeter : vos messages perdent l'authentification DKIM.
+  fix:
+    - "Supprimez i= de la configuration de signature, ou réglez-le sur une adresse de {dkim_domain}."
+  example_bad: "d={dkim_domain}; i=@autre-domaine.example"
+  example_good: "d={dkim_domain}; i=@{dkim_domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.1
+
+- id: dkim.key_algorithm_mismatch
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.signature.a.startswith('rsa') != (dkim.key.k in [null, 'rsa']) || (dkim.key.h != null && 'sha256' not in dkim.key.h)"
+    notes: "RFC 6376 §6.1.2 : PERMFAIL (inappropriate key algorithm) si k= de la clé ne correspond pas à l'algorithme de la signature, ou si h= de la clé n'autorise pas le hachage utilisé."
+  sa_rules: [DKIM_INVALID]
+  title: "La clé DKIM publiée ne correspond pas à l'algorithme de la signature"
+  why: >
+    La clé publiée est d'un autre type (par exemple ed25519 au lieu de rsa) ou n'autorise pas
+    SHA-256. Le destinataire ne peut pas vérifier la signature.
+  fix:
+    - "Comparez a= dans la signature avec k= et h= dans {selector}._domainkey.{dkim_domain}."
+    - "Publiez sous ce sélecteur la clé du bon type, ou retirez h=sha1 de l'enregistrement."
+  example_bad: "Signature a=rsa-sha256 et clé v=DKIM1; k=ed25519; p=..."
+  example_good: "Signature a=rsa-sha256 et clé v=DKIM1; k=rsa; p=..."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.2
+
+- id: dkim.ed25519_only
+  family: dkim
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "all(s.a == 'ed25519-sha256' for s in dkim.signatures)"
+    notes: "RFC 8463 §6 : pour la compatibilité, un signataire peut ajouter plusieurs signatures avec l'ancien et le nouvel algorithme, sous des sélecteurs différents. RFC 6376 §3.3.4 : un vérificateur ignore une signature dont il ne met pas en oeuvre l'algorithme."
+  sa_rules: []
+  title: "Le message n'est signé qu'en ed25519"
+  why: >
+    Les destinataires qui ne prennent pas encore en charge ed25519 ignorent cette signature.
+    Pour eux, le message n'est pas signé et DMARC dépend du seul SPF.
+  fix:
+    - "Ajoutez une seconde signature rsa-sha256 (clé de 2048 bits) avec un autre sélecteur."
+    - "Gardez la signature ed25519 en complément."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8463#section-6
+
+- id: dkim.esp_domain_only
+  family: dkim
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dkim.result == pass && all(not aligned(s.d, domain) for s in dkim.valid_signatures) && any(s.d in esp_domains for s in dkim.valid_signatures)"
+    notes: "La seule signature valide est celle du domaine du fournisseur (d=sendgrid.net, d=mcsv.net, d=amazonses.com…), non alignée sur {domain}. DMARC ne peut alors passer que par le SPF."
+  sa_rules: []
+  title: "Le message est signé par {dkim_domain} ({provider}), pas par {domain}"
+  why: >
+    La signature prouve que {provider} a envoyé le message, pas que {domain} l'a autorisé.
+    Pour DMARC, il manque une signature alignée : au moindre transfert, le message échoue.
+  fix:
+    - "Authentifiez {domain} dans {provider} pour qu'il signe avec d={domain}."
+    - "Publiez les enregistrements DKIM fournis puis relancez la vérification dans l'interface."
+  fix_by_provider:
+    brevo: "Settings, Senders, Domains, IPs, Domains, Authenticate, puis publiez brevo1._domainkey et brevo2._domainkey."
+    mailchimp: "Account & billing, Domains, Start authentication, puis publiez les deux CNAME."
+    sendgrid: "Settings, Sender Authentication, Domain Authentication."
+    mailjet: "Account, Domains & Sender addresses, SPF/DKIM Authentication."
+    amazon_ses: "Vérifiez le domaine comme identité avec Easy DKIM : SES signera alors avec d={domain}."
+    hubspot: "Settings, Content, Domains & URLs, Email Sending, Connect sending domain."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.4.1
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dkim-configure
+
+- id: dkim.canonicalization_simple
+  family: dkim
+  severity: info
+  penalty: 0.1
+  detect:
+    signal: "dkim.signature.c in ['simple', 'simple/simple', 'relaxed/simple'] && dkim.result != pass"
+    notes: "La canonicalisation simple (RFC 6376 §3.4) casse au moindre changement d'espace ou de fin de ligne ; relaxed/relaxed tolère ces modifications bénignes. Signalé seulement quand la signature échoue."
+  sa_rules: []
+  title: "La signature DKIM utilise une canonicalisation stricte (c=simple)"
+  why: >
+    Avec c=simple, un simple réencodage des espaces par un serveur intermédiaire suffit à
+    casser la signature, ce qui est probablement arrivé ici.
+  fix:
+    - "Réglez la canonicalisation sur relaxed/relaxed dans le logiciel de signature."
+  fix_by_provider:
+    postfix: "Avec OpenDKIM, réglez Canonicalization relaxed/relaxed dans opendkim.conf."
+  example_good: "c=relaxed/relaxed"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.4
+
+# Fiches ajoutées le 2026-11-10 pour les situations émises par le vérificateur DKIM et par
+# l'analyse des messages qui n'avaient qu'un texte de repli.
+
+- id: dkim.headers_not_signed
+  family: dkim
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "dkim.result == pass && count(h for h in ['subject', 'date', 'to', 'message-id'] if h not in dkim.signed_headers) >= 2"
+    notes: "La signature est valide mais sa balise h= omet au moins deux de ces en-têtes ; {value} les liste. RFC 6376 §5.4.1 cite Subject, Date, To et Cc parmi les en-têtes qui constituent le cœur du message et qu'il convient de signer."
+  sa_rules: []
+  title: "La signature DKIM de {dkim_domain} ne couvre pas {value}"
+  why: >
+    La signature reste valide si quelqu'un change ces en-têtes : un message signé par
+    {dkim_domain} peut être rejoué avec un autre sujet, une autre date ou un autre
+    destinataire sans casser DKIM.
+  fix:
+    - "Dans le service qui signe ({provider}), cherchez la liste des en-têtes signés et ajoutez Subject, Date, To, Cc et Message-ID."
+    - "Sur votre propre serveur, complétez la liste des en-têtes signés du signataire (OpenDKIM : SignHeaders ; Rspamd : sign_headers)."
+    - "Refaites le test : la balise h= de la signature doit contenir ces en-têtes."
+  example_bad: "h=from:content-type"
+  example_good: "h=from:to:cc:subject:date:message-id:content-type:mime-version"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-5.4.1
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.5
+
+- id: dkim.key_service_type
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dkim.key.s != null && '*' not in dkim.key.s && 'email' not in dkim.key.s"
+    notes: "RFC 6376 §3.6.1 : la balise s= de la clé liste les services autorisés (défaut *) ; un vérificateur doit ignorer la clé si le type email n'y figure pas. {value} est la valeur lue."
+  sa_rules: []
+  title: "La clé DKIM {selector} de {dkim_domain} n'est pas utilisable pour l'e-mail"
+  why: >
+    La balise s={value} réserve la clé à d'autres services. Les destinataires doivent alors
+    l'ignorer : toutes les signatures faites avec le sélecteur {selector} échouent, comme si
+    la clé n'existait pas.
+  fix:
+    - "Ouvrez l'enregistrement TXT {selector}._domainkey.{dkim_domain} chez votre hébergeur DNS."
+    - "Retirez la balise s= (la valeur par défaut couvre tous les services) ou écrivez s=email."
+    - "Ne touchez pas au reste de la clé (p=), puis relancez la vérification."
+  example_bad: "v=DKIM1; k=rsa; s=web; p=MIIBIjANBgkq..."
+  example_good: "v=DKIM1; k=rsa; p=MIIBIjANBgkq..."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.6.1
+
+- id: dkim.selector_not_discovered
+  family: dkim
+  severity: low
+  penalty: 0
+  detect:
+    signal: "dkim.user_selectors == [] && all(dns.TXT(s + '._domainkey.' + domain) == [] for s in config.common_selectors)"
+    notes: "Aucune clé trouvée parmi la liste interne des sélecteurs courants ({value} essayés). Ce n'est pas une preuve d'absence : RFC 6376 §3.1 laisse le choix du sélecteur au signataire, et beaucoup de services en génèrent un propre au compte."
+  sa_rules: []
+  title: "Aucune clé DKIM trouvée parmi {value} sélecteurs courants"
+  why: >
+    Le DNS ne permet pas de lister les clés d'un domaine : il faut connaître le sélecteur.
+    Aucun des {value} sélecteurs usuels ne répond pour {domain}, mais vos services peuvent
+    utiliser un sélecteur propre au compte, impossible à deviner.
+  fix:
+    - "Ouvrez la source d'un message envoyé par {domain} et repérez l'en-tête DKIM-Signature : la balise s= donne le sélecteur, d= le domaine."
+    - "Saisissez ce sélecteur dans le vérificateur pour contrôler la clé."
+    - "Si aucun message n'est signé, activez DKIM dans chaque outil qui envoie pour {domain} et publiez la clé qu'il fournit."
+  example_good: "DKIM-Signature: v=1; a=rsa-sha256; d={domain}; s=selecteur1; ..."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-3.1
+
+- id: dkim.wildcard
+  family: dkim
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dns.TXT(random_label + '._domainkey.' + domain) != []"
+    notes: "Un sélecteur inventé au hasard obtient une réponse : un enregistrement générique (*) couvre _domainkey.{domain}. RFC 6376 §6.1.2 note qu'un TXT générique produit une réponse qui a peu de chances d'être une vraie clé DKIM."
+  sa_rules: []
+  title: "Le DNS de {domain} répond à n'importe quel sélecteur DKIM"
+  why: >
+    Un enregistrement générique (*) répond même pour un sélecteur inventé. Les clés listées
+    ici peuvent donc en être des copies et non de vraies clés, et une signature avec un
+    sélecteur oublié ne sera pas détectée comme sans clé.
+  fix:
+    - "Dans la zone DNS de {domain}, cherchez un enregistrement nommé *._domainkey ou un * qui couvre ce nom."
+    - "Supprimez-le et publiez chaque sélecteur sous son propre nom (sélecteur._domainkey.{domain})."
+    - "Si le générique est voulu (zone gérée par un service), saisissez vos sélecteurs réels pour un contrôle fiable."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.2
+    - https://www.rfc-editor.org/rfc/rfc4592
+
+- id: dkim.selector_cname_dangling
+  family: dkim
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "scan.dkim(selector).cname != null && dns.TXT(dns.CNAME_target(selector + '._domainkey.' + dkim_domain)).rcode == NXDOMAIN && none(k.provider == provider(selector) && k.valid for k in scan.dkim.keys)"
+    notes: "Découverte des sélecteurs (scanner de domaine). Le fournisseur se lit dans la cible du CNAME, l'hébergeur DNS dans les NS de la zone ; les étapes fix_by_provider ne s'affichent que pour ce qui a été détecté. Gravité passée par le code."
+  sa_rules: []
+  title: "Le CNAME DKIM {selector}._domainkey.{dkim_domain} pointe dans le vide"
+  why: >
+    {selector}._domainkey.{dkim_domain} renvoie vers {value}, qui n'existe pas : un message
+    signé avec ce sélecteur échoue au DKIM, et aucun autre sélecteur de ce service ne fonctionne.
+  fix:
+    - "Dans {provider}, ouvrez l'authentification du domaine {dkim_domain} et recopiez exactement la valeur attendue pour {selector}._domainkey.{dkim_domain}."
+    - "Corrigez le CNAME chez {dns_host}, ou supprimez-le si {dkim_domain} n'utilise plus ce service."
+  fix_by_provider:
+    microsoft_365: "Sur la page DKIM du portail Microsoft Defender (https://security.microsoft.com/authentication?viewid=DKIM), ouvrez {dkim_domain} et comparez les valeurs CNAME affichées avec {value}. La commande Exchange Online Get-DkimSigningConfig -Identity {dkim_domain} | Format-List Selector1CNAME,Selector2CNAME donne les mêmes valeurs."
+    cloudflare_dns: "Dans Cloudflare, DNS, Records : laissez ce CNAME en DNS only (nuage gris). Cloudflare recommande de ne pas proxifier les enregistrements utilisés pour l'e-mail et le DKIM."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.2
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dkim-configure
+    - https://developers.cloudflare.com/dns/proxy-status/
+
+- id: dkim.standby_selector_dangling
+  family: dkim
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "scan.dkim(selector).cname != null && dns.TXT(dns.CNAME_target(selector + '._domainkey.' + dkim_domain)).rcode == NXDOMAIN && any(k.provider == provider(selector) && k.valid for k in scan.dkim.keys)"
+    notes: "Microsoft 365 publie deux sélecteurs : « The other selector is inactive. It's activated and used only after any future DKIM key rotation » (documentation Microsoft, lue le 2026-11-10). Une clé de réserve cassée ne fait rien échouer aujourd'hui, mais casserait la signature à la prochaine rotation. Gravité passée par le code."
+  sa_rules: []
+  title: "La clé de réserve {selector}._domainkey.{dkim_domain} pointe dans le vide"
+  why: >
+    {twin} fonctionne, mais {selector}, l'autre sélecteur de {provider}, renvoie vers {value},
+    qui n'existe pas. Tant que {provider} signe avec {twin}, rien n'échoue ; si le service passe à
+    {selector} (rotation des clés), ses messages ne pourront plus être vérifiés.
+  fix:
+    - "Comparez la valeur attendue pour {selector} dans {provider} avec la cible publiée ({value})."
+    - "Si elle diffère, corrigez le CNAME {selector}._domainkey.{dkim_domain} chez {dns_host}."
+    - "Si elle est identique, la clé n'est pas publiée côté fournisseur : ne lancez pas de rotation des clés DKIM tant que {selector}._domainkey.{dkim_domain} ne répond pas."
+  fix_by_provider:
+    microsoft_365: "Sur la page DKIM du portail Microsoft Defender (https://security.microsoft.com/authentication?viewid=DKIM), ouvrez {dkim_domain} : le bouton Rotate DKIM keys ferait signer avec {selector}, ne l'utilisez pas avant que la cible réponde. La commande Get-DkimSigningConfig -Identity {dkim_domain} | Format-List Selector1CNAME,Selector2CNAME donne les valeurs attendues."
+    cloudflare_dns: "Dans Cloudflare, DNS, Records : laissez ce CNAME en DNS only (nuage gris). Cloudflare recommande de ne pas proxifier les enregistrements utilisés pour l'e-mail et le DKIM."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6376#section-6.1.2
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dkim-configure
+    - https://developers.cloudflare.com/dns/proxy-status/

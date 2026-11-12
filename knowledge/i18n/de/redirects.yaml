@@ -1,0 +1,201 @@
+redirects.loop:
+  title: "Die Weiterleitungskette läuft in einer Schleife"
+  why: "{url} verweist auf eine Adresse, die schon besucht wurde: Der Browser bricht mit dem Fehler „zu viele Weiterleitungen“ ab, und die Crawler erreichen die Seite nie. Über diese Adresse ist die Website nicht erreichbar."
+  fix:
+    - "Suchen Sie in der obigen Kette die beiden Adressen, die sich gegenseitig weiterleiten."
+    - "Suchen Sie die Regeln, die sie erzeugen: .htaccess, nginx-Konfiguration, Weiterleitungserweiterung des CMS, Seitenregel des CDN."
+    - "Eine häufige Ursache: Der Server erzwingt https, während das CDN oder der Proxy mit ihm über http spricht. Testen Sie dann den Header X-Forwarded-Proto statt %{HTTPS}."
+    - "Behalten Sie eine einzige Regel, die direkt zur endgültigen Adresse führt, und wiederholen Sie die Messung."
+  fix_by_provider:
+    wordpress: "Tragen Sie unter Einstellungen > Allgemein dieselbe Adresse, in https, in „WordPress-Adresse (URL)“ und „Website-Adresse (URL)“ ein. Deaktivieren Sie dann nacheinander die Erweiterungen, die weiterleiten (Redirection, Really Simple SSL, Cache-Erweiterung), und wiederholen Sie die Messung nach jeder einzelnen. Prüfen Sie zum Schluss die Regeln in der .htaccess im Stammverzeichnis."
+redirects.too_many:
+  title: "Die Weiterleitungskette endet nicht"
+  why: "Nach {value} Anfragen ab {url} geht die Kette weiter. Die Crawler von Google folgen höchstens 10 Sprüngen: Darüber hinaus wird die Zielseite nicht gecrawlt, und jeder Sprung verlangsamt den Besucher."
+  fix:
+    - "Lesen Sie die obige Kette und finden Sie die Stelle, an der sie sich dem Ziel nicht mehr nähert."
+    - "Ersetzen Sie die aufeinanderfolgenden Weiterleitungen durch eine einzige 301-Weiterleitung auf die endgültige Adresse."
+redirects.private_target:
+  title: "Die Kette führt zu einer privaten Adresse"
+  why: "{url} zeigt auf {ip}, eine private oder lokale Adresse. Aus dem Internet kann sie niemand erreichen: Das ist ein Fehler in der DNS-Konfiguration oder eine Weiterleitung auf einen internen Server."
+  fix:
+    - "Wenn die Domain öffentlich ist, korrigieren Sie ihren A- oder AAAA-Eintrag, sodass er auf die öffentliche IP des Servers zeigt."
+    - "Wenn die Weiterleitung auf einen internen Server (Vorproduktion, Intranet) zeigt, ersetzen Sie das Ziel durch die öffentliche Adresse."
+redirects.unreachable:
+  title: "Eine Adresse der Kette antwortet nicht"
+  why: "Die Anfrage an {url} ist fehlgeschlagen: {value}. Der Besucher sieht eine Fehlerseite des Browsers, und die Crawler können nichts crawlen."
+  fix:
+    - "Wenn der Name nicht existiert, legen Sie seinen A-Eintrag (oder CNAME) beim DNS-Anbieter an oder korrigieren Sie die Weiterleitung, die dorthin führt."
+    - "Wenn die Verbindung abgelehnt wird oder abläuft, prüfen Sie, dass der Webserver auf den Ports 80 und 443 lauscht und die Firewall sie durchlässt."
+    - "Wenn die TLS-Aushandlung scheitert, installieren Sie auf dem Server ein Zertifikat für diesen Namen."
+redirects.chain_long:
+  title: "Zu viele Weiterleitungen, bevor man ankommt"
+  why: "{url} führt über {value} Weiterleitungen, bevor {final} erreicht wird. Jeder Sprung fügt eine vollständige Verbindung hinzu und verzögert die Anzeige, vor allem auf dem Handy. Links, die auf die alte Adresse zeigen, übertragen ihr Signal schlechter."
+  fix:
+    - "Lassen Sie jede alte Adresse mit einer einzigen 301-Weiterleitung direkt auf {final} zeigen."
+    - "Fassen Sie die Regeln von http zu https und von www in einer einzigen Regel zusammen, wie oben vorgeschlagen."
+    - "Aktualisieren Sie die internen Links, die Sitemap und die Canonical-Tags mit der endgültigen Adresse."
+redirects.temporary_for_permanent:
+  title: "Für eine endgültige Änderung wird eine temporäre Weiterleitung verwendet"
+  why: "{url} antwortet mit {status} (temporäre Weiterleitung), obwohl die Änderung endgültig ist: {value}. Eine temporäre Weiterleitung sagt den Suchmaschinen, dass die alte Adresse weiterhin die richtige ist: Google kann die alte weiter anzeigen, und das Signal der Links wird schlechter übertragen."
+  fix:
+    - "Ersetzen Sie in der Regel, die diesen Sprung erzeugt, den Code durch 301 (oder 308, wenn die Methode erhalten bleiben muss)."
+    - "Wiederholen Sie die Messung: Die Zeile muss 301 oder 308 anzeigen."
+  fix_by_provider:
+    wordpress: "Wenn die Regel von einer Weiterleitungserweiterung stammt (zum Beispiel Werkzeuge > Redirection), öffnen Sie sie und wählen Sie den Code 301. Steht sie in der .htaccess, ersetzen Sie [R,L] oder [R=302,L] durch [R=301,L]."
+redirects.redirect_to_error:
+  title: "Die Weiterleitung führt auf eine Fehlerseite"
+  why: "{url} leitet (Weiterleitung {value}) auf {final} weiter, und dort antwortet {status}. Der Besucher landet bei einem Fehler, und Google nimmt die Seite aus dem Index: Der Nutzen der Weiterleitung ist verloren."
+  fix:
+    - "Ändern Sie das Ziel der Weiterleitung auf eine Seite, die mit 200 antwortet: die neue gleichwertige Seite oder, falls es sie nicht gibt, die übergeordnete Rubrik."
+    - "Wenn die Ausgangsadresse ein Kurzlink ist (bit.ly, tinyurl.com ...), ändern Sie sein Ziel im Konto des Kürzungsdienstes: Dafür ist keine Serverregel zu schreiben."
+    - "Wenn der Inhalt gar nicht mehr existiert, löschen Sie die Weiterleitung und lassen Sie die alte Adresse mit 410 antworten."
+    - "Wenn das Ziel mit 5xx antwortet, ist der Zielserver gestört: Sehen Sie in seine Fehlerprotokolle."
+redirects.final_error:
+  title: "Die Adresse antwortet mit einem Fehler"
+  why: "{url} antwortet mit {status} ohne Weiterleitung. Wenn diese Adresse noch Besuche oder Links erhält, enden sie bei einem Fehler. Google nimmt URLs mit 4xx aus dem Index."
+  fix:
+    - "Wenn die Seite verschoben wurde, ergänzen Sie eine 301-Weiterleitung auf ihre neue Adresse."
+    - "Wenn sie absichtlich gelöscht wurde, belassen Sie 404 oder 410 und entfernen Sie die Links, die dorthin führen."
+    - "Wenn der Fehler 5xx ist, sehen Sie in die Fehlerprotokolle des Servers oder der Anwendung."
+redirects.redirect_without_location:
+  title: "Ein Weiterleitungscode ohne Zieladresse"
+  why: "{url} antwortet mit {status}, nennt aber kein Ziel (Header Location fehlt). Der Browser bleibt auf einer leeren Seite, und die Crawler brechen dort ab."
+  fix:
+    - "Ergänzen Sie in der Regel oder im Code, der dieses {status} erzeugt, den Header Location mit der vollständigen Zieladresse."
+    - "Wenn keine Weiterleitung gewollt ist, lassen Sie die Seite mit 200 antworten."
+redirects.https_to_http:
+  title: "Eine Weiterleitung führt von https zurück zu http"
+  why: "{url} leitet im Klartext auf {target} weiter. Der Besucher verliert unterwegs die Verschlüsselung, der Browser zeigt „Nicht sicher“ an, und eine Website, die HSTS veröffentlicht, sperrt sich selbst aus."
+  fix:
+    - "Ändern Sie das Ziel dieser Weiterleitung auf das entsprechende https://-Ziel."
+    - "Prüfen Sie die Adresseinstellung der Website im CMS: Sie muss mit https:// beginnen."
+  fix_by_provider:
+    wordpress: "Unter Einstellungen > Allgemein müssen die beiden Adressen „WordPress-Adresse (URL)“ und „Website-Adresse (URL)“ mit https:// beginnen."
+redirects.http_not_redirected:
+  title: "Die http-Version wird nicht auf https weitergeleitet"
+  why: "{url} wird im Klartext ausgeliefert, statt auf https://{domain} weiterzuleiten. Besucher, die die Adresse ohne https eingeben, bleiben auf einer unverschlüsselten Seite, die Browser als „Nicht sicher“ markieren."
+  fix:
+    - "Installieren Sie ein Zertifikat für {domain}, falls noch nicht geschehen (Let's Encrypt ist bei den meisten Hostern kostenlos)."
+    - "Ergänzen Sie die oben vorgeschlagene Regel: eine einzige 301-Weiterleitung von http auf https."
+    - "Hinter einem CDN aktivieren Sie stattdessen die Option „Immer HTTPS verwenden“ des CDN."
+  fix_by_provider:
+    wordpress: "Stellen Sie unter Einstellungen > Allgemein beide Adressen der Website auf https:// um und ergänzen Sie dann die oben genannte 301-Regel am Anfang der .htaccess, vor dem Block # BEGIN WordPress."
+redirects.hsts_missing:
+  title: "HSTS fehlt auf der https-Seite"
+  why: "{domain} veröffentlicht kein HSTS: Bei jedem ohne https eingegebenen Besuch geht der Browser zuerst über http, wo ein Zwischenhändler die Weiterleitung abfangen oder umleiten kann."
+  fix:
+    - "Ergänzen Sie den oben vorgeschlagenen Header in der https-Konfiguration der Website."
+    - "Beginnen Sie mit einer kurzen Laufzeit (max-age=300), wenn Sie nicht sicher sind, dass alle Subdomains ein Zertifikat haben, und erhöhen Sie sie dann auf ein Jahr."
+    - "Fügen Sie includeSubDomains nur hinzu, wenn alle Subdomains von {domain} über https antworten."
+redirects.hsts_short:
+  title: "HSTS-Laufzeit zu kurz"
+  why: "Der HSTS-Header von {domain} gilt nur {value}. Nach dieser Zeit ohne Besuch vergisst der Browser die Regel und geht beim nächsten Besuch wieder über http."
+  fix:
+    - "Setzen Sie max-age auf 31536000 (ein Jahr), sobald die Website stabil über https läuft."
+redirects.hsts_no_subdomains:
+  title: "HSTS deckt die Subdomains nicht ab"
+  why: "HSTS schützt {domain}, aber nicht seine Subdomains: Eine vergessene Subdomain bleibt unverschlüsselt erreichbar. Das ist optional, aber für die Preload-Liste der Browser nötig."
+  fix:
+    - "Prüfen Sie, dass alle Subdomains von {domain} mit einem gültigen Zertifikat über https antworten."
+    - "Ergänzen Sie dann includeSubDomains im Header, wie oben."
+redirects.meta_refresh:
+  title: "Weiterleitung per Meta-Refresh statt per HTTP-Weiterleitung"
+  why: "{url} lädt zuerst eine Seite und schickt den Besucher dann nach {value} Sekunde(n) per Meta-Tag auf {target}. Der Besucher lädt eine unnötige Seite. Google versteht dieses Verfahren, empfiehlt aber eine serverseitige Weiterleitung und behandelt eine Verzögerung ungleich null als temporär."
+  fix:
+    - "Ersetzen Sie das Tag durch eine serverseitige 301-Weiterleitung, wie oben vorgeschlagen."
+    - "Entfernen Sie danach die Zwischenseite."
+redirects.refresh_header:
+  title: "Weiterleitung per Refresh-Header statt mit einem 3xx-Code"
+  why: "{url} antwortet normal und bittet den Browser dann mit dem Header Refresh, nach {value} Sekunde(n) auf {target} zu gehen. Das ist keine Standard-HTTP-Weiterleitung: Bevorzugen Sie einen 301-Code."
+  fix:
+    - "Ersetzen Sie den Header Refresh durch eine serverseitige 301-Weiterleitung, wie oben vorgeschlagen."
+redirects.js_redirect:
+  title: "Weiterleitung per JavaScript statt per HTTP-Weiterleitung"
+  why: "{url} leitet nur über ein Skript auf {target} weiter. Ohne JavaScript (manche Crawler, Linkvorschauen, blockierende Browser) findet die Weiterleitung nicht statt, und Google sieht sie nur, wenn das Rendern der Seite gelingt."
+  fix:
+    - "Ersetzen Sie das Skript durch eine serverseitige 301-Weiterleitung, wie oben vorgeschlagen."
+    - "Wenn nur JavaScript möglich ist (statisches Hosting ohne Regeln), ergänzen Sie mindestens einen sofortigen Meta-Refresh und einen sichtbaren Link auf {target}."
+redirects.js_seen:
+  title: "Ein Skript der Seite kann anderswohin leiten"
+  why: "Das HTML von {url} enthält einen Adresswechsel auf {target}. Da die Seite einen eigenen Inhalt hat, ist check ihm nicht gefolgt: Er hängt vermutlich von einer Aktion oder einer Bedingung ab."
+  fix:
+    - "Wenn diese Weiterleitung bei jedem Besuch stattfinden soll, setzen Sie sie serverseitig als 301 um."
+redirects.canonical_missing:
+  title: "Die Zielseite gibt ihre kanonische Adresse nicht an"
+  why: "{url} deklariert ihre kanonische Adresse nicht. Antwortet dieselbe Seite auch mit Parametern oder unter einer anderen Adresse, wählt Google selbst aus, welche angezeigt wird."
+  fix:
+    - "Ergänzen Sie im <head> das oben vorgeschlagene Tag mit der absoluten Adresse der Seite."
+  fix_by_provider:
+    wordpress: "Yoast SEO und Rank Math setzen das Canonical-Tag von sich aus. Prüfen Sie, dass eine dieser Erweiterungen aktiv ist und dieser Inhaltstyp in ihren Einstellungen nicht von der Indexierung ausgeschlossen ist."
+redirects.canonical_mismatch:
+  title: "Die Canonical-Angabe passt nicht zur Adresse, auf die die Weiterleitung führt"
+  why: "Die Weiterleitung führt auf {url}, die Seite deklariert aber {target} als kanonisch. Die beiden Signale widersprechen sich: Google kann eines von beiden wählen, und die Weiterleitung hätte direkt auf die kanonische Adresse zielen müssen."
+  fix:
+    - "Wenn {target} die richtige Adresse ist, lassen Sie die Weiterleitung direkt darauf zeigen."
+    - "Wenn {url} die richtige Adresse ist, korrigieren Sie das Canonical-Tag wie oben vorgeschlagen."
+redirects.canonical_relative:
+  title: "Die Canonical-Angabe ist als relativer Pfad geschrieben"
+  why: "Die Seite deklariert {value} als kanonisch, ohne Schema und Domain. Google empfiehlt eine absolute Adresse: Eine Kopie der Website auf einer anderen Domain würde sonst dieselbe Canonical-Angabe übernehmen."
+  fix:
+    - "Schreiben Sie die vollständige Adresse, wie oben vorgeschlagen."
+redirects.final_noindex:
+  title: "Die Zielseite verbietet ihre Indexierung"
+  why: "{url} bittet die Suchmaschinen, sie nicht in den Ergebnissen anzuzeigen. Wenn dies die Seite ist, auf die Ihre Weiterleitungen führen, geht der gesamte Suchverkehr auf diese Adressen verloren."
+  fix:
+    - "Wenn die Seite gefunden werden soll, entfernen Sie noindex aus dem Header X-Robots-Tag (Serverkonfiguration) oder aus dem Meta-Tag robots (SEO-Einstellung des CMS)."
+  fix_by_provider:
+    wordpress: "Haken Sie unter Einstellungen > Lesen das Feld „Suchmaschinen davon abhalten, diese Website zu indexieren“ ab. Prüfen Sie in Yoast SEO oder Rank Math außerdem die Indexierungseinstellung für diesen Inhaltstyp."
+redirects.cert_invalid:
+  title: "Ungültiges Zertifikat auf {domain}"
+  why: "Das von {domain} vorgelegte Zertifikat wird abgelehnt: {value}. Browser sperren die Seite hinter einer Sicherheitswarnung, und ein Besucher erreicht die Weiterleitung nie."
+  fix:
+    - "Erneuern oder installieren Sie das Zertifikat von {domain} neu über den Verwaltungsbereich des Hosters (bei Let's Encrypt: Ausstellung erneut anstoßen)."
+    - "Wenn der Name nicht abgedeckt ist, stellen Sie ein Zertifikat aus, das {domain} in seinen Namen enthält (mit und ohne www, wenn beide antworten)."
+    - "Wenn die Kette nicht erkannt wird, installieren Sie das Zwischenzertifikat der Zertifizierungsstelle zusammen mit dem Zertifikat der Website."
+redirects.cert_expiring:
+  title: "Das Zertifikat von {domain} läuft bald ab"
+  why: "Das Zertifikat von {domain} ist nur noch {value} Tag(e) gültig. Wird es nicht rechtzeitig erneuert, sperren Browser die Website hinter einer Warnung."
+  fix:
+    - "Prüfen Sie, dass die automatische Erneuerung im Verwaltungsbereich des Hosters oder in der certbot-Aufgabe aktiv ist."
+    - "Starten Sie jetzt eine manuelle Erneuerung und wiederholen Sie danach die Messung."
+redirects.heavy_body:
+  title: "Das HTML der Zielseite ist sehr schwer"
+  why: "Das HTML-Dokument von {url} wiegt {value}. Der Google-Crawler liest davon nur die ersten 2 MB: Was danach kommt, wird für die Indexierung nicht berücksichtigt, und der Besucher wartet auf den vollständigen Download."
+  fix:
+    - "Lagern Sie große eingebettete Daten aus dem HTML in eigene Dateien aus (Bilder als base64, große JSON-Blöcke, eingebettete Styles und Skripte)."
+    - "Paginieren Sie sehr lange Listen."
+redirects.uncompressed:
+  title: "Die Zielseite wird nicht komprimiert"
+  why: "{url} sendet {value} unkomprimierten Text, obwohl der Browser Komprimierung akzeptiert. Eine gzip- oder Brotli-Komprimierung verringert das Volumen oft um den Faktor drei bis fünf, und die Anzeige kommt schneller."
+  fix:
+    - "Apache: Aktivieren Sie das Modul deflate (oder brotli) für text/html, text/css, application/javascript und application/json."
+    - "nginx: Ergänzen Sie im Block http gzip on; und gzip_types text/css application/javascript application/json;."
+redirects.slow:
+  title: "Die Kette ist langsam"
+  why: "Es dauert {value} ms, bis {url} erreicht ist, davon {ttfb} ms Wartezeit auf das erste Byte der Zielseite. Der Besucher wartet, bevor er etwas sieht."
+  fix:
+    - "Lesen Sie das Detail je Sprung oben: Wenn DNS oder Verbindung dominieren, verringern Sie die Zahl der Sprünge und der durchlaufenen Domains."
+    - "Wenn die Wartezeit auf das erste Byte dominiert, aktivieren Sie den Seiten-Cache des CMS oder des Servers (LiteSpeed Cache, WP Rocket, nginx-Cache)."
+    - "Führen Sie den oben vorgeschlagenen curl-Befehl vor und nach jeder Änderung erneut aus: Er misst dieselben Phasen von Ihrem Rechner aus."
+redirects.variants_diverge:
+  title: "Die Varianten der Website führen nicht zur selben Adresse"
+  why: "Je nachdem, wie die Adresse eingegeben wird, führt {domain} zu {value} verschiedenen Seiten. Google sieht Duplikate, teilt das Linksignal zwischen ihnen auf, und der Besucher findet nicht immer dieselbe Version."
+  fix:
+    - "Wählen Sie eine einzige Referenzadresse, hier {final}."
+    - "Leiten Sie alle anderen Varianten mit einer einzigen 301-Weiterleitung dorthin weiter, mit der oben vorgeschlagenen Regel."
+redirects.variant_extra_hops:
+  title: "Manche Varianten laufen über mehrere Weiterleitungen"
+  why: "Bevor {final} erreicht wird, verketten diese Varianten mehrere Weiterleitungen (zum Beispiel http, dann https, dann www): {value}. Eine einzige Regel genügt, und jeder vermiedene Sprung beschleunigt den ersten Besuch."
+  fix:
+    - "Ersetzen Sie die aufeinanderfolgenden Regeln durch die oben vorgeschlagene einzige Regel, die jede Variante direkt auf {target} leitet."
+redirects.variant_unreachable:
+  title: "Eine Variante der Website antwortet nicht"
+  why: "{value} antwortet nicht. Besucher, die diese Form der Adresse eingeben oder einem alten Link folgen, landen bei einem Fehler statt auf der Weiterleitung."
+  fix:
+    - "Wenn der Name im DNS nicht existiert, legen Sie ihn an (zum Beispiel CNAME www auf {domain}) und leiten Sie ihn dann per 301 weiter."
+    - "Wenn der Name existiert, aber nicht über https antwortet, nehmen Sie ihn in das Zertifikat der Website auf."
+redirects.language_redirect:
+  title: "Sprachweiterleitung, zu Recht temporär"
+  why: "{url} leitet je nach der vom Browser angegebenen Sprache mit {status} auf {target} weiter. Das ist eine Aushandlung: Eine endgültige Weiterleitung würde diese Sprache für alle Besucher und für die Suchmaschinen festschreiben."
+  fix:
+    - "Behalten Sie diesen temporären Code bei. Für die Suchmaschinen deklarieren Sie die Sprachversionen mit hreflang-Links statt mit der Weiterleitung."

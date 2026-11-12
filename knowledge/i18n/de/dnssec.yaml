@@ -1,0 +1,81 @@
+dnssec.bogus:
+  title: Die DNSSEC-Signatur von {domain} ist ungültig
+  why: "Resolver, die DNSSEC prüfen, lehnen alle Antworten von {domain} ab. Für sie existieren Ihr SPF, Ihre DKIM-Schlüssel und Ihr DMARC nicht mehr: Ihre Nachrichten werden zurückgehalten oder abgelehnt, und die Post an {domain} kann nicht mehr zugestellt werden."
+  fix:
+    - Prüfen Sie die Zone mit dem Analysator DNSViz (dnsviz.net) oder dem DNSSEC Analyzer von Verisign, um den betroffenen Eintrag zu finden.
+    - Haben Sie kürzlich den DNS-Hoster gewechselt, löschen Sie beim Registrar den alten DS-Eintrag, aktivieren Sie DNSSEC dann beim neuen Hoster und veröffentlichen Sie dessen DS.
+    - "Im Notfall entfernen Sie den DS-Eintrag beim Registrar: Die Zone ist dann nicht mehr signiert, lässt sich aber wieder auflösen, sobald die TTL des DS abgelaufen ist."
+  fix_by_provider:
+    cloudflare_dns: "Im Bereich DNS, Settings, Abschnitt DNSSEC prüfen Sie den Status. Weicht der angezeigte DS von dem beim Registrar veröffentlichten ab, ersetzen Sie diesen durch den von Cloudflare angegebenen Wert."
+dnssec.ds_mismatch:
+  title: Der DS-Eintrag von {domain} passt nicht mehr zu seinen DNSSEC-Schlüsseln
+  why: "Die Registry kündigt einen Schlüssel an, den die Zone von {domain} nicht mehr veröffentlicht. Validierende Resolver halten alle Ihre DNS-Antworten für gefälscht: SPF, DKIM, DMARC und MX werden unsichtbar."
+  fix:
+    - Ermitteln Sie die Schlüssel, die Ihr aktueller DNS-Hoster veröffentlicht (DNSKEY-Einträge oder der DS-Wert aus seiner Oberfläche).
+    - Entfernen Sie beim Registrar den alten DS und tragen Sie den des aktuellen Hosters ein.
+    - Warten Sie den Ablauf der TTL des alten DS ab (sichtbar mit dig DS {domain}), bevor Sie den Test wiederholen.
+  fix_by_provider:
+    cloudflare_dns: Im Bereich DNS, Settings, DNSSEC kopieren Sie den vorgeschlagenen DS-Eintrag und fügen ihn beim Registrar anstelle des alten ein.
+dnssec.dnskey_missing:
+  title: "{domain} meldet DNSSEC, aber seine Zone ist nicht mehr signiert"
+  why: Bei der Registry besteht noch ein DS-Eintrag, obwohl die Zone von {domain} nicht mehr signiert ist. Validierende Resolver lehnen dann alle Antworten ab, und Ihre E-Mail funktioniert für einen Teil der Empfänger nicht mehr.
+  fix:
+    - "Entscheiden Sie sich: Entweder aktivieren Sie DNSSEC bei Ihrem aktuellen DNS-Hoster erneut oder Sie entfernen den DS."
+    - Um den DS zu entfernen, löschen Sie ihn in der DNSSEC-Oberfläche Ihres Registrars.
+    - Um DNSSEC wieder zu aktivieren, schalten Sie es beim DNS-Hoster ein und ersetzen Sie den DS beim Registrar durch den neuen Wert.
+dnssec.rrsig_expired:
+  title: Die DNSSEC-Signaturen von {domain} sind abgelaufen
+  why: Die Signaturen Ihrer Zone sind nicht mehr gültig. Validierende Resolver lehnen die Antworten von {domain} ab, wodurch Ihr SPF, Ihre DKIM-Schlüssel und Ihr DMARC unsichtbar werden.
+  fix:
+    - Lassen Sie die Zone beim DNS-Hoster oder auf Ihrem Server neu signieren, zum Beispiel mit rndc sign {domain} bei BIND oder mit dem Befehl zur Neusignierung Ihrer Software.
+    - Richten Sie eine automatische Neusignierung ein (Online-Signierung, vom DNS-Server verwaltet), damit sich das nicht wiederholt.
+    - Wenn die Zone nicht rasch neu signiert werden kann, entfernen Sie den DS beim Registrar.
+dnssec.rrsig_expiring:
+  title: Die DNSSEC-Signaturen von {domain} laufen bald ab
+  why: Wird die Zone vor dem Fälligkeitstermin nicht neu signiert, wird {domain} für validierende Resolver unlesbar, und Ihre E-Mail mit ihr.
+  fix:
+    - Prüfen Sie, ob die automatische Neusignierung bei Ihrem DNS-Hoster oder auf Ihrem Server aktiv ist.
+    - "Wiederholen Sie diesen Test morgen: Das Ablaufdatum muss sich verschoben haben."
+dnssec.unsigned:
+  title: Die DNS-Zone von {domain} ist nicht signiert (DNSSEC)
+  why: Ohne DNSSEC kann ein Angreifer im Netzwerk die DNS-Antworten von {domain} fälschen, zum Beispiel Ihre MX-Einträge. Das ist kein Kriterium für die Zustellbarkeit, aber eine Voraussetzung für DANE, den stärksten Schutz für den E-Mail-Transport.
+  fix:
+    - Aktivieren Sie DNSSEC bei Ihrem DNS-Hoster.
+    - Veröffentlichen Sie beim Registrar den vom Hoster bereitgestellten DS-Eintrag (oft automatisch, wenn Registrar und Hoster identisch sind).
+    - Prüfen Sie das Ergebnis mit dnsviz.net, bevor Sie sich darauf verlassen.
+  fix_by_provider:
+    cloudflare_dns: Im Bereich DNS, Settings klicken Sie auf Enable DNSSEC und fügen Sie beim Registrar den angezeigten DS-Eintrag hinzu.
+dnssec.algorithm_not_recommended:
+  title: Die Zone {domain} ist mit einem nicht empfohlenen Algorithmus signiert
+  why: Der Algorithmus, mit dem Ihre Zone signiert wird, ist für die Signatur nicht empfohlen oder verboten. Manche Resolver könnten ihn nicht mehr validieren und Ihre Zone dann als nicht signiert oder ungültig behandeln.
+  fix:
+    - Bitten Sie Ihren DNS-Hoster um einen Algorithmuswechsel (Rollover) auf ECDSAP256SHA256 (13).
+    - Veröffentlichen Sie beim Wechsel den neuen DS-Eintrag beim Registrar, bevor Sie den alten entfernen, und berücksichtigen Sie dabei die TTLs.
+dnssec.nsec3_iterations:
+  title: Die Zone {domain} verwendet NSEC3 mit zusätzlichen Iterationen
+  why: Zusätzliche NSEC3-Iterationen bringen keine Sicherheit und erschweren die Validierung. Oberhalb einer bestimmten Schwelle halten Resolver die Zone für nicht abgesichert oder fehlerhaft, was die Auflösung Ihrer E-Mail-Einträge scheitern lassen kann.
+  fix:
+    - Stellen Sie die NSEC3-Parameter der Zone auf 0 Iterationen und ein leeres Salt ein.
+    - Verwaltet Ihr DNS-Hoster die Signierung, bitten Sie ihn, die Werte aus RFC 9276 anzuwenden.
+dnssec.mx_zone_bogus:
+  title: Der MX-Server von {domain} liegt in einer defekten DNSSEC-Zone
+  why: Der Name Ihres Empfangsservers wird von validierenden Resolvern nicht mehr aufgelöst. Antworten und Ablehnungsmeldungen an {domain} können von diesen Absendern nicht mehr zugestellt werden.
+  fix:
+    - Ermitteln Sie die Domain, zu der der Name des MX gehört, und informieren Sie deren Verwalter (oft Ihr E-Mail-Anbieter).
+    - Gehört sie zu einer Ihrer Domains, wenden Sie die Korrektur des Eintrags „ungültige DNSSEC-Signatur“ auf diese Zone an.
+dnssec.ds_missing:
+  title: Die Zone {domain} ist signiert, aber die Registry hat keinen DS-Eintrag
+  why: "Ihr DNS-Hoster signiert die Zone, aber ohne DS bei der Registry endet die Vertrauenskette an dieser Stelle: Kein Resolver validiert {domain}. Sie haben den Aufwand von DNSSEC ohne seinen Schutz, und DANE kann nicht funktionieren."
+  fix:
+    - Ermitteln Sie bei Ihrem DNS-Hoster den DS-Eintrag von {domain} (oder den KSK-Schlüssel samt Algorithmus, falls der Registrar den Schlüssel verlangt).
+    - Öffnen Sie beim Registrar den DNSSEC-Bereich der Domain und fügen Sie diesen DS mit dem Digest-Typ 2 (SHA-256) hinzu.
+    - "Kontrollieren Sie nach der Verbreitung die Kette mit dnsviz.net: Ein Übertragungsfehler würde die gesamte Zone für validierende Resolver ungültig machen."
+  fix_by_provider:
+    cloudflare_dns: Im Bereich DNS, Settings, Abschnitt DNSSEC klicken Sie auf Enable DNSSEC (oder auf DS record, wenn DNSSEC bereits aktiv ist) und übernehmen Sie die Werte beim Registrar. Mit Cloudflare Registrar wird der DS automatisch veröffentlicht, was ein bis zwei Tage dauern kann.
+dnssec.ds_sha1:
+  title: Der DS-Eintrag von {domain} verwendet nur SHA-1
+  why: Die DNSSEC-Delegation von {domain} beruht auf einem SHA-1-Digest, dessen Veröffentlichung der Standard inzwischen untersagt. Validierende Resolver akzeptieren ihn heute noch, doch die Delegation folgt nicht mehr den Empfehlungen.
+  fix:
+    - Ermitteln Sie bei Ihrem DNS-Hoster den DS vom Typ 2 (SHA-256) zu demselben Schlüssel.
+    - Fügen Sie ihn beim Registrar neben dem aktuellen DS hinzu.
+    - Nachdem der neue DS veröffentlicht und die TTL des alten abgelaufen ist, entfernen Sie den DS vom Typ 1.

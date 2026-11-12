@@ -1,0 +1,431 @@
+/* Recherche DNS and the type picker shared with Propagation. Tokens only (styles/tokens.css). */
+
+/* ---------- type and mode pickers ---------- */
+.rr-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+.rr-picker__label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink-2);
+  min-width: 2.5rem;
+}
+.rr-seg {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.rr-seg button {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  min-width: 2.75rem;
+}
+.rr-seg--modes button {
+  font-family: var(--font-ui);
+}
+.rr-seg button:hover:not([aria-pressed='true']) {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+.rr-other {
+  width: auto;
+  min-height: 2.25rem;
+  padding: 0 var(--s2);
+  font-size: var(--fs-sm);
+}
+.rr-other--on {
+  border-color: var(--lab);
+  background: var(--lab-pale);
+  color: var(--lab-strong);
+  font-weight: 600;
+}
+.rr-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 2.25rem;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.rr-check input {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ---------- result page controls ---------- */
+.rr-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3) var(--s5);
+  margin-bottom: var(--s5);
+}
+.rr-controls__hint {
+  flex-basis: 100%;
+  margin-top: calc(-1 * var(--s2));
+}
+.rr-resolver {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s2) var(--s3);
+}
+.rr-resolver .field {
+  flex: 0 1 16rem;
+}
+.rr-resolver__chips {
+  align-self: center;
+}
+
+/* ---------- header ---------- */
+.rr-subject {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2) var(--s3);
+}
+.rr-subject__type {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 0;
+  position: relative;
+  top: -0.2em;
+}
+/* ---------- sections ---------- */
+.rr-sections {
+  gap: var(--s6);
+}
+.rr-sections > .lab-section + .lab-section {
+  margin-top: 0;
+}
+.rr-multi {
+  white-space: pre-line;
+}
+.rr-ns {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 var(--s2);
+}
+.rr-dig {
+  padding-top: var(--s4);
+}
+
+/* ---------- resolution trace ---------- */
+.rr-trace {
+  list-style: none;
+  margin: var(--s3) 0 0;
+  padding: 0;
+  display: grid;
+}
+.rr-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1.4fr) minmax(0, 1fr) 4.5rem;
+  gap: var(--s1) var(--s3);
+  align-items: baseline;
+  padding: var(--s2) 0 var(--s2) var(--s5);
+  font-size: var(--fs-sm);
+  border-bottom: 1px solid var(--rule);
+}
+/* the chain: a thin rule from root to the answering zone, a node at each step */
+.rr-step::before {
+  content: '';
+  position: absolute;
+  left: 0.4rem;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--rule-strong);
+}
+.rr-step:first-child::before {
+  top: 50%;
+}
+.rr-step:last-child::before {
+  bottom: 50%;
+}
+.rr-step::after {
+  content: '';
+  position: absolute;
+  left: calc(0.4rem - 3px);
+  top: calc(50% - 3px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--ink-3);
+}
+.rr-step--answer::after {
+  background: var(--in);
+  border-color: var(--in);
+}
+.rr-step--nxdomain::after,
+.rr-step--error::after {
+  background: var(--out);
+  border-color: var(--out);
+}
+.rr-step--nodata::after {
+  background: var(--warn);
+  border-color: var(--warn);
+}
+.rr-step__zone {
+  font-weight: 650;
+  color: var(--ink);
+}
+.rr-step__server {
+  overflow-wrap: anywhere;
+}
+.rr-step__out {
+  color: var(--ink-2);
+}
+.rr-step--nxdomain .rr-step__out,
+.rr-step--error .rr-step__out {
+  color: var(--out);
+  font-weight: 600;
+}
+.rr-step__rtt {
+  text-align: right;
+  color: var(--ink-3);
+}
+.rr-trace__total {
+  margin-top: var(--s2);
+}
+@media (max-width: 48rem) {
+  .rr-step {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .rr-step__server,
+  .rr-step__out {
+    grid-column: 1 / -1;
+  }
+  .rr-step__rtt {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .rr-check {
+    min-height: 2.75rem;
+  }
+  .rr-controls {
+    gap: var(--s3);
+  }
+}
+
+.rr-other {
+  max-width: 12rem;
+}
+.rr-dig pre {
+  white-space: pre;
+  overflow-x: auto;
+  overflow-wrap: normal;
+}
+@media (max-width: 40rem) {
+  .rr-seg--modes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .rr-seg--modes button {
+    white-space: normal;
+    line-height: 1.2;
+    padding: var(--s1) var(--s2);
+  }
+  .rr-seg--modes button + button {
+    border-left: 1px solid var(--rule);
+  }
+  .rr-picker:has(.rr-seg--modes) {
+    width: 100%;
+  }
+  .rr-step::after {
+    top: 0.85rem;
+  }
+  .rr-step:first-child::before {
+    top: 0.85rem;
+  }
+  .rr-step:last-child::before {
+    bottom: auto;
+    height: 0.85rem;
+  }
+}
+/* the unwrapped dig output scrolls inside its block, never the page */
+.rr-sections,
+.pp-sections {
+  grid-template-columns: minmax(0, 1fr);
+}
+.rr-dig,
+.rr-dig .code {
+  min-width: 0;
+}
+
+@media (max-width: 40rem) {
+}
+
+/* values are never cut inside an IP or a serial; long names may still wrap when they cannot fit */
+.rr-sections .c-val,
+.rr-sections .c-ref,
+.pp-sections .c-val,
+.pp-sections .c-ref,
+.rr-multi {
+  overflow-wrap: break-word;
+}
+.rr-nowrap {
+  white-space: nowrap;
+}
+/* copy button above the unwrapped dig output, never over it */
+.rr-dig .code {
+  flex-direction: column;
+  align-items: stretch;
+}
+.rr-dig .code .btn {
+  order: -1;
+  align-self: flex-end;
+  margin-bottom: 0;
+}
+.rr-dig .code pre {
+  padding-top: 0;
+}
+
+/* phones: the resolver form, the type list and the DNSSEC box reach 44 px; the whole label is the target */
+@media (max-width: 40rem) {
+  .rr-resolver .btn,
+  .rr-other {
+    min-height: 2.75rem;
+  }
+  .rr-check {
+    min-height: 2.75rem;
+    padding: 0 var(--s2) 0 0;
+  }
+  .rr-check input {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+/* ---------- v2: hero, controls card, records in large lines (2026-11-10) ---------- */
+.rr-hero-types {
+  display: grid;
+  justify-items: center;
+  gap: var(--s2);
+  margin-top: var(--s5);
+}
+.rr-controls {
+  padding: var(--s4);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--edge);
+}
+.rr-subject {
+  display: inline-flex;
+}
+.band__under {
+  text-align: right;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  font-weight: 600;
+}
+@media (max-width: 48rem) {
+  .band__under {
+    text-align: left;
+  }
+}
+.rr-block-note {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+.rr-records {
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--edge);
+  overflow: hidden;
+}
+.rr-details .rr-records,
+.details__body .rr-records {
+  box-shadow: none;
+  background: none;
+}
+.rr-recs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.rr-rec {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'value copy' 'meta copy';
+  gap: 0.15rem var(--s3);
+  align-items: center;
+  padding: 11px 16px;
+  transition: background var(--t-fast) var(--ease-out);
+  animation: rise 220ms var(--ease-out) both;
+}
+.rr-rec:hover {
+  background: var(--surface-hover);
+}
+.rr-rec + .rr-rec {
+  border-top: 1px solid var(--rule);
+}
+.rr-rec__value {
+  grid-area: value;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.rr-rec__meta {
+  grid-area: meta;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem var(--s3);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.rr-rec .rr-copy {
+  grid-area: copy;
+}
+.rr-copy {
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--ink-3);
+}
+.rr-copy:hover {
+  color: var(--lab);
+}
+.rr-records__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+  padding: 10px 16px;
+  border-top: 1px solid var(--rule);
+}
+.rr-negative strong {
+  color: var(--ink);
+}
+.rr-ptr__name {
+  color: var(--ink);
+  font-weight: 700;
+}
+.rr-ptr__issues {
+  border-top: 1px solid var(--rule);
+}
+.rr-ptr__issues .todo {
+  box-shadow: none;
+  background: none;
+}
+.rr-inline-ic {
+  display: inline;
+  width: 0.85rem;
+  height: 0.85rem;
+  vertical-align: -0.1rem;
+}
+

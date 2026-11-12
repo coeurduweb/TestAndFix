@@ -1,0 +1,19 @@
+dmarc-report.forwarding:
+  title: "Wahrscheinliche Weiterleitung über {ip} (Reverse DNS: {ptr})"
+  why: "{value} Nachricht(en) von {domain} kommen über einen Server, der E-Mails weiterleitet (Adressweiterleitung, Mailingliste). SPF schlägt dabei zwangsläufig fehl: Das ist normal, und nur DKIM hält diese Nachrichten authentifiziert."
+  fix:
+    - "Fügen Sie {ip} nicht zu Ihrem SPF hinzu: Sie würden einem Server, den Sie nicht kontrollieren, erlauben, im Namen von {domain} zu senden."
+    - "Prüfen Sie, dass alle Ihre Sendungen mit DKIM und d={domain} signiert sind: Das ist die einzige Authentifizierung, die eine Weiterleitung übersteht."
+    - Sonst müssen Sie nichts tun. Bevor Sie auf p=reject umstellen, sollten Sie wissen, dass eine weitergeleitete Nachricht, deren DKIM-Signatur unterwegs gebrochen wurde (Liste, die den Betreff oder den Text ändert), bei DMARC fehlschlägt und abgelehnt werden kann.
+dmarc-report.more_sources:
+  title: "{value} weitere nicht ausgerichtete Quelle(n) werden nicht einzeln beschrieben"
+  why: Nur die zehn volumenstärksten Quellen jeder Kategorie haben einen Eintrag. Die anderen stehen in der Quellentabelle, mit ihrem Volumen und ihrer Ausrichtung.
+  fix:
+    - Öffnen Sie die Quellentabelle und sortieren Sie sie nach der Anzahl der Nachrichten.
+    - "Behandeln Sie zuerst die hier ausführlich beschriebenen Quellen: Die Korrektur eines Versanddienstes löst oft mehrere IP-Adressen auf einmal."
+dmarc-report.low_volume:
+  title: Berichtsvolumen noch gering ({value} Nachrichten)
+  why: "Die eingereichten Berichte decken nur {value} Nachricht(en) ab: Ein monatlicher Versand oder ein selten genutztes Werkzeug fehlt darin vielleicht noch. Die Ausrichtungsraten sind noch nicht repräsentativ."
+  fix:
+    - Reichen Sie die Berichte der kommenden Wochen ein, von allen Empfängern, die Ihnen welche senden.
+    - Verschärfen Sie Ihre DMARC-Richtlinie nicht allein auf der Grundlage dieser Berichte.

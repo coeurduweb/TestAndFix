@@ -1,0 +1,340 @@
+# Famille unsubscribe : désinscription (RFC 2369, RFC 8058, exigences Gmail et Yahoo, CPCE L34-5).
+# Vérifié le 2026-11-10 :
+# - Gmail : désinscription en un clic obligatoire pour les messages marketing des expéditeurs de
+#   5 000 messages par jour ou plus (support.google.com/a/answer/81126), à mettre en place avant le
+#   1er juin 2024 pour ceux qui avaient déjà un lien (FAQ support.google.com/a/answer/14229414),
+#   demandes à traiter sous 48 heures (même FAQ). Messages transactionnels exclus.
+# - Yahoo : en-tête List-Unsubscribe en un clic, méthode POST RFC 8058 fortement recommandée,
+#   mailto accepté, désinscription honorée sous 2 jours (senders.yahooinc.com/best-practices/).
+# - Orange (plus de 1 000 messages par jour) : désinscription en un clic, RFC 8058 (postmaster.orange.fr).
+
+- id: unsubscribe.list_unsubscribe_missing
+  family: unsubscribe
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "message.is_bulk && headers.count('List-Unsubscribe') == 0"
+    notes: "message.is_bulk : outil d'envoi de masse détecté, en-tête List-Id ou Precedence: bulk, pied de page de newsletter, ou déclaration de l'utilisateur. Ne pas déclencher sur un message transactionnel (Gmail les exclut)."
+  sa_rules: []
+  title: "Ce message marketing n'a pas d'en-tête List-Unsubscribe"
+  why: >
+    Gmail et Yahoo exigent cet en-tête sur les messages marketing des gros expéditeurs. Sans lui, le
+    webmail n'affiche pas son bouton de désinscription : les lecteurs cliquent sur « Spam » à la
+    place, ce qui dégrade la réputation de {domain}.
+  fix:
+    - "Ajoutez un en-tête List-Unsubscribe avec une adresse https de désinscription propre à chaque destinataire."
+    - "Ajoutez en même temps List-Unsubscribe-Post: List-Unsubscribe=One-Click pour la désinscription en un clic."
+    - "Signez ces deux en-têtes avec DKIM."
+  fix_by_provider:
+    mailchimp: "Mailchimp ajoute List-Unsubscribe aux campagnes. S'il manque, vérifiez que vous envoyez bien une campagne et non un message par l'API transactionnelle (Mandrill), où vous devez l'ajouter vous-même."
+    sendgrid: "Activez Settings > Tracking > Subscription Tracking, ou utilisez des groupes de désinscription (Unsubscribe Groups) dans l'appel API : SendGrid ajoute alors les en-têtes."
+    amazon_ses: "Ajoutez les en-têtes List-Unsubscribe et List-Unsubscribe-Post dans vos messages, ou utilisez la gestion des abonnements de SES (listes de contacts) qui les ajoute."
+    wordpress: "Une extension de newsletter (MailPoet, The Newsletter Plugin, FluentCRM) gère l'en-tête. Évitez d'envoyer une newsletter par wp_mail() sans extension."
+    postfix: "Postfix n'ajoute pas cet en-tête : il doit être écrit par l'application qui génère le message, avant la signature DKIM."
+  example_good: |
+    List-Unsubscribe: <https://{domain}/desinscription?u=8f2c1a>, <mailto:desinscription@{domain}?subject=unsubscribe>
+    List-Unsubscribe-Post: List-Unsubscribe=One-Click
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2369#section-3.2
+    - https://www.rfc-editor.org/rfc/rfc8058
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+
+- id: unsubscribe.one_click_post_missing
+  family: unsubscribe
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "message.is_bulk && headers.count('List-Unsubscribe') == 1 && headers.count('List-Unsubscribe-Post') == 0"
+    notes: "RFC 8058 §3.1. Gmail exige List-Unsubscribe-Post: List-Unsubscribe=One-Click pour les messages marketing des expéditeurs de 5 000 messages par jour ou plus."
+  sa_rules: []
+  title: "La désinscription en un clic (List-Unsubscribe-Post) n'est pas activée"
+  why: >
+    Le message a un List-Unsubscribe mais pas l'en-tête List-Unsubscribe-Post. Gmail exige les deux
+    pour les envois marketing en volume : sans lui, Gmail considère que vous ne proposez pas la
+    désinscription en un clic.
+  fix:
+    - "Ajoutez la ligne List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Vérifiez que List-Unsubscribe contient une adresse https, qui accepte une requête POST et désinscrit sans demander de confirmation."
+    - "Incluez les deux en-têtes dans la signature DKIM (paramètre h=)."
+  example_bad: "List-Unsubscribe: <https://{domain}/desinscription?u=8f2c1a>"
+  example_good: |
+    List-Unsubscribe: <https://{domain}/desinscription?u=8f2c1a>
+    List-Unsubscribe-Post: List-Unsubscribe=One-Click
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8058#section-3.1
+    - https://support.google.com/a/answer/81126
+    - https://support.google.com/a/answer/14229414
+
+- id: unsubscribe.mailto_only
+  family: unsubscribe
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "headers.list_unsubscribe.uris.length > 0 && headers.list_unsubscribe.uris.all(u => u.scheme == 'mailto')"
+    notes: "Yahoo accepte la méthode mailto. Gmail exige la désinscription en un clic de la RFC 8058, qui repose sur une adresse HTTPS."
+  sa_rules: []
+  title: "La désinscription ne propose qu'une adresse e-mail (mailto)"
+  why: >
+    Yahoo accepte le mailto, mais Gmail demande la désinscription en un clic de la RFC 8058, qui
+    exige une adresse https. Pour Gmail, ce message n'est donc pas conforme.
+  fix:
+    - "Ajoutez une adresse https de désinscription en première position dans List-Unsubscribe, et gardez le mailto en second."
+    - "Ajoutez List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+  example_bad: "List-Unsubscribe: <mailto:desinscription@{domain}>"
+  example_good: |
+    List-Unsubscribe: <https://{domain}/desinscription?u=8f2c1a>, <mailto:desinscription@{domain}?subject=unsubscribe>
+    List-Unsubscribe-Post: List-Unsubscribe=One-Click
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8058#section-3.1
+    - https://senders.yahooinc.com/best-practices/
+    - https://support.google.com/a/answer/81126
+
+- id: unsubscribe.http_not_https
+  family: unsubscribe
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "headers.list_unsubscribe.uris.any(u => u.scheme == 'http') && !headers.list_unsubscribe.uris.any(u => u.scheme == 'https')"
+    notes: "RFC 8058 §3.1 : List-Unsubscribe MUST contenir une URI HTTPS pour la désinscription en un clic."
+  sa_rules: []
+  title: "L'adresse de désinscription est en http au lieu de https"
+  why: >
+    La RFC 8058 exige une adresse https pour la désinscription en un clic. Avec http, Gmail et les
+    autres webmails ne proposent pas le bouton de désinscription.
+  fix:
+    - "Remplacez http:// par https:// dans List-Unsubscribe."
+    - "Vérifiez que le certificat du domaine de désinscription est valide."
+  example_bad: "List-Unsubscribe: <http://{domain}/desinscription?u=8f2c1a>"
+  example_good: "List-Unsubscribe: <https://{domain}/desinscription?u=8f2c1a>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8058#section-3.1
+
+- id: unsubscribe.not_dkim_signed
+  family: unsubscribe
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "headers.count('List-Unsubscribe-Post') > 0 && !dkim.valid_signatures.any(s => s.h.includes('list-unsubscribe') && s.h.includes('list-unsubscribe-post'))"
+    notes: "RFC 8058 §3.1 : le message MUST avoir une signature DKIM valide couvrant au moins List-Unsubscribe et List-Unsubscribe-Post. Sinon, le récepteur SHOULD NOT proposer la désinscription en un clic (§4)."
+  sa_rules: []
+  title: "Les en-têtes de désinscription ne sont pas couverts par DKIM"
+  why: >
+    Aucune signature DKIM valide ne couvre List-Unsubscribe et List-Unsubscribe-Post. La RFC 8058
+    demande alors aux webmails de ne pas proposer la désinscription en un clic : votre configuration
+    ne sert à rien.
+  fix:
+    - "Ajoutez list-unsubscribe et list-unsubscribe-post à la liste des en-têtes signés (paramètre h= de DKIM)."
+    - "Ajoutez les en-têtes avant l'étape de signature, pas après."
+    - "Si un relais ajoute ces en-têtes après votre signature, faites-les ajouter par l'application."
+  fix_by_provider:
+    postfix: "Avec OpenDKIM, ajoutez List-Unsubscribe et List-Unsubscribe-Post à SignHeaders dans opendkim.conf, puis redémarrez OpenDKIM. Avec rspamd, ajoutez-les à sign_headers dans dkim_signing.conf."
+  example_good: "DKIM-Signature: v=1; a=rsa-sha256; d={domain}; s={selector}; h=from:to:subject:date:message-id:list-unsubscribe:list-unsubscribe-post; ..."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8058#section-3.1
+    - https://www.rfc-editor.org/rfc/rfc8058#section-4
+
+- id: unsubscribe.post_value_invalid
+  family: unsubscribe
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "headers.count('List-Unsubscribe-Post') > 0 && headers.list_unsubscribe_post.trim() != 'List-Unsubscribe=One-Click'"
+    notes: "RFC 8058 §3.1 : l'en-tête MUST contenir la seule paire clé valeur List-Unsubscribe=One-Click."
+  sa_rules: []
+  title: "La valeur de List-Unsubscribe-Post est incorrecte"
+  why: >
+    L'en-tête vaut « {value} » au lieu de List-Unsubscribe=One-Click. Les webmails ne reconnaissent
+    alors pas la désinscription en un clic.
+  fix:
+    - "Écrivez exactement : List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "N'ajoutez ni guillemets, ni point-virgule, ni autre paramètre."
+  example_bad: "List-Unsubscribe-Post: One-Click"
+  example_good: "List-Unsubscribe-Post: List-Unsubscribe=One-Click"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8058#section-3.1
+
+- id: unsubscribe.syntax_invalid
+  family: unsubscribe
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "headers.count('List-Unsubscribe') > 0 && !headers.list_unsubscribe.matches_rfc2369"
+    notes: "RFC 2369 : une ou plusieurs URL entre chevrons, séparées par des virgules, par ordre de préférence de gauche à droite."
+  sa_rules: []
+  title: "L'en-tête List-Unsubscribe est mal écrit"
+  why: >
+    Les adresses de List-Unsubscribe ne sont pas écrites entre chevrons ou sont mal séparées. Les
+    webmails ignorent alors l'en-tête et n'affichent pas le bouton de désinscription.
+  fix:
+    - "Mettez chaque adresse entre chevrons < >."
+    - "Séparez les adresses par une virgule, l'adresse https en premier."
+  example_bad: "List-Unsubscribe: https://{domain}/desinscription?u=8f2c1a; mailto:desinscription@{domain}"
+  example_good: "List-Unsubscribe: <https://{domain}/desinscription?u=8f2c1a>, <mailto:desinscription@{domain}>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2369#section-2
+    - https://www.rfc-editor.org/rfc/rfc2369#section-3.2
+
+- id: unsubscribe.multiple_https
+  family: unsubscribe
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "headers.list_unsubscribe.uris.filter(u => u.scheme == 'https').length > 1"
+    notes: "RFC 8058 §3.1 : List-Unsubscribe MUST contenir une URI HTTPS. Plusieurs URI HTTPS rendent le choix ambigu."
+  sa_rules: []
+  title: "List-Unsubscribe contient plusieurs adresses https"
+  why: >
+    La RFC 8058 prévoit une seule adresse https. Avec plusieurs, le webmail peut choisir celle qui ne
+    traite pas la requête en un clic.
+  fix:
+    - "Gardez une seule adresse https, celle qui accepte la requête POST en un clic."
+    - "Gardez éventuellement un mailto en second."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8058#section-3.1
+
+- id: unsubscribe.endpoint_not_working
+  family: unsubscribe
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "unsub_probe.post(headers.list_unsubscribe.https, body='List-Unsubscribe=One-Click').status !in [200, 202, 204] || unsub_probe.redirected"
+    notes: "Requête POST de test vers une adresse de test seulement (jamais vers l'adresse d'un vrai contact). RFC 8058 §3.1 : la requête ne contient ni cookie ni authentification, et l'expéditeur MUST NOT répondre par une redirection HTTPS."
+  sa_rules: []
+  title: "L'adresse de désinscription en un clic ne répond pas correctement"
+  why: >
+    La requête de désinscription vers {url} a reçu la réponse {value}. Les webmails envoient cette
+    requête sans cookie et sans suivre de redirection : si elle échoue, le destinataire reste inscrit
+    et finit par signaler vos messages comme spam.
+  fix:
+    - "Faites accepter une requête POST sans cookie ni session à l'adresse de désinscription, et répondez par un code 200."
+    - "Ne répondez pas par une redirection : traitez la désinscription directement à cette adresse."
+    - "Retrouvez le contact grâce au jeton présent dans l'adresse elle-même."
+  example_good: |
+    POST /desinscription?u=8f2c1a HTTP/1.1
+    Host: {domain}
+    Content-Type: application/x-www-form-urlencoded
+
+    List-Unsubscribe=One-Click
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8058#section-3.1
+    - https://www.rfc-editor.org/rfc/rfc8058#section-3.2
+
+- id: unsubscribe.body_link_missing
+  family: unsubscribe
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "message.is_bulk && !body.links.any(l => l.text ~ /d[ée]sinscri|d[ée]sabonn|unsubscribe|ne plus recevoir|g[ée]rer (mes|vos) (pr[ée]f[ée]rences|abonnements)/i || l.href == headers.list_unsubscribe.https)"
+    notes: "Gmail et Yahoo exigent un lien de désinscription bien visible dans le corps des messages marketing. La CNIL rappelle que chaque message de prospection doit offrir un moyen simple de s'opposer à de nouveaux envois (article L34-5 du CPCE)."
+  sa_rules: []
+  title: "Le corps du message n'a pas de lien de désinscription"
+  why: >
+    Gmail et Yahoo demandent un lien de désinscription bien visible dans le corps des messages
+    marketing, et la loi française impose un moyen simple de refuser les envois suivants. Sans ce
+    lien, le seul moyen de ne plus vous recevoir est le bouton « Spam ».
+  fix:
+    - "Ajoutez en pied de page un lien « Se désinscrire » qui mène à une page de désinscription sur {domain}."
+    - "La page doit désinscrire sans demander de mot de passe ni de connexion."
+  fix_by_provider:
+    mailchimp: "Gardez la balise *|UNSUB|* dans le bloc Footer de la campagne."
+    brevo: "Gardez le bloc de pied de page avec le lien de désinscription inséré par l'éditeur Brevo."
+    wordpress: "Dans MailPoet, le pied de page par défaut contient le lien [link:subscription_unsubscribe_url] : ne le supprimez pas."
+  example_good: "<p style=\"font-size:13px;color:#555555\">Vous recevez ce message car vous êtes inscrit à la lettre de {domain}. <a href=\"https://{domain}/desinscription?u=8f2c1a\">Se désinscrire</a></p>"
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+    - https://www.cnil.fr/fr/la-prospection-commerciale-par-courrier-electronique
+
+- id: unsubscribe.body_link_hidden
+  family: unsubscribe
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "body.unsubscribe_link != null && (body.unsubscribe_link.font_size_px < config.min_unsub_font_px || contrast(body.unsubscribe_link) < config.min_unsub_contrast)"
+    notes: "Gmail demande un lien de désinscription « clairement visible ». Taille de police et contraste calculés sur le rendu ; seuils internes."
+  sa_rules: []
+  title: "Le lien de désinscription est difficile à voir"
+  why: >
+    Le lien de désinscription est minuscule ou presque de la couleur du fond. Gmail et Yahoo le
+    demandent clairement visible : un lien caché pousse le lecteur à cliquer sur « Spam ».
+  fix:
+    - "Affichez le lien dans une taille lisible et dans une couleur contrastée par rapport au fond."
+    - "Placez-le en début de pied de page, pas après plusieurs lignes de mentions légales."
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+
+- id: unsubscribe.requires_login
+  family: unsubscribe
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "fetch(body.unsubscribe_link).page.has_password_field || fetch(body.unsubscribe_link).final_url ~ /login|connexion|signin|account/i"
+    notes: "Yahoo : le processus de désinscription doit être évident et ne pas demander de connexion."
+  sa_rules: []
+  title: "La désinscription demande de se connecter"
+  why: >
+    Le lien de désinscription mène à une page de connexion. Yahoo demande une désinscription sans
+    connexion, et la plupart des lecteurs abandonnent puis signalent le message comme spam.
+  fix:
+    - "Mettez dans le lien un jeton unique qui identifie le contact, et désinscrivez-le sans mot de passe."
+    - "Proposez la gestion fine des préférences sur la même page, sans l'imposer."
+  references:
+    - https://senders.yahooinc.com/best-practices/
+    - https://www.cnil.fr/fr/la-prospection-commerciale-par-courrier-electronique
+
+- id: unsubscribe.mailto_domain_unreachable
+  family: unsubscribe
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "headers.list_unsubscribe.uris.any(u => u.scheme == 'mailto' && !dns.can_receive_mail(u.domain))"
+    notes: "Domaine de l'adresse mailto sans MX ni A : la demande de désinscription ne peut pas être reçue."
+  sa_rules: []
+  title: "L'adresse e-mail de désinscription ne peut pas recevoir de messages"
+  why: >
+    L'adresse de désinscription {value} est sur un domaine qui ne reçoit pas de courrier. Les
+    demandes de désinscription envoyées par les webmails sont perdues.
+  fix:
+    - "Utilisez une adresse de désinscription sur un domaine qui a un enregistrement MX, par exemple desinscription@{domain}."
+    - "Faites traiter automatiquement les messages reçus à cette adresse par votre outil d'envoi."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2369#section-3.2
+    - https://www.rfc-editor.org/rfc/rfc5321#section-5.1
+
+- id: unsubscribe.on_transactional
+  family: unsubscribe
+  severity: info
+  penalty: 0
+  detect:
+    signal: "message.is_transactional && headers.count('List-Unsubscribe') == 0"
+    notes: "Informatif. Gmail exclut les messages transactionnels (réinitialisation de mot de passe, confirmation de réservation, confirmation de formulaire) de l'obligation de désinscription en un clic, tout en rappelant que ce sont les destinataires qui jugent si un message est promotionnel."
+  sa_rules: []
+  title: "Message transactionnel sans en-tête de désinscription : c'est admis"
+  why: >
+    Gmail n'exige pas la désinscription en un clic pour les messages transactionnels. Si ce message
+    contient aussi de la promotion, les destinataires peuvent le juger promotionnel et le signaler.
+  fix:
+    - "Gardez les messages transactionnels sans contenu promotionnel."
+    - "Envoyez la promotion dans des messages séparés, avec List-Unsubscribe."
+  references:
+    - https://support.google.com/a/answer/14229414
+
+- id: unsubscribe.list_id_missing
+  family: unsubscribe
+  severity: info
+  penalty: 0
+  detect:
+    signal: "message.is_bulk && headers.count('List-Id') == 0"
+    notes: "RFC 2919 : List-Id identifie la liste de diffusion. Recommandé, non exigé par Gmail ni Yahoo."
+  sa_rules: []
+  title: "Le message n'indique pas de quelle liste il provient (List-Id)"
+  why: >
+    List-Id permet aux destinataires et aux webmails de trier vos envois par liste. Son absence ne
+    pénalise pas, mais il aide à distinguer vos différentes lettres.
+  fix:
+    - "Ajoutez un en-tête List-Id avec un identifiant stable par liste."
+  example_good: "List-Id: Lettre mensuelle <lettre-mensuelle.{domain}>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2919

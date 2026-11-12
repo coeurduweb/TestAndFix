@@ -1,0 +1,115 @@
+bulk-sender.spf_and_dkim_required:
+  title: "大量送信では、SPF と DKIM の両方が有効でなければなりません"
+  why: "大量送信者にとって、Gmail、Yahoo、Outlook.com は SPF と DKIM を要求し、Orange は 1日あたり 1,000 通を超える場合にこれを要求します。このメッセージではどちらか一方が欠けており、この4つのメールサービスでスパムフォルダーに入れられるか、拒否される恐れがあります。"
+  fix:
+    - "{envelope_domain} の SPF レコードを公開または修正し、IP {ip} を許可してください。"
+    - "送信ツールで {domain} の DKIM 署名を有効にし、公開鍵を DNS に公開してください。"
+    - "新しいテストを送信してください。両方の結果が pass である必要があります。"
+  fix_by_provider:
+    google_workspace: "管理コンソール > アプリ > Google Workspace > Gmail > メールの認証：DKIM キーを生成し、TXT の google._domainkey を公開してから、認証を開始をクリックしてください。SPF：v=spf1 include:_spf.google.com ~all"
+    microsoft_365: "Microsoft Defender ポータル > ポリシーとルール > 脅威ポリシー > メール認証の設定 > DKIM：selector1 と selector2 の2つの CNAME を公開してから、{domain} の署名を有効にしてください。SPF：v=spf1 include:spf.protection.outlook.com -all"
+    brevo: "設定 > 送信者、ドメイン、専用 IP > ドメイン：{domain} を認証し、表示されたレコードを公開してください。"
+    mailchimp: "Website > Domains：{domain} を追加し、Authenticate をクリックしてから、表示された DKIM の CNAME を公開してください。"
+    sendgrid: "Settings > Sender Authentication > Authenticate Your Domain：表示された CNAME を公開してください。これは DKIM と、SPF 用の return-path ドメインをカバーします。"
+bulk-sender.dmarc_missing:
+  title: "大量送信では、DMARC レコードが必須です"
+  why: "{domain} には DMARC レコードがありません。Gmail、Yahoo、Outlook.com は大量送信者にこれを要求し、Orange は 1日あたり 1,000 通を超える場合に要求します。DMARC がなければ、メッセージはフィルターされるか拒否されます。"
+  fix:
+    - "_dmarc.{domain} に TXT レコードを公開してください。"
+    - "p=none から始め、受信レポート用の rua アドレスを指定して、送信フローを観察してから強化してください。"
+    - "数週間きれいなレポートが届いたら、p=quarantine、次に p=reject に進めてください。"
+  fix_by_provider:
+    cloudflare_dns: "DNS > Records > Add record：種類 TXT、名前 _dmarc、内容 v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+    ovh: "Web Cloud > ドメイン名 > {domain} > DNSゾーン > エントリを追加：TXT、サブドメイン _dmarc、値 v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+bulk-sender.dmarc_not_aligned:
+  title: "大量送信では、From のドメインが SPF または DKIM と整合している必要があります"
+  why: "SPF は {envelope_domain} を、DKIM は {dkim_domain} を有効と判定していますが、どちらも {domain} と一致しません。Gmail、Yahoo、Outlook.com は大量送信でこの整合を要求するため、DMARC は失敗します。"
+  fix:
+    - "送信ツールの DKIM 署名を d={domain} で設定してください（ツール名ではなく、自分の名前での署名）。"
+    - "または、{domain} のサブドメインにカスタムのリターンパスドメインを設定し、SPF を整合させてください。"
+    - "Microsoft が推奨するとおり、両方の整合を目指してください。"
+bulk-sender.outlook_high_volume:
+  title: "このメッセージは、Outlook.com の大量送信の要件を満たしていません"
+  why: "2025年5月5日以降、Outlook.com は、有効な SPF、有効な DKIM、整合した DMARC がないまま1日に 5,000 通を超えて送信するドメインからのメッセージを、迷惑メールフォルダーに振り分けます。Microsoft は、日付未定のまま完全な拒否を予告しています。"
+  fix:
+    - "{envelope_domain} の SPF と {domain} の DKIM を通過させてください。"
+    - "{domain} に、少なくとも p=none の DMARC を公開し、SPF か DKIM と整合させてください。できれば両方と整合させてください。"
+    - "エラー 550 5.7.515 を受け取った場合は、修正後にここからテストを再送し、3つの結果すべてを確認してください。"
+bulk-sender.one_click_required:
+  title: "大量送信では、ワンクリックでの配信停止が必須です"
+  why: "Gmail は2024年6月1日から、大量送信者のマーケティングメッセージにワンクリックでの配信停止を要求しています。Yahoo と Orange も同様です。Gmail は要求を48時間以内に処理するよう求め、Yahoo は2日以内としています。このメッセージは要件を満たしていません。"
+  fix:
+    - "https のアドレスを指定して List-Unsubscribe を追加し、List-Unsubscribe-Post: List-Unsubscribe=One-Click も追加してください。"
+    - "この2つのヘッダーを DKIM で署名してください。"
+    - "配信停止した連絡先を、48時間以内に送信対象から外してください。予約済みのキャンペーンも含みます。"
+bulk-sender.ptr_required:
+  title: "送信元の IP に、有効な逆引き DNS がありません"
+  why: "IP {ip} には、その IP に戻ってくる逆引き名がありません。Gmail、Yahoo、Orange、La Poste はこれを要求しています。La Poste は接続を拒否する場合があり、ほかのサービスはメッセージをスパムに分類します。"
+  fix:
+    - "IP {ip} のホスティング事業者に、mail.{domain} のような名前への PTR を作成してもらってください。"
+    - "その名前の A レコードを {ip} に向けて作成し、往復確認が成功するようにしてください。"
+    - "サーバーの HELO 名を、同じ名前に設定してください。"
+bulk-sender.tls_required:
+  title: "メッセージが TLS 暗号化なしで送信されました"
+  why: "サーバー {helo} は、当方のサーバーが提供していたにもかかわらず、接続を暗号化しませんでした。Gmail はすべての送信者に TLS を要求し、Orange は TLS 1.2 以降のみを受け付けます。"
+  fix:
+    - "送信サーバーで送信時の STARTTLS を有効にし、TLS 1.2 以上を使用してください。"
+    - "リレーや送信ツールを使う場合は、その設定で送信時の暗号化が有効になっているか確認してください。"
+  fix_by_provider:
+    postfix: "main.cf に smtp_tls_security_level = may と smtp_tls_mandatory_protocols = >=TLSv1.2 を設定し、postfix reload を実行してください。"
+    exim: "remote_smtp トランスポートの設定で hosts_try_tls = *（既定値）のままにし、tls_require_ciphers が TLS 1.2 を除外していないか確認してください。"
+bulk-sender.rfc5322_format:
+  title: "メッセージが、Gmail と Yahoo が要求する RFC 5322 の形式に適合していません"
+  why: "Gmail と Yahoo は、RFC 5322 形式のメッセージを要求しています。このメッセージには {value} 件の逸脱があります。大量送信では、これだけでスパムに分類されたり、拒否されたりするのに十分です。"
+  fix:
+    - "このレポートの「ヘッダー」セクションに挙げられたヘッダーの異常を修正してください。"
+    - "手作業ではなく、実績のあるメール送信ライブラリでメッセージを作成してください。"
+bulk-sender.dkim_key_too_short:
+  title: "DKIM キーが短すぎます"
+  why: "セレクター {selector} の DKIM キーは {value} ビットです。Gmail は 1,024 ビット以上を要求し、2,048 ビットを推奨しています。これより短いキーは受け付けられません。"
+  fix:
+    - "新しいセレクターで、2,048 ビットの新しいキーを生成してください。"
+    - "公開鍵を nouveau-selecteur._domainkey.{domain} に公開し、その後、署名をこのセレクターに切り替えてください。"
+    - "配信中のメッセージがすべて届いた後、数日たってから古いセレクターを削除してください。"
+  fix_by_provider:
+    google_workspace: "管理コンソール > Gmail > メールの認証：キーの長さに 2048 ビットを選び、古いレコードがまだ公開されている場合は、google 以外の別のセレクター接頭辞で新しいレコードを生成してください。"
+    postfix: "OpenDKIM を使う場合：opendkim-genkey -b 2048 -d {domain} -s s2026 を実行し、s2026.txt を公開してから、KeyTable を更新して OpenDKIM を再起動してください。"
+bulk-sender.spam_rate_above_limit:
+  title: "Gmail の迷惑メール報告率が 0.3% に達しているか、それを超えています"
+  why: "Postmaster Tools は、ユーザーによる迷惑メール報告率を {value} と示しています。0.3% 以上になると、Gmail はそれ以上の緩和措置を適用しません。この閾値を下回るまで、メッセージは最大7日間連続でフィルターされます。"
+  fix:
+    - "数か月間、開封もクリックもしていない連絡先への送信を停止してください。"
+    - "すべての連絡先が同意していることを確認し、購入した、または同意なしに取り込んだアドレスを削除してください。"
+    - "配信停止リンクをメッセージの上部に目立つように配置し、ワンクリックでの配信停止を有効にしてください。"
+    - "最近送信頻度が上がった場合は、送信の間隔を空けてください。"
+bulk-sender.spam_rate_above_target:
+  title: "Gmail の迷惑メール報告率が、目標の 0.1% を超えています"
+  why: "報告された迷惑メール率は {value} です。Gmail は 0.1% を下回ることを推奨しています。現在は、キャンペーンがもう1回送られるだけで 0.3% を超えかねない範囲にあります。"
+  fix:
+    - "Postmaster Tools で、率が上がった日と、その日に送られたキャンペーンを特定してください。"
+    - "送信対象から、非アクティブな連絡先と、不確かな経路で登録された連絡先を外してください。"
+    - "その連絡先にこのメッセージが届く理由を、メッセージの上部に改めて記載してください。"
+bulk-sender.orange_large_sender:
+  title: "このメッセージは、Orange の大規模送信者の要件を満たしていません"
+  why: "1日 1,000 通を超えると、Orange は SPF、DKIM、DMARC の3つすべての通過、Feedback-ID ヘッダー、ワンクリックでの配信停止を要求します。このメッセージには {value} が欠けています。"
+  fix:
+    - "SPF、DKIM、DMARC をすべて通過させ、From を {domain} に整合させてください。"
+    - "a:b:c:送信者ID の形式で Feedback-ID ヘッダーを追加し、DKIM で署名してください。"
+    - "List-Unsubscribe を https で追加し、List-Unsubscribe-Post: List-Unsubscribe=One-Click も追加してください。"
+    - "https://{domain} に、会社の身元と法的表示を備えたサイトが表示されることを確認してください。"
+    - "Orange のサーバーへは、接続あたり 100 通まで、IP あたり同時 2 接続までに制限してください。"
+  fix_by_provider:
+    postfix: "master.cf に orange トランスポートを作成してください（smtp 行をコピーし、-o smtp_connection_reuse_count_limit=100 を付けます。Postfix 3.4 以降）。main.cf に orange_destination_concurrency_limit = 2 と orange_destination_recipient_limit = 100 を設定し、transport_maps で orange.fr と wanadoo.fr をこのトランスポートに関連付けてください。"
+bulk-sender.laposte_dkim_required:
+  title: "有効な DKIM 署名がないと、laposte.net がメッセージを拒否する場合があります"
+  why: "このメッセージには有効な DKIM 署名がありません。La Poste はこの理由でメッセージを拒否していると公表しており、SPF で許可されていない IP から送られたメッセージも拒否します。"
+  fix:
+    - "送信ツールで {domain} の DKIM 署名を有効にし、公開鍵を DNS に公開してください。"
+    - "公開されている鍵が、署名に使われている鍵と一致することを確認してください（同じセレクター {selector}）。"
+    - "IP {ip} が {envelope_domain} の SPF に含まれていることを確認してください。"
+bulk-sender.status_permanent:
+  title: "Gmail の大量送信者ステータスは恒久的です"
+  why: "Gmail は {domain} とそのサブドメインの送信数を合算します。一度でも Gmail アカウント宛てに 24時間で 5,000 通に近づくと、その後に送信量が減っても、大量送信者の要件が引き続き適用されます。"
+  fix:
+    - "{domain} のサブドメインを含むすべての送信フローに、大量送信者の要件を適用してください。"
+    - "Postmaster Tools の「Compliance status」ダッシュボードで、コンプライアンスの状態を確認してください。"

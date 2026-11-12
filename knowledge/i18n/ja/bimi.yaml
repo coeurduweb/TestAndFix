@@ -1,0 +1,109 @@
+bimi.missing:
+  title: "{domain} は BIMI でロゴを表示できます"
+  why: "お使いの DMARC は適用されており、これは BIMI の主な前提条件です。BIMI レコードを設定すると、Yahoo でメッセージの横にロゴを表示でき、ブランド証明書があれば Gmail と Apple でも表示できます。"
+  fix:
+    - "正方形で HTTPS 上にホストされた SVG Tiny PS 形式のロゴを用意してください。"
+    - "TXT の default._bimi.{domain} を公開してください： v=BIMI1; l=https://{domain}/bimi/logo.svg"
+    - "Gmail では、BIMI Group に掲載されている認証局から VMC（登録商標の証明書）または CMC を取得し、a=https://{domain}/bimi/certificate.pem を追加してください。"
+bimi.dmarc_not_enforced:
+  title: "{domain} の BIMI ロゴは表示できません：DMARC が適用されていません"
+  why: "BIMI レコードは公開されていますが、お使いの DMARC は p=none か存在しない状態です。DMARC が quarantine または reject になるまで、どのメールサービスもロゴを表示しません。"
+  fix:
+    - "DMARC のレポートで、正当な送信がすべて通っていることを確認してください。"
+    - "_dmarc.{domain} のポリシーを p=quarantine（または p=reject）に変更してください。"
+bimi.dmarc_pct_below_100:
+  title: "{domain} の DMARC の pct={value} により BIMI ロゴがブロックされています"
+  why: "Gmail と BIMI Group は、DMARC ポリシーがメッセージの 100% に適用されることを求めています。pct がそれより低いと、ロゴは表示されません。"
+  fix:
+    - "pct={value} を pct=100 に置き換えるか、pct= を削除してください（100 が既定値です）。"
+bimi.dmarc_subdomain_none:
+  title: "{domain} の DMARC はサブドメインを sp=none のままにしており、BIMI はこれを受け付けません"
+  why: "BIMI Group のガイドによると、ポリシーはサブドメインも保護する必要があります。sp=none のままだと、一部のメールサービスはロゴの表示を拒否します。"
+  fix:
+    - "sp=none を sp=quarantine または sp=reject に置き換えるか、sp= を削除して p= を継承させてください。"
+bimi.syntax_invalid:
+  title: "{domain} の BIMI レコードの形式が正しくありません"
+  why: "BIMI レコードが認識されていません。v=BIMI1 で始まり、ロゴのアドレスを指定している必要があります。どのメールサービスも使用しません。"
+  fix:
+    - "default._bimi.{domain} に公開してください： v=BIMI1; l=https://…（SVG の URL）; a=https://…（PEM 証明書の URL。持っている場合のみ）。"
+    - "タグはセミコロンで区切ってください。"
+bimi.declined:
+  title: "{domain} は BIMI を意図的に無効にしています"
+  why: "BIMI レコードが空になっています。これは「ロゴなし」を意味します。正当な選択です。ロゴを使う予定がなければ、レコードを削除してください。"
+  fix:
+    - "対応は不要です。ただしロゴを表示したい場合は、l= と a= を設定してください。"
+bimi.selector_not_found:
+  title: "メッセージが要求する BIMI セレクターが存在しません"
+  why: "メッセージは特定のセレクターのロゴを表示するよう求めていますが、そのセレクターは {domain} の DNS に公開されていません。ロゴは表示されません。"
+  fix:
+    - "<セレクター>._bimi.{domain} にレコードを公開するか、BIMI-Selector ヘッダーを削除して default._bimi.{domain} を使ってください。"
+bimi.logo_unreachable:
+  title: "{domain} の BIMI ロゴにアクセスできません"
+  why: "メールサービスは指定されたアドレスからロゴをダウンロードします。応答がない場合、ほかがすべて正しくてもロゴは表示されません。"
+  fix:
+    - "ロゴのアドレスをブラウザで開き、SVG ファイルが直接返されることを確認してください。"
+    - "このファイルを、メールサービスをブロックしてしまうボット対策（アプリケーションファイアウォール、JavaScript チャレンジ）の対象から除外してください。"
+bimi.logo_not_https:
+  title: "{domain} の BIMI ロゴが HTTPS で配信されていません"
+  why: "Gmail は HTTPS で配信されたロゴのみを受け付けます。http:// のアドレスがあるだけで表示はブロックされます。"
+  fix:
+    - "SVG を https:// のアドレスでホストし、default._bimi.{domain} の l= を更新してください。"
+bimi.svg_not_tiny_ps:
+  title: "{domain} の BIMI ロゴが SVG Tiny PS 形式ではありません"
+  why: "メールサービスはこの制限されたプロファイルの SVG のみを受け付けます。そうでなければロゴは無視されます。描画ソフトの標準的な書き出しは、ほとんどこの形式に従っていません。"
+  fix:
+    - "描画ソフトから SVG Tiny 1.2 として書き出すか、SVG Tiny PS に変換してください。"
+    - "ルート要素に version=\"1.2\" と baseProfile=\"tiny-ps\" が含まれていることを確認してください。"
+    - "ルート要素の x と y 属性を削除し、外部参照をすべて取り除いてください。"
+bimi.svg_forbidden_content:
+  title: "{domain} の BIMI ロゴに禁止された要素が含まれています"
+  why: "ファイルにスクリプト、アニメーション、外部リソース、またはルート要素の x と y 属性が含まれています。この場合 Gmail はロゴを拒否します。"
+  fix:
+    - "SVG から script 要素、アニメーション、外部ファイルやフォントへの参照をすべて削除してください。"
+    - "ルートの svg 要素から x と y 属性を削除してください。"
+bimi.logo_size:
+  title: "{domain} の BIMI ロゴが推奨サイズ（{value}）を満たしていません"
+  why: "Gmail は、一辺が 96 ピクセル以上の正方形のロゴと、32 KB 以下のファイルサイズを推奨しています。これらの値から外れると、ロゴがトリミングされるか拒否される可能性があります。"
+  fix:
+    - "ロゴを正方形の中央に配置してください（viewBox の幅と高さを同じにします）。"
+    - "パスを単純化して、ファイルサイズを 32 KB 以下にしてください。"
+bimi.no_certificate:
+  title: "{domain} の BIMI ロゴに証明書がありません（a= がありません）"
+  why: "証明書がないと、ロゴは Yahoo には表示されるかもしれませんが、VMC または CMC を求める Gmail と、Apple Mail には表示されません。"
+  fix:
+    - "商標として登録されたロゴの場合は VMC（Verified Mark Certificate）を申請してください。そうでなければ、Gmail には CMC（Common Mark Certificate）で十分です。"
+    - "BIMI Group に掲載されている認証局（2026-11-10 時点: DigiCert、GlobalSign、SSL.com）から選んでください。"
+    - "PEM ファイルを HTTPS で公開し、BIMI レコードに a=https://… を追加してください。"
+bimi.certificate_invalid:
+  title: "{domain} の BIMI 証明書が無効か、アクセスできません"
+  why: "Gmail はロゴを表示する前に証明書を検証します。期限切れ、読み取れない、または別のドメイン向けに発行されている場合、ロゴは表示されません。"
+  fix:
+    - "a= のアドレスが完全な .pem ファイル（証明書とチェーン）を返すか確認してください。"
+    - "期限切れの場合は証明書を更新し、別のドメインを対象としている場合は {domain} 向けに発行し直してください。"
+bimi.certificate_logo_mismatch:
+  title: "{domain} の BIMI ロゴが証明書のロゴと異なります"
+  why: "l= のアドレスで配信されているロゴは、証明書で検証されたものではありません。検証を行うメールサービスは、ロゴの表示を拒否します。"
+  fix:
+    - "認証局に提出したものと全く同じ SVG ファイルを、l= のアドレスに公開してください。"
+    - "ロゴを変更した場合は、新しいバージョン向けに新しい証明書を申請してください。"
+bimi.cmc_no_checkmark:
+  title: "{domain} のロゴは確認マークなしで表示されます（CMC 証明書）"
+  why: "CMC の場合、Gmail はロゴを表示しますが、青いチェックマークは表示されません。チェックマークは、登録商標に基づく VMC 証明書専用です。"
+  fix:
+    - "対応は不要です。チェックマークが必要な場合は、ロゴを商標として登録してから VMC を申請してください。"
+bimi.svg_recommendation:
+  title: "{domain} の BIMI ロゴは改善できます"
+  why: "これらの点はロゴの表示をブロックしませんが、SVG Tiny PS のプロファイルや Google が推奨しています：{value}。"
+  fix:
+    - "SVG ファイル（{url}）をテキストエディタで開いてください。"
+    - "<svg> タグの直後にある <title> 要素を 1 つだけ残し、組織名を 64 文字以内で入れてください。"
+    - "その直後に、ロゴを一文で説明する <desc> 要素を追加してください。"
+    - "BIMI レコードが VMC または CMC 証明書（a=）を参照している場合は注意してください。証明書にはロゴのコピーが含まれており、タイトルを含め、ファイルを少しでも変更すると証明書との食い違いが生じます。その場合、これらの変更は次回の証明書更新時に行ってください。"
+    - "証明書がない場合は、同じアドレスにファイルを公開し直してから、検証をやり直してください。"
+bimi.missing_dmarc_not_enforced:
+  title: "{domain} には BIMI がなく、DMARC もまだそれを許可していません"
+  why: "BIMI は DMARC が適用されている場合（p=quarantine または p=reject）にのみロゴを表示します。測定された現在の状態：{value}。いま BIMI を公開しても、表示は変わりません。"
+  fix:
+    - "まず DMARC を p=quarantine にし、次に p=reject にしてください。集計レポート（DMARC のページを参照）を確認しながら進めます。"
+    - "その後に限り、TXT の default._bimi.{domain} を公開してください： v=BIMI1; l=https://{domain}/bimi/logo.svg"
+    - "Gmail と Apple には、VMC または CMC の証明書を追加してください： a=https://{domain}/bimi/certificate.pem"

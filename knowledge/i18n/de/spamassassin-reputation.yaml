@@ -1,0 +1,309 @@
+sa.rcvd_in_dnswl_hi:
+  title: Versand-IP auf der DNSWL-Whitelist, hohes Vertrauen
+  why: Die IP {ip} ist bei DNSWL in der höchsten Vertrauensstufe eingetragen. Einer der größten Boni von SpamAssassin, reserviert für Server, die kaum je Spam versenden.
+  fix:
+    - Nichts zu korrigieren. Behalten Sie diese IP für Ihre wichtigsten Versände.
+sa.rcvd_in_dnswl_med:
+  title: Versand-IP auf der DNSWL-Whitelist, mittleres Vertrauen
+  why: Die IP {ip} ist bei DNSWL als legitimer Server bekannt, der nur selten Spam durchlässt. Klarer Bonus.
+  fix:
+    - Nichts zu korrigieren.
+sa.rcvd_in_dnswl_low:
+  title: Versand-IP auf der DNSWL-Whitelist, niedriges Vertrauen
+  why: "Die IP {ip} wird von DNSWL als legitimer Server geführt, der aber geteilt wird oder bereits Spam versendet hat (große Hoster, geteilte Router). Kleiner Bonus."
+  fix:
+    - Nichts zu korrigieren. Für eine höhere Stufe brauchen Sie eine IP, die nur Ihre eigenen Versände nutzt.
+sa.rcvd_in_dnswl_none:
+  title: Versand-IP bei DNSWL bekannt, ohne Vertrauensstufe
+  why: DNSWL kennt die IP {ip} und ihren Inhaber, gewährt ihr aber kein besonderes Vertrauen, oft weil sie von vielen Kunden geteilt wird. Keine Wirkung auf die Bewertung.
+  fix:
+    - Nichts zu korrigieren.
+sa.rcvd_in_dnswl_blocked:
+  title: DNSWL-Anfrage vom Testserver abgelehnt
+  why: "Verwaltungshinweis: DNSWL hat die Anfrage des Servers abgelehnt, der die Nachricht analysiert (zu viele Anfragen oder öffentlicher Resolver). Ihr Versand ist nicht betroffen."
+  fix:
+    - Keine Maßnahme Ihrerseits. Der mögliche DNSWL-Bonus konnte schlicht nicht berechnet werden.
+sa.rcvd_in_mspike_h2:
+  title: Mittlere Mailspike-Reputation (+2) für die Versand-IP
+  why: "Mailspike stuft die IP {ip} auf Stufe +2 ein, eine mittlere, aber positive Reputation. SpamAssassin vergibt dafür keinen Punkt: Es ist vor allem ein Hinweis."
+  fix:
+    - Nichts zu korrigieren. Halten Sie die Volumen regelmäßig und die Listen sauber, um diese Stufe zu behalten.
+sa.rcvd_in_mspike_h3:
+  title: Gute Mailspike-Reputation (+3) für die Versand-IP
+  why: Mailspike stuft die IP {ip} auf Stufe +3 ein. Positives Signal ohne Wirkung auf den Standardwert von SpamAssassin.
+  fix:
+    - Nichts zu korrigieren. Halten Sie die Volumen regelmäßig und die Listen sauber, um diese Stufe zu behalten.
+sa.rcvd_in_mspike_h4:
+  title: Sehr gute Mailspike-Reputation (+4) für die Versand-IP
+  why: Mailspike stuft die IP {ip} auf Stufe +4 ein. Sehr positives Signal.
+  fix:
+    - Nichts zu korrigieren. Halten Sie die Volumen regelmäßig und die Listen sauber, um diese Stufe zu behalten.
+sa.rcvd_in_mspike_h5:
+  title: Ausgezeichnete Mailspike-Reputation (+5) für die Versand-IP
+  why: Mailspike stuft die IP {ip} auf der höchsten Reputationsstufe ein.
+  fix:
+    - Nichts zu korrigieren. Halten Sie die Volumen regelmäßig und die Listen sauber, um diese Stufe zu behalten.
+sa.rcvd_in_mspike_wl:
+  title: Versand-IP in der Liste guter Absender von Mailspike
+  why: Die IP {ip} hat eine Mailspike-Reputation von +3 oder höher. Positiver Hinweis.
+  fix:
+    - Nichts zu korrigieren.
+sa.rcvd_in_mspike_l2:
+  title: Verdächtige Mailspike-Reputation (-2) für die Versand-IP
+  why: "Mailspike hält die IP {ip} für verdächtig. SpamAssassin bestraft sie kaum, aber andere Filter nutzen diese Liste. Typische Ursache: plötzlicher hoher Versand von einer IP ohne Historie."
+  fix:
+    - Steigern Sie die Volumen auf einer neuen IP schrittweise, statt die ganze Datenbank auf einmal zu versenden.
+    - Entfernen Sie aus Ihren Listen Adressen, die zurückprallen oder seit langem nicht mehr öffnen.
+sa.rcvd_in_mspike_l3:
+  title: Schlechte Mailspike-Reputation (-3) für die Versand-IP
+  why: "Mailspike vergibt der IP {ip} eine niedrige Reputation: Sie wurde in Spam oder in Spamfallen gesehen. Filter, die dieser Liste folgen, werden Sie bestrafen."
+  fix:
+    - Hören Sie auf, an nicht angeforderte oder alte Adressen zu senden, und bereinigen Sie die Liste.
+    - Ist die IP die eines geteilten Dienstleisters, bitten Sie ihn um eine andere IP oder einen besser gepflegten Pool.
+sa.rcvd_in_mspike_l4:
+  title: Sehr schlechte Mailspike-Reputation (-4) für die Versand-IP
+  why: Die IP {ip} hat eine stark verschlechterte Mailspike-Reputation. Nachrichten von dort werden mit großer Wahrscheinlichkeit über SpamAssassin hinaus gefiltert.
+  fix:
+    - "Suchen Sie die Ursache: gehacktes Konto oder Formular, das Spam versendet, gekaufte Liste, Kampagne an ungültige Adressen."
+    - Beheben Sie die Ursache, bevor Sie den Versand wieder aufnehmen, und lassen Sie die Reputation dann wieder steigen.
+sa.rcvd_in_mspike_l5:
+  title: Mailspike-Reputation auf dem Tiefstwert (-5) für die Versand-IP
+  why: Die IP {ip} hat die schlechteste Mailspike-Reputation. Diese IP ist unbrauchbar, solange die Ursache nicht behoben ist.
+  fix:
+    - Setzen Sie die Versände von {ip} aus und prüfen Sie, dass kein Skript und kein kompromittiertes Konto unbemerkt sendet.
+    - Nutzen Sie während der Bereinigung vorübergehend einen anerkannten Versanddienst.
+sa.rcvd_in_mspike_bl:
+  title: Versand-IP auf der Mailspike-Blacklist
+  why: "Die IP {ip} steht bei Mailspike auf der Blacklist oder hat eine Reputation von -3 oder niedriger. Symbolische Bewertung für SpamAssassin, aber andere Filter blockieren auf dieser Grundlage."
+  fix:
+    - Beheben Sie die Ursache der unerwünschten Versände von {ip} und beantragen Sie die Entfernung über {delist_url}.
+sa.rcvd_in_mspike_zbi:
+  title: Versand-IP auf der Mailspike-Blacklist (Blockzone)
+  why: Die IP {ip} steht ohne detaillierte Reputation auf der Mailspike-Blacklist. Gleiche Behandlung wie bei einem Eintrag auf der Blacklist.
+  fix:
+    - Suchen Sie die missbräuchliche Quelle auf {ip}, beheben Sie sie und beantragen Sie die Entfernung über {delist_url}.
+sa.rcvd_in_pbl:
+  title: "Versand-IP in der Spamhaus PBL (Bereich nicht für Direktversand bestimmt)"
+  why: "Die IP {ip} gehört zu einem Bereich, den der Anbieter nicht für den direkten E-Mail-Versand vorgesehen hat: Glasfaser- oder DSL-Anschluss, dynamische IP. Die PBL ist keine Strafe, aber ein Server, der von diesen IPs sendet, wird wie ein infizierter Rechner behandelt."
+  fix:
+    - "Versenden Sie nicht direkt von dieser IP: Nutzen Sie den SMTP-Server Ihres Postfachs oder eines Versanddienstes mit Authentifizierung."
+    - Ist {ip} eine feste IP eines Servers, den Sie kontrollieren, beantragen Sie die Entfernung über {delist_url}, nachdem Sie den Reverse-DNS eingerichtet haben.
+sa.rcvd_in_sbl:
+  title: Versand-IP in der Spamhaus SBL
+  why: "Die IP {ip} ist in der SBL eingetragen, der Liste der von Spamhaus verifizierten Spamquellen. Der SpamAssassin-Wert ist moderat, doch viele Server lehnen solche Nachrichten bereits bei der Verbindung ab."
+  fix:
+    - "Lesen Sie den SBL-Eintrag über {delist_url}: Er nennt den Grund und wer die Entfernung beantragen kann."
+    - Liegt die IP bei einem Hoster, eröffnen Sie bei ihm ein Ticket: Oft kann nur er handeln.
+sa.rcvd_in_sbl_css:
+  title: "Versand-IP in der Spamhaus CSS (erkannter Spamversand)"
+  why: "Die CSS listet automatisch IPs, die kürzlich Spam versendet haben, oft eine kompromittierte Website, ein gehacktes Postfach oder einen falsch konfigurierten Server (falsches HELO, fehlender Reverse-DNS)."
+  fix:
+    - "Suchen Sie auf dem Server {ip}, was sendet: ungeschütztes Formular, bösartiges PHP-Skript, gehacktes Mailkonto."
+    - Prüfen Sie, dass HELO-Name und Reverse-DNS ({ptr}) zusammenpassen.
+    - Sobald die Ursache beseitigt ist, beantragen Sie die Entfernung über {delist_url}.
+sa.rcvd_in_xbl:
+  title: "Versand-IP in der Spamhaus XBL (kompromittierter Rechner)"
+  why: Spamhaus hat beobachtet, dass sich die IP {ip} wie ein infizierter Rechner verhält (Botnetz, offener Proxy). Server, die ZEN nutzen, lehnen diese Nachrichten oft ab.
+  fix:
+    - Analysieren Sie die Rechner und Server, die über {ip} ausgehen (Virenscanner, Updates, Passwörter).
+    - Beantragen Sie nach der Bereinigung die Entfernung über {delist_url}.
+sa.rcvd_in_zen_blocked:
+  title: Spamhaus-Anfrage vom Testserver abgelehnt
+  why: "Verwaltungshinweis: Spamhaus hat dem Analyseserver nicht geantwortet, weil er das kostenlose Volumen überschreitet. Das sagt nichts über Ihre IP aus."
+  fix:
+    - Keine Maßnahme Ihrerseits. Die Spamhaus-Listen wurden für diesen Test nicht abgefragt.
+sa.rcvd_in_zen_blocked_opendns:
+  title: "Spamhaus-Anfrage abgelehnt: öffentlicher Resolver"
+  why: "Verwaltungshinweis: Der Analyseserver fragt Spamhaus über einen öffentlichen Resolver ab, was Spamhaus ablehnt. Ihr Versand ist davon nicht betroffen."
+  fix:
+    - Keine Maßnahme Ihrerseits.
+sa.rcvd_in_psbl:
+  title: Versand-IP in der PSBL-Liste
+  why: Die IP {ip} hat Nachrichten an PSBL-Spamfallen gesendet. Das kommt bei geteilten Servern und bei Kampagnen an alte Listen häufig vor.
+  fix:
+    - Entfernen Sie aus Ihren Listen Adressen, die nie bestätigt wurden oder lange inaktiv sind.
+    - "Beantragen Sie die Entfernung über {delist_url}: Sie ist im Selbstbedienungsverfahren möglich, doch der Eintrag kehrt zurück, solange die Versände an Fallen weitergehen."
+sa.rcvd_in_bl_spamcop_net:
+  title: Versand-IP in der SpamCop-Liste
+  why: Empfänger haben Nachrichten von {ip} bei SpamCop gemeldet, oder die IP hat deren Fallen getroffen. Der Eintrag läuft von selbst ab, sobald die Meldungen aufhören.
+  fix:
+    - Prüfen Sie, dass jeder Empfänger ausdrücklich zugestimmt hat, Ihre Nachrichten zu erhalten, und dass der Abmeldelink sichtbar ist.
+    - Ist die IP bei einem Dienstleister geteilt, melden Sie ihm den Eintrag.
+sa.rcvd_in_iadb_vouched:
+  title: Absender durch ISIPP IADB zertifiziert
+  why: Die IP {ip} wird durch das Zertifizierungsprogramm ISIPP verbürgt. Bedeutender Bonus von SpamAssassin.
+  fix:
+    - Nichts zu korrigieren.
+sa.rcvd_in_iadb_listed:
+  title: Absender in ISIPP IADB eingetragen
+  why: Die IP {ip} nimmt am Akkreditierungssystem IADB teil. Information ohne spürbare Wirkung.
+  fix:
+    - Nichts zu korrigieren.
+sa.rcvd_in_iadb_optin:
+  title: "IADB: Mailinglisten mit Opt-in"
+  why: Der Absender hat der IADB erklärt, dass alle seine Listen auf freiwilliger Anmeldung beruhen. Bonus.
+  fix:
+    - Nichts zu korrigieren.
+sa.rcvd_in_iadb_doptin:
+  title: "IADB: Mailinglisten mit Double-Opt-in"
+  why: Der Absender hat der IADB erklärt, dass alle seine Listen per Double-Opt-in bestätigt sind. Großer Bonus.
+  fix:
+    - Nichts zu korrigieren.
+sa.rcvd_in_iadb_ml_doptin:
+  title: "IADB: nur Mailinglisten mit Double-Opt-in"
+  why: Laut IADB versendet die IP ausschließlich Mailinglisten, die per Double-Opt-in bestätigt sind. Einer der stärksten Boni von SpamAssassin.
+  fix:
+    - Nichts zu korrigieren.
+sa.razor2_check:
+  title: Inhalt in Razor bereits als Spam gemeldet
+  why: Razor-Nutzer haben eine Nachricht mit identischem oder sehr ähnlichem Inhalt gemeldet. Bei einem Newsletter passiert das, wenn Abonnenten ihn als Spam melden, statt sich abzumelden.
+  fix:
+    - Machen Sie den Abmeldelink oben oder unten in der Nachricht sichtbar und ergänzen Sie den Header List-Unsubscribe.
+    - Senden Sie nur an kürzlich angemeldete oder aktive Personen und erinnern Sie daran, warum sie die Nachricht erhalten.
+sa.razor2_cf_range_51_100:
+  title: Razor bewertet diesen Inhalt mit über 50 % Spam-Wahrscheinlichkeit
+  why: "Der Inhalt ist in Razor stark als Spam gemeldet. Derselbe Text wird auch bei anderen bestraft: kopierte Vorlagen, geteilte Werbetexte."
+  fix:
+    - Schreiben Sie die Nachricht neu, statt eine verbreitete Vorlage unverändert zu verwenden.
+    - Prüfen Sie, ob Ihre Empfänger sie massenhaft melden (Beschwerdequote im Versandtool).
+sa.pyzor_check:
+  title: Inhalt in Pyzor bereits als Spam gemeldet
+  why: Der Nachrichtentext entspricht einem Fingerabdruck, den Pyzor-Nutzer als Spam gemeldet haben. Sehr kurze, von Versand zu Versand identische Newsletter-Vorlagen sind davon besonders betroffen.
+  fix:
+    - Personalisieren Sie den Inhalt stärker und verringern Sie den Textanteil, der allen Versänden gemeinsam ist.
+    - Beobachten Sie Beschwerden und entfernen Sie Empfänger, die nicht mehr lesen.
+sa.dcc_check:
+  title: Nachricht von DCC als Massenversand erkannt
+  why: "DCC zählt, wie oft dieselbe Nachricht zirkuliert. Hier meldet es einen Massenversand: Bei einem Newsletter ist das normal, aber SpamAssassin vergibt Punkte, wenn der Versand nicht als angefordert erkannt wird."
+  fix:
+    - Ergänzen Sie die Header List-Unsubscribe und List-Unsubscribe-Post sowie einen sichtbaren Abmeldelink.
+    - Authentifizieren Sie den Versand (SPF, DKIM, DMARC ausgerichtet), um die Punkte durch Boni auszugleichen.
+sa.dcc_reput_00_12:
+  title: Gute DCC-Reputation (0 bis 12 % Spam)
+  why: Laut DCC versendet die IP {ip} überwiegend legitime Nachrichten. Kleiner Bonus.
+  fix:
+    - Nichts zu korrigieren.
+sa.dcc_reput_95_98:
+  title: Schlechte DCC-Reputation (95 bis 98 % Spam)
+  why: Laut DCC versendet die IP {ip} fast ausschließlich unerwünschte Massennachrichten.
+  fix:
+    - Prüfen Sie, wer sonst von {ip} sendet, wenn die IP geteilt ist, und bitten Sie den Dienstleister um eine besser gepflegte IP.
+    - Bereinigen Sie Ihre Listen und beschränken Sie die Versände auf aktive Angemeldete.
+sa.dcc_reput_99_100:
+  title: DCC-Reputation eines Spammers (99 % und mehr)
+  why: DCC betrachtet die IP {ip} als Spamquelle. Dieser Punkt kommt zu möglichen anderen Blacklist-Einträgen hinzu.
+  fix:
+    - Stoppen Sie die Versände von {ip}, bis die Ursache (gehacktes Konto, gekaufte Liste) ermittelt ist.
+sa.digest_multiple:
+  title: Inhalt von mehreren kollaborativen Netzwerken gemeldet
+  why: Mindestens zwei Netzwerke unter Razor, Pyzor und DCC kennen diesen Inhalt. Die Punkte addieren sich zu denen jedes Netzwerks.
+  fix:
+    - "Beheben Sie die gemeinsame Ursache: Beschwerden der Empfänger oder eine von Spammern wiederverwendete Nachrichtenvorlage."
+sa.from_fmbla_newdom:
+  title: Absenderdomain vor weniger als 7 Tagen registriert
+  why: "{domain} wurde vor weniger als einer Woche registriert. Spammer verwenden Wegwerf-Domains, daher ist eine neue Domain standardmäßig verdächtig, auch für ein seriöses Unternehmen."
+  fix:
+    - Warten Sie einige Wochen, bevor Sie in großer Zahl von {domain} aus senden.
+    - Beginnen Sie mit individuellen Versänden und kleinen Volumen an Empfänger, die Sie kennen.
+    - Veröffentlichen Sie jetzt SPF, DKIM und DMARC, damit sich die Reputation auf einer authentifizierten Domain aufbaut.
+sa.from_fmbla_newdom14:
+  title: Absenderdomain vor 7 bis 14 Tagen registriert
+  why: "{domain} ist weniger als zwei Wochen alt. Der Malus sinkt mit dem Alter der Domain."
+  fix:
+    - Halten Sie die Volumen in den ersten Wochen niedrig und regelmäßig.
+    - Prüfen Sie, dass SPF, DKIM und DMARC eingerichtet sind.
+sa.from_fmbla_newdom28:
+  title: Absenderdomain vor 14 bis 28 Tagen registriert
+  why: "{domain} ist weniger als einen Monat alt. Der Malus ist gering und verschwindet nach 28 Tagen."
+  fix:
+    - Warten Sie, bevor Sie Massenversände starten. Keine technische Änderung hebt diesen Malus auf.
+sa.from_fmbla_ndblocked:
+  title: Anfrage an fresh.fmb.la vom Testserver abgelehnt
+  why: "Verwaltungshinweis: Der Dienst, der Domains datiert, hat dem Analyseserver nicht geantwortet. Hat nichts mit Ihrem Versand zu tun."
+  fix:
+    - Keine Maßnahme Ihrerseits.
+sa.bayes_00:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit von 0 bis 1 %"
+  why: Wortschatz und Aufbau der Nachricht ähneln legitimen Nachrichten, die der Server bereits gelernt hat. Klarer Bonus.
+  fix:
+    - Nichts zu korrigieren.
+sa.bayes_05:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit von 1 bis 5 %"
+  why: Der Inhalt ähnelt deutlich legitimen Nachrichten. Kleiner Bonus.
+  fix:
+    - Nichts zu korrigieren.
+sa.bayes_20:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit von 5 bis 20 %"
+  why: Der Inhalt neigt zur legitimen Seite. Keine Wirkung auf die Bewertung.
+  fix:
+    - Nichts zu korrigieren.
+sa.bayes_40:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit von 20 bis 40 %"
+  why: Der Inhalt ist eher neutral. Keine Wirkung auf die Bewertung.
+  fix:
+    - Nichts zu korrigieren.
+sa.bayes_50:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit von 40 bis 60 %"
+  why: "Der Filter kann nicht entscheiden. Das ist das übliche Ergebnis eines Testservers, der Ihre Nachrichten noch nie gesehen hat: Er fügt knapp einen Punkt hinzu."
+  fix:
+    - Eine gezielte Korrektur ist nicht möglich. Ein klarer, für den Leser geschriebener Text ohne serienmäßige Verkaufsformeln senkt das Ergebnis.
+sa.bayes_60:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit von 60 bis 80 %"
+  why: Der Wortschatz der Nachricht ähnelt eher gelerntem Spam als legitimen Nachrichten. Oft ein sehr werblicher Ton (Angebote, Dringlichkeit, Preise) oder ein kurzer Text, der in Bildern untergeht.
+  fix:
+    - Entschärfen Sie wiederholte Werbeformeln („außergewöhnliches Angebot“, „letzte Chance“).
+    - Fügen Sie echten, nützlichen Text hinzu und reduzieren Sie den Anteil an Bildern.
+sa.bayes_80:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit von 80 bis 95 %"
+  why: Der Inhalt ähnelt stark bereits gelerntem Spam. Dieser Punkt allein kann die Nachricht mit zwei oder drei anderen Regeln in den Spam-Ordner kippen.
+  fix:
+    - Formulieren Sie Betreff und Einleitung informativer.
+    - Entfernen Sie Kurzlinks und unbekannte Drittdomains und fügen Sie eine stimmige Textversion hinzu.
+sa.bayes_95:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit von 95 bis 99 %"
+  why: "Der Filter ist fast sicher, dass es sich um Spam handelt. Die Nachricht hat viele Merkmale mit bekanntem Spam gemeinsam: Wortschatz, Links, HTML-Aufbau."
+  fix:
+    - Vergleichen Sie mit einer einfacheren Nachricht (Text, ein Link auf Ihre Domain), um zu isolieren, was auslöst.
+    - Vermeiden Sie gekaufte oder weit verbreitete Layoutvorlagen und Links auf Drittdomains.
+sa.bayes_99:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit von 99 bis 100 %"
+  why: "Der Filter stuft den Inhalt mit nahezu Sicherheit als Spam ein. Das ist eine der schwersten Regeln: 3,5 Punkte von den 5, die standardmäßig für eine Einstufung als Spam genügen."
+  fix:
+    - "Beginnen Sie mit neuem Inhalt: anderer Betreff, anderer Text, andere Links."
+    - Testen Sie mit einer minimalen Nachricht, um zu prüfen, dass die Infrastruktur (Domain, IP) nicht selbst die Ursache ist.
+sa.bayes_999:
+  title: "Bayes-Filter: Spam-Wahrscheinlichkeit über 99,9 %"
+  why: Kommt zu BAYES_99 hinzu, wenn die Sicherheit noch höher ist.
+  fix:
+    - "Siehe BAYES_99: Der Inhalt muss vollständig überarbeitet werden."
+sa.awl:
+  title: Punktzahl durch den Absenderverlauf angepasst (AWL)
+  why: Der Testserver merkt sich die Punktzahlen Ihrer früheren Nachrichten und nähert diese dem Durchschnitt an. Mehrere schlechte Tests hintereinander heben daher die Punktzahl der nächsten an.
+  fix:
+    - "Korrigieren Sie die anderen Regeln: Die Anpassung folgt dem Trend Ihrer Versände."
+    - Für eine saubere Messung vergleichen Sie Tests, die von einer neuen Adresse aus gesendet wurden.
+sa.txrep:
+  title: Punktzahl durch die Reputation des Absenders angepasst (TxRep)
+  why: Der Server speichert eine Reputation Ihrer Adresse, Domain und IP, aufgebaut aus bereits empfangenen Nachrichten. Sie korrigiert die Punktzahl in die eine oder andere Richtung.
+  fix:
+    - "Korrigieren Sie die anderen Regeln und versenden Sie regelmäßig: Die Reputation baut sich mit der Zeit auf."
+sa.all_trusted:
+  title: Nachricht nur über vertrauenswürdige Server geleitet
+  why: Die Nachricht hat nur Server durchlaufen, die der Analyzer als intern betrachtet. Das ist der Fall bei einem Versand aus demselben Netz wie der Testserver.
+  fix:
+    - Nichts zu korrigieren. Dieser Bonus existiert bei einem externen Empfänger nicht.
+sa.no_relays:
+  title: Nachricht ohne SMTP-Relay
+  why: "Information: Die Nachricht trägt keine Spur eines SMTP-Transports, etwa weil sie direkt in den Posteingang eingelegt wurde."
+  fix:
+    - Nichts zu korrigieren. Senden Sie für einen repräsentativen Test über Ihren üblichen Weg.
+sa.no_received:
+  title: Nachricht ohne Header Received
+  why: "Information: Es ist kein Header Received vorhanden. Bei einer tatsächlich gesendeten Nachricht selten."
+  fix:
+    - Nichts zu korrigieren. Senden Sie den Test über Ihren echten Versandserver, statt sie zu importieren.
+sa.unparseable_relay:
+  title: Header Received unleserlich
+  why: Eine Zeile Received hat ein Format, das SpamAssassin nicht versteht. Es kann dann die Ursprungs-IP falsch bestimmen und Blacklists falsch anwenden.
+  fix:
+    - Stammt die Zeile von Ihrem Server, belassen Sie das Standardformat von Received der Software (Postfix, Exim) statt eines eigenen Formats.

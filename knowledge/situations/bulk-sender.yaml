@@ -1,0 +1,359 @@
+# Famille bulk-sender : exigences des grandes messageries pour les expéditeurs en volume.
+# Sources vérifiées le 2026-11-10 (texte des pages officielles) :
+# - Gmail (support.google.com/a/answer/81126 et FAQ support.google.com/a/answer/14229414) :
+#   exigences depuis le 1er février 2024 ; expéditeur en volume = près de 5 000 messages ou plus
+#   par 24 heures vers des comptes Gmail personnels, domaine principal et sous-domaines cumulés,
+#   statut permanent une fois atteint ; SPF ET DKIM ; DMARC publié (p=none admis) ; alignement du
+#   From sur SPF ou DKIM ; PTR valide ; TLS ; RFC 5322 ; taux de spam sous 0,3 % (cible sous 0,1 %) ;
+#   depuis juin 2024, au-delà de 0,3 % pas d'atténuation, rétablie après 7 jours consécutifs sous
+#   0,3 % ; désinscription en un clic (1er juin 2024) traitée sous 48 heures ; depuis novembre 2025,
+#   application renforcée sur le trafic non conforme ; clé DKIM de 1 024 bits au moins.
+# - Yahoo (senders.yahooinc.com/best-practices/ et /faqs/) : pas de seuil de volume publié ;
+#   SPF ET DKIM ; DMARC au moins p=none ; alignement relâché admis ; taux de spam sous 0,3 % ;
+#   désinscription honorée sous 2 jours ; RFC 5321 et 5322 ; PTR valide ; application à partir de
+#   février 2024, désinscription à partir de juin 2024 ; clé DKIM de 1 024 bits au moins pour la CFL.
+# - Microsoft Outlook.com (blog techcommunity, version 4.0 du 30 avril 2025) : domaines envoyant plus
+#   de 5 000 messages par jour vers outlook.com, hotmail.com, live.com ; à partir du 5 mai 2025,
+#   courrier non conforme d'abord dirigé vers le dossier Courrier indésirable, rejet annoncé à une
+#   date non fixée (code 550 5.7.515) ; SPF pass, DKIM pass, DMARC au moins p=none aligné sur SPF ou
+#   DKIM (de préférence les deux).
+# - Orange (postmaster.orange.fr, page mise à jour le 1er septembre 2026) : gros expéditeurs = plus de
+#   1 000 messages par jour ; SPF, DKIM et DMARC obligatoires et tous valides ; From aligné ; en-tête
+#   Feedback-ID ; désinscription en un clic RFC 8058 ; plaintes à 0,6 % ou plus pouvant déclencher
+#   des protections, passage progressif à 0,3 % annoncé ; PTR valide ; HELO en FQDN ; TLS 1.2 au
+#   moins ; 100 messages par connexion, 2 connexions simultanées par IP ; site web derrière le
+#   domaine du From avec identité, consentement et mentions légales.
+# - La Poste (postmaster.laposte.net) : PTR valide et cohérent exigé ; SPF appliqué (rejet des IP non
+#   autorisées) ; DKIM fortement recommandé, des messages sont refusés pour absence de signature
+#   DKIM valide ; politique DMARC prise en compte ; boucle de rétroaction via Signal Spam.
+# - Free (postmaster.free.fr) et SFR : aucune exigence chiffrée publiée trouvée ; rien n'est écrit
+#   ici pour eux.
+#
+# Non-cumul : ces entrées donnent le contexte « gros expéditeur ». Quand la même anomalie est déjà
+# signalée par une autre famille (spf, dkim, dmarc, alignment, rdns, tls, unsubscribe), le moteur
+# retient la pénalité la plus forte, une seule fois.
+
+- id: bulk-sender.spf_and_dkim_required
+  family: bulk-sender
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "message.is_bulk && !(spf.result == 'pass' && dkim.valid_signatures.any())"
+    notes: "Gmail (plus de 5 000 messages par jour), Yahoo et Outlook.com (plus de 5 000 par jour) exigent SPF et DKIM, pas l'un ou l'autre. Orange exige les deux au-delà de 1 000 messages par jour. Non cumulé avec les familles spf et dkim."
+  sa_rules: []
+  title: "En volume, SPF et DKIM doivent tous les deux être valides"
+  why: >
+    Pour un expéditeur en volume, Gmail, Yahoo et Outlook.com exigent SPF et DKIM, et Orange les
+    exige au-delà de 1 000 messages par jour. Il manque l'un des deux sur ce message : il risque le
+    dossier spam ou le rejet chez ces quatre messageries.
+  fix:
+    - "Publiez ou corrigez l'enregistrement SPF de {envelope_domain} pour autoriser l'IP {ip}."
+    - "Activez la signature DKIM de {domain} dans votre outil d'envoi et publiez la clé publique dans le DNS."
+    - "Envoyez un nouveau test : les deux résultats doivent être pass."
+  fix_by_provider:
+    google_workspace: "Console d'administration > Applications > Google Workspace > Gmail > Authentifier les e-mails : générez la clé DKIM, publiez le TXT google._domainkey, puis cliquez sur Commencer l'authentification. SPF : v=spf1 include:_spf.google.com ~all."
+    microsoft_365: "Portail Microsoft Defender > Stratégies et règles > Stratégies de menace > Paramètres d'authentification e-mail > DKIM : publiez les deux CNAME selector1 et selector2, puis activez la signature pour {domain}. SPF : v=spf1 include:spf.protection.outlook.com -all."
+    brevo: "Paramètres > Expéditeurs, domaines et IP dédiées > Domaines : authentifiez {domain} et publiez les enregistrements indiqués."
+    mailchimp: "Website > Domains : ajoutez {domain}, puis Authenticate et publiez les CNAME DKIM indiqués."
+    sendgrid: "Settings > Sender Authentication > Authenticate Your Domain : publiez les CNAME fournis, qui couvrent DKIM et le domaine de retour pour SPF."
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+    - https://techcommunity.microsoft.com/blog/microsoft-defender-for-office-365-blog/strengthening-email-ecosystem-outlook%E2%80%99s-new-requirements-for-high%E2%80%90volume-senders/4399730
+    - https://postmaster.orange.fr/
+
+- id: bulk-sender.dmarc_missing
+  family: bulk-sender
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "message.is_bulk && dmarc.record == null"
+    notes: "Gmail, Yahoo et Outlook.com exigent un enregistrement DMARC pour les expéditeurs en volume ; p=none suffit. Orange l'exige au-delà de 1 000 messages par jour. Non cumulé avec la famille dmarc."
+  sa_rules: []
+  title: "En volume, un enregistrement DMARC est obligatoire"
+  why: >
+    {domain} n'a pas d'enregistrement DMARC. Gmail, Yahoo et Outlook.com l'exigent des expéditeurs en
+    volume, et Orange au-delà de 1 000 messages par jour : sans lui, vos messages sont filtrés ou
+    rejetés.
+  fix:
+    - "Publiez un enregistrement TXT sur _dmarc.{domain}."
+    - "Commencez par p=none avec une adresse de rapports rua pour observer vos flux avant de durcir."
+    - "Après quelques semaines de rapports propres, passez à p=quarantine puis p=reject."
+  fix_by_provider:
+    cloudflare_dns: "DNS > Records > Add record : type TXT, nom _dmarc, contenu v=DMARC1; p=none; rua=mailto:dmarc@{domain}."
+    ovh: "Web Cloud > Noms de domaine > {domain} > Zone DNS > Ajouter une entrée : TXT, sous-domaine _dmarc, valeur v=DMARC1; p=none; rua=mailto:dmarc@{domain}."
+  example_good: "_dmarc.{domain}. IN TXT \"v=DMARC1; p=none; rua=mailto:dmarc@{domain}\""
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+    - https://techcommunity.microsoft.com/blog/microsoft-defender-for-office-365-blog/strengthening-email-ecosystem-outlook%E2%80%99s-new-requirements-for-high%E2%80%90volume-senders/4399730
+    - https://www.rfc-editor.org/rfc/rfc7489#section-6.3
+
+- id: bulk-sender.dmarc_not_aligned
+  family: bulk-sender
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "message.is_bulk && dmarc.record != null && !(alignment.spf || alignment.dkim)"
+    notes: "Gmail et Yahoo : le domaine du From doit être aligné sur le domaine SPF ou le domaine DKIM (alignement relâché admis chez Yahoo). Outlook.com : DMARC aligné sur SPF ou DKIM, de préférence les deux. Non cumulé avec la famille alignment."
+  sa_rules: []
+  title: "En volume, le domaine du From doit être aligné sur SPF ou DKIM"
+  why: >
+    SPF valide {envelope_domain} et DKIM valide {dkim_domain}, mais aucun des deux ne correspond à
+    {domain}. Gmail, Yahoo et Outlook.com exigent cet alignement pour les envois en volume : DMARC
+    échoue.
+  fix:
+    - "Configurez la signature DKIM de votre outil d'envoi avec d={domain} (signature à votre nom, pas au nom de l'outil)."
+    - "Ou configurez un domaine de retour personnalisé sur un sous-domaine de {domain} pour aligner SPF."
+    - "Visez les deux alignements, comme le recommande Microsoft."
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+    - https://techcommunity.microsoft.com/blog/microsoft-defender-for-office-365-blog/strengthening-email-ecosystem-outlook%E2%80%99s-new-requirements-for-high%E2%80%90volume-senders/4399730
+    - https://www.rfc-editor.org/rfc/rfc7489#section-3.1
+
+- id: bulk-sender.outlook_high_volume
+  family: bulk-sender
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "message.is_bulk && !(spf.result == 'pass' && dkim.result == 'pass' && dmarc.record.p in ['none','quarantine','reject'] && (alignment.spf || alignment.dkim))"
+    notes: "Microsoft, version 4.0 du 30 avril 2025 : plus de 5 000 messages par jour vers outlook.com, hotmail.com, live.com ; depuis le 5 mai 2025, courrier non conforme dirigé vers le dossier Courrier indésirable ; rejet annoncé à une date non fixée avec 550; 5.7.515. Synthèse des trois exigences pour le public Outlook.com ; non cumulée avec les entrées précédentes."
+  sa_rules: []
+  title: "Ce message ne respecte pas les exigences d'Outlook.com pour les envois en volume"
+  why: >
+    Depuis le 5 mai 2025, Outlook.com envoie dans le dossier Courrier indésirable les messages des
+    domaines qui envoient plus de 5 000 messages par jour sans SPF valide, DKIM valide et DMARC
+    aligné. Microsoft annonce le rejet pur et simple à une date non encore fixée.
+  fix:
+    - "Faites passer SPF pour {envelope_domain} et DKIM pour {domain}."
+    - "Publiez un DMARC au moins en p=none pour {domain}, aligné sur SPF ou DKIM, idéalement les deux."
+    - "Si vous recevez l'erreur 550 5.7.515, renvoyez un test ici après correction pour confirmer les trois résultats."
+  references:
+    - https://techcommunity.microsoft.com/blog/microsoft-defender-for-office-365-blog/strengthening-email-ecosystem-outlook%E2%80%99s-new-requirements-for-high%E2%80%90volume-senders/4399730
+
+- id: bulk-sender.one_click_required
+  family: bulk-sender
+  axis: message
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "message.is_bulk && message.is_marketing && !(headers.count('List-Unsubscribe-Post') == 1 && headers.list_unsubscribe.uris.any(u => u.scheme == 'https') && dkim.covers(['list-unsubscribe','list-unsubscribe-post']))"
+    notes: "Gmail : désinscription en un clic obligatoire sur les messages marketing des expéditeurs en volume, à mettre en place au plus tard le 1er juin 2024, demandes traitées sous 48 heures. Yahoo : sous 2 jours. Orange : un clic, RFC 8058. Non cumulée avec la famille unsubscribe."
+  sa_rules: []
+  title: "En volume, la désinscription en un clic est obligatoire"
+  why: >
+    Gmail exige depuis le 1er juin 2024 la désinscription en un clic sur les messages marketing des
+    expéditeurs en volume, Yahoo et Orange aussi. Gmail demande de traiter les demandes sous 48
+    heures, Yahoo sous 2 jours. Ce message n'est pas conforme.
+  fix:
+    - "Ajoutez List-Unsubscribe avec une adresse https et List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Signez ces deux en-têtes avec DKIM."
+    - "Retirez les contacts désinscrits de vos envois en moins de 48 heures, y compris dans les campagnes déjà programmées."
+  example_good: |
+    List-Unsubscribe: <https://{domain}/desinscription?u=8f2c1a>
+    List-Unsubscribe-Post: List-Unsubscribe=One-Click
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://support.google.com/a/answer/14229414
+    - https://senders.yahooinc.com/best-practices/
+    - https://postmaster.orange.fr/
+    - https://www.rfc-editor.org/rfc/rfc8058
+
+- id: bulk-sender.ptr_required
+  family: bulk-sender
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "ptr == null || !fcrdns(ip)"
+    notes: "Gmail (tous expéditeurs), Yahoo et Orange : enregistrements DNS direct et inverse valides pour les IP d'envoi. La Poste : DNS inverse valide et cohérent, connexions refusées sinon. Non cumulé avec la famille rdns."
+  sa_rules: []
+  title: "L'IP d'envoi n'a pas de DNS inverse valide"
+  why: >
+    L'IP {ip} n'a pas de nom inverse qui revient sur elle-même. Gmail, Yahoo, Orange et La Poste
+    l'exigent : La Poste peut refuser la connexion, et les autres classent le message en spam.
+  fix:
+    - "Demandez à l'hébergeur de l'IP {ip} de créer un PTR vers un nom comme mail.{domain}."
+    - "Créez l'enregistrement A de ce nom vers {ip} pour que la vérification aller retour réussisse."
+    - "Réglez le nom HELO du serveur sur ce même nom."
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+    - https://postmaster.orange.fr/
+    - https://postmaster.laposte.net/kb/guide/fr/quelles-sont-les-specifications-techniques-a-respecter-pour-emettre-des-emails-vers-laposte-net-efHektw82l
+
+- id: bulk-sender.tls_required
+  family: bulk-sender
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "!smtp.tls"
+    notes: "Notre serveur propose STARTTLS : s'il n'a pas été utilisé, l'expéditeur ne chiffre pas. Gmail exige une connexion TLS pour tous les expéditeurs. Orange recommande fortement TLS et n'accepte plus les versions antérieures à TLS 1.2. Non cumulé avec la famille tls."
+  sa_rules: []
+  title: "Le message a été transmis sans chiffrement TLS"
+  why: >
+    Le serveur {helo} n'a pas chiffré la connexion alors que notre serveur le proposait. Gmail exige
+    TLS pour tous les expéditeurs, et Orange n'accepte que TLS 1.2 ou plus récent.
+  fix:
+    - "Activez STARTTLS en sortie sur votre serveur d'envoi, avec TLS 1.2 au minimum."
+    - "Si vous passez par un relais ou un outil d'envoi, vérifiez que le chiffrement sortant est activé dans ses réglages."
+  fix_by_provider:
+    postfix: "Dans main.cf : smtp_tls_security_level = may et smtp_tls_mandatory_protocols = >=TLSv1.2, puis postfix reload."
+    exim: "Dans la configuration du transport remote_smtp, laissez hosts_try_tls = * (valeur par défaut) et vérifiez que tls_require_ciphers n'exclut pas TLS 1.2."
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://postmaster.orange.fr/
+    - https://www.rfc-editor.org/rfc/rfc8996
+
+- id: bulk-sender.rfc5322_format
+  family: bulk-sender
+  axis: message
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "message.is_bulk && headers.rfc5322_violations.count > 0"
+    notes: "Gmail et Yahoo exigent des messages conformes à la RFC 5322 (et RFC 5321 pour Yahoo). Synthèse des écarts relevés dans la famille headers ; pénalité non cumulée avec celles-ci."
+  sa_rules: []
+  title: "Le message n'est pas conforme au format RFC 5322 exigé par Gmail et Yahoo"
+  why: >
+    Gmail et Yahoo exigent des messages au format RFC 5322. Ce message présente {value} écarts : en
+    volume, ils suffisent à faire classer les envois en spam ou à les faire rejeter.
+  fix:
+    - "Corrigez les anomalies d'en-têtes listées dans la section En-têtes de ce rapport."
+    - "Construisez les messages avec une bibliothèque d'envoi éprouvée plutôt qu'à la main."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+
+- id: bulk-sender.dkim_key_too_short
+  family: bulk-sender
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "dkim.valid_signatures.all(s => s.key_bits < 1024)"
+    notes: "Gmail : clé DKIM de 1 024 bits ou plus pour envoyer vers Gmail, 2 048 recommandé. Yahoo exige aussi 1 024 bits ou plus pour la boucle de rétroaction. Non cumulé avec la famille dkim."
+  sa_rules: []
+  title: "La clé DKIM est trop courte"
+  why: >
+    La clé DKIM du sélecteur {selector} fait {value} bits. Gmail exige au moins 1 024 bits et
+    recommande 2 048 : une clé plus courte n'est pas acceptée.
+  fix:
+    - "Générez une nouvelle clé de 2 048 bits avec un nouveau sélecteur."
+    - "Publiez la clé publique sur nouveau-selecteur._domainkey.{domain}, puis basculez la signature sur ce sélecteur."
+    - "Supprimez l'ancien sélecteur quelques jours plus tard, une fois les messages en transit livrés."
+  fix_by_provider:
+    google_workspace: "Console d'administration > Gmail > Authentifier les e-mails : choisissez une longueur de clé de 2048 bits, générez un nouvel enregistrement avec un autre préfixe de sélecteur que google si l'ancien est encore publié."
+    postfix: "Avec OpenDKIM : opendkim-genkey -b 2048 -d {domain} -s s2026, publiez s2026.txt, puis mettez à jour KeyTable et redémarrez OpenDKIM."
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/faqs/
+    - https://www.rfc-editor.org/rfc/rfc8301
+
+- id: bulk-sender.spam_rate_above_limit
+  family: bulk-sender
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "postmaster.connected && postmaster.user_reported_spam_rate >= 0.003"
+    notes: "Ne se déclenche que si l'utilisateur a relié Gmail Postmaster Tools. Gmail : spam rate calculé chaque jour ; depuis juin 2024, à 0,3 % ou plus, l'expéditeur n'est plus éligible aux mesures d'atténuation, rétablies après 7 jours consécutifs sous 0,3 %. Yahoo : sous 0,3 %, calculé sur le courrier livré en boîte de réception."
+  sa_rules: []
+  title: "Votre taux de plaintes Gmail atteint ou dépasse 0,3 %"
+  why: >
+    Postmaster Tools indique un taux de spam signalé par les utilisateurs de {value}. À 0,3 % ou plus,
+    Gmail ne vous accorde plus de mesure d'atténuation : vos messages sont filtrés jusqu'à 7 jours
+    consécutifs sous ce seuil.
+  fix:
+    - "Arrêtez d'envoyer aux contacts qui n'ont pas ouvert ni cliqué depuis plusieurs mois."
+    - "Vérifiez que chaque contact a donné son accord, et supprimez les adresses achetées ou importées sans consentement."
+    - "Rendez le lien de désinscription visible en haut du message et activez la désinscription en un clic."
+    - "Espacez vos envois si la fréquence a augmenté récemment."
+  references:
+    - https://support.google.com/a/answer/14229414
+    - https://support.google.com/a/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+
+- id: bulk-sender.spam_rate_above_target
+  family: bulk-sender
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "postmaster.connected && postmaster.user_reported_spam_rate >= 0.001 && postmaster.user_reported_spam_rate < 0.003"
+    notes: "Gmail recommande de rester sous 0,10 % et de ne jamais atteindre 0,30 %."
+  sa_rules: []
+  title: "Votre taux de plaintes Gmail dépasse la cible de 0,1 %"
+  why: >
+    Votre taux de spam signalé est de {value}. Gmail recommande de rester sous 0,1 % : vous êtes dans
+    la zone où une campagne de plus peut vous faire passer au-dessus de 0,3 %.
+  fix:
+    - "Identifiez dans Postmaster Tools les jours où le taux monte, et la campagne envoyée ce jour-là."
+    - "Retirez de la cible les contacts inactifs et ceux inscrits depuis une source douteuse."
+    - "Rappelez en haut du message pourquoi le contact le reçoit."
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://support.google.com/mail/answer/9981691
+
+- id: bulk-sender.orange_large_sender
+  family: bulk-sender
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "message.is_bulk && recipients.include_domains(['orange.fr','wanadoo.fr']) && !(spf.result == 'pass' && dkim.result == 'pass' && dmarc.result == 'pass' && headers.count('Feedback-ID') > 0 && headers.count('List-Unsubscribe-Post') > 0)"
+    notes: "Orange, page mise à jour le 1er septembre 2026 : pour plus de 1 000 messages par jour, SPF, DKIM et DMARC obligatoires et tous valides, From aligné, Feedback-ID au format décrit par Google, désinscription en un clic RFC 8058, site web derrière le domaine du From. Plaintes à 0,6 % ou plus : protections possibles ; passage progressif à 0,3 % annoncé."
+  sa_rules: []
+  title: "Ce message ne respecte pas les exigences d'Orange pour les gros expéditeurs"
+  why: >
+    Au-delà de 1 000 messages par jour, Orange exige que SPF, DKIM et DMARC passent tous les trois,
+    un en-tête Feedback-ID et la désinscription en un clic. Il manque {value} sur ce message.
+  fix:
+    - "Faites passer SPF, DKIM et DMARC, avec un From sur {domain} aligné."
+    - "Ajoutez un en-tête Feedback-ID au format a:b:c:IdentifiantExpediteur, signé par DKIM."
+    - "Ajoutez List-Unsubscribe en https et List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Vérifiez que https://{domain} affiche un site avec l'identité de l'entreprise et des mentions légales."
+    - "Limitez-vous à 100 messages par connexion et à 2 connexions simultanées par IP vers les serveurs d'Orange."
+  fix_by_provider:
+    postfix: "Créez un transport orange dans master.cf (copie de la ligne smtp, avec -o smtp_connection_reuse_count_limit=100, Postfix 3.4 ou plus), réglez orange_destination_concurrency_limit = 2 et orange_destination_recipient_limit = 100 dans main.cf, puis associez orange.fr et wanadoo.fr à ce transport dans transport_maps."
+  references:
+    - https://postmaster.orange.fr/
+    - https://support.google.com/a/answer/6254652
+    - https://www.rfc-editor.org/rfc/rfc8058
+
+- id: bulk-sender.laposte_dkim_required
+  family: bulk-sender
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "recipients.include_domains(['laposte.net']) && !dkim.valid_signatures.any()"
+    notes: "La Poste : la page d'aide « Mails rejetés pour absence de signature DKIM valide » confirme des refus pour ce motif ; la page des spécifications techniques présente DKIM comme fortement recommandé et applique strictement SPF. Aucune date ni seuil de volume publié."
+  sa_rules: []
+  title: "Sans signature DKIM valide, laposte.net peut refuser le message"
+  why: >
+    Ce message n'a pas de signature DKIM valide. La Poste indique refuser des messages pour ce
+    motif, et rejette aussi les messages partis d'IP non autorisées par SPF.
+  fix:
+    - "Activez la signature DKIM de {domain} chez votre outil d'envoi et publiez la clé publique dans votre DNS."
+    - "Vérifiez que la clé publiée correspond bien à celle qui signe (même sélecteur {selector})."
+    - "Vérifiez que l'IP {ip} figure dans le SPF de {envelope_domain}."
+  references:
+    - https://postmaster.laposte.net/kb/guide/fr/mails-rejetes-pour-absence-de-signature-dkim-valide-IEBRnbx8YB
+    - https://postmaster.laposte.net/kb/guide/fr/quelles-sont-les-specifications-techniques-a-respecter-pour-emettre-des-emails-vers-laposte-net-efHektw82l
+
+- id: bulk-sender.status_permanent
+  family: bulk-sender
+  severity: info
+  penalty: 0
+  detect:
+    signal: "message.is_bulk"
+    notes: "Gmail : un expéditeur qui a atteint une fois le critère de près de 5 000 messages par 24 heures vers des comptes personnels reste considéré comme expéditeur en volume ; les envois du domaine principal et de ses sous-domaines s'additionnent."
+  sa_rules: []
+  title: "Le statut d'expéditeur en volume chez Gmail est permanent"
+  why: >
+    Gmail additionne les envois de {domain} et de ses sous-domaines. Dès que vous avez approché une
+    fois 5 000 messages en 24 heures vers des comptes Gmail, vous restez soumis aux exigences des
+    expéditeurs en volume, même si vous envoyez moins ensuite.
+  fix:
+    - "Appliquez les exigences des expéditeurs en volume à tous les flux de {domain}, sous-domaines compris."
+    - "Suivez l'état de conformité dans le tableau de bord Compliance status de Postmaster Tools."
+  references:
+    - https://support.google.com/a/answer/14229414
+    - https://support.google.com/a/answer/81126

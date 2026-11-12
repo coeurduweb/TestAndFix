@@ -1,0 +1,15 @@
+# check: SpamAssassin settings. Network tests on, Bayes off, our own resolver.
+
+# Bayes would learn from test messages and drift between two runs of the same message.
+use_bayes 0
+bayes_auto_learn 0
+
+# Network tests (DNSBL, URIBL, SPF, DKIM) go through the local Unbound, which caches nothing.
+dns_available yes
+dns_server 127.0.0.1
+skip_rbl_checks 0
+
+# The message is analysed, never modified: no rewrite of the subject or the body.
+report_safe 0
+clear_report_template
+report _SUMMARY_

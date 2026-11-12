@@ -1,0 +1,148 @@
+tls.inbound_plaintext:
+  title: The message was sent without TLS encryption
+  why: Your server sent the message in plain text although the recipient offered encryption. Gmail requires a TLS connection from all senders, and the content can be read in transit.
+  fix:
+    - Enable opportunistic encryption (STARTTLS) for your server's outgoing mail.
+    - Check that a recent TLS library is installed and that the server is not configured to disable TLS toward certain domains.
+    - "Run the test again: the Received header must show with ESMTPS."
+  fix_by_provider:
+    postfix: In main.cf, set smtp_tls_security_level = may (and smtp_tls_loglevel = 1 to track it), then run postfix reload.
+    exim: In the remote_smtp transport, leave hosts_try_tls = * (default value) and check that no hosts_avoid_tls setting targets the recipient.
+    wordpress: In your SMTP plugin, choose TLS encryption (port 587) or SSL (port 465), never “None”.
+tls.inbound_old_version:
+  title: "The message was sent over {value}, an obsolete version of TLS"
+  why: "TLS 1.0 and 1.1 have been abandoned since RFC 8996. Receiving servers increasingly refuse them: your server may then fall back to plain text or be unable to deliver."
+  fix:
+    - Update the system and the TLS library (OpenSSL, GnuTLS) of the sending server.
+    - Allow TLS 1.2 and TLS 1.3 in the configuration of the sending software.
+    - Run the test again and check the version shown in the Received header.
+  fix_by_provider:
+    postfix: "In main.cf, set smtp_tls_protocols = >=TLSv1.2 (Postfix 3.6 or later; otherwise !SSLv2, !SSLv3, !TLSv1, !TLSv1.1), then run postfix reload."
+tls.inbound_weak_cipher:
+  title: "The TLS connection used a weak cipher suite ({value})"
+  why: The encryption negotiated by your server is broken or too weak to protect the message. It also signals outdated software, which recipients will eventually refuse.
+  fix:
+    - Update the TLS library of the sending server.
+    - Remove the RC4, 3DES, NULL, export and anonymous suites from the configuration.
+  fix_by_provider:
+    postfix: "In main.cf, set smtp_tls_ciphers = medium and smtp_tls_exclude_ciphers = aNULL, eNULL, RC4, 3DES, MD5, then run postfix reload."
+tls.submission_without_tls:
+  title: The sending password was transmitted without encryption
+  why: "Your software authenticated with the sending server without TLS. Anyone listening on the network can capture the login and use it to send spam in your name, which would ruin the reputation of {domain}."
+  fix:
+    - In your email software or application, choose port 465 with SSL/TLS, or port 587 with mandatory STARTTLS.
+    - Change the account password, since it may have been intercepted.
+    - On the server side, refuse authentication without TLS.
+  fix_by_provider:
+    postfix: "On the submission server, set smtpd_tls_auth_only = yes in main.cf."
+    wordpress: In your SMTP plugin, select SSL (465) or TLS (587) encryption.
+tls.mx_no_starttls:
+  title: The receiving server of {domain} does not offer encryption
+  why: Messages sent to {domain} travel in plain text. Senders that require TLS (MTA-STS, internal policies) cannot deliver to you, and replies to your mail can be read in transit.
+  fix:
+    - Install a certificate on the receiving server (Let's Encrypt works) for the name used in the MX record.
+    - Enable STARTTLS on port 25 of the server.
+    - "Run the test again: the EHLO response must include STARTTLS."
+  fix_by_provider:
+    postfix: "In main.cf, set smtpd_tls_cert_file and smtpd_tls_key_file, then smtpd_tls_security_level = may, and run postfix reload."
+    exim: Set tls_certificate and tls_privatekey, and leave tls_advertise_hosts = * in the main configuration.
+tls.mx_starttls_broken:
+  title: The encryption announced by the MX of {domain} fails
+  why: "The server of {domain} offers TLS, but the negotiation fails. Depending on the sender, the message is delayed, delivered in plain text, or abandoned: you lose part of your incoming mail."
+  fix:
+    - Check the log of the receiving server at the time of the test to read the TLS error.
+    - Verify that the certificate and key files exist, are readable by the service, and match each other.
+    - Enable TLS 1.2 and TLS 1.3, then restart the service.
+tls.mx_old_version_only:
+  title: The MX of {domain} accepts only obsolete TLS versions
+  why: Up-to-date senders refuse TLS 1.0 and 1.1. With this server, they deliver in plain text or not at all, especially those that apply MTA-STS.
+  fix:
+    - Update the system and the TLS library of the receiving server.
+    - Enable TLS 1.2 and TLS 1.3 in the SMTP configuration.
+  fix_by_provider:
+    postfix: "In main.cf, set smtpd_tls_protocols = >=TLSv1.2 (Postfix 3.6 or later), then run postfix reload."
+tls.mx_cert_expired:
+  title: The TLS certificate of the MX of {domain} has expired
+  why: Senders that verify the certificate, for example because {domain} publishes an MTA-STS policy, refuse to deliver. Others deliver without any guarantee of identity.
+  fix:
+    - Renew the certificate of the receiving server.
+    - Automate the renewal (certbot renew or equivalent) and reload the SMTP service after each renewal.
+tls.mx_cert_expiring:
+  title: The TLS certificate of the MX of {domain} expires soon
+  why: In less than two weeks, senders that verify the certificate will no longer be able to deliver to {domain}.
+  fix:
+    - Check that automatic renewal works (for example with certbot renew --dry-run).
+    - Check that the SMTP service reloads the new certificate, not only the web server.
+tls.mx_cert_self_signed:
+  title: The MX of {domain} presents a self-signed certificate
+  why: A self-signed certificate encrypts the connection without proving the identity of the server. You will not be able to enable MTA-STS, and senders that require it will not deliver to you.
+  fix:
+    - Replace the certificate with one from a recognized authority (Let's Encrypt is free) for the MX name.
+    - If you use DANE, publish the TLSA record matching the new certificate before installing it.
+tls.mx_cert_name_mismatch:
+  title: The certificate of the MX of {domain} does not carry the right name
+  why: The certificate was issued for a different name than your MX. Senders that verify the identity of the server, including those that apply MTA-STS, will refuse to deliver.
+  fix:
+    - Issue a certificate that covers exactly the MX name (for example mx1.{domain}).
+    - Or change the MX so that it points to the name covered by the current certificate.
+tls.mx_cert_chain_incomplete:
+  title: The MX of {domain} does not send the complete certificate chain
+  why: The intermediate certificate is missing. Some senders cannot verify your certificate, which is enough to block their sends if {domain} publishes MTA-STS.
+  fix:
+    - Configure the server with the file that contains the certificate followed by the intermediates (fullchain.pem with Let's Encrypt).
+    - Restart the SMTP service and run the test again.
+  fix_by_provider:
+    postfix: "Point smtpd_tls_cert_file to fullchain.pem rather than cert.pem, then run postfix reload."
+tls.dane_tlsa_mismatch:
+  title: The TLSA (DANE) records of the MX of {domain} no longer match the certificate
+  why: "Senders that validate DANE refuse to deliver to {domain} as long as the TLSA record does not match the certificate presented: they delay the message, then bounce it with an error."
+  fix:
+    - "Compute the fingerprint of the public key of the current certificate (usage 3 1 1: DANE-EE, SPKI, SHA-256)."
+    - Publish this new TLSA record next to the old one at _25._tcp.<MX name>.
+    - At the next renewals, reuse the same key (certbot --reuse-key) or publish the TLSA record of the future key before installing it.
+tls.dane_unsigned:
+  title: The MX of {domain} publishes TLSA records in an unsigned zone
+  why: "Without DNSSEC, senders ignore your TLSA records: they provide no protection and give a false sense of security."
+  fix:
+    - Enable DNSSEC on the zone that holds the MX name, then publish the DS record at your registrar.
+    - Or remove the TLSA records as long as the zone is not signed.
+tls.dane_pkix_usage:
+  title: The TLSA records of the MX of {domain} use a usage not recommended for SMTP
+  why: Usages 0 and 1 rely on certification authorities, which mail servers do not agree on. DANE senders may treat them as unusable.
+  fix:
+    - Replace these records with a TLSA 3 1 1 record computed on the public key of the certificate.
+    - Keep the old and new records in parallel for the duration of the TTL, then remove the old one.
+tls.web_cert_expired:
+  title: The HTTPS certificate of {domain} has expired
+  why: "The browser displays a security alert for {url}. A maintained site does not let its certificate expire: either the site has been abandoned, or it is not the one it claims to be."
+  fix:
+    - Do not bypass the browser alert to enter information on this site.
+    - "If the site is yours, renew the certificate (current issuer: {value}), then automate the renewal, for example with certbot renew in a scheduled task."
+    - Then check that the web server was reloaded and serves the new certificate.
+tls.web_cert_self_signed:
+  title: The HTTPS certificate of {domain} is self-signed
+  why: "No recognized authority vouches for this certificate: anyone can create one in the name of {domain}. The browser displays a security alert, and the encryption proves nothing about the identity of the site."
+  fix:
+    - Do not bypass the browser alert to enter information on this site.
+    - "If the site is yours, replace the certificate with one from a recognized authority for {domain}: Let's Encrypt issues them for free, and most hosts install them from their control panel."
+tls.web_cert_name_mismatch:
+  title: The certificate presented is not that of {domain}
+  why: "The server presents a certificate issued for a name other than {domain}. The browser displays an alert: either the site is misconfigured, or the address does not lead to the expected service."
+  fix:
+    - Do not bypass the browser alert to enter information on this site.
+    - If the site is yours, issue a certificate that covers exactly {domain} (and the variant with or without www if both are used).
+    - On shared hosting, check that the domain is attached to the site and that the certificate was requested for it in the host's control panel.
+tls.web_cert_untrusted:
+  title: The HTTPS certificate of {domain} is not recognized
+  why: "The certificate chain of {url} does not lead to a recognized authority (issuer: {value}). Most often, the server does not send the intermediate certificate: some browsers and software then display an alert, others do not."
+  fix:
+    - If you received this link, be wary of any browser alert on this site, and enter nothing if in doubt.
+    - If the site is yours, configure the server with the complete chain provided by the authority (fullchain.pem file with Let's Encrypt), then reload the web server.
+    - If the authority is not recognized at all, replace the certificate with one from a recognized authority.
+tls.web_cert_recent_free:
+  title: "Free certificate issued {value} ago for a recent domain"
+  why: "A free certificate is normal and safe in itself. But a certificate a few days old on a domain a few weeks old is the profile of a site set up for a phishing campaign: the browser padlock says nothing about the honesty of the site."
+  fix:
+    - "Do not rely on the padlock: check that the domain name {domain} is indeed that of the service you expect."
+    - If in doubt, open the service by typing its official address yourself.
+    - If the site is yours and has just been launched, this signal will disappear on its own as the domain ages.

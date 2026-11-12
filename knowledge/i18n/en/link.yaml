@@ -1,0 +1,46 @@
+link.shortener:
+  title: The link goes through a URL shortener
+  why: "{url} is a shortened address: it says nothing about its destination. Public shorteners are also used to hide phishing pages. The actual destination, read by the tool, is shown in the redirect chain ({domain})."
+  fix:
+    - Judge the link by its final destination, shown in the chain, not by the short address.
+    - If you distribute this link yourself, give the full address of the page on {domain} instead.
+link.nonstandard_port:
+  title: "The link points to an unusual port ({value})"
+  why: "Public websites respond on ports 80 (http) and 443 (https). {url} requests port {value}: this is the case for a test server, an exposed device, or a hastily set-up server, rarely a company website."
+  fix:
+    - Check that you were expecting this server before entering anything there.
+link.domain_listed:
+  title: The domain {domain} is listed on {list_name}
+  why: "{list_name} lists domains used for spam, phishing or malware. Email filters and several security tools consult it: a link to {domain} is treated as dangerous there."
+  fix:
+    - "Do not open this link: this report already describes the page, so there is no need to go and look at it."
+    - If the domain is yours, find the cause (hacked site, unsolicited sends), fix it, then request removal at {delist_url}.
+link.domain_recent:
+  title: The domain {domain} was created {value} ago
+  why: Phishing campaigns use domains that are a few days or a few weeks old, abandoned as soon as they are spotted. A recent domain is not malicious for all that, but it has no history yet that would allow you to trust it.
+  fix:
+    - If the link presents itself as the link of a service you know, compare {domain} with the official domain of that service.
+    - When in doubt, type the official address yourself in the browser.
+link.unreachable:
+  title: The final page could not be reached ({value})
+  why: The destination {url} returns an error or does not respond. A phishing page already taken down by its host gives this result; the verdict then relies on reputation sources, on the address itself, and on what the error page contains.
+  fix:
+    - "Run the check again in a few minutes: a temporary server outage gives the same result."
+    - "To check the response without displaying the page, run curl -I followed by the address from an isolated machine (virtual machine or test server): the command only reads the response headers."
+    - If you were expecting a specific page, verify the address with the person who gave it to you, through another channel.
+link.redirect_chain:
+  title: The link goes through {value} redirects
+  why: Before the final page, {url} redirects several times to other addresses. Advertising tracking links add one or two; a long chain across several domains also serves to hide the real destination from filtering tools.
+  fix:
+    - "Look at the domain of the final page in the chain: that is the one that matters."
+link.punycode_lookalike:
+  title: The domain of the link is written with characters that imitate another name
+  why: "{url} contains letters from other alphabets (Cyrillic, Greek) or digits that look like Latin letters. On screen, the name reads like that of a known domain although it belongs to someone else."
+  fix:
+    - "Do not use this link: type the address of the service in the browser yourself."
+    - If you entered a login on this page, change the password on the official site.
+link.private_target:
+  title: The link points to a private network address
+  why: "One step in the chain leads to {domain}, an address that only exists inside a local network. A public site has no reason to do this: the tool did not follow this step."
+  fix:
+    - If the link comes from your own site, look for the misconfigured redirect (a test address left in production).

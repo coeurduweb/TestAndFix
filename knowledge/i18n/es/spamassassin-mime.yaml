@@ -1,0 +1,153 @@
+sa.mime_html_only:
+  title: El mensaje no tiene versión de texto
+  why: El mensaje solo contiene HTML. La penalización directa es baja, pero sirve de condición a varias reglas más pesadas (TO_NO_BRKTS_HTML_ONLY, TO_EQ_FM_HTML_ONLY...). Los scripts PHP y algunos editores solo envían HTML.
+  fix:
+    - Envía un mensaje multipart/alternative con una parte text/plain legible y la parte HTML.
+    - En la herramienta de envío, activa la generación automática de la versión de texto y luego revísala.
+  fix_by_provider:
+    wordpress: "wp_mail() solo envía una parte: para añadir una versión de texto, indica $phpmailer->AltBody en una función enganchada al hook phpmailer_init."
+sa.mime_html_only_multi:
+  title: Mensaje multipart sin parte de texto
+  why: El mensaje se declara multipart/alternative (texto y HTML) pero solo contiene HTML. La estructura anuncia una versión de texto que no existe. Puntuación simbólica.
+  fix:
+    - Añade la parte text/plain que falta o pasa el mensaje a text/html simple.
+sa.mime_html_mostly:
+  title: Parte de texto casi vacía junto al HTML
+  why: "Existe una versión de texto, pero está casi vacía («Tu programa no lee el HTML»). Los filtros la consideran como si no hubiera texto."
+  fix:
+    - "Rellena la versión de texto con el mismo contenido que el HTML: títulos, párrafos, enlaces en claro."
+sa.mpart_alt_diff:
+  title: Las versiones de texto y HTML son distintas
+  why: "La versión de texto casi no se corresponde con el HTML: texto genérico, contenido antiguo o versión de texto de otra plantilla. Los spammers ponen un texto inocuo como texto y la oferta real en HTML."
+  fix:
+    - Regenera la versión de texto a partir del HTML final de esta campaña.
+    - No dejes la versión de texto de una plantilla antigua.
+sa.mpart_alt_diff_count:
+  title: La versión de texto tiene muchas menos palabras que el HTML
+  why: El número de palabras distintas entre texto y HTML está muy desequilibrado. La versión de texto no refleja el contenido HTML. Más de 1 punto.
+  fix:
+    - Genera la versión de texto automáticamente a partir del HTML y luego corrígela.
+sa.mime_no_text:
+  title: Mensaje multipart sin ninguna parte de texto identificada
+  why: "El mensaje es multipart pero ninguna parte se declara como texto: todo va en adjuntos o en tipos no textuales. Puntuación simbólica, pero combinado con un X-Mailer PHP suma casi 3 puntos."
+  fix:
+    - Añade una parte text/plain o text/html que describa el mensaje.
+sa.mime_qp_long_line:
+  title: Línea quoted-printable demasiado larga
+  why: Una línea codificada en quoted-printable supera la longitud prevista por la norma (76 caracteres). Puntuación simbólica, pero algunos servidores cortan estas líneas y rompen el HTML o la firma DKIM.
+  fix:
+    - Deja que la biblioteca de envío haga la codificación quoted-printable en lugar de escribirla tú.
+sa.mime_base64_text:
+  title: Texto simple codificado en base64
+  why: "Una parte de texto en ASCII puro está codificada en base64, lo que la hace ilegible para un filtro simple. No hay ninguna razón para un texto sin acentos: los spammers lo hacen para ocultar su contenido. Más de 1,5 puntos."
+  fix:
+    - Codifica las partes de texto en quoted-printable o 7bit, y declara charset=UTF-8.
+sa.base64_length_79_inf:
+  title: Líneas base64 de más de 79 caracteres
+  why: Una parte codificada en base64 tiene líneas demasiado largas. La norma MIME limita estas líneas a 76 caracteres; los scripts que codifican con base64_encode() sin trocear producen una sola línea. 1,5 puntos.
+  fix:
+    - Trocea el base64 en líneas de 76 caracteres (chunk_split() en PHP), o deja que la biblioteca de envío codifique.
+sa.base64_length_78_79:
+  title: Líneas base64 de 78 caracteres
+  why: Una parte base64 tiene líneas de 78 caracteres, por encima de los 76 previstos. Penalización baja.
+  fix:
+    - Trocea el base64 en líneas de 76 caracteres.
+sa.mime_header_ctype_only:
+  title: Content-Type sin las demás cabeceras MIME
+  why: El mensaje declara un Content-Type pero no MIME-Version, que es obligatoria en cuanto se usa MIME. Esto delata cabeceras escritas a mano. Penalización baja.
+  fix:
+    - "Añade la cabecera MIME-Version: 1.0, o haz que una biblioteca construya el mensaje."
+sa.mime_suspect_name:
+  title: El nombre del adjunto no corresponde a su contenido
+  why: Un adjunto lleva una extensión que no corresponde a su tipo declarado (un .pdf declarado como imagen, por ejemplo). Así se disfrazan los programas maliciosos.
+  fix:
+    - Adjunta los archivos con su tipo MIME real (application/pdf para un PDF); las bibliotecas lo deducen de la extensión.
+sa.mime_charset_faraway:
+  title: Juego de caracteres MIME de un idioma no esperado
+  why: Una parte del mensaje se declara en un juego de caracteres de un idioma que el servidor de prueba no acepta. La regla solo se activa si el servidor ha restringido ok_locales.
+  fix:
+    - Codifica todo el mensaje en UTF-8.
+sa.charset_faraway_header:
+  title: Juego de caracteres de un idioma no esperado en las cabeceras
+  why: El asunto o el nombre del remitente están codificados en un juego de caracteres extranjero (big5, koi8-r...). Solo se activa si el servidor ha restringido ok_locales, pero entonces suma más de 3 puntos.
+  fix:
+    - Codifica el asunto y el nombre del remitente en UTF-8.
+sa.bogus_mime_version:
+  title: Cabecera MIME-Version no válida
+  why: La cabecera MIME-Version no vale 1.0, el único valor existente. Es típico de un script que escribe la cabecera a mano con una errata.
+  fix:
+    - "Escribe exactamente MIME-Version: 1.0."
+sa.mimepart_limit_exceeded:
+  title: Demasiadas partes MIME
+  why: El mensaje contiene tantas partes MIME que SpamAssassin dejó de analizarlas. Puntuación simbólica, pero un mensaje así es sospechoso para todos los filtros.
+  fix:
+    - Agrupa los adjuntos en un archivo comprimido o propón un enlace de descarga.
+sa.empty_message:
+  title: Mensaje sin contenido de texto
+  why: El mensaje no tiene texto ni adjuntos. Los envíos de prueba vacíos y los mensajes de verificación de dirección tienen este perfil. Más de 2 puntos.
+  fix:
+    - Prueba con el contenido real del mensaje, no con un envío vacío.
+sa.pp_mime_fake_ascii_text:
+  title: Texto declarado como ASCII pero con otros caracteres
+  why: "La parte de texto se declara en ASCII (o no declara nada) pero contiene caracteres acentuados. En el destinatario, «é» puede convertirse en «Ã©»."
+  fix:
+    - "Declara Content-Type: text/plain; charset=UTF-8 para la parte de texto."
+sa.t_mime_malf:
+  title: Cabeceras MIME en el cuerpo del mensaje
+  why: El cuerpo contiene líneas Content-Type que deberían ser cabeceras de parte. Estructura MIME rota. Regla de prueba sin peso.
+  fix:
+    - Construye el MIME con una biblioteca; comprueba la línea vacía entre las cabeceras de parte y el contenido.
+sa.body_8bits:
+  title: Cuerpo con una larga secuencia de caracteres de 8 bits
+  why: El cuerpo contiene largas secuencias de bytes no ASCII, típicas de idiomas no latinos o de un texto mal codificado. Solo afecta a los servidores que han restringido ok_languages. 1,5 puntos.
+  fix:
+    - Verifica la codificación declarada (UTF-8) y que ningún texto se haya convertido mal.
+sa.null_in_body:
+  title: Byte nulo en el mensaje
+  why: El mensaje contiene un carácter nulo, prohibido en un correo. Suele venir de un archivo binario insertado sin codificar, o de un texto en UTF-16. 1,6 puntos.
+  fix:
+    - Codifica los adjuntos en base64 y guarda los textos en UTF-8, no en UTF-16.
+sa.mime_php_no_text:
+  title: Sin parte de texto y con X-Mailer PHP
+  why: "Un script PHP envía un mensaje multipart sin ninguna parte de texto. Casi 3 puntos: es la firma de un script de envío masivo."
+  fix:
+    - Añade una parte de texto al mensaje y elimina la cabecera X-Mailer PHP.
+    - Usa PHPMailer o Symfony Mailer con AltBody rellenado.
+sa.malf_html_b64:
+  title: HTML codificado en base64 sin etiqueta html
+  why: El mensaje es un fragmento HTML sin etiqueta <html>, codificado en base64. Los dos defectos juntos forman el perfil de un generador de spam.
+  fix:
+    - Envía un documento HTML completo codificado en quoted-printable.
+sa.encrypted_message:
+  title: Mensaje cifrado
+  why: "El mensaje está cifrado (PGP o S/MIME). Los spammers casi nunca lo hacen: bonificación de 1 punto."
+  fix:
+    - Nada que corregir.
+sa.microsoft_executable:
+  title: Programa de Windows adjunto
+  why: Un adjunto es un programa o un script de Windows, o lleva una extensión que ejecuta uno. Penalización baja en SpamAssassin, pero la mayoría de los proveedores bloquean estos adjuntos.
+  fix:
+    - "Nunca adjuntes ningún ejecutable ni script: propón un enlace de descarga en tu sitio."
+    - Comprueba que no se haya adjuntado por error ningún archivo .url o .lnk (acceso directo).
+sa.gmd_pdf_encrypted:
+  title: PDF adjunto cifrado
+  why: Un PDF adjunto está protegido con contraseña o cifrado, así que no se puede analizar. Los programas maliciosos suelen llegar en PDF protegidos.
+  fix:
+    - Envía el PDF sin protección, o comparte el documento mediante un enlace seguro.
+sa.gmd_pdf_empty_body:
+  title: PDF adjunto con un mensaje vacío
+  why: El mensaje solo contiene un PDF y ningún texto. Es un caso frecuente en facturas y presupuestos enviados automáticamente, pero también en phishing por falsa factura.
+  fix:
+    - Añade unas líneas que presenten el documento (número de factura, importe, contacto).
+  fix_by_provider:
+    wordpress: En WooCommerce o en la extensión de facturas, completa el texto del correo que acompaña al PDF.
+sa.any_bounce_message:
+  title: Mensaje de respuesta automática
+  why: "El mensaje es un aviso de no entrega, una respuesta de ausencia o una alerta antivirus. Información: no es el envío que querías probar."
+  fix:
+    - Comprueba que has enviado el mensaje a la dirección de prueba y no has reenviado una respuesta.
+sa.bounce_message:
+  title: Aviso de no entrega de un servidor de correo
+  why: El mensaje es un aviso de no entrega enviado por un servidor. Información.
+  fix:
+    - Nada que corregir para esta prueba. Si recibes muchos de estos avisos, limpia tu lista de envío.

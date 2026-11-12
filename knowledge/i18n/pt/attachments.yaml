@@ -1,0 +1,97 @@
+attachments.dangerous_extension:
+  title: "Um anexo é de um tipo bloqueado pelo Gmail"
+  why: "O arquivo {value} é de um tipo que o Gmail recusa por motivos de segurança. A mensagem será rejeitada pelo Gmail e, muito provavelmente, pela maioria dos outros serviços de e-mail."
+  fix:
+    - "Remova o anexo."
+    - "Envie o arquivo para um espaço de download de {domain} ou para um serviço de compartilhamento, e coloque o link na mensagem."
+    - "Não renomeie a extensão para contornar o bloqueio: o Gmail também inspeciona o conteúdo dos arquivos compactados."
+attachments.archive_with_dangerous:
+  title: "Um arquivo compactado anexado contém um arquivo de tipo bloqueado"
+  why: "O arquivo compactado anexado contém {value}, um tipo de arquivo proibido. O Gmail abre os arquivos compactados e bloqueia os tipos proibidos que eles contêm: a mensagem será recusada."
+  fix:
+    - "Remova o arquivo compactado da mensagem."
+    - "Compartilhe o arquivo por um link de download de {domain}."
+attachments.encrypted_archive:
+  title: "Um arquivo compactado anexado está protegido por senha"
+  why: "O arquivo compactado {value} está criptografado: nenhum filtro consegue verificar o conteúdo dele. O Gmail recusa arquivos protegidos que contêm outros arquivos compactados, e os outros filtros os tratam como suspeitos."
+  fix:
+    - "Envie os arquivos sem arquivo compactado criptografado, como anexos comuns, se o tipo for aceito."
+    - "Para documentos confidenciais, coloque-os em um espaço seguro com autenticação e envie apenas o link."
+attachments.double_extension:
+  title: "Um anexo tem extensão dupla"
+  why: "O arquivo {value} imita um documento, mas a extensão real é a última. É o truque mais clássico para fazer alguém abrir um programa: os filtros o bloqueiam."
+  fix:
+    - "Renomeie o arquivo com uma única extensão, a do formato real dele."
+    - "Se o arquivo for realmente um programa, não o envie por e-mail: use um link de download."
+attachments.filename_bidi_override:
+  title: "O nome de um anexo contém um caractere que inverte a exibição dele"
+  why: "O nome do arquivo contém um caractere invisível que faz a extensão aparecer ao contrário, para que um programa pareça um documento. Essa técnica é tratada como maliciosa."
+  fix:
+    - "Renomeie o arquivo digitando o nome no teclado, sem copiá-lo."
+    - "Verifique o tipo real do arquivo antes de enviá-lo."
+attachments.office_macro:
+  title: "Um documento Office anexado contém macros"
+  why: "O arquivo {value} contém macros. As macros são um vetor importante de malware: o Gmail bloqueia as que considera maliciosas, e o Office as desativa por padrão em arquivos recebidos da Internet."
+  fix:
+    - "Salve o documento sem macros: Arquivo > Salvar como, formato .docx, .xlsx ou .pptx."
+    - "Se o destinatário não precisar alterar o documento, envie-o em PDF."
+attachments.html_attachment:
+  title: "Uma página HTML está anexada à mensagem"
+  why: "O arquivo {value} abre no navegador como uma página da web. Esse formato serve principalmente para phishing com formulário falso: os filtros o tratam com forte desconfiança."
+  fix:
+    - "Coloque o conteúdo no corpo da mensagem ou publique-o em uma página de {domain} e envie o link."
+    - "Se for um documento para guardar, envie-o em PDF."
+attachments.pdf_active_content:
+  title: "Um PDF anexado contém código ou ação automática"
+  why: "O PDF {value} contém JavaScript, uma ação na abertura ou um arquivo oculto. Um documento comum não precisa disso: os filtros o tratam como potencialmente malicioso."
+  fix:
+    - "Gere o PDF novamente a partir do documento original com a opção de exportação padrão, sem formulário dinâmico."
+    - "Ou imprima-o em PDF (“Microsoft Print to PDF” ou “Salvar como PDF”): o código e os arquivos incorporados desaparecem."
+attachments.pdf_with_links:
+  title: "A mensagem aponta para links ocultos em um PDF anexado"
+  why: "A mensagem é curta e os links estão no PDF {value}. Colocar os links em um anexo é uma forma conhecida de escapar da análise de links: alguns filtros levam isso em conta."
+  fix:
+    - "Coloque os links importantes no corpo da mensagem, em {domain}."
+    - "Acrescente algumas frases que expliquem o que o documento contém."
+attachments.too_large:
+  title: "A mensagem é pesada demais para ser recebida por alguns serviços de e-mail"
+  why: "A mensagem pesa {value}, anexos incluídos, após a codificação. O Google indica um limite de 25 MB de anexos para contas pessoais do Gmail, e a Orange aceita no máximo 45 MB por mensagem: acima disso, a mensagem pode ser recusada."
+  fix:
+    - "Remova os anexos pesados e coloque no lugar um link de download."
+    - "Comprima os PDFs (exportação em qualidade “web” ou “tela”) e redimensione as fotos."
+    - "Lembre-se de que a codificação para o envio aumenta o tamanho em cerca de um terço."
+  fix_by_provider:
+    google_workspace: "Insira os arquivos pesados com o botão do Google Drive da janela de redação, em vez de anexá-los."
+    microsoft_365: "No Outlook, anexe o arquivo a partir do OneDrive e escolha Compartilhar link em vez de Anexar uma cópia."
+attachments.large:
+  title: "Os anexos são pesados"
+  why: "Os anexos pesam {value}. A mensagem passa, mas lota a caixa do destinatário e demora para baixar no celular. Em um envio em massa, multiplica o volume transmitido."
+  fix:
+    - "Comprima os documentos e redimensione as imagens antes de anexá-los."
+    - "Para um envio a vários destinatários, prefira um link de download."
+attachments.type_mismatch:
+  title: "O tipo real de um anexo não corresponde ao nome dele"
+  why: "O arquivo {value} tem uma extensão que não corresponde ao conteúdo real dele. Os filtros verificam a assinatura dos arquivos e tratam essa diferença como uma tentativa de disfarce."
+  fix:
+    - "Abra o arquivo com o programa que o criou e salve-o novamente no formato anunciado."
+    - "Verifique se o seu aplicativo não renomeia os arquivos no momento de anexá-los."
+attachments.no_filename:
+  title: "Um anexo não tem nome de arquivo"
+  why: "O destinatário verá um arquivo “noname” ou “ATT00001” sem saber como abri-lo. Um anexo sem nome também é um sinal de mensagem montada à mão."
+  fix:
+    - "Dê um nome explícito a cada anexo no seu código, por exemplo fatura-2026-11.pdf."
+    - "Deixe a biblioteca de envio escrever o Content-Disposition com o parâmetro filename, codificado segundo a RFC 2231 se tiver acentos."
+attachments.winmail_dat:
+  title: "A mensagem contém um arquivo winmail.dat"
+  why: "O Outlook enviou a mensagem no formato TNEF. Fora dos clientes Microsoft, o destinatário vê apenas um arquivo winmail.dat ilegível, e os seus anexos reais estão dentro dele."
+  fix:
+    - "No Outlook, Arquivo > Opções > E-mail > Compor mensagens: escolha HTML em vez de Texto Rico."
+    - "Não defina o Texto Rico em um contato específico, nas propriedades dele."
+  fix_by_provider:
+    microsoft_365: "No Exchange Online PowerShell, desative o TNEF para o exterior: Set-RemoteDomain Default -TNEFEnabled $false."
+attachments.attachment_without_body:
+  title: "O anexo é enviado sem texto de acompanhamento"
+  why: "A mensagem contém apenas um anexo e quase nenhum texto. Esse é exatamente o formato das faturas falsas com armadilha: os filtros e os destinatários desconfiam."
+  fix:
+    - "Acrescente algumas frases: quem você é, o que o arquivo contém e por que o envia."
+    - "Acrescente uma assinatura com o nome da empresa e um meio de contato."

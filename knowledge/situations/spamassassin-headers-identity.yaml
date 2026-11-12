@@ -1,0 +1,1100 @@
+# Famille spamassassin, groupe headers-identity. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/headers-identity.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.freemail_from
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FREEMAIL_FROM)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_freemail_from()
+      : une adresse From appartient à la liste freemail_domains (gmail.com, outlook.*, hotmail.*, yahoo.*,
+      orange.fr, free.fr, laposte.net, gmx.*...).'
+  sa_rules:
+  - FREEMAIL_FROM
+  title: L'expéditeur utilise une messagerie gratuite
+  why: L'adresse d'expédition est sur une messagerie grand public. Le score est quasi nul, mais cette
+    règle sert de condition à d'autres plus lourdes, et une entreprise qui écrit depuis Gmail ou Orange
+    inspire moins confiance qu'une adresse de son domaine.
+  fix:
+  - Pour des envois professionnels, utilisez une adresse de votre propre domaine.
+  - 'N''envoyez jamais de newsletter avec une adresse Gmail, Outlook.com ou Yahoo en From : envoyé depuis
+    un autre service, le message ne peut pas passer DMARC pour ce domaine, et Yahoo publie une politique
+    de rejet.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_freemail.cf
+- id: sa.freemail_replyto
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(FREEMAIL_REPLYTO)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_freemail_replyto(''replyto'')
+      : Reply-To est une adresse de messagerie gratuite différente du From (ou une adresse gratuite citée
+      dans le corps diffère), hors transfert et liste de diffusion.'
+  sa_rules:
+  - FREEMAIL_REPLYTO
+  title: Reply-To sur une messagerie gratuite différente de l'expéditeur
+  why: Les réponses partent vers une adresse gratuite qui n'est pas celle de l'expéditeur. C'est le montage
+    des arnaques (on écrit depuis une adresse, on récupère les réponses ailleurs), mais aussi celui d'un
+    formulaire qui met l'adresse Gmail du visiteur en Reply-To.
+  fix:
+  - 'Si c''est un formulaire de contact, c''est attendu : vérifiez seulement que le From est une adresse
+    de votre domaine authentifiée par SPF et DKIM.'
+  - Pour une campagne, mettez en Reply-To une adresse de votre domaine.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_freemail.cf
+- id: sa.freemail_forged_replyto
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(FREEMAIL_FORGED_REPLYTO)
+    notes: 'score SA 4.0.x : 2.095 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_freemail_header(''Reply-To'')
+      && !FREEMAIL_FROM, hors transfert et liste de diffusion.'
+  sa_rules:
+  - FREEMAIL_FORGED_REPLYTO
+  title: Reply-To sur une messagerie gratuite alors que l'expéditeur n'en est pas une
+  why: Le message vient d'une adresse d'entreprise mais demande de répondre à une adresse Gmail, Outlook
+    ou similaire. C'est très typique des fraudes au président et des fausses factures, d'où une pénalité
+    de plus de 2 points.
+  fix:
+  - Mettez en Reply-To une adresse de votre domaine, ou retirez l'en-tête Reply-To.
+  - Pour un formulaire de site qui place l'adresse du visiteur en Reply-To, acceptez cette pénalité ou
+    recopiez plutôt l'adresse du visiteur dans le corps du message.
+  fix_by_provider:
+    wordpress: 'Dans Contact Form 7 ou WPForms, l''en-tête Reply-To: [your-email] provoque cette règle
+      quand le visiteur a une adresse gratuite. C''est sans risque pour une notification interne.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_freemail.cf
+- id: sa.freemail_reply
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(FREEMAIL_REPLY)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_freemail_replyto(''reply'')
+      : l''expéditeur et une adresse citée dans le corps sont deux messageries gratuites différentes,
+      sans Reply-To gratuit.'
+  sa_rules:
+  - FREEMAIL_REPLY
+  title: Le corps du message cite une adresse gratuite différente de l'expéditeur
+  why: Le message invite à écrire à une autre adresse gratuite que celle qui envoie. Les arnaques s'en
+    servent pour faire répondre à une boîte qui n'a pas encore été signalée.
+  fix:
+  - Indiquez dans le message une adresse de contact identique à l'expéditeur, ou une adresse de votre
+    domaine.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_freemail.cf
+- id: sa.freemail_envfrom_end_digit
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(FREEMAIL_ENVFROM_END_DIGIT)
+    notes: 'score SA 4.0.x : 0.25 (sa-update r1939780, jeu réseau + Bayes). Teste : check_freemail_header(''EnvelopeFrom'',
+      ''\d@'') : MAIL FROM gratuit dont l''identifiant finit par un chiffre.'
+  sa_rules:
+  - FREEMAIL_ENVFROM_END_DIGIT
+  title: Adresse d'enveloppe gratuite terminée par un chiffre
+  why: L'adresse d'enveloppe est une boîte gratuite du type jean.dupont75@gmail.com. Les comptes créés
+    en masse par les spammeurs ont souvent ce format. Pénalité faible.
+  fix:
+  - Envoyez depuis une adresse de votre domaine pour éviter cette règle et les règles voisines.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_freemail.cf
+- id: sa.freemail_replyto_end_digit
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(FREEMAIL_REPLYTO_END_DIGIT)
+    notes: 'score SA 4.0.x : 0.25 (sa-update r1939780, jeu réseau + Bayes). Teste : check_freemail_header(''Reply-To'',
+      ''\d@'').'
+  sa_rules:
+  - FREEMAIL_REPLYTO_END_DIGIT
+  title: Reply-To gratuit terminé par un chiffre
+  why: L'adresse de réponse est une boîte gratuite dont l'identifiant finit par un chiffre. Signal faible
+    qui s'ajoute aux autres règles freemail.
+  fix:
+  - Utilisez en Reply-To une adresse de votre domaine.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_freemail.cf
+- id: sa.freemail_forged_fromdomain
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FREEMAIL_FORGED_FROMDOMAIN)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta FREEMAIL_FROM
+      && HEADER_FROM_DIFFERENT_DOMAINS.'
+  sa_rules:
+  - FREEMAIL_FORGED_FROMDOMAIN
+  title: Expéditeur gratuit envoyé depuis un autre domaine d'enveloppe
+  why: Le From est une adresse gratuite (Gmail, Orange...) mais l'enveloppe appartient à un autre domaine.
+    C'est ce que produit un outil d'envoi ou un site configuré avec une adresse Gmail en expéditeur. Le
+    message ne peut alors pas être aligné sur le domaine du fournisseur gratuit et échoue à DMARC partout
+    où ce domaine publie un enregistrement DMARC.
+  fix:
+  - Utilisez comme expéditeur une adresse de votre propre domaine, authentifiée dans l'outil d'envoi.
+  - Si vous n'avez pas de domaine, envoyez depuis le webmail du fournisseur gratuit lui-même, pas depuis
+    un service tiers.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kmcgrail/20_freemail.cf
+  - https://www.rfc-editor.org/rfc/rfc7489
+- id: sa.header_from_different_domains
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(HEADER_FROM_DIFFERENT_DOMAINS)
+    notes: 'score SA 4.0.x : 0.25 (sa-update r1939780, jeu réseau + Bayes). Teste : check_equal_from_domains()
+      : les deux derniers niveaux du domaine du From et du MAIL FROM (Return-Path) sont différents.'
+  sa_rules:
+  - HEADER_FROM_DIFFERENT_DOMAINS
+  title: Le domaine du From diffère du domaine d'enveloppe
+  why: Le From affiche {domain} mais le Return-Path appartient à {envelope_domain}. C'est le réglage par
+    défaut de nombreux outils d'envoi (Brevo, Mailchimp, Mailjet) qui gèrent les retours sur leur propre
+    domaine. Pénalité faible, mais SPF n'est alors pas aligné pour DMARC.
+  fix:
+  - Configurez dans l'outil d'envoi un domaine de retour personnalisé (Return-Path) sous {domain}, par
+    exemple bounce.{domain}.
+  - À défaut, assurez-vous que DKIM signe avec {domain} pour que DMARC passe malgré tout.
+  fix_by_provider:
+    brevo: 'Authentifiez {domain} dans la rubrique Domaines de Brevo : la signature DKIM se fait alors
+      avec votre domaine, et DMARC passe par DKIM même si le Return-Path n''est pas sous {domain}.'
+    mailchimp: 'Authentifiez {domain} dans la rubrique Domains de Mailchimp : la signature DKIM se fait
+      alors avec votre domaine, et DMARC passe par DKIM même si le Return-Path n''est pas sous {domain}.'
+    amazon_ses: Configurez un MAIL FROM personnalisé (sous-domaine de {domain}) dans l'identité SES.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kmcgrail/20_freemail.cf
+  - https://www.rfc-editor.org/rfc/rfc7489#section-3.1.2
+- id: sa.replyto_without_to_cc
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(REPLYTO_WITHOUT_TO_CC)
+    notes: 'score SA 4.0.x : 1.552 (sa-update r1939780, jeu réseau + Bayes). Teste : meta exists:Reply-To
+      && !exists:ToCc : un Reply-To mais aucun en-tête To ou Cc.'
+  sa_rules:
+  - REPLYTO_WITHOUT_TO_CC
+  title: Reply-To présent sans destinataire To ni Cc
+  why: 'Le message a une adresse de réponse mais aucun destinataire visible : tous les destinataires sont
+    en copie cachée. C''est ce que fait un envoi groupé depuis une messagerie avec la liste en Cci, schéma
+    fréquent dans le spam.'
+  fix:
+  - 'Ajoutez un en-tête To : l''adresse du destinataire pour un envoi individuel, ou votre propre adresse
+    si vous gardez la liste en Cci.'
+  - Pour plus de quelques dizaines de destinataires, utilisez un outil d'envoi qui adresse chaque message
+    individuellement.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jm/20_basic.cf
+- id: sa.to_no_brkts_dynip
+  family: spamassassin
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: spamassassin.hit(TO_NO_BRKTS_DYNIP)
+    notes: 'score SA 4.0.x : 3.029 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : To sans >
+      final (adresse nue), RDNS_DYNAMIC, et absence de signes légitimes (fil de discussion, lien de désinscription,
+      Thunderbird, liste de diffusion).'
+  sa_rules:
+  - TO_NO_BRKTS_DYNIP
+  title: Destinataire sans chevrons et IP d'envoi grand public
+  why: Le To contient une adresse nue (sans « Nom <...> ») et le message part d'une IP au reverse DNS
+    de connexion résidentielle. La combinaison est caractéristique des machines infectées qui envoient
+    du spam, d'où une pénalité de 3 points.
+  fix:
+  - 'Écrivez le destinataire avec un nom et des chevrons : "Prénom Nom" <adresse@exemple.fr>. Les outils
+    d''envoi le font si le champ nom est renseigné.'
+  - 'Ajoutez l''en-tête List-Unsubscribe et un lien de désinscription : plusieurs variantes de cette règle
+    ne s''appliquent plus alors.'
+  example_bad: 'To: client@exemple.fr'
+  example_good: 'To: "Marie Martin" <client@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_tbird_image_spam.cf
+- id: sa.to_no_brkts_from_mssp
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(TO_NO_BRKTS_FROM_MSSP)
+    notes: 'score SA 4.0.x : 2.499 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : To sans chevrons
+      et From collé du type Nom<adresse> (__FROM_RUNON), sans les signes de message légitime listés dans
+      la règle.'
+  sa_rules:
+  - TO_NO_BRKTS_FROM_MSSP
+  title: Destinataire sans chevrons et expéditeur mal formaté
+  why: L'adresse du destinataire est nue et le From est écrit sans espace entre le nom et la chevron (Nom<adresse>).
+    Ces deux défauts de formatage ensemble trahissent un script d'envoi artisanal.
+  fix:
+  - 'Écrivez le destinataire avec un nom et des chevrons : "Prénom Nom" <adresse@exemple.fr>. Les outils
+    d''envoi le font si le champ nom est renseigné.'
+  - 'Ajoutez l''en-tête List-Unsubscribe et un lien de désinscription : plusieurs variantes de cette règle
+    ne s''appliquent plus alors.'
+  example_bad: 'To: client@exemple.fr'
+  example_good: 'To: "Marie Martin" <client@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_tbird_image_spam.cf
+- id: sa.to_no_brkts_html_img
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(TO_NO_BRKTS_HTML_IMG)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : To sans chevrons,
+      HTML_MESSAGE, une seule image, sans nom complet dans From, sans DKIM, Sender ni fil de discussion.'
+  sa_rules:
+  - TO_NO_BRKTS_HTML_IMG
+  title: Destinataire sans chevrons, HTML avec une seule image
+  why: Adresse destinataire nue et message HTML réduit à une image. Score symbolique, mais c'est le profil
+    des spams en image.
+  fix:
+  - 'Écrivez le destinataire avec un nom et des chevrons : "Prénom Nom" <adresse@exemple.fr>. Les outils
+    d''envoi le font si le champ nom est renseigné.'
+  - 'Ajoutez l''en-tête List-Unsubscribe et un lien de désinscription : plusieurs variantes de cette règle
+    ne s''appliquent plus alors.'
+  example_bad: 'To: client@exemple.fr'
+  example_good: 'To: "Marie Martin" <client@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_tbird_image_spam.cf
+- id: sa.to_no_brkts_html_only
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(TO_NO_BRKTS_HTML_ONLY)
+    notes: 'score SA 4.0.x : 1.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : To sans chevrons
+      && MIME_HTML_ONLY, sans signes de légitimité (liste de diffusion, DKIM, lien de désinscription...).'
+  sa_rules:
+  - TO_NO_BRKTS_HTML_ONLY
+  title: Destinataire sans chevrons et message uniquement HTML
+  why: Adresse destinataire nue et message sans version texte. C'est ce que produisent la fonction mail()
+    de PHP ou un script maison qui envoie un HTML brut. Pénalité proche de 2 points.
+  fix:
+  - 'Écrivez le destinataire avec un nom et des chevrons : "Prénom Nom" <adresse@exemple.fr>. Les outils
+    d''envoi le font si le champ nom est renseigné.'
+  - 'Ajoutez l''en-tête List-Unsubscribe et un lien de désinscription : plusieurs variantes de cette règle
+    ne s''appliquent plus alors.'
+  example_bad: 'To: client@exemple.fr'
+  example_good: 'To: "Marie Martin" <client@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_tbird_image_spam.cf
+- id: sa.to_no_brkts_msft
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(TO_NO_BRKTS_MSFT)
+    notes: 'score SA 4.0.x : 2.499 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : To sans chevrons
+      et X-Mailer Outlook ou X-MimeOLE Microsoft, sans liste de diffusion, Thread-Index valide, Exchange,
+      lien de désinscription ni authentification.'
+  sa_rules:
+  - TO_NO_BRKTS_MSFT
+  title: Destinataire sans chevrons et en-têtes Outlook
+  why: Le message prétend venir d'Outlook mais l'adresse du destinataire est nue, ce qu'Outlook ne fait
+    pas en temps normal. Les logiciels d'envoi qui imitent Outlook sont visés.
+  fix:
+  - 'Écrivez le destinataire avec un nom et des chevrons : "Prénom Nom" <adresse@exemple.fr>. Les outils
+    d''envoi le font si le champ nom est renseigné.'
+  - 'Ajoutez l''en-tête List-Unsubscribe et un lien de désinscription : plusieurs variantes de cette règle
+    ne s''appliquent plus alors.'
+  example_bad: 'To: client@exemple.fr'
+  example_good: 'To: "Marie Martin" <client@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_tbird_image_spam.cf
+- id: sa.to_no_brkts_nordns_html
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(TO_NO_BRKTS_NORDNS_HTML)
+    notes: 'score SA 4.0.x : 2 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : TO_NO_BRKTS_HTML_ONLY
+      && RDNS_NONE, hors exceptions.'
+  sa_rules:
+  - TO_NO_BRKTS_NORDNS_HTML
+  title: Destinataire sans chevrons, IP sans reverse DNS, HTML seul
+  why: 'Adresse destinataire nue, message uniquement HTML et IP sans reverse DNS : trois défauts qui décrivent
+    un serveur improvisé.'
+  fix:
+  - 'Écrivez le destinataire avec un nom et des chevrons : "Prénom Nom" <adresse@exemple.fr>. Les outils
+    d''envoi le font si le champ nom est renseigné.'
+  - 'Ajoutez l''en-tête List-Unsubscribe et un lien de désinscription : plusieurs variantes de cette règle
+    ne s''appliquent plus alors.'
+  example_bad: 'To: client@exemple.fr'
+  example_good: 'To: "Marie Martin" <client@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_tbird_image_spam.cf
+- id: sa.to_no_brkts_pcnt
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(TO_NO_BRKTS_PCNT)
+    notes: 'score SA 4.0.x : 2.499 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : To sans chevrons
+      && motif de pourcentages (__FB_NUM_PERCNT), sans List-Unsubscribe ni lien de désinscription, ni
+      autres signes légitimes.'
+  sa_rules:
+  - TO_NO_BRKTS_PCNT
+  title: Destinataire sans chevrons et pourcentages dans le texte
+  why: 'Adresse destinataire nue et pourcentages mis en avant (« -50 % ») : profil d''une promotion envoyée
+    sans outil d''envoi ni lien de désinscription.'
+  fix:
+  - 'Écrivez le destinataire avec un nom et des chevrons : "Prénom Nom" <adresse@exemple.fr>. Les outils
+    d''envoi le font si le champ nom est renseigné.'
+  - 'Ajoutez l''en-tête List-Unsubscribe et un lien de désinscription : plusieurs variantes de cette règle
+    ne s''appliquent plus alors.'
+  example_bad: 'To: client@exemple.fr'
+  example_good: 'To: "Marie Martin" <client@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_tbird_image_spam.cf
+- id: sa.to_malformed
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(TO_MALFORMED)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : header To !~ adresse
+      valide, groupe vide ou commentaire : le To ne contient rien qui ressemble à une adresse.'
+  sa_rules:
+  - TO_MALFORMED
+  title: L'en-tête To est mal formé
+  why: Le champ To ne contient pas d'adresse valide. Souvent une balise de fusion restée vide ou non remplacée,
+    ou un nom sans adresse.
+  fix:
+  - Vérifiez la variable de fusion utilisée pour le destinataire dans l'outil d'envoi ou le script.
+  - Utilisez le format "Nom" <adresse@domaine.fr> ou une adresse seule.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.to_in_subj
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(TO_IN_SUBJ)
+    notes: 'score SA 4.0.x : 0.099 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : l''adresse
+      du To apparaît dans le Subject, hors liste de diffusion, Re:/Fw: et Thread-Index valide.'
+  sa_rules:
+  - TO_IN_SUBJ
+  title: L'adresse du destinataire figure dans l'objet
+  why: 'L''objet contient l''adresse e-mail complète du destinataire, procédé courant des spams et des
+    faux avis de messagerie (« contact@exemple.fr : votre boîte est pleine »). Pénalité faible.'
+  fix:
+  - Personnalisez l'objet avec le prénom plutôt qu'avec l'adresse e-mail.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.to_eq_fm_html_only
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(TO_EQ_FM_HTML_ONLY)
+    notes: 'score SA 4.0.x : 0.719 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : To == From
+      && MIME_HTML_ONLY, sans authentification, sans DKIM ni image jointe.'
+  sa_rules:
+  - TO_EQ_FM_HTML_ONLY
+  title: Expéditeur identique au destinataire, message HTML seul
+  why: Le message vient en apparence du destinataire lui-même et ne contient que du HTML. C'est la forme
+    des fausses alertes de compte. Un formulaire qui envoie au propriétaire du site avec son adresse comme
+    expéditeur la déclenche aussi.
+  fix:
+  - Utilisez en From une adresse technique du domaine différente de l'adresse de réception.
+  - Ajoutez une version texte au message et signez-le en DKIM.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.to_eq_fm_dom_html_only
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(TO_EQ_FM_DOM_HTML_ONLY)
+    notes: 'score SA 4.0.x : 1.503 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : domaine To
+      == domaine From && MIME_HTML_ONLY, sans authentification ni multipart/alternative.'
+  sa_rules:
+  - TO_EQ_FM_DOM_HTML_ONLY
+  title: Même domaine pour l'expéditeur et le destinataire, message HTML seul
+  why: 'Le message prétend venir de l''intérieur de l''entreprise destinataire, sans authentification
+    et sans version texte. Les hameçonnages « service informatique » utilisent ce schéma. Cas légitime
+    : les notifications d''un site envoyées depuis le serveur web.'
+  fix:
+  - Faites signer ces messages en DKIM par le domaine, ou envoyez-les par le SMTP authentifié de la messagerie.
+  - Ajoutez une partie texte (multipart/alternative).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.to_eq_fm_direct_mx
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(TO_EQ_FM_DIRECT_MX)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : To == From
+      et remise directe au MX (un seul relais externe, sans en-têtes de liste).'
+  sa_rules:
+  - TO_EQ_FM_DIRECT_MX
+  title: Expéditeur identique au destinataire, remis directement au serveur
+  why: Le message est envoyé de soi à soi et remis directement au serveur de réception, sans passer par
+    un serveur d'envoi. Score symbolique, mais la règle suivante, avec HTML seul, pèse lourd.
+  fix:
+  - Envoyez via le serveur SMTP de votre messagerie plutôt que directement au MX.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.to_eq_fm_html_direct
+  family: spamassassin
+  severity: high
+  penalty: 1.8
+  detect:
+    signal: spamassassin.hit(TO_EQ_FM_HTML_DIRECT)
+    notes: 'score SA 4.0.x : 3.662 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : TO_EQ_FM_DIRECT_MX
+      && MIME_HTML_ONLY, sans vocabulaire de confidentialité.'
+  sa_rules:
+  - TO_EQ_FM_HTML_DIRECT
+  title: Expéditeur identique au destinataire, HTML seul et remise directe
+  why: 'Le message vient en apparence du destinataire, ne contient que du HTML et a été remis directement
+    au serveur de réception. C''est le schéma exact des faux avis « mot de passe expiré » : plus de 3,5
+    points à lui seul.'
+  fix:
+  - 'Ne mettez jamais l''adresse du destinataire en From : utilisez une adresse d''expédition dédiée.'
+  - Faites passer l'envoi par votre serveur SMTP authentifié et ajoutez une version texte.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.localpart_in_subject
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(LOCALPART_IN_SUBJECT)
+    notes: 'score SA 4.0.x : 1.107 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_to_in_subject(''user'')
+      : la partie avant @ de l''adresse To figure dans le Subject.'
+  sa_rules:
+  - LOCALPART_IN_SUBJECT
+  title: L'identifiant du destinataire apparaît dans l'objet
+  why: L'objet reprend la partie avant le @ de l'adresse du destinataire (« jdupont, votre offre »). Les
+    spammeurs personnalisent ainsi quand ils n'ont que l'adresse. Un outil qui insère la balise de l'adresse
+    au lieu du prénom produit le même effet.
+  fix:
+  - Personnalisez l'objet avec le prénom réel du contact, ou pas du tout.
+  - Vérifiez que la variable de fusion ne retombe pas sur l'adresse quand le prénom est vide.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.from_in_to_and_subj
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(FROM_IN_TO_AND_SUBJ)
+    notes: 'score SA 4.0.x : 2.599 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : To == From
+      et l''adresse From figure dans le Subject, sans List-Id.'
+  sa_rules:
+  - FROM_IN_TO_AND_SUBJ
+  title: L'adresse d'expédition est aussi dans le To et dans l'objet
+  why: La même adresse est expéditrice, destinataire et citée dans l'objet. C'est la signature des faux
+    messages « votre boîte {domain} va être désactivée ».
+  fix:
+  - Retirez l'adresse de l'objet et utilisez une adresse d'expédition distincte de celle du destinataire.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.from_blank_name
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(FROM_BLANK_NAME)
+    notes: 'score SA 4.0.x : 0.723 (sa-update r1939780, jeu réseau + Bayes). Teste : header From =~ /(?:\s|^)""
+      <\S+>/ : From avec des guillemets vides.'
+  sa_rules:
+  - FROM_BLANK_NAME
+  title: Le nom de l'expéditeur est vide
+  why: 'Le From est de la forme "" <adresse> : un champ nom vide entre guillemets. C''est le résultat
+    d''une variable de nom non renseignée dans un script ou un CMS.'
+  fix:
+  - Renseignez le nom d'expéditeur (nom de l'entreprise ou de la personne) dans l'outil d'envoi.
+  - Si aucun nom n'est disponible, écrivez l'adresse seule, sans guillemets vides.
+  fix_by_provider:
+    wordpress: Renseignez le champ From Name de l'extension SMTP ; sans lui, certaines extensions écrivent
+      un nom vide.
+  example_bad: 'From: "" <contact@exemple.fr>'
+  example_good: 'From: "Atelier Martin" <contact@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.from_no_user
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(FROM_NO_USER)
+    notes: 'score SA 4.0.x : 0.798 (sa-update r1939780, jeu réseau + Bayes). Teste : header From =~ /(?:^\@|<\@|
+      \@[^\)<]*$|<>)/ : From commençant par @ ou vide entre chevrons.'
+  sa_rules:
+  - FROM_NO_USER
+  title: L'adresse d'expédition n'a pas d'identifiant avant le @
+  why: L'adresse d'expédition est du type @exemple.fr ou <>. Les destinataires ne peuvent pas répondre
+    et les filtres y voient une adresse fabriquée.
+  fix:
+  - 'Corrigez la variable d''expéditeur du script : l''identifiant avant @ est vide.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.from_excess_base64
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FROM_EXCESS_BASE64)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : From encodé
+      =?...?B?...?= alors que le nom ne contient que de l''ASCII.'
+  sa_rules:
+  - FROM_EXCESS_BASE64
+  title: Le nom d'expéditeur est encodé en base64 sans nécessité
+  why: Le nom d'expéditeur est encodé en base64 alors qu'il ne contient aucun accent. Certains outils
+    le font par défaut, les spammeurs aussi pour masquer le nom aux filtres. Score symbolique.
+  fix:
+  - Laissez la bibliothèque d'envoi encoder seulement quand c'est nécessaire, et en quoted-printable plutôt
+    qu'en base64.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc2047
+- id: sa.from_illegal_chars
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FROM_ILLEGAL_CHARS)
+    notes: 'score SA 4.0.x : 0.036 (sa-update r1939780, jeu réseau + Bayes). Teste : check_illegal_chars(''From'',
+      ''0.20'', ''2'') : proportion de caractères 8 bits bruts dans le From au-delà du seuil.'
+  sa_rules:
+  - FROM_ILLEGAL_CHARS
+  title: Le From contient des caractères non encodés
+  why: Le nom d'expéditeur contient des caractères accentués ou spéciaux envoyés bruts, sans l'encodage
+    prévu pour les en-têtes. Certains logiciels les affichent mal.
+  fix:
+  - Encodez le nom d'expéditeur selon la RFC 2047 (les bibliothèques le font si vous déclarez le jeu de
+    caractères UTF-8).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc2047
+- id: sa.from_local_digits
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FROM_LOCAL_DIGITS)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : header From =~ /\d{11}\S*\@/i
+      : 11 chiffres ou plus dans la partie avant @.'
+  sa_rules:
+  - FROM_LOCAL_DIGITS
+  title: L'adresse d'expédition contient une longue suite de chiffres
+  why: L'identifiant de l'adresse d'expédition contient au moins 11 chiffres d'affilée, format des adresses
+    générées automatiquement. Score symbolique.
+  fix:
+  - Utilisez une adresse d'expédition lisible (contact@, newsletter@).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.from_local_hex
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FROM_LOCAL_HEX)
+    notes: 'score SA 4.0.x : 0.006 (sa-update r1939780, jeu réseau + Bayes). Teste : header From =~ /[0-9a-f]{11}\S*\@/i.'
+  sa_rules:
+  - FROM_LOCAL_HEX
+  title: L'adresse d'expédition contient une longue suite hexadécimale
+  why: L'identifiant de l'adresse d'expédition ressemble à un code aléatoire (au moins 11 caractères 0-9
+    et a-f). Typique d'adresses générées par un outil. Score symbolique.
+  fix:
+  - Affichez en From une adresse lisible ; laissez les identifiants techniques dans le Return-Path.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.from_local_novowel
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(FROM_LOCAL_NOVOWEL)
+    notes: 'score SA 4.0.x : 0.5 (sa-update r1939780, jeu réseau + Bayes). Teste : header From =~ /[bcdfgjklmnpqrstvwxz]{7}\S*\@/i
+      : 7 consonnes consécutives avant @.'
+  sa_rules:
+  - FROM_LOCAL_NOVOWEL
+  title: L'adresse d'expédition contient une suite de consonnes
+  why: L'identifiant avant le @ contient sept consonnes d'affilée, signe d'une adresse aléatoire. Peut
+    toucher des sigles ou des noms régionaux.
+  fix:
+  - Si possible, utilisez une adresse d'expédition plus lisible (contact@, info@).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.from_domain_novowel
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(FROM_DOMAIN_NOVOWEL)
+    notes: 'score SA 4.0.x : 0.5 (sa-update r1939780, jeu réseau + Bayes). Teste : header From =~ /\@\S*[bcdfgjklmnpqrstvwxz]{7}/i.'
+  sa_rules:
+  - FROM_DOMAIN_NOVOWEL
+  title: Le domaine de l'expéditeur contient une suite de consonnes
+  why: Le domaine {domain} contient sept consonnes consécutives, motif des domaines générés au hasard.
+    Un sigle ou un nom composé peut le déclencher sans raison.
+  fix:
+  - Rien d'urgent si le domaine est ancien et authentifié. Pour un nouveau domaine d'envoi, préférez un
+    nom prononçable.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.from_starts_with_nums
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(FROM_STARTS_WITH_NUMS)
+    notes: 'score SA 4.0.x : 0.738 (sa-update r1939780, jeu réseau + Bayes). Teste : header From:addr
+      =~ /^\d{3,50}[^0-9\@]/.'
+  sa_rules:
+  - FROM_STARTS_WITH_NUMS
+  title: L'adresse d'expédition commence par plusieurs chiffres
+  why: L'identifiant commence par au moins trois chiffres suivis de lettres (123info@...). Format fréquent
+    dans les adresses jetables.
+  fix:
+  - Utilisez une adresse d'expédition qui commence par un mot.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.from_misspaced
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FROM_MISSPACED)
+    notes: 'score SA 4.0.x : 0.091 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : From =~ /^\s*"[^"]*"</
+      (guillemet fermant collé au chevron), sans les signes légitimes listés.'
+  sa_rules:
+  - FROM_MISSPACED
+  title: Pas d'espace entre le nom et l'adresse dans le From
+  why: 'Le From est écrit "Nom"<adresse> sans espace. La norme le tolère, mais peu de logiciels légitimes
+    l''écrivent ainsi : c''est la marque de scripts d''envoi maison.'
+  fix:
+  - Ajoutez un espace entre le nom entre guillemets et la chevron ouvrante.
+  example_bad: 'From: "Atelier Martin"<contact@exemple.fr>'
+  example_good: 'From: "Atelier Martin" <contact@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.from_wsp_lead
+  family: spamassassin
+  severity: high
+  penalty: 1.6
+  detect:
+    signal: spamassassin.hit(FROM_WSP_LEAD)
+    notes: 'score SA 4.0.x : 3.199 (sa-update r1939780, jeu réseau + Bayes). Teste : header From:raw =~
+      /< \s+ [^>\s] [^>]* > [^<>]* \z/xm : espace entre < et l''adresse.'
+  sa_rules:
+  - FROM_WSP_LEAD
+  title: Espace après le chevron ouvrant dans le From
+  why: L'adresse d'expédition est écrite < contact@exemple.fr> avec un espace après le chevron. Ce défaut
+    vient d'une concaténation mal faite dans un script, et SpamAssassin le pénalise de plus de 3 points.
+  fix:
+  - Corrigez la construction de l'en-tête From pour qu'il n'y ait aucun espace à l'intérieur des chevrons.
+  example_bad: 'From: Atelier Martin < contact@exemple.fr>'
+  example_good: 'From: Atelier Martin <contact@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/mmartinec/20_misc.cf
+- id: sa.from_wsp_trail
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(FROM_WSP_TRAIL)
+    notes: 'score SA 4.0.x : 2.088 (sa-update r1939780, jeu réseau + Bayes). Teste : header From:raw =~
+      /< [^>]* \s > [^<>]* \z/xm.'
+  sa_rules:
+  - FROM_WSP_TRAIL
+  title: Espace avant le chevron fermant dans le From
+  why: L'adresse est écrite <contact@exemple.fr > avec un espace avant le chevron fermant, souvent un
+    espace resté à la fin d'un champ de saisie. Plus de 2 points.
+  fix:
+  - Supprimez les espaces en fin de valeur (trim) avant de construire le From.
+  example_bad: 'From: Atelier Martin <contact@exemple.fr >'
+  example_good: 'From: Atelier Martin <contact@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/mmartinec/20_misc.cf
+- id: sa.from_unbal1
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(FROM_UNBAL1)
+    notes: 'score SA 4.0.x : 2.499 (sa-update r1939780, jeu réseau + Bayes). Teste : header From:raw =~
+      / < [^>]* $/xm.'
+  sa_rules:
+  - FROM_UNBAL1
+  title: Chevron fermant manquant dans le From
+  why: Le From ouvre un chevron qui n'est jamais refermé. L'en-tête est invalide et certains logiciels
+    n'affichent pas l'expéditeur.
+  fix:
+  - 'Corrigez la chaîne d''expéditeur dans le script ou le réglage de l''outil : "Nom" <adresse>.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/mmartinec/20_misc.cf
+- id: sa.from_addr_ws
+  family: spamassassin
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: spamassassin.hit(FROM_ADDR_WS)
+    notes: 'score SA 4.0.x : 2.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : From:addr
+      contient un blanc, hors bounces et From encodé QP.'
+  sa_rules:
+  - FROM_ADDR_WS
+  title: L'adresse d'expédition contient un espace
+  why: L'adresse e-mail extraite du From contient un espace, ce qui la rend invalide. Souvent un copier
+    coller ou une variable mal concaténée. Près de 3 points.
+  fix:
+  - Retirez l'espace de l'adresse d'expédition dans le réglage ou le code.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.from_long_dom
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(FROM_LONG_DOM)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : From:addr =~ /\@[^.]{30}/
+      (30 caractères ou plus sans point après @).'
+  sa_rules:
+  - FROM_LONG_DOM
+  title: Domaine d'expédition anormalement long
+  why: Le premier niveau du domaine d'expédition compte au moins 30 caractères sans point. Les domaines
+    jetables générés automatiquement ont souvent ce profil.
+  fix:
+  - Envoyez depuis un domaine court et identifiable ; gardez les longs domaines pour le web si besoin.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.fromspace
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(FROMSPACE)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : header From:raw =~ /^\s?\"\s/.
+      Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - FROMSPACE
+  title: Espace après le guillemet ouvrant du nom d'expéditeur
+  why: Le nom d'expéditeur commence par un guillemet suivi d'un espace (" Atelier Martin"). Format idiosyncrasique
+    repéré dans des logiciels de spam.
+  fix:
+  - Supprimez l'espace initial du nom d'expéditeur dans le réglage de l'outil.
+  example_bad: 'From: " Atelier Martin" <contact@exemple.fr>'
+  example_good: 'From: "Atelier Martin" <contact@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.apostrophe_from
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(APOSTROPHE_FROM)
+    notes: 'score SA 4.0.x : 0.545 (sa-update r1939780, jeu réseau + Bayes). Teste : header From:addr
+      =~ /''/.'
+  sa_rules:
+  - APOSTROPHE_FROM
+  title: L'adresse d'expédition contient une apostrophe
+  why: L'adresse e-mail elle-même (pas le nom) contient une apostrophe. C'est autorisé mais rare, et souvent
+    le signe d'un nom mal placé dans l'adresse.
+  fix:
+  - Vérifiez que l'apostrophe n'appartient pas au nom affiché ("L'Atelier") qui aurait été collé dans
+    l'adresse.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/duncf/20_header.cf
+- id: sa.name_email_diff
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(NAME_EMAIL_DIFF)
+    notes: 'score SA 4.0.x : 0.885 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : From:raw contient
+      une adresse dans le nom différente de l''adresse réelle.'
+  sa_rules:
+  - NAME_EMAIL_DIFF
+  title: Le nom d'expéditeur est une autre adresse e-mail
+  why: Le nom affiché est une adresse e-mail différente de l'adresse d'envoi, par exemple "service@banque.fr"
+    <x@autre.com>. C'est un procédé d'usurpation classique.
+  fix:
+  - Mettez un nom en clair (entreprise ou personne) dans le nom d'expéditeur, pas une adresse.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/khopesh/20_khop_experimental.cf
+- id: sa.from_suspicious_ntld
+  family: spamassassin
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: spamassassin.hit(FROM_SUSPICIOUS_NTLD)
+    notes: 'score SA 4.0.x : 0.499 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_from_in_list(''SUSP_NTLD'')
+      : le From est en .icu, .online, .work, .date, .top, .fun, .life, .review, .bid, .stream, .gdn, .click,
+      .world, .fit, .ooo, .faith, .buzz, .trade, .cyou, .vip ou .xyz.'
+  sa_rules:
+  - FROM_SUSPICIOUS_NTLD
+  title: Le domaine de l'expéditeur utilise une extension souvent abusée
+  why: L'extension du domaine {domain} fait partie des nouvelles extensions massivement utilisées par
+    les spammeurs (domaines bon marché). La pénalité touche aussi les entreprises légitimes qui les ont
+    choisies.
+  fix:
+  - Pour les envois, privilégiez un domaine en .fr, .com ou une extension sectorielle établie.
+  - Si vous gardez ce domaine, soignez SPF, DKIM et DMARC pour compenser.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_ntld.cf
+- id: sa.from_suspicious_ntld_fp
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(FROM_SUSPICIOUS_NTLD_FP)
+    notes: 'score SA 4.0.x : 1.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : SUSP_NTLD
+      sans Sender, In-Reply-To ni X-Mailing-List.'
+  sa_rules:
+  - FROM_SUSPICIOUS_NTLD_FP
+  title: Extension de domaine abusée, sans signe de conversation
+  why: L'extension de {domain} est sur la liste des extensions abusées et le message n'est ni une réponse
+    ni un envoi de liste. Près de 2 points.
+  fix:
+  - Envoyez les campagnes depuis un domaine dans une extension plus répandue, ou par une liste de diffusion
+    qui ajoute les en-têtes List-*.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_ntld.cf
+- id: sa.pds_from_2_emails
+  family: spamassassin
+  severity: high
+  penalty: 1.7
+  detect:
+    signal: spamassassin.hit(PDS_FROM_2_EMAILS)
+    notes: 'score SA 4.0.x : 3.499 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : From contient
+      une adresse dans le nom puis une autre adresse entre chevrons, hors liste de diffusion, resigneur,
+      JavaMail et DKIM.'
+  sa_rules:
+  - PDS_FROM_2_EMAILS
+  title: Le From contient deux adresses différentes
+  why: L'en-tête From affiche une adresse dans le nom et en utilise une autre pour l'envoi. Les usurpateurs
+    s'en servent pour afficher une adresse de confiance. Près de 3,5 points.
+  fix:
+  - Remplacez le nom affiché par un nom en clair ; une seule adresse doit apparaître dans le From.
+  example_bad: 'From: "contact@banque.fr" <noreply@autre-domaine.com>'
+  example_good: 'From: "Banque Exemple" <contact@banque.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.pds_from_name_to_domain
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(PDS_FROM_NAME_TO_DOMAIN)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : From: "exemple.fr"
+      ... To: ...@exemple.fr.'
+  sa_rules:
+  - PDS_FROM_NAME_TO_DOMAIN
+  title: Le nom d'expéditeur reprend le domaine du destinataire
+  why: Le nom affiché de l'expéditeur est le domaine du destinataire (« exemple.fr »). Procédé des faux
+    messages d'administration de boîte. Score symbolique, mais révélateur.
+  fix:
+  - Utilisez comme nom d'expéditeur votre propre marque.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/10_menaces.cf
+- id: sa.t_fromname_equals_to
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_FROMNAME_EQUALS_TO)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_fromname_equals_to()
+      (plugin FromNameSpoof) : le nom affiché du From correspond à une adresse du To. Règle de test T_.
+      Dépend du plugin FromNameSpoof, non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît
+      que si le serveur de test l''active. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_FROMNAME_EQUALS_TO
+  title: Le nom d'expéditeur est l'adresse du destinataire
+  why: Le nom affiché de l'expéditeur est l'adresse du destinataire lui-même. Les faux avis de messagerie
+    font cela pour paraître internes.
+  fix:
+  - Utilisez votre nom ou votre marque comme nom d'expéditeur.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_fns.cf
+- id: sa.t_fromname_spoofed_email
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_FROMNAME_SPOOFED_EMAIL)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_fromname_spoof()
+      (FromNameSpoof) hors liste de diffusion et resigneur. Règle de test T_. Dépend du plugin FromNameSpoof,
+      non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test l''active.
+      Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_FROMNAME_SPOOFED_EMAIL
+  title: Le nom d'expéditeur imite une autre adresse
+  why: Le nom affiché contient une adresse qui ne correspond pas à l'adresse réelle d'envoi. Règle de
+    test sans poids, mais le motif est celui de l'usurpation.
+  fix:
+  - Ne mettez pas d'adresse e-mail dans le nom d'expéditeur.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_fns.cf
+- id: sa.t_pds_to_eq_from_name
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_PDS_TO_EQ_FROM_NAME)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : le From:name
+      contient l''adresse du To, sans Sender. Règle de test T_. Pas de ligne score : valeur par défaut
+      de SpamAssassin.'
+  sa_rules:
+  - T_PDS_TO_EQ_FROM_NAME
+  title: Le nom d'expéditeur reprend l'adresse du destinataire
+  why: Le nom affiché de l'expéditeur est l'adresse du destinataire. Règle de test sans poids.
+  fix:
+  - Affichez votre propre nom ou marque en expéditeur.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.hk_random_from
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(HK_RANDOM_FROM)
+    notes: 'score SA 4.0.x : 0.999 (sa-update r1939780, jeu réseau + Bayes). Teste : header From:addr
+      =~ motif de suites de consonnes et voyelles improbables, hors préfixes mail/bounce et caractères
+      + = ^ ~ # -.'
+  sa_rules:
+  - HK_RANDOM_FROM
+  title: L'identifiant de l'adresse d'expédition semble aléatoire
+  why: L'identifiant avant le @ ressemble à une chaîne tirée au hasard. Les adresses de spam générées
+    en masse ont ce profil.
+  fix:
+  - 'Utilisez des adresses lisibles (contact@, newsletter@, bounce@) : les identifiants précédés de bounce-,
+    mail- ou contenant + ou = sont ignorés par la règle.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/hege/20_hk.cf
+- id: sa.hk_random_envfrom
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(HK_RANDOM_ENVFROM)
+    notes: 'score SA 4.0.x : 0.755 (sa-update r1939780, jeu réseau + Bayes). Teste : header EnvelopeFrom
+      =~ même motif que HK_RANDOM_FROM.'
+  sa_rules:
+  - HK_RANDOM_ENVFROM
+  title: L'identifiant de l'adresse d'enveloppe semble aléatoire
+  why: L'adresse d'enveloppe (Return-Path) a un identifiant d'apparence aléatoire. Les outils d'envoi
+    utilisent des identifiants codés, mais avec + ou = (VERP) que la règle ignore.
+  fix:
+  - 'Utilisez des adresses lisibles (contact@, newsletter@, bounce@) : les identifiants précédés de bounce-,
+    mail- ou contenant + ou = sont ignorés par la règle.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/hege/20_hk.cf
+- id: sa.hk_random_replyto
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(HK_RANDOM_REPLYTO)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : header Reply-To:addr
+      =~ même motif que HK_RANDOM_FROM.'
+  sa_rules:
+  - HK_RANDOM_REPLYTO
+  title: L'identifiant de l'adresse de réponse semble aléatoire
+  why: L'adresse de réponse ressemble à une chaîne aléatoire, ce qui évoque une boîte jetable créée pour
+    recevoir les réponses.
+  fix:
+  - 'Utilisez des adresses lisibles (contact@, newsletter@, bounce@) : les identifiants précédés de bounce-,
+    mail- ou contenant + ou = sont ignorés par la règle.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/hege/20_hk.cf
+- id: sa.sorted_recips
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(SORTED_RECIPS)
+    notes: 'score SA 4.0.x : 2.499 (sa-update r1939780, jeu réseau + Bayes). Teste : sorted_recipients()
+      : les adresses de To/Cc sont nombreuses et triées.'
+  sa_rules:
+  - SORTED_RECIPS
+  title: La liste des destinataires est triée par ordre alphabétique
+  why: 'Le message est adressé à une longue liste de destinataires visibles, rangés par ordre alphabétique
+    : comportement d''un logiciel qui parcourt un fichier d''adresses. Les destinataires voient aussi
+    toutes les adresses, ce qui pose un problème de confidentialité.'
+  fix:
+  - 'N''envoyez pas un même message à des dizaines de destinataires visibles : un envoi par destinataire,
+    via un outil adapté.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.suspicious_recips
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(SUSPICIOUS_RECIPS)
+    notes: 'score SA 4.0.x : 2.51 (sa-update r1939780, jeu réseau + Bayes). Teste : similar_recipients(''0.65'',
+      ''undef'') : plus de 65 % des destinataires partagent un motif d''adresse.'
+  sa_rules:
+  - SUSPICIOUS_RECIPS
+  title: Les destinataires ont des adresses très proches
+  why: Beaucoup de destinataires ont des adresses presque identiques (contact1@, contact2@...), signe
+    d'une liste générée ou achetée. Plus de 2,5 points.
+  fix:
+  - Envoyez un message par destinataire et retirez les adresses générées ou devinées de votre liste.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.spoofed_freemail
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(SPOOFED_FREEMAIL)
+    notes: 'score SA 4.0.x : 0.745 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : FREEMAIL_FROM
+      sans SPF pass, DKIM valide ni relais authentifié, hors réponse, liste, Google et T-Online.'
+  sa_rules:
+  - SPOOFED_FREEMAIL
+  title: Adresse de messagerie gratuite sans preuve d'origine
+  why: Le From est une adresse Gmail, Outlook ou similaire, mais le message n'a été ni authentifié par
+    SPF ou DKIM ni envoyé par les serveurs du fournisseur. Quelqu'un utilise donc l'adresse gratuite depuis
+    un autre serveur.
+  fix:
+  - Envoyez les messages d'une adresse gratuite depuis le fournisseur lui-même (webmail ou SMTP du fournisseur).
+  - Pour un site ou un outil, utilisez une adresse de votre domaine.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_shared_subrules.cf
+- id: sa.forged_gmail_rcvd
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(FORGED_GMAIL_RCVD)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_forged_gmail_received_headers()
+      : From @gmail.com mais les en-têtes Received ne montrent pas l''infrastructure Google. Pas de ligne
+      score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - FORGED_GMAIL_RCVD
+  title: Expéditeur gmail.com sans passage par les serveurs de Google
+  why: L'adresse d'expédition est en @gmail.com mais le message n'est pas passé par Google. Il ne peut
+    donc pas être aligné sur gmail.com et échoue à DMARC chez les destinataires qui le vérifient.
+  fix:
+  - 'N''utilisez pas une adresse @gmail.com comme expéditeur dans un site ou un outil d''envoi : prenez
+    une adresse de votre domaine.'
+  - Si vous tenez à Gmail, configurez l'outil pour qu'il envoie via smtp.gmail.com avec votre compte.
+  fix_by_provider:
+    wordpress: Dans l'extension SMTP, soit vous choisissez le mode Gmail (OAuth), soit vous remplacez
+      l'adresse From par une adresse de votre domaine.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.forged_yahoo_rcvd
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(FORGED_YAHOO_RCVD)
+    notes: 'score SA 4.0.x : 1.63 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_forged_yahoo_received_headers()
+      : From @yahoo.com mais les Received ne correspondent pas à Yahoo.'
+  sa_rules:
+  - FORGED_YAHOO_RCVD
+  title: Expéditeur yahoo.com sans passage par les serveurs de Yahoo
+  why: 'L''adresse d''expédition est en @yahoo.com mais le message n''est pas passé par Yahoo. Yahoo publie
+    un DMARC strict : ces messages sont rejetés par beaucoup de destinataires.'
+  fix:
+  - Remplacez l'adresse Yahoo par une adresse de votre domaine pour les envois depuis un site ou un outil.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf

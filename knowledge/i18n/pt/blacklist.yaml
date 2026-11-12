@@ -1,0 +1,197 @@
+blacklist.spamhaus_sbl:
+  title: "O IP {ip} está listado no Spamhaus SBL"
+  why: "O Spamhaus é a lista mais usada pelos servidores de e-mail. Estar listado no SBL faz uma grande parte dos destinatários rejeitar suas mensagens, muitas vezes logo na conexão."
+  fix:
+    - "Consulte a ficha do IP {ip} em {delist_url} para ler o motivo e o número do caso SBL."
+    - "Elimine a causa: conta comprometida, formulário usado de forma indevida, lista de endereços comprada."
+    - "Entre em contato com seu provedor de hospedagem ou de acesso à internet: segundo o Spamhaus, o pedido de remoção de um registro SBL deve partir do provedor responsável pelo IP. A remoção é gratuita."
+    - "Se {ip} for um IP compartilhado de um serviço de envio ({provider}), avise o suporte dele: o IP não pertence a você, e cabe a ele tratar o registro."
+blacklist.spamhaus_css:
+  title: "O IP {ip} está listado no Spamhaus CSS"
+  why: "O Spamhaus detectou automaticamente spam vindo de {ip}. Enquanto o registro durar, uma grande parte dos destinatários recusa suas mensagens."
+  fix:
+    - "Procure a origem: uma conta de e-mail invadida, um site que envia (formulário, extensão), ou um HELO e um DNS reverso mal configurados que se parecem com os de um robô."
+    - "Corrija a causa antes de qualquer pedido, senão o IP é listado de novo imediatamente."
+    - "Peça a remoção em {delist_url} (a remoção feita por conta própria é limitada em quantidade) ou aguarde a expiração, normalmente três dias após a última detecção."
+blacklist.spamhaus_xbl:
+  title: "O IP {ip} está listado no Spamhaus XBL (máquina comprometida)"
+  why: "O Spamhaus viu {ip} se comportar como uma máquina infectada. Muitos destinatários rejeitam suas mensagens, e o problema vai além do e-mail: um dispositivo da sua rede provavelmente está sob o controle de terceiros."
+  fix:
+    - "Leia em {delist_url} o tipo de infecção detectado e a hora da última detecção."
+    - "Analise os computadores, servidores e objetos conectados atrás de {ip}, e troque as senhas das contas de e-mail."
+    - "Se {ip} for um servidor, bloqueie a saída pela porta 25 para qualquer processo que não seja o software de e-mail."
+    - "Depois de limpar a máquina, peça a remoção em {delist_url}."
+blacklist.spamhaus_pbl:
+  title: "O IP {ip} pertence a uma faixa residencial (Spamhaus PBL)"
+  why: "Seu servidor envia diretamente de uma conexão de consumidor ou de uma faixa que o dono reserva para usuários finais. Muitos destinatários recusam esses envios, mesmo que você não tenha feito nada de errado."
+  fix:
+    - "Envie pelo servidor SMTP autenticado do seu provedor de e-mail ou de acesso (porta 587 ou 465), em vez de entregar diretamente."
+    - "Se {ip} for um IP fixo de um servidor de e-mail real, com DNS reverso correto, você pode pedir a exclusão em {delist_url}; ela vale por um ano e só é possível se a política da rede permitir."
+    - "Para vários endereços, cabe ao provedor de acesso dono da faixa pedir a remoção."
+  fix_by_provider:
+    postfix: "Defina relayhost = [smtp.seu-provedor]:587 com smtp_sasl_auth_enable = yes e smtp_tls_security_level = encrypt, depois execute postfix reload."
+    wordpress: "Instale uma extensão SMTP e envie pelo servidor SMTP do seu provedor de e-mail, em vez da função mail() do servidor."
+blacklist.spamhaus_drop:
+  title: "O IP {ip} pertence a uma faixa Spamhaus DROP"
+  why: "O Spamhaus considera toda a faixa de {ip} controlada por agentes maliciosos. Nenhum ajuste do seu lado tornará este IP utilizável para e-mail."
+  fix:
+    - "Pare de enviar a partir deste IP."
+    - "Troque de provedor de hospedagem ou de serviço de envio e verifique o novo IP antes de usá-lo."
+blacklist.spamhaus_dbl_sender:
+  title: "O domínio {domain} está listado no Spamhaus DBL"
+  why: "Seu próprio domínio é associado a spam ou fraude. Trocar de IP não adianta: toda mensagem que contém {domain}, no endereço ou em um link, é recusada ou classificada como spam pelos destinatários que usam a DBL."
+  fix:
+    - "Consulte a ficha do domínio em {delist_url}."
+    - "Procure a causa: site invadido que hospeda páginas de phishing, campanha enviada a endereços sem consentimento, redirecionamentos abertos."
+    - "Depois de eliminar a causa, peça a remoção em {delist_url}. O Spamhaus indica até 24 horas de processamento e não garante a remoção."
+blacklist.spamhaus_dbl_abused:
+  title: "Um nome de {domain} está listado no Spamhaus DBL como site desviado"
+  why: "O Spamhaus considera seu domínio legítimo, mas uma parte do seu site é usada por terceiros, por exemplo uma página invadida ou um redirecionamento aberto. As mensagens que apontam para esse nome são filtradas."
+  fix:
+    - "Identifique em {delist_url} o nome de host listado e o tipo de abuso."
+    - "Limpe o site (atualização do CMS e das extensões, remoção dos arquivos acrescentados) ou feche o redirecionamento aberto."
+    - "Peça a remoção em {delist_url} assim que a correção estiver no ar."
+  fix_by_provider:
+    wordpress: "Atualize o WordPress, o tema e todas as extensões, remova as contas de administrador desconhecidas e faça uma análise antivírus do site antes de pedir a remoção."
+blacklist.barracuda:
+  title: "O IP {ip} está listado na Barracuda (BRBL)"
+  why: "Empresas protegidas por um gateway Barracuda rejeitam suas mensagens. Isso é comum entre clientes corporativos, portanto prejudicial para um envio B2B."
+  fix:
+    - "Elimine a causa do envio suspeito (conta invadida, lista sem consentimento, volume repentino)."
+    - "Preencha o formulário https://www.barracudacentral.org/rbl/removal-request com o IP {ip}, um endereço de contato válido e a explicação da correção."
+    - "Envie apenas um pedido: a Barracuda ignora pedidos repetidos e costuma processar em até 12 horas."
+blacklist.spamcop:
+  title: "O IP {ip} está listado no SpamCop"
+  why: "Destinatários denunciaram suas mensagens como spam. Enquanto as denúncias continuarem, os servidores que usam o SpamCop recusam seus envios."
+  fix:
+    - "Verifique em https://www.spamcop.net/bl.shtml a data da última denúncia."
+    - "Retire dos envios os endereços que não deram autorização e torne o link de cancelamento de inscrição visível."
+    - "Aguarde: o SpamCop remove o IP automaticamente 24 horas após a última denúncia e pede que não se escreva para solicitar a remoção antecipada."
+blacklist.uceprotect_level1:
+  title: "O IP {ip} está listado no UCEPROTECT nível 1"
+  why: "Seu IP enviou mensagens para um endereço armadilha da UCEPROTECT. Poucos grandes provedores usam essa lista, mas alguns servidores corporativos a consultam."
+  fix:
+    - "Limpe sua lista de envio: os endereços armadilha costumam vir de arquivos antigos ou comprados."
+    - "Verifique se nenhuma conta ou site envia a partir de {ip} sem o seu conhecimento."
+    - "Aguarde a expiração automática, 7 dias após a última detecção. A remoção paga não é necessária."
+blacklist.uceprotect_level2:
+  title: "A rede de {ip} está listada no UCEPROTECT nível 2"
+  why: "Não é o seu IP que está visado, e sim o bloco de endereços do seu provedor de hospedagem, por causa de vizinhos. O efeito se limita aos poucos servidores que usam esse nível."
+  fix:
+    - "Não pague pela remoção: o pedido só pode partir do seu provedor, e o registro cai sozinho."
+    - "Informe o registro ao seu provedor de hospedagem para que ele trate os clientes envolvidos."
+    - "Se seus envios forem grandes, peça ao seu provedor de hospedagem um IP em outro bloco ou use um serviço de envio."
+blacklist.uceprotect_level3:
+  title: "O provedor de hospedagem de {ip} está listado por inteiro no UCEPROTECT nível 3"
+  why: "Todos os endereços do seu provedor de hospedagem estão listados: o seu e os de milhões de outros. Pouquíssimos servidores bloqueiam nesse nível: o efeito sobre seus envios costuma ser nulo."
+  fix:
+    - "Não inicie nenhum procedimento de remoção e não pague nada: só o provedor de hospedagem pode agir."
+    - "Guarde essa informação caso um destinatário específico recuse seus envios citando a UCEPROTECT, e repasse-a a ele."
+blacklist.sorbs_closed:
+  title: "A SORBS está encerrada: um registro citado não vale mais nada"
+  why: "A lista SORBS não funciona mais. Uma ferramenta ou um servidor que ainda a cita usa uma configuração obsoleta: a causa real de uma eventual rejeição está em outro lugar."
+  fix:
+    - "Ignore qualquer “registro na SORBS” apontado por uma ferramenta de teste."
+    - "Se um destinatário rejeitar você citando a SORBS, informe ao administrador dele que a lista está encerrada e que ele deve removê-la da configuração."
+blacklist.psbl:
+  title: "O IP {ip} está listado na PSBL"
+  why: "Seu IP enviou mensagens para endereços armadilha. Filtros do SpamAssassin acrescentam pontos às suas mensagens enquanto o registro durar."
+  fix:
+    - "Limpe sua lista de envio dos endereços antigos ou sem consentimento."
+    - "Remova o IP você mesmo em https://psbl.org/remove: é gratuito e imediato, mas ele será listado de novo se os envios para os armadilhas continuarem."
+blacklist.mailspike:
+  title: "O IP {ip} tem má reputação na Mailspike"
+  why: "A Mailspike considera que {ip} envia spam. O SpamAssassin e outros filtros acrescentam pontos às suas mensagens."
+  fix:
+    - "Verifique o IP e o motivo em https://mailspike.io/ip_verify."
+    - "Elimine a causa (volume repentino, endereços inválidos, máquina infectada)."
+    - "Use o formulário de remoção da mesma página se o registro não cair sozinho em 36 horas."
+blacklist.spamrats_dyna:
+  title: "O IP {ip} está listado na SpamRATS Dyna (IP com aparência dinâmica)"
+  why: "O DNS reverso de {ip} ({ptr}) se parece com o de um assinante residencial. Os servidores que usam a SpamRATS recusam esses envios diretos."
+  fix:
+    - "Peça ao seu provedor de hospedagem um DNS reverso personalizado, por exemplo mail.{domain}, que não contenha o IP nem palavras como dynamic ou pool."
+    - "Se o IP for mesmo uma conexão residencial, envie por um servidor SMTP autenticado."
+    - "Depois, peça a remoção em https://www.spamrats.com/removal.php."
+blacklist.spamrats_noptr:
+  title: "O IP {ip} está listado na SpamRATS NoPtr (sem DNS reverso)"
+  why: "{ip} não tem DNS reverso. A SpamRATS o lista apenas por esse motivo, e os grandes provedores também penalizam essa falha."
+  fix:
+    - "Peça ao seu provedor de hospedagem que configure um DNS reverso para {ip}, por exemplo mail.{domain}, e crie o registro A correspondente."
+    - "Depois, peça a remoção em https://www.spamrats.com/removal.php."
+blacklist.spamrats_spam:
+  title: "O IP {ip} está listado na SpamRATS Spam"
+  why: "A SpamRATS observou spam vindo de {ip}. Os servidores que usam esta lista recusam seus envios."
+  fix:
+    - "Procure a origem dos envios: conta invadida, formulário usado de forma indevida, lista sem consentimento."
+    - "Depois de eliminar a causa, peça a remoção em https://www.spamrats.com/removal.php (ou pela página de contato, se a remoção automática não for oferecida)."
+blacklist.surbl:
+  title: "Um domínio citado na mensagem está listado na SURBL ({value})"
+  why: "Um link da mensagem aponta para um domínio que a SURBL associa a spam ou fraude. Os filtros que analisam links classificam a mensagem como spam, independentemente da reputação do seu IP."
+  fix:
+    - "Identifique o domínio em questão ({value}) e verifique a categoria do registro em https://www.surbl.org/surbl-analysis."
+    - "Se ele não for seu (encurtador, link de afiliado, imagem hospedada em outro lugar), remova-o da mensagem."
+    - "Se for seu, limpe o site e depois peça a remoção pelo formulário da mesma página."
+blacklist.uribl_black:
+  title: "Um domínio citado na mensagem está na lista negra da URIBL ({value})"
+  why: "Um domínio presente na mensagem consta na lista negra da URIBL. O SpamAssassin e outros filtros acrescentam então uma pontuação alta à mensagem."
+  fix:
+    - "Verifique o domínio ({value}) em https://lookup.uribl.com."
+    - "Remova da mensagem os links para esse domínio, se ele não for seu."
+    - "Se for seu, corrija a causa e depois peça a remoção em https://admin.uribl.com (login necessário)."
+blacklist.uribl_grey_red:
+  title: "Um domínio citado na mensagem está em uma lista secundária da URIBL ({value})"
+  why: "Um domínio da mensagem consta em uma lista da URIBL de gravidade menor. O efeito é fraco, mas se soma aos outros sinais desfavoráveis."
+  fix:
+    - "Verifique o domínio ({value}) e a lista correspondente em https://lookup.uribl.com."
+    - "Se este domínio for seu, garanta que seus envios vão apenas para pessoas que os solicitaram, e depois peça a remoção em https://admin.uribl.com."
+blacklist.abusix:
+  title: "O IP {ip} está registrado na Abusix Mail Intelligence"
+  why: "A Abusix observou um comportamento indesejado vindo de {ip}. Os servidores e filtros que usam os dados dela recusam ou penalizam suas mensagens."
+  fix:
+    - "Consulte o motivo em https://lookup.abusix.com/."
+    - "Elimine a causa e depois peça a remoção na mesma página (é solicitada uma confirmação por e-mail)."
+    - "Sem pedido, o registro costuma expirar 5,2 dias após o último evento."
+blacklist.invaluement:
+  title: "{list_name}: o IP {ip} ou o domínio {domain} está registrado na Invaluement"
+  why: "A Invaluement é usada por filtros corporativos. Um registro nela faz suas mensagens serem recusadas por esses clientes."
+  fix:
+    - "Verifique o motivo em https://www.invaluement.com/research/."
+    - "Corrija a causa e depois peça a remoção em https://www.invaluement.com/removal/."
+blacklist.microsoft_banned_ip:
+  title: "A Microsoft bloqueia o IP {ip}"
+  why: "A Microsoft recusa mensagens vindas de {ip} para todos os domínios hospedados no Microsoft 365. Uma parte importante dos destinatários corporativos deixa de receber seus envios."
+  fix:
+    - "Corrija primeiro a causa (conta invadida, lista sem consentimento, volume anormal)."
+    - "Abra https://sender.office.com, informe um endereço de contato e o IP {ip}, depois clique no link de confirmação recebido e em Delist IP."
+    - "Aguarde até 24 horas, às vezes mais, até o bloqueio ser suspenso."
+    - "Se a rejeição indicar 5.7.511, encaminhe a mensagem de rejeição para delist@microsoft.com."
+blacklist.query_blocked:
+  title: "A lista {list_name} não pôde ser consultada"
+  why: "A lista recusou nossa consulta em vez de responder. Isso não diz nada sobre {ip} nem sobre {domain}: essa verificação simplesmente não aconteceu para essa lista."
+  fix:
+    - "Nenhuma ação sua é necessária. Se outra ferramenta anunciar um registro com este código, trata-se de um falso alarme."
+    - "Para verificar você mesmo, use a página de consulta da lista: {delist_url}."
+blacklist.ip_listed:
+  title: "O IP {ip} está listado em {list_name}"
+  why: "Os servidores receptores que consultam {list_name} recusam ou classificam como spam as mensagens vindas de {ip}. Uma lista registra um endereço quando observa envios abusivos ou a atividade de uma máquina comprometida."
+  fix:
+    - "Abra a página da lista ({delist_url}): ela normalmente indica o motivo e a data do registro."
+    - "Corrija a causa antes de qualquer pedido: conta de e-mail invadida, formulário de site abusado, lista de contatos comprada ou sem consentimento, servidor mal configurado."
+    - "Peça a remoção segundo o procedimento da lista; algumas removem o endereço sozinhas após um período sem novo abuso."
+    - "Se {ip} pertencer ao seu serviço de envio ou ao seu provedor de hospedagem, repasse o registro a ele: cabe a ele pedir a remoção."
+blacklist.domain_listed:
+  title: "O domínio {domain} está listado em {list_name}"
+  why: "Os filtros que consultam {list_name} recusam ou classificam como spam as mensagens que usam {domain}, como remetente ou em um link. As causas habituais são envios não solicitados ou um site invadido que hospeda uma página maliciosa."
+  fix:
+    - "Abra a página da lista ({delist_url}) para saber o motivo do registro."
+    - "Se o site de {domain} foi invadido, limpe-o e troque as senhas de acesso à hospedagem."
+    - "Se os envios forem a causa, pare os que partem para endereços sem consentimento."
+    - "Depois, peça a remoção segundo o procedimento da lista."
+blacklist.listed:
+  title: "{value} está listado em {list_name}"
+  why: "Servidores receptores consultam {list_name} antes de aceitar uma mensagem. Enquanto {value} constar ali, as mensagens que dependem dele podem ser classificadas como spam ou recusadas."
+  fix:
+    - "Abra a página da lista ({delist_url}) para saber o motivo e a data do registro."
+    - "Encontre a causa e corrija-a: conta invadida, formulário abusado, envio sem consentimento, site comprometido."
+    - "Depois, peça a remoção segundo o procedimento da lista."

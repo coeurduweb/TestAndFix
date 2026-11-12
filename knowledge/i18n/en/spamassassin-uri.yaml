@@ -1,0 +1,194 @@
+sa.uri_try_3ld:
+  title: Link to a call-to-action subdomain (try., get., check., join., my.…)
+  why: A link points to a .com or .net host whose name starts with try, start, get, save, check, act, compare, join, learn, request, visit or my (get.offer-example.com, check.myservice.com). Spammers create these call-to-action subdomains, and a legitimate service that uses one is penalized as well.
+  fix:
+    - "Point links to your main domain (www.{domain}) or to a path (/essai) rather than to a subdomain that starts with one of these words."
+sa.uri_try_usme:
+  title: “try” or “get” link to a .us, .me, .mobi or .club extension
+  why: A call-to-action link points to a domain in .us, .me, .mobi or .club, extensions often used by spammers.
+  fix:
+    - Use links to your main domain, and sign the message with DKIM (the rule does not apply to signed messages).
+sa.uri_optout_3ld:
+  title: Unsubscribe link on a subdomain such as “remove” or “stop”
+  why: The unsubscribe link points to a host such as remove.example.com or stop.example.net. A pattern seen with spammers who change domains for each campaign.
+  fix:
+    - Host the unsubscribe page on your domain or on your sending tool's domain, with a path (/unsubscribe).
+sa.uri_optout_usme:
+  title: “remove” or “stop” unsubscribe link in .us, .me, .mobi or .club
+  why: The unsubscribe link points to a stop subdomain in an extension that is often abused.
+  fix:
+    - Use the native unsubscribe link of your sending tool.
+sa.uri_novowel:
+  title: Link to a host name with a long run of consonants
+  why: A link points to a host that contains seven consonants in a row, like randomly generated domains. Tracking domains of sending tools (encoded IDs) sometimes trigger it.
+  fix:
+    - "Configure a readable custom tracking domain (click.{domain}) in your sending tool."
+sa.uri_hex:
+  title: Link to a host name with a long hexadecimal string
+  why: The host name of a link contains at least six hexadecimal characters (a1b2c3), typical of generated subdomains. Low penalty.
+  fix:
+    - Use readable host names in links, especially for click tracking.
+sa.numeric_http_addr:
+  title: Link to an IP address instead of a domain name
+  why: "A link points to an IP address (http://203.0.113.10/...). No serious site does this in an email, and link filters cannot verify anything. More than one point."
+  fix:
+    - Replace the IP with the domain name of the site.
+    - For a test or staging link left in a template, replace it with the production address.
+sa.normal_http_to_ip:
+  title: Link to a public IPv4 address
+  why: A link points to a public IP address. Negligible score, but NUMERIC_HTTP_ADDR usually triggers at the same time.
+  fix:
+    - Use a domain name in links.
+sa.https_http_mismatch:
+  title: The text of a link shows a different domain from its destination
+  why: A link displays https://www.example.com but actually leads to another domain. This is the basic technique of phishing. A newsletter whose links go through a tracking domain while showing the final address in plain text also triggers it.
+  fix:
+    - "Do not write an https:// address as link text: use a label (“View the shop”)."
+    - Or set up click tracking on a subdomain of {domain}, so that the displayed domain and the real domain match.
+sa.http_escaped_host:
+  title: Host name of a link encoded with %
+  why: The host name of a link contains encoded characters (%2E instead of a dot), a technique used to hide the real destination. Low penalty.
+  fix:
+    - Write the host name in plain characters. Only the parameters after ? can be encoded.
+sa.http_excessive_escapes:
+  title: Link with unnecessary % encodings
+  why: A link encodes ordinary letters or digits (%61 for a). Negligible score.
+  fix:
+    - In links, only encode the characters that require it (spaces, accented characters, &).
+sa.weird_port:
+  title: Link with an unusual port
+  why: A link specifies an unusual network port (https://example.com:8443/). Often a forgotten staging or admin link. Negligible score.
+  fix:
+    - Use the public address of the site without a port number.
+sa.uri_truncated:
+  title: A link was truncated during analysis
+  why: "A link exceeds 8,192 characters or the message contains too many links: SpamAssassin did not analyze everything. Negligible score, but a link of this size is abnormal."
+  fix:
+    - Shorten links that are too long (excess tracking parameters), and limit the number of links.
+sa.uri_data:
+  title: "Link using data: (content embedded in the address)"
+  why: "A link uses the data: scheme to embed a document (often HTML) in the address itself. It is a phishing technique to display a fake page without a server."
+  fix:
+    - Replace this link with a link to a page hosted on your site.
+sa.uri_wpadmin:
+  title: Link to a WordPress admin area
+  why: A link points into /wp-admin/ of a WordPress site. Phishing pages are hosted on hacked WordPress sites, and an admin link in a newsletter is also a mistake.
+  fix:
+    - Replace the link with the public address of the page (without /wp-admin/).
+  fix_by_provider:
+    wordpress: "Copy the link from the article's “View” button, not from the editing screen."
+sa.uri_wp_hacked:
+  title: Link to a PHP or HTML file in wp-content or wp-includes
+  why: "A link points to a .php or .html file in wp-content or wp-includes. These directories normally contain only images and internal scripts: this is the typical path of a page dropped by an attacker. More than 2.5 points."
+  fix:
+    - "If the link is yours, check this file: if it has no business there, the site is compromised."
+    - For a legitimate link to a document, use the address of the public page or of a PDF in uploads.
+    - "Authenticate the message (SPF or DKIM): the rule does not apply to authenticated messages."
+sa.uri_php_redir:
+  title: Link going through redirect.php
+  why: A link goes through a redirect.php script that forwards to another address. Open redirects on third-party sites are used to hide malicious destinations.
+  fix:
+    - Put the destination address directly in the link.
+sa.url_shortener_disabled:
+  title: Short link disabled for abuse
+  why: A short link was suspended by its shortening service for abuse. The reader will land on a warning page, and SpamAssassin adds 2 points.
+  fix:
+    - Replace the short link with the full address of the page.
+    - "Do not use a public URL shortener in an email: it is shared with spammers."
+sa.url_shortener_chained:
+  title: Short link that redirects to another shortener
+  why: A short link leads to another short link. The chain is used to hide the final destination. Negligible score, but link filters note it.
+  fix:
+    - Use the final address directly, without a shortener.
+sa.t_short_shortner:
+  title: Short message containing mostly a short link
+  why: The message is a few words and a short link. SpamAssassin's list also includes youtu.be, amzn.to, wp.me or eepurl.com (Mailchimp). Typical profile of spam or of a message from a hacked account. Test rule with no weight.
+  fix:
+    - Add context to the message, and use the full address of the page.
+sa.redir_url_chained:
+  title: Link redirected through other redirectors
+  why: A link goes through several successive redirect services. Negligible score, but it is a common way to hide a destination.
+  fix:
+    - Limit the chain to a single pass (your sending tool's tracking), then the final address.
+sa.redir_url_loop:
+  title: Redirect link that loops back on itself
+  why: A redirect link leads back to itself. The reader will never reach the page.
+  fix:
+    - Test the link in a browser, and fix the redirect.
+sa.redir_url_maxchain:
+  title: Link with too many redirects
+  why: The link passes through so many redirects that the analysis stopped. Browsers may also give up.
+  fix:
+    - Reduce the number of redirects between the link in the message and the final page.
+sa.gb_google_obfur:
+  title: Link hidden behind a Google redirect
+  why: The link is a google.com/url?...&url=... address copied from a Google results page. It hides the real destination, and spammers use it to bypass blocklists.
+  fix:
+    - Open the link, then copy the actual address of the page from the browser's address bar.
+sa.uri_google_proxy:
+  title: Link going through Google's image proxy
+  why: A link or image goes through googleusercontent.com/proxy/, the address Gmail gives to images it caches. It appears when an image is copied from a message received in Gmail.
+  fix:
+    - Re-insert the images from their original file or their address on your site.
+sa.uri_dq_unsub:
+  title: Unsubscribe link to an IP address
+  why: The unsubscribe link points to an IP address. Recipients and filters have no way to identify the sender.
+  fix:
+    - Host the unsubscribe page under a domain name (yours or your sending tool's).
+sa.spoof_com2com:
+  title: Link with .com in the middle and at the end of the host name
+  why: A host name such as banque.com.autre-site.com imitates a known domain. Negligible score, but it is a spoofing pattern.
+  fix:
+    - "Avoid subdomains that contain “.com”: use the real domain."
+sa.spoof_com2oth:
+  title: Link with .com in the middle of the host name
+  why: The host name contains “.com.” in the middle (example.com.your-site.net). Negligible score.
+  fix:
+    - Use a host name without an intermediate “.com”.
+sa.long_hex_uri:
+  title: Link with a very long hexadecimal string
+  why: A link contains a 128-character hexadecimal identifier. Per-recipient tracking links sometimes generate these. 1 point.
+  fix:
+    - If this is your tool's tracking link, use a shorter identifier or a custom tracking domain.
+sa.uppercase_uri:
+  title: Link protocol written with unusual capitalization
+  why: The start of a link mixes lowercase and uppercase (hTTps://). A technique to bypass naive filters. Close to 3 points.
+  fix:
+    - Write https:// in lowercase in all links.
+sa.uri_excess_slashes:
+  title: Link with too many slashes after the protocol
+  why: "A link starts with https:/// (three slashes or more). Browsers correct it, but filters see an attempt to bypass them. 2.5 points."
+  fix:
+    - "Fix the link: https:// followed directly by the domain."
+    - Check the template variable that builds the link (empty domain, extra slash).
+sa.body_uri_only:
+  title: The message body is only a link
+  why: The message consists of a clickable link or image only. Negligible score, but this is the profile of messages sent from hacked accounts.
+  fix:
+    - Add one or two sentences explaining the link, and sign the message with DKIM.
+sa.mxg_email_frag:
+  title: "Link containing an email address after #"
+  why: "A link contains an email address after the #. Phishing uses this to prefill a fake login page. Low penalty."
+  fix:
+    - Pass the recipient's identifier as an opaque parameter, not as their email address in plain text.
+sa.tracker_id:
+  title: Paragraph reduced to a tracking ID
+  why: A paragraph of the message is just a random code, like those spammers add to make each message unique. Low penalty.
+  fix:
+    - Remove technical identifiers visible in the text. Place them in links or headers.
+sa.uri_firebaseapp:
+  title: Link to an app hosted on firebaseapp.com or web.app
+  why: A link leads to an app hosted on Firebase. These free hosts are widely used for phishing pages, hence close to 3 points even for a legitimate app.
+  fix:
+    - Attach a custom domain to the Firebase app and use it in links.
+sa.t_pds_other_bad_tld:
+  title: Link to an unreliable domain extension
+  why: A link points to an extension that the rules classify as unreliable. Test rule with no weight, but other filters penalize these extensions.
+  fix:
+    - If this is your domain, consider a more widespread extension for campaign links.
+sa.shortener_short_img:
+  title: Short HTML with a clickable image and a short link
+  why: The message is a tiny HTML with a clickable image pointing to a short link. A typical spam combination. More than 2 points.
+  fix:
+    - Replace the short link with the full address, and add text to the message.
+    - "Warning: youtu.be, amzn.to, wp.me and eepurl.com count as shorteners. Use the long addresses."

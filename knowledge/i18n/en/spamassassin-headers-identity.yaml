@@ -1,0 +1,317 @@
+sa.freemail_from:
+  title: The sender uses a free mail service
+  why: "The sending address is on a consumer mail service. The score is almost nil, but this rule is a condition for other, heavier rules, and a company that writes from Gmail or Orange inspires less trust than an address on its own domain."
+  fix:
+    - For business mailings, use an address on your own domain.
+    - "Never send a newsletter with a Gmail, Outlook.com or Yahoo address as From: sent from another service, the message cannot pass DMARC for this domain, and Yahoo publishes a reject policy."
+sa.freemail_replyto:
+  title: Reply-To on a free mail service, different from the sender
+  why: "Replies go to a free address that is not the sender's. This is the setup of scams (you write from one address and collect the replies elsewhere), but also that of a form that puts the visitor's Gmail address in Reply-To."
+  fix:
+    - "If it is a contact form, this is expected: just check that the From is an address on your domain, authenticated by SPF and DKIM."
+    - For a campaign, put an address on your domain in Reply-To.
+sa.freemail_forged_replyto:
+  title: Reply-To on a free mail service while the sender is not one
+  why: "The message comes from a company address but asks you to reply to a Gmail, Outlook or similar address. This is very typical of CEO fraud and fake invoices, hence a penalty of more than 2 points."
+  fix:
+    - Put an address on your domain in Reply-To, or remove the Reply-To header.
+    - For a website form that puts the visitor's address in Reply-To, accept this penalty, or copy the visitor's address into the body of the message instead.
+  fix_by_provider:
+    wordpress: "In Contact Form 7 or WPForms, the header Reply-To: [your-email] triggers this rule when the visitor has a free address. It is harmless for an internal notification."
+sa.freemail_reply:
+  title: The body of the message cites a free address different from the sender
+  why: The message invites you to write to another free address than the one sending. Scams use this to get replies to a mailbox that has not yet been reported.
+  fix:
+    - State in the message a contact address identical to the sender, or an address on your domain.
+sa.freemail_envfrom_end_digit:
+  title: Free envelope address ending in a digit
+  why: "The envelope address is a free mailbox such as jean.dupont75@gmail.com. Accounts created in bulk by spammers often have this format. Low penalty."
+  fix:
+    - Send from an address on your domain to avoid this rule and the neighboring rules.
+sa.freemail_replyto_end_digit:
+  title: Free Reply-To ending in a digit
+  why: The reply address is a free mailbox whose identifier ends in a digit. A weak signal that adds to the other freemail rules.
+  fix:
+    - Use an address on your domain as Reply-To.
+sa.freemail_forged_fromdomain:
+  title: Free sender sent from another envelope domain
+  why: "The From is a free address (Gmail, Orange...) but the envelope belongs to another domain. This is what a sending tool or a site configured with a Gmail address as sender produces. The message then cannot be aligned with the domain of the free provider, and it fails DMARC wherever that domain publishes a DMARC record."
+  fix:
+    - Use as sender an address on your own domain, authenticated in your sending tool.
+    - If you have no domain, send from the free provider's own webmail, not from a third-party service.
+sa.header_from_different_domains:
+  title: The From domain differs from the envelope domain
+  why: "The From shows {domain} but the Return-Path belongs to {envelope_domain}. This is the default setting of many sending tools (Brevo, Mailchimp, Mailjet), which handle bounces on their own domain. Low penalty, but SPF is then not aligned for DMARC."
+  fix:
+    - Set up a custom return domain (Return-Path) under {domain} in your sending tool, for example bounce.{domain}.
+    - Otherwise, make sure DKIM signs with {domain} so that DMARC passes anyway.
+  fix_by_provider:
+    brevo: "Authenticate {domain} in Brevo's Domains section: the DKIM signature is then made with your domain, and DMARC passes through DKIM even if the Return-Path is not under {domain}."
+    mailchimp: "Authenticate {domain} in Mailchimp's Domains section: the DKIM signature is then made with your domain, and DMARC passes through DKIM even if the Return-Path is not under {domain}."
+    amazon_ses: Set up a custom MAIL FROM (a subdomain of {domain}) in the SES identity.
+sa.replyto_without_to_cc:
+  title: Reply-To present without a To or Cc recipient
+  why: "The message has a reply address but no visible recipient: all recipients are in blind copy. This is what a group send does from a mail client with the list in Bcc, a common pattern in spam."
+  fix:
+    - "Add a To header: the recipient's address for an individual send, or your own address if you keep the list in Bcc."
+    - For more than a few dozen recipients, use a sending tool that addresses each message individually.
+sa.to_no_brkts_dynip:
+  title: Recipient without angle brackets and a consumer sending IP
+  why: "The To contains a bare address (without “Name <...>”), and the message is sent from an IP whose reverse DNS is that of a residential connection. The combination is typical of infected machines that send spam, hence a penalty of 3 points."
+  fix:
+    - "Write the recipient with a name and angle brackets: \"First Last\" <address@example.com>. Sending tools do this when the name field is filled in."
+    - "Add the List-Unsubscribe header and an unsubscribe link: several variants of this rule then no longer apply."
+sa.to_no_brkts_from_mssp:
+  title: Recipient without angle brackets and a badly formatted sender
+  why: "The recipient's address is bare, and the From is written without a space between the name and the angle bracket (Name<address>). These two formatting defects together betray a homemade sending script."
+  fix:
+    - "Write the recipient with a name and angle brackets: \"First Last\" <address@example.com>. Sending tools do this when the name field is filled in."
+    - "Add the List-Unsubscribe header and an unsubscribe link: several variants of this rule then no longer apply."
+sa.to_no_brkts_html_img:
+  title: Recipient without angle brackets, HTML with a single image
+  why: Bare recipient address and an HTML message reduced to an image. Negligible score, but it is the profile of image spam.
+  fix:
+    - "Write the recipient with a name and angle brackets: \"First Last\" <address@example.com>. Sending tools do this when the name field is filled in."
+    - "Add the List-Unsubscribe header and an unsubscribe link: several variants of this rule then no longer apply."
+sa.to_no_brkts_html_only:
+  title: Recipient without angle brackets and HTML-only message
+  why: Bare recipient address and a message without a text version. This is what PHP's mail() function produces, or a homemade script that sends raw HTML. Penalty close to 2 points.
+  fix:
+    - "Write the recipient with a name and angle brackets: \"First Last\" <address@example.com>. Sending tools do this when the name field is filled in."
+    - "Add the List-Unsubscribe header and an unsubscribe link: several variants of this rule then no longer apply."
+sa.to_no_brkts_msft:
+  title: Recipient without angle brackets and Outlook headers
+  why: The message claims to come from Outlook, but the recipient's address is bare, which Outlook does not normally do. Sending software that imitates Outlook is targeted.
+  fix:
+    - "Write the recipient with a name and angle brackets: \"First Last\" <address@example.com>. Sending tools do this when the name field is filled in."
+    - "Add the List-Unsubscribe header and an unsubscribe link: several variants of this rule then no longer apply."
+sa.to_no_brkts_nordns_html:
+  title: Recipient without angle brackets, IP without reverse DNS, HTML only
+  why: "Bare recipient address, HTML-only message and an IP without reverse DNS: three defects that describe an improvised server."
+  fix:
+    - "Write the recipient with a name and angle brackets: \"First Last\" <address@example.com>. Sending tools do this when the name field is filled in."
+    - "Add the List-Unsubscribe header and an unsubscribe link: several variants of this rule then no longer apply."
+sa.to_no_brkts_pcnt:
+  title: Recipient without angle brackets and percentages in the text
+  why: "Bare recipient address and highlighted percentages (“-50%”): the profile of a promotion sent without a sending tool or an unsubscribe link."
+  fix:
+    - "Write the recipient with a name and angle brackets: \"First Last\" <address@example.com>. Sending tools do this when the name field is filled in."
+    - "Add the List-Unsubscribe header and an unsubscribe link: several variants of this rule then no longer apply."
+sa.to_malformed:
+  title: The To header is malformed
+  why: The To field does not contain a valid address. Often a merge tag left empty or not replaced, or a name without an address.
+  fix:
+    - Check the merge variable used for the recipient in your sending tool or script.
+    - "Use the format \"Name\" <address@domain.fr>, or an address alone."
+sa.to_in_subj:
+  title: The recipient's address appears in the subject
+  why: "The subject contains the recipient's full email address, a common technique of spam and fake mail-system notices (“contact@example.com: your mailbox is full”). Low penalty."
+  fix:
+    - Personalize the subject with the first name rather than with the email address.
+sa.to_eq_fm_html_only:
+  title: Sender identical to the recipient, HTML only
+  why: "The message appears to come from the recipient themselves and contains only HTML. This is the form of fake account alerts. A form that sends to the site owner with their own address as sender also triggers it."
+  fix:
+    - Use as From a technical address of the domain that is different from the receiving address.
+    - Add a text version to the message, and sign it with DKIM.
+sa.to_eq_fm_dom_html_only:
+  title: Same domain for sender and recipient, HTML only
+  why: "The message claims to come from inside the recipient's company, without authentication and without a text version. “IT department” phishing uses this pattern. Legitimate case: a website's notifications sent from the web server."
+  fix:
+    - Have these messages signed with DKIM for the domain, or send them through the authenticated SMTP of the mail service.
+    - Add a text part (multipart/alternative).
+sa.to_eq_fm_direct_mx:
+  title: Sender identical to the recipient, delivered directly to the server
+  why: "The message is sent from oneself to oneself and delivered directly to the receiving server, without going through a sending server. Negligible score, but the following rule, with HTML only, weighs heavily."
+  fix:
+    - Send through the SMTP server of your mail service rather than directly to the MX.
+sa.to_eq_fm_html_direct:
+  title: Sender identical to the recipient, HTML only and direct delivery
+  why: "The message appears to come from the recipient, contains only HTML and was delivered directly to the receiving server. This is the exact pattern of fake “password expired” notices: more than 3.5 points on its own."
+  fix:
+    - "Never put the recipient's address in From: use a dedicated sending address."
+    - Send through your authenticated SMTP server, and add a text version.
+sa.localpart_in_subject:
+  title: The recipient's username appears in the subject
+  why: "The subject repeats the part before the @ of the recipient's address (“jdupont, your offer”). Spammers personalize this way when they only have the address. A tool that inserts the address tag instead of the first name produces the same effect."
+  fix:
+    - Personalize the subject with the contact's real first name, or not at all.
+    - Check that the merge variable does not fall back to the address when the first name is empty.
+sa.from_in_to_and_subj:
+  title: The sending address is also in To and in the subject
+  why: "The same address is the sender and the recipient, and it is cited in the subject. This is the signature of fake messages “your {domain} mailbox will be deactivated”."
+  fix:
+    - Remove the address from the subject, and use a sending address distinct from the recipient's.
+sa.from_blank_name:
+  title: The sender name is empty
+  why: "The From has the form \"\" <address>: an empty name field between quotes. This is the result of an unfilled name variable in a script or CMS."
+  fix:
+    - Fill in the sender name (company or person's name) in your sending tool.
+    - If no name is available, write the address alone, without empty quotes.
+  fix_by_provider:
+    wordpress: "Fill in the From Name field of the SMTP plugin. Without it, some plugins write an empty name."
+sa.from_no_user:
+  title: The sending address has no identifier before the @
+  why: "The sending address is of the form @example.com or <>. Recipients cannot reply, and filters see a fabricated address."
+  fix:
+    - "Fix the sender variable of the script: the identifier before @ is empty."
+sa.from_excess_base64:
+  title: The sender name is encoded in base64 without need
+  why: The sender name is encoded in base64 although it contains no accented character. Some tools do this by default, and spammers do it to hide the name from filters. Negligible score.
+  fix:
+    - Let the sending library encode only when necessary, and use quoted-printable rather than base64.
+sa.from_illegal_chars:
+  title: The From contains unencoded characters
+  why: The sender name contains accented or special characters sent raw, without the encoding provided for headers. Some software displays them badly.
+  fix:
+    - Encode the sender name according to RFC 2047 (libraries do this if you declare the UTF-8 character set).
+sa.from_local_digits:
+  title: The sending address contains a long run of digits
+  why: The identifier of the sending address contains at least 11 consecutive digits, the format of automatically generated addresses. Negligible score.
+  fix:
+    - Use a readable sending address (contact@, newsletter@).
+sa.from_local_hex:
+  title: The sending address contains a long hexadecimal string
+  why: The identifier of the sending address looks like a random code (at least 11 characters from 0-9 and a-f). Typical of addresses generated by a tool. Negligible score.
+  fix:
+    - Show a readable address in From, and leave the technical identifiers in the Return-Path.
+sa.from_local_novowel:
+  title: The sending address contains a run of consonants
+  why: The identifier before the @ contains seven consecutive consonants, a sign of a random address. It may affect acronyms or regional names.
+  fix:
+    - If possible, use a more readable sending address (contact@, info@).
+sa.from_domain_novowel:
+  title: The sender's domain contains a run of consonants
+  why: "The domain {domain} contains seven consecutive consonants, a pattern of randomly generated domains. An acronym or a compound name can trigger it for no reason."
+  fix:
+    - Nothing urgent if the domain is old and authenticated. For a new sending domain, prefer a pronounceable name.
+sa.from_starts_with_nums:
+  title: The sending address starts with several digits
+  why: "The identifier starts with at least three digits followed by letters (123info@...). A format common in disposable addresses."
+  fix:
+    - Use a sending address that starts with a word.
+sa.from_misspaced:
+  title: No space between the name and the address in From
+  why: "The From is written \"Name\"<address> without a space. The standard tolerates it, but few legitimate programs write it this way: it is the mark of homemade sending scripts."
+  fix:
+    - Add a space between the quoted name and the opening angle bracket.
+sa.from_wsp_lead:
+  title: Space after the opening angle bracket in From
+  why: "The sending address is written < contact@example.com> with a space after the bracket. This defect comes from a badly made concatenation in a script, and SpamAssassin penalizes it by more than 3 points."
+  fix:
+    - Fix the construction of the From header so that there is no space inside the angle brackets.
+sa.from_wsp_trail:
+  title: Space before the closing angle bracket in From
+  why: "The address is written <contact@example.com > with a space before the closing bracket, often a space left at the end of an input field. More than 2 points."
+  fix:
+    - Remove trailing spaces from the value (trim) before building the From.
+sa.from_unbal1:
+  title: Missing closing angle bracket in From
+  why: The From opens an angle bracket that is never closed. The header is invalid, and some software does not display the sender.
+  fix:
+    - "Fix the sender string in the script or in the tool's setting: \"Name\" <address>."
+sa.from_addr_ws:
+  title: The sending address contains a space
+  why: "The email address extracted from the From contains a space, which makes it invalid. Often a copy-paste or a badly concatenated variable. Close to 3 points."
+  fix:
+    - Remove the space from the sending address in the setting or the code.
+sa.from_long_dom:
+  title: Abnormally long sending domain
+  why: The first level of the sending domain has at least 30 characters without a dot. Automatically generated disposable domains often have this profile.
+  fix:
+    - Send from a short, identifiable domain. Keep long domains for the web if needed.
+sa.fromspace:
+  title: Space after the opening quote of the sender name
+  why: "The sender name starts with a quote followed by a space (\" Atelier Martin\"). An idiosyncratic format found in spam software."
+  fix:
+    - Remove the leading space from the sender name in the tool's setting.
+sa.apostrophe_from:
+  title: The sending address contains an apostrophe
+  why: "The email address itself (not the name) contains an apostrophe. It is allowed but rare, and often the sign of a name placed in the address by mistake."
+  fix:
+    - "Check that the apostrophe does not belong to the displayed name (\"L'Atelier\") that was pasted into the address."
+sa.name_email_diff:
+  title: The sender name is another email address
+  why: "The displayed name is an email address different from the sending address, for example \"service@banque.fr\" <x@autre.com>. This is a classic spoofing technique."
+  fix:
+    - Put a plain name (company or person) in the sender name, not an address.
+sa.from_suspicious_ntld:
+  title: The sender's domain uses an often-abused extension
+  why: "The extension of {domain} is one of the new extensions widely used by spammers (cheap domains). The penalty also affects legitimate companies that chose them."
+  fix:
+    - For mailings, prefer a .fr or .com domain, or an established industry extension.
+    - If you keep this domain, take care of SPF, DKIM and DMARC to compensate.
+sa.from_suspicious_ntld_fp:
+  title: Often-abused domain extension, with no sign of a conversation
+  why: "The extension of {domain} is on the list of often-abused extensions, and the message is neither a reply nor a list mailing. Close to 2 points."
+  fix:
+    - Send campaigns from a domain in a more widespread extension, or through a mailing list that adds the List-* headers.
+sa.pds_from_2_emails:
+  title: The From contains two different addresses
+  why: "The From header shows one address in the name and uses another one for sending. Impersonators use this to display a trusted address. Close to 3.5 points."
+  fix:
+    - Replace the displayed name with a plain name. Only one address should appear in the From.
+sa.pds_from_name_to_domain:
+  title: The sender name uses the recipient's domain
+  why: "The displayed sender name is the recipient's domain (“example.com”). A technique of fake mailbox-administration messages. Negligible score, but revealing."
+  fix:
+    - Use your own brand as the sender name.
+sa.t_fromname_equals_to:
+  title: The sender name is the recipient's address
+  why: The displayed sender name is the recipient's own address. Fake mail-system notices do this to look internal.
+  fix:
+    - Use your name or brand as the sender name.
+sa.t_fromname_spoofed_email:
+  title: The sender name imitates another address
+  why: The displayed name contains an address that does not match the actual sending address. Test rule with no weight, but the pattern is that of spoofing.
+  fix:
+    - Do not put an email address in the sender name.
+sa.t_pds_to_eq_from_name:
+  title: The sender name uses the recipient's address
+  why: The displayed sender name is the recipient's address. Test rule with no weight.
+  fix:
+    - Show your own name or brand as the sender.
+sa.hk_random_from:
+  title: The identifier of the sending address seems random
+  why: The identifier before the @ looks like a string drawn at random. Spam addresses generated in bulk have this profile.
+  fix:
+    - "Use readable addresses (contact@, newsletter@, bounce@): identifiers preceded by bounce-, mail- or containing + or = are ignored by the rule."
+sa.hk_random_envfrom:
+  title: The identifier of the envelope address seems random
+  why: "The envelope address (Return-Path) has an identifier that looks random. Sending tools use encoded identifiers, but with + or = (VERP), which the rule ignores."
+  fix:
+    - "Use readable addresses (contact@, newsletter@, bounce@): identifiers preceded by bounce-, mail- or containing + or = are ignored by the rule."
+sa.hk_random_replyto:
+  title: The identifier of the reply address seems random
+  why: The reply address looks like a random string, which suggests a disposable mailbox created to receive replies.
+  fix:
+    - "Use readable addresses (contact@, newsletter@, bounce@): identifiers preceded by bounce-, mail- or containing + or = are ignored by the rule."
+sa.sorted_recips:
+  title: The recipient list is sorted alphabetically
+  why: "The message is addressed to a long list of visible recipients, sorted alphabetically: the behavior of software that goes through an address file. Recipients also see all the addresses, which raises a privacy problem."
+  fix:
+    - "Do not send the same message to dozens of visible recipients: send one message per recipient, through a suitable tool."
+sa.suspicious_recips:
+  title: The recipients have very similar addresses
+  why: "Many recipients have almost identical addresses (contact1@, contact2@...), a sign of a generated or purchased list. More than 2.5 points."
+  fix:
+    - Send one message per recipient, and remove generated or guessed addresses from your list.
+sa.spoofed_freemail:
+  title: Free mail address with no proof of origin
+  why: The From is a Gmail, Outlook or similar address, but the message was neither authenticated by SPF or DKIM nor sent by the provider's servers. Someone is therefore using the free address from another server.
+  fix:
+    - Send messages from a free address through the provider itself (its webmail or SMTP).
+    - For a website or a tool, use an address on your domain.
+sa.forged_gmail_rcvd:
+  title: gmail.com sender not passing through Google's servers
+  why: The sending address is @gmail.com, but the message did not go through Google. It therefore cannot be aligned with gmail.com and fails DMARC for the recipients who check it.
+  fix:
+    - "Do not use a @gmail.com address as sender in a website or a sending tool: use an address on your domain."
+    - If you want to keep Gmail, configure the tool to send via smtp.gmail.com with your account.
+  fix_by_provider:
+    wordpress: In the SMTP plugin, either choose Gmail mode (OAuth), or replace the From address with an address on your domain.
+sa.forged_yahoo_rcvd:
+  title: yahoo.com sender not passing through Yahoo's servers
+  why: "The sending address is @yahoo.com, but the message did not go through Yahoo. Yahoo publishes a strict DMARC policy: these messages are rejected by many recipients."
+  fix:
+    - Replace the Yahoo address with an address on your domain for mailings from a website or a tool.

@@ -1,0 +1,563 @@
+# Famille redirects : chaîne de redirections d'une URL (outil Redirections, US-069 à US-072).
+# Variables : {url} adresse concernée, {target} cible de la redirection, {final} adresse finale,
+# {status} code HTTP, {domain} nom d'hôte, {ip} adresse IP, {value} valeur mesurée, {ttfb} attente en ms.
+# Les seuils nommés config.* sont des réglages internes de l'outil (server/src/tools/redirects/analyze.ts).
+# Sources vérifiées le 2026-11-10 : RFC 9110, RFC 6797, hstspreload.org, Google Search Central, web.dev.
+
+- id: redirects.loop
+  family: redirects
+  severity: critical
+  penalty: 4.0
+  detect:
+    signal: "la prochaine adresse de la chaîne a déjà été demandée avec les mêmes cookies"
+    notes: "RFC 9110 §15.4 : un client SHOULD détecter les redirections cycliques et intervenir. Les navigateurs affichent alors une erreur (trop de redirections)."
+  title: "La chaîne de redirections tourne en boucle"
+  why: >
+    {url} renvoie vers une adresse déjà visitée : le navigateur abandonne avec une erreur « trop de
+    redirections » et les robots n'atteignent jamais la page. Le site est inaccessible par cette adresse.
+  fix:
+    - "Repérez dans la chaîne ci-dessus les deux adresses qui se renvoient l'une à l'autre."
+    - "Cherchez les règles qui les produisent : .htaccess, configuration nginx, extension de redirection du CMS, règle de page du CDN."
+    - "Une cause fréquente : le serveur force https alors que le CDN ou le proxy lui parle en http. Testez alors l'en-tête X-Forwarded-Proto au lieu de %{HTTPS}."
+    - "Gardez une seule règle qui envoie directement vers l'adresse finale, puis relancez la mesure."
+  example_good: "RewriteCond %{HTTP:X-Forwarded-Proto} !https\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]"
+  fix_by_provider:
+    wordpress: "Dans Réglages > Général, mettez la même adresse, en https, dans « Adresse web de WordPress (URL) » et « Adresse web du site (URL) ». Puis désactivez une à une les extensions qui redirigent (Redirection, Really Simple SSL, extension de cache) et relancez la mesure après chacune ; vérifiez enfin les règles du .htaccess à la racine."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4
+
+- id: redirects.too_many
+  family: redirects
+  severity: high
+  penalty: 3.0
+  detect:
+    signal: "la chaîne dépasse le nombre maximal de requêtes réglé (15 par défaut)"
+    notes: "Google : par défaut, ses robots suivent au plus 10 sauts de redirection."
+  title: "La chaîne de redirections ne s'arrête pas"
+  why: >
+    Après {value} requêtes depuis {url}, la chaîne continue encore. Les robots de Google suivent au plus
+    10 sauts : au-delà, la page finale n'est pas explorée, et chaque saut ralentit le visiteur.
+  fix:
+    - "Lisez la chaîne ci-dessus et trouvez où elle cesse de se rapprocher de la destination."
+    - "Remplacez les redirections successives par une seule redirection 301 vers l'adresse finale."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/http-network-errors
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4
+
+- id: redirects.private_target
+  family: redirects
+  severity: high
+  penalty: 3.0
+  detect:
+    signal: "le nom résout vers une adresse non publique (privée, locale, réservée)"
+    notes: "Protection SSRF de check : aucune connexion n'est ouverte vers un réseau privé."
+  title: "La chaîne mène vers une adresse privée"
+  why: >
+    {url} pointe vers {ip}, une adresse privée ou locale. Depuis Internet, personne ne peut l'atteindre :
+    c'est une erreur de configuration DNS, ou une redirection qui vise un serveur interne.
+  fix:
+    - "Si le domaine est public, corrigez son enregistrement A ou AAAA pour qu'il pointe vers l'IP publique du serveur."
+    - "Si la redirection vise un serveur interne (préproduction, intranet), remplacez sa cible par l'adresse publique."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6890
+
+- id: redirects.unreachable
+  family: redirects
+  severity: critical
+  penalty: 5.0
+  detect:
+    signal: "aucune réponse HTTP : nom inexistant, connexion refusée, délai de 10 s dépassé, TLS impossible"
+  title: "Une adresse de la chaîne ne répond pas"
+  why: >
+    La requête vers {url} a échoué : {value}. Le visiteur voit une page d'erreur du navigateur et les
+    robots ne peuvent rien explorer.
+  fix:
+    - "Si le nom n'existe pas, créez son enregistrement A (ou CNAME) chez l'hébergeur du DNS, ou corrigez la redirection qui y mène."
+    - "Si la connexion est refusée ou expire, vérifiez que le serveur web écoute sur le port 80 et 443 et que le pare-feu les laisse passer."
+    - "Si la négociation TLS échoue, installez un certificat pour ce nom sur le serveur."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-4.3.4
+
+- id: redirects.chain_long
+  family: redirects
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "plus de 2 redirections avant la page finale"
+    notes: "Chaque saut ajoute une résolution DNS, une connexion et souvent une poignée de main TLS. Google suit au plus 10 sauts."
+  title: "Trop de redirections avant d'arriver"
+  why: >
+    {url} passe par {value} redirections avant {final}. Chaque saut ajoute une connexion complète et
+    retarde l'affichage, surtout sur mobile ; les liens qui pointent vers l'ancienne adresse transmettent
+    moins bien leur signal.
+  fix:
+    - "Faites pointer chaque ancienne adresse directement vers {final}, en une seule redirection 301."
+    - "Regroupez les règles http vers https et www dans une seule règle, comme celle proposée ci-dessus."
+    - "Mettez à jour les liens internes, le sitemap et les balises canoniques avec l'adresse finale."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/301-redirects
+    - https://developers.google.com/search/docs/crawling-indexing/http-network-errors
+
+- id: redirects.temporary_for_permanent
+  family: redirects
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "302, 303 ou 307 sur un changement qui ressemble à une canonicalisation : http vers https, ajout ou retrait du www, même chemin sur un autre domaine"
+    notes: "RFC 9110 §15.4.2 et §15.4.9 : 301 et 308 sont définitives, 302, 303 et 307 temporaires. Google traite 301/308 comme un signal fort, 302/307 comme un signal faible."
+  title: "Une redirection temporaire est utilisée pour un changement définitif"
+  why: >
+    {url} répond {status} (redirection temporaire) alors que le changement est définitif : {value}. Une redirection temporaire dit aux moteurs que
+    l'ancienne adresse reste la bonne : Google peut continuer à afficher l'ancienne et le signal des liens
+    se transfère moins bien.
+  fix:
+    - "Remplacez le code par 301 (ou 308 si la méthode doit être conservée) dans la règle qui produit ce saut."
+    - "Relancez la mesure : la ligne doit afficher 301 ou 308."
+  example_bad: "RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R,L]"
+  example_good: "RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]"
+  fix_by_provider:
+    wordpress: "Si la règle vient d'une extension de redirection (Outils > Redirection, par exemple), ouvrez-la et choisissez le code 301. Si elle est dans le .htaccess, remplacez [R,L] ou [R=302,L] par [R=301,L]."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4.2
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4.3
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4.8
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4.9
+    - https://developers.google.com/search/docs/crawling-indexing/301-redirects
+
+- id: redirects.redirect_to_error
+  family: redirects
+  severity: high
+  penalty: 3.0
+  detect:
+    signal: "au moins une redirection, page finale en 4xx ou 5xx"
+    notes: "Google retire de l'index une URL qui répond 4xx (sauf 429). Une redirection doit viser une page qui existe."
+  title: "La redirection mène vers une page en erreur"
+  why: >
+    {url} redirige (redirection {value}) vers {final}, qui répond {status}. Le visiteur arrive sur une
+    erreur et Google retire la page de son index : le bénéfice de la redirection est perdu.
+  fix:
+    - "Changez la cible de la redirection pour une page qui répond 200 : la nouvelle page équivalente, ou à défaut la rubrique parente."
+    - "Si l'adresse de départ est un lien court (bit.ly, tinyurl.com...), changez sa destination dans le compte du raccourcisseur : aucune règle serveur n'est à écrire."
+    - "Si le contenu n'existe plus du tout, supprimez la redirection et laissez l'ancienne adresse répondre 410."
+    - "Si la cible répond 5xx, c'est le serveur de destination qui est en panne : consultez ses journaux d'erreurs."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/http-network-errors
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.5.5
+
+- id: redirects.final_error
+  family: redirects
+  severity: high
+  penalty: 3.0
+  detect:
+    signal: "aucune redirection, réponse 4xx ou 5xx"
+  title: "L'adresse répond par une erreur"
+  why: >
+    {url} répond {status} sans redirection. Si cette adresse reçoit encore des visites ou des liens, ils
+    aboutissent à une erreur ; Google retire de l'index les URL en 4xx.
+  fix:
+    - "Si la page a été déplacée, ajoutez une redirection 301 vers sa nouvelle adresse."
+    - "Si elle a été supprimée volontairement, laissez 404 ou 410 et retirez les liens qui y mènent."
+    - "Si l'erreur est 5xx, consultez les journaux d'erreurs du serveur ou de l'application."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/http-network-errors
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.5.5
+
+- id: redirects.redirect_without_location
+  family: redirects
+  severity: medium
+  penalty: 1.5
+  detect:
+    signal: "code 3xx sans en-tête Location"
+    notes: "RFC 9110 §10.2.2 : Location désigne la cible vers laquelle rediriger automatiquement."
+  title: "Un code de redirection sans adresse de destination"
+  why: >
+    {url} répond {status} mais n'indique aucune destination (en-tête Location absent). Le navigateur
+    reste sur une page vide et les robots s'arrêtent là.
+  fix:
+    - "Ajoutez l'en-tête Location avec l'adresse complète de destination dans la règle ou le code qui produit ce {status}."
+    - "Si aucune redirection n'est voulue, faites répondre la page en 200."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-10.2.2
+
+- id: redirects.https_to_http
+  family: redirects
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "redirection d'une adresse https vers une adresse http"
+  title: "Une redirection repasse de https à http"
+  why: >
+    {url} renvoie vers {target}, en clair. Le visiteur perd le chiffrement en cours de route, le navigateur
+    affiche « non sécurisé », et un site qui publie HSTS se bloque lui-même.
+  fix:
+    - "Changez la cible de cette redirection pour son équivalent en https://."
+    - "Vérifiez le réglage d'adresse du site dans le CMS : il doit commencer par https://."
+  fix_by_provider:
+    wordpress: "Dans Réglages > Général, les deux adresses « Adresse web de WordPress (URL) » et « Adresse web du site (URL) » doivent commencer par https://."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6797#section-7.2
+
+- id: redirects.http_not_redirected
+  family: redirects
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "la page finale est servie en http"
+    notes: "RFC 6797 §7.2 : un hôte HSTS qui reçoit une requête http SHOULD répondre par une redirection permanente vers https."
+  title: "La version http n'est pas redirigée vers https"
+  why: >
+    {url} est servie en clair au lieu de renvoyer vers https://{domain}. Les visiteurs qui tapent l'adresse
+    sans https restent sur une page non chiffrée, marquée « non sécurisé » par les navigateurs.
+  fix:
+    - "Installez un certificat pour {domain} si ce n'est pas fait (Let's Encrypt est gratuit chez la plupart des hébergeurs)."
+    - "Ajoutez la règle proposée ci-dessus : une seule redirection 301 de http vers https."
+    - "Derrière un CDN, activez plutôt l'option « toujours utiliser HTTPS » du CDN."
+  fix_by_provider:
+    wordpress: "Dans Réglages > Général, passez les deux adresses du site en https://, puis ajoutez la règle 301 ci-dessus au début du .htaccess, avant le bloc # BEGIN WordPress."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6797#section-7.2
+    - https://hstspreload.org/
+
+- id: redirects.hsts_missing
+  family: redirects
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "page finale https sans en-tête Strict-Transport-Security"
+    notes: "RFC 6797 §6.1. L'en-tête n'a d'effet que reçu en https (§8.1)."
+  title: "HSTS absent sur la page https"
+  why: >
+    {domain} ne publie pas HSTS : à chaque visite tapée sans https, le navigateur passe d'abord par http,
+    où un intermédiaire peut intercepter ou détourner la redirection.
+  fix:
+    - "Ajoutez l'en-tête proposé ci-dessus dans la configuration https du site."
+    - "Commencez par une durée courte (max-age=300) si vous n'êtes pas sûr que tous les sous-domaines ont un certificat, puis montez à un an."
+    - "N'ajoutez includeSubDomains que si tous les sous-domaines de {domain} répondent en https."
+  example_good: "Strict-Transport-Security: max-age=31536000; includeSubDomains"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6797#section-6.1
+    - https://www.rfc-editor.org/rfc/rfc6797#section-8.1
+
+- id: redirects.hsts_short
+  family: redirects
+  severity: low
+  penalty: 0.5
+  detect:
+    signal: "max-age absent ou inférieur à 31536000 secondes"
+    notes: "La liste de préchargement HSTS exige au moins 31536000 secondes (un an)."
+  title: "Durée HSTS trop courte"
+  why: >
+    L'en-tête HSTS de {domain} ne vaut que {value}. Passé ce délai sans visite, le navigateur oublie la
+    règle et repasse par http à la visite suivante.
+  fix:
+    - "Portez max-age à 31536000 (un an) une fois le site stable en https."
+  example_good: "Strict-Transport-Security: max-age=31536000; includeSubDomains"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6797#section-6.1.1
+    - https://hstspreload.org/
+
+- id: redirects.hsts_no_subdomains
+  family: redirects
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "HSTS sans la directive includeSubDomains"
+    notes: "RFC 6797 §6.1.2 : directive facultative. Exigée pour la liste de préchargement."
+  title: "HSTS ne couvre pas les sous-domaines"
+  why: >
+    HSTS protège {domain} mais pas ses sous-domaines : un sous-domaine oublié reste joignable en clair.
+    C'est facultatif, mais nécessaire pour la liste de préchargement des navigateurs.
+  fix:
+    - "Vérifiez que tous les sous-domaines de {domain} répondent en https avec un certificat valide."
+    - "Ajoutez alors includeSubDomains à l'en-tête, comme ci-dessus."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6797#section-6.1.2
+    - https://hstspreload.org/
+
+- id: redirects.meta_refresh
+  family: redirects
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "page 2xx dont le HTML contient <meta http-equiv=refresh content=\"N; url=...\">"
+    notes: "Google interprète un meta refresh immédiat comme permanent, différé comme temporaire, et recommande une redirection côté serveur."
+  title: "Redirection par meta refresh au lieu d'une redirection HTTP"
+  why: >
+    {url} charge d'abord une page, puis l'envoie vers {target} après {value} seconde(s) par une balise
+    meta. Le visiteur télécharge une page inutile ; Google comprend ce procédé, mais recommande une
+    redirection serveur, et traite un délai non nul comme temporaire.
+  fix:
+    - "Remplacez la balise par une redirection 301 côté serveur, comme proposé ci-dessus."
+    - "Supprimez ensuite la page intermédiaire."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/301-redirects
+
+- id: redirects.refresh_header
+  family: redirects
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "réponse 2xx avec un en-tête Refresh qui contient une URL"
+    notes: "Google range l'en-tête Refresh avec le meta refresh (son équivalent HTTP)."
+  title: "Redirection par l'en-tête Refresh au lieu d'un code 3xx"
+  why: >
+    {url} répond normalement puis demande au navigateur d'aller vers {target} après {value} seconde(s)
+    avec l'en-tête Refresh. Ce n'est pas une redirection HTTP standard : préférez un code 301.
+  fix:
+    - "Remplacez l'en-tête Refresh par une redirection 301 côté serveur, comme proposé ci-dessus."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/301-redirects
+
+- id: redirects.js_redirect
+  family: redirects
+  severity: medium
+  penalty: 1.5
+  detect:
+    signal: "page presque vide dont un script change location vers une adresse littérale"
+    notes: "Repéré dans le HTML sans l'exécuter. Google : n'utilisez une redirection JavaScript que si une redirection serveur ou meta refresh est impossible ; elle peut ne jamais être vue si le rendu échoue."
+  title: "Redirection en JavaScript au lieu d'une redirection HTTP"
+  why: >
+    {url} n'envoie vers {target} que par un script. Sans JavaScript (certains robots, aperçus de liens,
+    navigateurs bloquants) la redirection n'a pas lieu, et Google ne la voit que si le rendu de la page réussit.
+  fix:
+    - "Remplacez le script par une redirection 301 côté serveur, comme proposé ci-dessus."
+    - "Si seul le JavaScript est possible (hébergement statique sans règles), ajoutez au moins un meta refresh immédiat et un lien visible vers {target}."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/301-redirects
+
+- id: redirects.js_seen
+  family: redirects
+  severity: info
+  penalty: 0
+  detect:
+    signal: "page avec du contenu propre, dont un script change location vers une adresse littérale"
+    notes: "Non suivi : sur une page qui a son propre contenu, le changement d'adresse dépend souvent d'un clic ou d'une condition."
+  title: "Un script de la page peut envoyer ailleurs"
+  why: >
+    Le HTML de {url} contient un changement d'adresse vers {target}. La page ayant son propre contenu,
+    check ne l'a pas suivi : il dépend probablement d'une action ou d'une condition.
+  fix:
+    - "Si cette redirection doit avoir lieu à chaque visite, faites-la côté serveur en 301."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/301-redirects
+
+- id: redirects.canonical_missing
+  family: redirects
+  severity: low
+  penalty: 0.5
+  detect:
+    signal: "page finale HTML en 2xx sans link rel=canonical ni en-tête Link rel=canonical"
+    notes: "Google : la redirection et le rel=canonical sont des signaux forts de l'URL canonique."
+  title: "La page finale n'indique pas son adresse canonique"
+  why: >
+    {url} ne déclare pas son adresse canonique. Si la même page répond aussi avec des paramètres ou sous
+    une autre adresse, Google choisit lui-même laquelle afficher.
+  fix:
+    - "Ajoutez dans le <head> la balise proposée ci-dessus, avec l'adresse absolue de la page."
+  fix_by_provider:
+    wordpress: "Yoast SEO et Rank Math ajoutent la balise canonique d'office : vérifiez que l'une de ces extensions est active et que ce type de contenu n'est pas exclu de l'indexation dans ses réglages."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls
+
+- id: redirects.canonical_mismatch
+  family: redirects
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "canonique de la page finale différente de l'URL finale (schéma, hôte ou chemin ; les paramètres de requête sont ignorés)"
+  title: "La canonique ne correspond pas à l'adresse où la redirection aboutit"
+  why: >
+    La redirection aboutit à {url}, mais la page déclare {target} comme canonique. Les deux signaux se
+    contredisent : Google peut choisir l'une ou l'autre, et la redirection aurait dû viser directement la canonique.
+  fix:
+    - "Si {target} est la bonne adresse, faites aboutir la redirection directement sur elle."
+    - "Si c'est {url} la bonne adresse, corrigez la balise canonique comme proposé ci-dessus."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls
+
+- id: redirects.canonical_relative
+  family: redirects
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "canonique écrite en chemin relatif"
+    notes: "Google recommande des adresses absolues pour rel=canonical, balise comme en-tête."
+  title: "La canonique est écrite en chemin relatif"
+  why: >
+    La page déclare {value} comme canonique, sans le schéma ni le domaine. Google recommande une adresse
+    absolue : une copie du site sur un autre domaine hériterait sinon de la même canonique.
+  fix:
+    - "Écrivez l'adresse complète, comme proposé ci-dessus."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls
+
+- id: redirects.final_noindex
+  family: redirects
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "X-Robots-Tag ou meta robots de la page finale contient noindex ou none"
+  title: "La page finale interdit son indexation"
+  why: >
+    {url} demande aux moteurs de ne pas l'afficher dans les résultats. Si c'est la page où vos
+    redirections aboutissent, tout le trafic de recherche vers ces adresses est perdu.
+  fix:
+    - "Si la page doit être trouvée, retirez noindex de l'en-tête X-Robots-Tag (configuration du serveur) ou de la balise meta robots (réglage SEO du CMS)."
+  fix_by_provider:
+    wordpress: "Dans Réglages > Lecture, décochez « Demander aux moteurs de recherche de ne pas indexer ce site ». Dans Yoast SEO ou Rank Math, vérifiez aussi le réglage d'indexation de ce type de contenu."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag
+
+- id: redirects.cert_invalid
+  family: redirects
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "certificat expiré, chaîne non reconnue ou nom non couvert, sur un saut https"
+    notes: "RFC 9110 §4.3.4 : le client MUST vérifier que l'identité du service correspond à l'origine."
+  title: "Certificat invalide sur {domain}"
+  why: >
+    Le certificat présenté par {domain} est refusé : {value}. Les navigateurs bloquent la page derrière un
+    avertissement de sécurité, et la redirection n'est jamais suivie par un visiteur.
+  fix:
+    - "Renouvelez ou réinstallez le certificat de {domain} depuis le panneau de l'hébergeur (Let's Encrypt : relancez l'émission)."
+    - "Si le nom n'est pas couvert, émettez un certificat qui contient {domain} dans ses noms (avec et sans www si les deux répondent)."
+    - "Si la chaîne n'est pas reconnue, installez le certificat intermédiaire fourni par l'autorité avec le certificat du site."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-4.3.4
+
+- id: redirects.cert_expiring
+  family: redirects
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "certificat valide qui expire dans moins de config.cert_soon_days (14) jours"
+  title: "Le certificat de {domain} expire bientôt"
+  why: >
+    Le certificat de {domain} n'est plus valide que {value} jour(s). S'il n'est pas renouvelé à temps, les
+    navigateurs bloqueront le site derrière un avertissement.
+  fix:
+    - "Vérifiez que le renouvellement automatique est actif dans le panneau de l'hébergeur ou la tâche certbot."
+    - "Lancez un renouvellement manuel maintenant, puis relancez la mesure."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-4.3.4
+
+- id: redirects.heavy_body
+  family: redirects
+  severity: low
+  penalty: 0.5
+  detect:
+    signal: "HTML de la page finale de 2 Mo ou plus une fois décompressé"
+    notes: "Google : Googlebot lit les 2 premiers Mo d'un fichier pris en charge, taille comptée sur les données décompressées."
+  title: "Le HTML de la page finale est très lourd"
+  why: >
+    Le document HTML de {url} pèse {value}. Googlebot n'en lit que les 2 premiers Mo : ce qui suit n'est
+    pas pris en compte pour l'indexation, et le visiteur attend le téléchargement complet.
+  fix:
+    - "Sortez du HTML les données en ligne volumineuses (images en base64, gros blocs JSON, styles et scripts intégrés) vers des fichiers séparés."
+    - "Paginez les listes très longues."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/googlebot
+
+- id: redirects.uncompressed
+  family: redirects
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "réponse texte de config.compress_min (10 Ko) ou plus sans Content-Encoding, alors que la requête annonçait Accept-Encoding"
+    notes: "RFC 9110 §8.4 : Content-Encoding indique le codage appliqué au contenu (gzip, br...)."
+  title: "La page finale n'est pas compressée"
+  why: >
+    {url} envoie {value} de texte sans compression, alors que le navigateur l'accepte. Une compression
+    gzip ou Brotli divise souvent le volume par trois à cinq, et l'affichage arrive plus vite.
+  fix:
+    - "Apache : activez le module deflate (ou brotli) pour text/html, text/css, application/javascript et application/json."
+    - "nginx : ajoutez gzip on; et gzip_types text/css application/javascript application/json; dans le bloc http."
+  example_good: "# nginx\ngzip on;\ngzip_types text/css application/javascript application/json image/svg+xml;"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-8.4
+
+- id: redirects.slow
+  family: redirects
+  severity: low
+  penalty: 0.5
+  detect:
+    signal: "chaîne complète au-delà de config.slow_total_ms (3 s) ou attente du premier octet de la page finale au-delà de 800 ms"
+    notes: "web.dev : un TTFB est bon à 0,8 s ou moins, mauvais au-delà de 1,8 s."
+  title: "La chaîne est lente"
+  why: >
+    Il faut {value} ms pour arriver sur {url}, dont {ttfb} ms d'attente du premier octet sur la page
+    finale. Le visiteur attend avant de voir quoi que ce soit.
+  fix:
+    - "Lisez le détail par saut ci-dessus : si le DNS ou la connexion dominent, réduisez le nombre de sauts et de domaines traversés."
+    - "Si l'attente du premier octet domine, activez le cache de pages du CMS ou du serveur (LiteSpeed Cache, WP Rocket, cache nginx)."
+    - "Relancez la commande curl proposée ci-dessus avant et après chaque changement : elle mesure les mêmes phases depuis votre poste."
+  references:
+    - https://web.dev/articles/ttfb
+
+- id: redirects.variants_diverge
+  family: redirects
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "les variantes http/https, avec et sans www n'aboutissent pas toutes à la même URL"
+    notes: "Google : la redirection est un signal fort de l'URL canonique ; des variantes qui divergent créent des doublons."
+  title: "Les variantes du site n'aboutissent pas à la même adresse"
+  why: >
+    Selon la façon de taper l'adresse, {domain} aboutit à {value} pages différentes. Google voit des
+    doublons, partage entre elles le signal des liens, et le visiteur ne retrouve pas toujours la même version.
+  fix:
+    - "Choisissez une seule adresse de référence, ici {final}."
+    - "Faites rediriger toutes les autres variantes vers elle en une seule 301, avec la règle proposée ci-dessus."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls
+    - https://www.rfc-editor.org/rfc/rfc6797#section-7.2
+
+- id: redirects.variant_extra_hops
+  family: redirects
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "une variante passe par plus d'une redirection avant l'adresse canonique"
+  title: "Certaines variantes passent par plusieurs redirections"
+  why: >
+    Avant d'arriver sur {final}, ces variantes enchaînent plusieurs redirections (par exemple http,
+    puis https, puis www) : {value}. Une seule règle suffit, et chaque saut évité accélère la première visite.
+  fix:
+    - "Remplacez les règles successives par la règle unique proposée ci-dessus, qui envoie chaque variante directement vers {target}."
+  references:
+    - https://developers.google.com/search/docs/crawling-indexing/301-redirects
+
+- id: redirects.variant_unreachable
+  family: redirects
+  severity: low
+  penalty: 0.5
+  detect:
+    signal: "une variante ne répond pas (nom absent, connexion refusée, TLS impossible)"
+    notes: "hstspreload.org exige que le sous-domaine www fonctionne en https s'il a un enregistrement DNS."
+  title: "Une variante du site ne répond pas"
+  why: >
+    {value} ne répond pas. Les visiteurs qui tapent cette forme de l'adresse, ou qui suivent un vieux lien,
+    tombent sur une erreur au lieu d'être redirigés.
+  fix:
+    - "Si le nom n'existe pas dans le DNS, créez-le (CNAME www vers {domain}, par exemple) puis redirigez-le en 301."
+    - "Si le nom existe mais ne répond pas en https, ajoutez-le au certificat du site."
+  references:
+    - https://hstspreload.org/
+
+- id: redirects.language_redirect
+  family: redirects
+  severity: info
+  penalty: 0
+  detect:
+    signal: "302, 303 ou 307 sur la même origine qui n'ajoute qu'un paramètre de langue ou de région (?locale=fr-fr, ?hl=fr), ou un préfixe /fr, /en-gb, ou dont la réponse porte Vary: Accept-Language"
+    notes: "Négociation de langue : la cible dépend du visiteur (Accept-Language). Un 301 la figerait pour tout le monde. Ce saut n'est compté ni comme faute ni comme saut de trop dans la comparaison des variantes."
+  title: "Redirection de langue, temporaire à juste titre"
+  why: >
+    {url} renvoie vers {target} en {status} selon la langue annoncée par le navigateur. C'est une
+    négociation : une redirection définitive figerait cette langue pour tous les visiteurs et pour les moteurs.
+  fix:
+    - "Gardez ce code temporaire. Pour les moteurs, déclarez les versions linguistiques avec des liens hreflang plutôt qu'avec la redirection."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4.3
+    - https://developers.google.com/search/docs/specialty/international/localized-versions

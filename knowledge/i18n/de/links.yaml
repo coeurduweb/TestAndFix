@@ -1,0 +1,143 @@
+links.shortener:
+  title: Die Nachricht verwendet einen Link-Verkürzer
+  why: "Der Link {url} läuft über einen öffentlichen Link-Verkürzer. Diese Domains werden von Spammern mitgenutzt: Deren Ruf fällt auf Ihre Nachricht zurück, und der Empfänger sieht nicht, wohin der Link führt."
+  fix:
+    - Ersetzen Sie den verkürzten Link durch die vollständige Adresse der Seite auf {domain}.
+    - Ist die Adresse zu lang, richten Sie eine kurze Weiterleitung auf Ihrer eigenen Domain ein, zum Beispiel https://{domain}/promo.
+    - Wenn Sie Klick-Tracking brauchen, nutzen Sie das Ihres Versandtools mit einer eigenen Tracking-Domain.
+links.text_url_mismatch:
+  title: Ein Link zeigt eine Adresse an und führt zu einer anderen
+  why: "Der Linktext zeigt eine Adresse, aber der Klick führt zu {url}. Das ist das Kennzeichen von Phishing: Anti-Phishing-Filter bestrafen diese Abweichung stark."
+  fix:
+    - Wenn der Linktext eine Adresse ist, lassen Sie ihn genau auf diese Adresse zeigen.
+    - Andernfalls schreiben Sie einen beschreibenden Linktext, zum Beispiel „Meine Bestellung ansehen“, statt einer Adresse.
+    - Wenn die Abweichung vom Klick-Tracking stammt, richten Sie eine Tracking-Domain auf einer Subdomain von {domain} ein.
+links.http_not_https:
+  title: Links verwenden http statt https
+  why: Der Link {url} ist nicht verschlüsselt. Browser kennzeichnen ihn als unsicher, und ein unverschlüsselter Link ist ein negatives Signal für Filter, die die Qualität von Links bewerten.
+  fix:
+    - Ersetzen Sie in allen Links der Vorlage http:// durch https://.
+    - Antwortet die Seite nicht über HTTPS, installieren Sie ein Zertifikat auf der Website (Let's Encrypt ist bei den meisten Hostern kostenlos).
+  fix_by_provider:
+    sendgrid: "Stammt das http vom Klick-Tracking, aktivieren Sie SSL auf der Tracking-Domain: Settings > Sender Authentication > Link Branding, dann folgen Sie der Anleitung SSL click tracking von SendGrid."
+links.ip_literal:
+  title: Ein Link zeigt auf eine IP-Adresse statt auf einen Domainnamen
+  why: "Der Link {url} verwendet eine IP-Adresse. Seriöse Websites haben einen Domainnamen: Filter, darunter die von Microsoft, behandeln solche Links als verdächtig."
+  fix:
+    - Ersetzen Sie die IP-Adresse durch den Domainnamen der Website, zum Beispiel https://{domain}/.
+    - Hat der Dienst keinen Namen, richten Sie eine Subdomain von {domain} ein, die auf diese IP zeigt, und installieren Sie ein Zertifikat.
+links.nonstandard_port:
+  title: Ein Link zeigt auf einen ungewöhnlichen Port
+  why: Der Link {url} zielt auf einen anderen Port als die üblichen Web-Ports. Microsoft schlägt vor, den Spam-Score dieser Nachrichten zu erhöhen, und manche Firmennetze blockieren diese Ports.
+  fix:
+    - Stellen Sie die Seite auf Port 443 (Standard-HTTPS) bereit und entfernen Sie die Portnummer aus dem Link.
+    - Läuft die Anwendung auf einem anderen Port, betreiben Sie sie hinter einem Reverse Proxy auf einer Subdomain von {domain}.
+links.uribl_listed:
+  title: Ein Link der Nachricht zeigt auf eine Domain auf der Sperrliste
+  why: "Die Domain des Links {url} ist auf {list_name} gelistet. Filter prüfen diese Listen für jeden Link: Oft genügt eine einzige gelistete Domain, um die Nachricht in den Spam-Ordner zu schicken."
+  fix:
+    - Wenn die Domain nicht Ihnen gehört, entfernen Sie diesen Link aus der Nachricht oder ersetzen Sie ihn durch eine andere Quelle.
+    - Gehört sie Ihnen oder Ihrer Tracking-Domain, lesen Sie die Diagnose der Familie Sperrliste, beseitigen Sie die Ursache und beantragen Sie die Entfernung unter {delist_url}.
+    - Prüfen Sie, dass der Link nicht über einen Verkürzer oder eine gemeinsam genutzte Tracking-Domain läuft.
+links.domain_recent:
+  title: Ein Link zeigt auf eine sehr neu registrierte Domain
+  why: "Die Domain des Links {url} wurde vor {value} registriert. Neue Domains werden massenhaft für Phishing genutzt: Filter schenken ihnen wenig Vertrauen."
+  fix:
+    - Wenn möglich, lassen Sie den Link auf eine Seite Ihrer älteren Hauptdomain {domain} zeigen.
+    - Soll die neue Domain bleiben, schalten Sie sie mit einer echten Website online und erhöhen Sie das Volumen der Sendungen, die sie nennen, nach und nach.
+links.broken:
+  title: Ein Link der Nachricht ist defekt
+  why: "Der Link {url} antwortet mit dem Fehler {value}. Der Leser landet auf einer Fehlerseite, und ein toter Link ist für Filter, die Links prüfen, ein Zeichen für eine vernachlässigte Nachricht."
+  fix:
+    - Öffnen Sie den Link in einem Browser, um den Fehler zu bestätigen.
+    - Korrigieren Sie die Adresse in der Vorlage oder stellen Sie die Seite auf der Website wieder her.
+    - Ist die Seite umgezogen, richten Sie eine 301-Weiterleitung von der alten auf die neue Adresse ein.
+links.redirect_chain:
+  title: Ein Link läuft über mehrere Weiterleitungen
+  why: "Der Link {url} führt über {value} Weiterleitungen, bevor er ankommt. Jeder Schritt verlangsamt das Öffnen und kann über eine Domain mit schlechtem Ruf führen. Lange Ketten sind typisch für Spam."
+  fix:
+    - Schreiben Sie in die Nachricht die endgültige Adresse der Seite, also die nach den Weiterleitungen.
+    - "Behalten Sie höchstens eine Weiterleitung: die des Klick-Trackings Ihres Versandtools."
+links.open_redirect:
+  title: Ein Link läuft über eine offene Weiterleitung einer fremden Website
+  why: Der Link {url} nutzt die Weiterleitung einer anderen Website, um das wahre Ziel zu verbergen. Diese Technik dient dazu, Filter zu umgehen, die sie erkennen.
+  fix:
+    - Ersetzen Sie diesen Link durch die direkte Adresse der Zielseite.
+    - Haben Sie den Link aus einer Suchmaschine oder einem sozialen Netzwerk kopiert, öffnen Sie die Seite und kopieren Sie die Adresse aus der Browserleiste.
+links.tracking_domain_unbranded:
+  title: Die Tracking-Links nutzen die gemeinsame Domain des Versandtools
+  why: Die Klicks laufen über die Domain von {provider}, die mit allen Kunden dieses Dienstes geteilt wird. Verschickt einer von ihnen Spam, kann diese Domain bestraft werden und mit ihr Ihre Links.
+  fix:
+    - Richten Sie eine eigene Tracking-Domain auf einer Subdomain ein, zum Beispiel clic.{domain}.
+    - Veröffentlichen Sie den CNAME-Eintrag, den Ihr Versandtool angibt, und aktivieren Sie die Domain in dessen Einstellungen.
+  fix_by_provider:
+    sendgrid: "Settings > Sender Authentication > Link Branding > Brand your links: Wählen Sie eine Subdomain von {domain} und veröffentlichen Sie die angezeigten CNAME-Einträge."
+    mailgun: Tragen Sie im Versanddomain im Bereich Tracking eine Tracking-Domain auf {domain} ein und veröffentlichen Sie den angegebenen CNAME.
+    amazon_ses: Erstellen Sie ein Configuration Set mit einer eigenen Weiterleitungsdomain (custom redirect domain) für das Klick-Tracking und veröffentlichen Sie den CNAME zum Tracking-Endpunkt Ihrer Region.
+links.executable_target:
+  title: Ein Link lädt eine ausführbare Datei herunter
+  why: Der Link {url} lädt direkt eine Datei vom Typ {value} herunter. Gmail lehnt diesen Dateityp als Anhang ab, und Filter behandeln einen Link auf eine ausführbare Datei genauso.
+  fix:
+    - Ersetzen Sie den direkten Link durch einen Link auf eine Download-Seite von {domain}, die die Datei erklärt.
+    - Handelt es sich um Software, verteilen Sie sie über einen App-Store oder eine signierte Download-Seite.
+links.unsafe_scheme:
+  title: Ein Link verwendet ein gefährliches Protokoll (javascript:, data:, file:)
+  why: "Der Link {url} ist keine Web-Adresse. Clients deaktivieren ihn, und Filter sehen darin einen Versuch, Code auszuführen oder eine lokale Datei zu öffnen."
+  fix:
+    - Ersetzen Sie jeden solchen Link durch eine https-Adresse einer Seite von {domain}.
+    - Hat der Editor Ihres Tools einen Link javascript:void(0) erzeugt, entfernen Sie den Link oder geben Sie ihm ein echtes Ziel.
+links.userinfo_in_url:
+  title: Ein Link enthält ein @, das sein echtes Ziel verbirgt
+  why: "In {url} ignoriert der Browser alles vor dem @: Der Link scheint zu einer Website zu führen und führt zu einer anderen. Das ist eine bekannte und bestrafte Phishing-Technik."
+  fix:
+    - Entfernen Sie den Teil Benutzername:Passwort@ aus dem Link.
+    - Muss der Link eine Kennung übermitteln, geben Sie sie als Abfrageparameter nach dem ? an.
+links.punycode_lookalike:
+  title: Ein Link verwendet eine Domain mit Sonderzeichen, die eine bekannte Domain nachahmt
+  why: Der Link {url} verwendet einen Domainnamen, der mit Zeichen geschrieben ist, die denen einer bekannten Domain ähneln. Das ist eine Methode der Identitätsfälschung, die Filter und Browser überwachen.
+  fix:
+    - Wenn diese Domain nicht Ihnen gehört, entfernen Sie den Link.
+    - Gehört Ihnen diese Domain mit Sonderzeichen, verwenden Sie in E-Mails bevorzugt ihre Version ohne Sonderzeichen auf {domain}.
+links.free_hosting_or_dyndns:
+  title: Ein Link zeigt auf ein kostenloses Hosting oder einen dynamischen DNS-Dienst
+  why: Der Link {url} liegt bei einem Dienst, auf dem jeder kostenlos eine Seite anlegen kann. Solche Dienste werden stark für Phishing genutzt, und ihr Ruf ist schlecht.
+  fix:
+    - Hosten Sie die Seite auf Ihrer eigenen Domain {domain}.
+    - Verwenden Sie einen Seitengenerator, verbinden Sie dort eine Subdomain von {domain}.
+links.cloud_share:
+  title: Die Nachricht verweist auf eine Dateifreigabe mit wenig Erklärung
+  why: Eine kurze Nachricht, die auf eine geteilte Datei verweist, ähnelt gefälschten Rechnungsversänden. Filter und Empfänger misstrauen ihr.
+  fix:
+    - Erklären Sie in wenigen Sätzen, was die Datei enthält und warum Sie sie schicken.
+    - Bei einem erwarteten Dokument (Rechnung, Angebot) hängen Sie ein PDF an oder stellen Sie es in einem Kundenbereich auf {domain} bereit.
+links.no_link_to_sender_domain:
+  title: Kein Link führt zur Website des Absenders
+  why: "Die Nachricht stammt von {domain}, aber kein Link führt zu dieser Domain. Filter setzen die Versanddomain und die Links in Beziehung: Eine völlige Abweichung erinnert an Versände im Auftrag Dritter."
+  fix:
+    - Setzen Sie mindestens einen Link auf Ihre Website {domain}, zum Beispiel im Logo und in der Fußzeile.
+    - Verkaufen Sie auf einem Marktplatz, setzen Sie zusätzlich einen Link auf Ihre eigene Website.
+links.localhost_or_staging:
+  title: Ein Link zeigt auf eine Testumgebung oder ein privates Netz
+  why: Der Link {url} funktioniert nur in Ihrem Netz oder auf Ihrem Testserver. Der Empfänger landet auf einer Fehlerseite, und die Nachricht wirkt, als sei sie nicht geprüft worden.
+  fix:
+    - Ersetzen Sie die Testadresse durch die öffentliche Adresse auf {domain}.
+    - Stellen Sie in Ihrer Anwendung die Basisadresse der Website (zum Beispiel APP_URL oder siteurl) auf den Produktionswert ein.
+  fix_by_provider:
+    wordpress: "Prüfen Sie Einstellungen > Allgemein > Website-Adresse und suchen Sie die alte Adresse in der Datenbank mit WP-CLI: wp search-replace 'https://preprod.{domain}' 'https://{domain}' --dry-run."
+links.too_many:
+  title: Die Nachricht enthält viele Links für wenig Text
+  why: Die Nachricht enthält {value} Links. Eine hohe Linkdichte im Verhältnis zum Text ist ein typisches Spam-Profil, und sie erhöht das Risiko, auf eine Domain mit schlechtem Ruf zu stoßen.
+  fix:
+    - Behalten Sie einen Haupt-Aufruf zur Aktion und einige wenige Nebenlinks.
+    - Entfernen Sie doppelte Links, die auf dieselbe Seite führen.
+links.empty_href:
+  title: Manche Links haben kein Ziel
+  why: Manche Schaltflächen oder Links führen nirgendwohin. Der Leser klickt ohne Ergebnis, und die Nachricht wirkt unfertig.
+  fix:
+    - Geben Sie jedem Link eine https-Adresse oder entfernen Sie das a-Tag um den Text.
+    - Prüfen Sie besonders die Symbole der sozialen Netzwerke in der Fußzeile.
+links.mailto_only:
+  title: Die Nachricht enthält nur Mail-Links (mailto)
+  why: Alle Links öffnen eine neue Nachricht. Das wird nicht bestraft, aber der Leser kann auf einer Website nicht überprüfen, wer Sie sind.
+  fix:
+    - Fügen Sie einen Link auf Ihre Website {domain} hinzu, zum Beispiel in der Signatur.

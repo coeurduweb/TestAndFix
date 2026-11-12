@@ -1,0 +1,248 @@
+sa.spf_pass:
+  title: "SPF válido para la dirección de sobre"
+  why: "La IP {ip} figura en el registro SPF de {envelope_domain}. Es el comportamiento esperado: SpamAssassin apenas concede bonificación por ello, pero su ausencia hace perder la alineación de DMARC por el lado de SPF."
+  fix:
+    - "Nada que corregir. Mantén el registro SPF de {envelope_domain} actualizado cada vez que añadas o quites una herramienta de envío."
+sa.spf_fail:
+  title: "SPF en fallo estricto (-all) para la dirección de sobre"
+  why: "{envelope_domain} publica un SPF que termina en -all y la IP {ip} no figura en él. SpamAssassin da poco peso a este resultado, pero para Gmail, Outlook o Yahoo es un defecto de autenticación: sin DKIM válido alineado con {domain}, el mensaje acaba en spam o se rechaza. Caso típico: una herramienta nueva (CRM, tienda, formulario) envía en nombre del dominio sin haberse añadido al SPF."
+  fix:
+    - "Identifica el servicio que posee la IP {ip} (proveedor detectado: {provider})."
+    - "Añade su mecanismo include: o ip4: al registro SPF de {envelope_domain}, antes de -all."
+    - "Si ese servicio no debe enviar por ti, corta sus envíos en nombre de {domain}."
+sa.spf_softfail:
+  title: "SPF en fallo suave (~all) para la dirección de sobre"
+  why: "La IP {ip} no está autorizada por el SPF de {envelope_domain}, que termina en ~all. El mensaje no se rechaza por ello, pero pierde el beneficio del SPF y DMARC falla si DKIM no está alineado. Suele tratarse de una herramienta de envío olvidada en el SPF."
+  fix:
+    - "Averigua qué servicio envía desde {ip} ({provider}) y añade su include: al SPF de {envelope_domain}."
+    - "Si el envío pasa por un servidor WordPress o un alojamiento compartido, envía mejor los correos por SMTP autenticado a tu correo oficial."
+  fix_by_provider:
+    wordpress: "Instala una extensión SMTP (WP Mail SMTP, FluentSMTP) y envía a través del servidor de tu correo en lugar de la función mail() de PHP."
+sa.spf_neutral:
+  title: "SPF neutro (?all) para la dirección de sobre"
+  why: "El SPF de {envelope_domain} no dice ni sí ni no para la IP {ip}, normalmente porque termina en ?all. Un SPF neutro no protege nada: SpamAssassin lo penaliza más que un softfail."
+  fix:
+    - "Enumera todos los servicios que envían en nombre de {envelope_domain} y añádelos al SPF."
+    - "Sustituye ?all por ~all, y después por -all cuando los informes DMARC confirmen que ningún envío legítimo falla."
+sa.spf_none:
+  title: "No hay ningún registro SPF para la dirección de sobre"
+  why: "{envelope_domain} no publica ningún SPF. SpamAssassin casi no lo penaliza, pero Gmail y Yahoo exigen como mínimo SPF o DKIM, y cualquiera puede enviar en nombre de este dominio."
+  fix:
+    - "Crea un registro TXT en la raíz de {envelope_domain} que empiece por v=spf1."
+    - "Añade un include: por cada servicio de envío (correo, newsletter, web) y termina con ~all."
+sa.spf_helo_pass:
+  title: "SPF válido para el nombre HELO del servidor"
+  why: "El servidor se anuncia con el nombre {helo}, y ese nombre autoriza la IP {ip} en su propio SPF. Es señal de un servidor bien configurado."
+  fix:
+    - "Nada que corregir."
+sa.spf_helo_fail:
+  title: "El nombre HELO del servidor falla en SPF"
+  why: "El servidor se anuncia con el nombre {helo}, pero el SPF de ese nombre excluye la IP {ip}. Esto ocurre cuando un servidor toma el nombre de otro, o cuando el SPF del nombre de host no se actualizó tras un cambio de IP."
+  fix:
+    - "Haz que el servidor anuncie un nombre que le pertenezca y cuyo DNS inverso ({ptr}) coincida."
+    - "Publica para ese nombre de host un SPF mínimo que autorice su propia IP."
+sa.spf_helo_softfail:
+  title: "El nombre HELO del servidor está en fallo suave en SPF"
+  why: "El SPF del nombre {helo} no cubre la IP {ip} y termina en ~all. El servidor parece usar un nombre que no es suyo, algo que SpamAssassin penaliza ligeramente."
+  fix:
+    - "Configura el nombre HELO del servidor (myhostname en Postfix) con su nombre de host real."
+    - "Añade a ese nombre de host un SPF \"v=spf1 a -all\"."
+  fix_by_provider:
+    postfix: "Ajusta myhostname en main.cf con el nombre que corresponde al DNS inverso de la IP, y recarga Postfix."
+sa.spf_helo_neutral:
+  title: "El nombre HELO del servidor tiene un SPF neutro"
+  why: "El SPF del nombre {helo} no se pronuncia sobre la IP {ip}. Efecto leve, pero muestra un nombre de host sin SPF propio."
+  fix:
+    - "Publica para {helo} un SPF \"v=spf1 a -all\" si ese nombre apunta efectivamente a {ip}."
+sa.spf_helo_none:
+  title: "El nombre HELO del servidor no publica ningún SPF"
+  why: "El nombre {helo} que anuncia el servidor no tiene SPF. Es muy habitual y casi no afecta a la puntuación, pero un SPF de nombre de host cuesta una línea de DNS."
+  fix:
+    - "Si gestionas este servidor, añade para {helo} el registro TXT \"v=spf1 a -all\"."
+    - "Si es el servidor de un proveedor ({provider}), no tienes que hacer nada por tu parte."
+sa.t_spf_permerror:
+  title: "SPF con error permanente para la dirección de sobre"
+  why: "El SPF de {envelope_domain} no puede evaluarse: sintaxis incorrecta, dos registros v=spf1 o más de 10 consultas DNS. Los destinatarios lo tratan como un fallo, y DMARC no puede contar con SPF."
+  fix:
+    - "Comprueba que solo existe un registro TXT que empiece por v=spf1 en {envelope_domain}."
+    - "Cuenta los include:, a, mx, ptr y exists: si superan 10, retira los servicios que no uses o sustituye algunos include: por ip4:."
+    - "Corrige las erratas (espacios que faltan, ip4 mal formado, include hacia un dominio que ya no existe)."
+sa.t_spf_temperror:
+  title: "SPF con error temporal para la dirección de sobre"
+  why: "La lectura del SPF de {envelope_domain} falló por un incidente de DNS (tiempo de espera agotado, servidor DNS inaccesible). Si se repite, tus mensajes se evalúan sin SPF."
+  fix:
+    - "Repite la prueba: un error aislado no requiere ninguna acción."
+    - "Si vuelve a aparecer, comprueba que todos los servidores DNS de {envelope_domain} responden y que los dominios citados en include: existen."
+sa.t_spf_helo_permerror:
+  title: "SPF del nombre HELO con error permanente"
+  why: "El nombre {helo} publica un SPF no válido. Por tanto, el servidor envía con un nombre de host mal configurado."
+  fix:
+    - "Corrige o sustituye el SPF de {helo} por \"v=spf1 a -all\"."
+sa.t_spf_helo_temperror:
+  title: "SPF del nombre HELO con error temporal"
+  why: "La lectura del SPF de {helo} falló por un incidente de DNS. Sin consecuencias si es aislado."
+  fix:
+    - "Repite la prueba. Si el error persiste, comprueba que la zona DNS del nombre {helo} responde."
+sa.dkim_signed:
+  title: "El mensaje lleva una firma DKIM"
+  why: "El mensaje está firmado. SpamAssassin añade una puntuación muy pequeña que se anula en cuanto la firma es válida: solo una firma rota deja este punto."
+  fix:
+    - "Nada que corregir si también aparece DKIM_VALID. Si no, consulta la regla DKIM_INVALID."
+sa.dkim_valid:
+  title: "Al menos una firma DKIM es válida"
+  why: "Se verificó una firma DKIM (dominio {dkim_domain}): el mensaje no se modificó en el camino y el dominio firmante responde por él."
+  fix:
+    - "Nada que corregir. Comprueba solo que el dominio firmante es {domain} (regla DKIM_VALID_AU)."
+sa.dkim_valid_au:
+  title: "Firma DKIM válida del dominio del remitente"
+  why: "La firma válida es la de {domain}, el dominio visible en From. Es lo que permite que DMARC pase aunque SPF falle."
+  fix:
+    - "Nada que corregir."
+sa.dkim_valid_ef:
+  title: "Firma DKIM válida del dominio de sobre"
+  why: "El dominio de sobre {envelope_domain} también firmó el mensaje. Buena señal de coherencia entre la herramienta de envío y el dominio."
+  fix:
+    - "Nada que corregir."
+sa.dkim_invalid:
+  title: "Firma DKIM presente pero no válida"
+  why: "El mensaje está firmado (selector {selector}, dominio {dkim_domain}) pero la verificación falla: clave pública ausente o distinta en el DNS, o mensaje modificado después de firmarlo (pie de página añadido por un antivirus, una lista de distribución, un retransmisor). La puntuación de SpamAssassin es baja, pero DMARC falla si SPF tampoco está alineado."
+  fix:
+    - "Comprueba que el registro {selector}._domainkey.{dkim_domain} existe y contiene la clave pública actual de la herramienta de envío."
+    - "Si la clave es correcta, busca qué modifica el mensaje después de firmarlo: firma o mención añadida por el servidor saliente, reescritura de enlaces, paso por una lista de distribución."
+    - "Copia la clave sin saltos de línea ni comillas parásitas: una clave cortada en la interfaz del DNS es la avería más frecuente."
+sa.dkim_adsp_all:
+  title: "Falta la firma DKIM del dominio, que debería firmarlo todo"
+  why: "El dominio del From es conocido por firmar todos sus mensajes, pero este mensaje no tiene una firma válida de {domain}. Para un dominio conocido (banco, marketplace), es un indicio fuerte de suplantación."
+  fix:
+    - "Si realmente envías en nombre de {domain}, firma con la clave DKIM de {domain} y no con la de la herramienta de envío."
+    - "Si {domain} no es tu dominio, no uses esta dirección en From: usa una dirección de tu propio dominio."
+sa.dkim_adsp_nxdomain:
+  title: "El dominio del remitente no existe en el DNS"
+  why: "El dominio {domain} mostrado en From no existe en el DNS. Los destinatarios no pueden responder ni verificar nada, y muchos rechazan estos mensajes. Caso habitual: una dirección de prueba del tipo noreply@misitio.local dejada en un formulario o en un CMS."
+  fix:
+    - "Sustituye la dirección de envío por una dirección de un dominio real que poseas."
+    - "En WordPress o en el CMS, revisa la dirección « From » de las notificaciones y de los formularios."
+  fix_by_provider:
+    wordpress: "Ajusta la dirección de envío en la extensión SMTP (campo From Email) y en cada formulario (Contact Form 7, pestaña Correo electrónico, campo De)."
+sa.dmarc_pass:
+  title: "DMARC validado"
+  why: "SPF o DKIM pasa y coincide con el dominio {domain} del From. Es el nivel de autenticación que Gmail y Yahoo esperan para los envíos masivos."
+  fix:
+    - "Nada que corregir. Si tu política sigue siendo p=none, pasa a quarantine y después a reject cuando los informes estén limpios."
+sa.dmarc_none:
+  title: "DMARC en fallo, política p=none"
+  why: "Ni SPF ni DKIM están alineados con {domain}. La política p=none pide no bloquear nada, pero SpamAssassin suma puntos, y Gmail o Yahoo tratan un fallo de DMARC como un defecto de autenticación, sobre todo en los envíos masivos."
+  fix:
+    - "Firma con DKIM en nombre de {domain} en la herramienta de envío: es la alineación más robusta."
+    - "O bien configura un Return-Path personalizado bajo {domain} para alinear SPF."
+    - "Lee los informes DMARC (rua) para detectar otras fuentes que fallan."
+sa.dmarc_quar:
+  title: "DMARC en fallo, política quarantine"
+  why: "El mensaje falla en DMARC y {domain} pide él mismo que se envíe a no deseados. Los destinatarios siguen esta indicación: este mensaje acabará en spam."
+  fix:
+    - "Activa la firma DKIM de {domain} en la herramienta de envío ({provider}) y publica la clave que te facilite."
+    - "Comprueba que el dominio de firma d= es {domain} o un subdominio de {domain}."
+sa.dmarc_reject:
+  title: "DMARC en fallo, política reject"
+  why: "El mensaje falla en DMARC y {domain} pide su rechazo. La mayoría de los grandes proveedores lo rechazan sin más: esta prueba solo lo ha recibido porque no bloquea nada."
+  fix:
+    - "Haz que este flujo se firme con DKIM con el dominio {domain} antes de cualquier otro envío."
+    - "Mientras tanto, no vuelvas a poner DMARC en p=none sin haber identificado la fuente defectuosa en los informes rua."
+sa.dmarc_missing:
+  title: "No hay ninguna política DMARC publicada"
+  why: "{domain} no publica ningún registro DMARC. SpamAssassin casi no lo penaliza, pero Gmail y Yahoo lo exigen a los remitentes masivos, y el dominio sigue siendo suplantable."
+  fix:
+    - "Crea un registro TXT en _dmarc.{domain} con como mínimo v=DMARC1; p=none; y una dirección rua para recibir los informes."
+    - "Después de unas semanas de informes limpios, pasa a p=quarantine y luego a p=reject."
+sa.dmarc_permerror:
+  title: "Registro DMARC no válido"
+  why: "El registro _dmarc.{domain} es ilegible (etiqueta desconocida, v=DMARC1 ausente o mal colocado, dos registros). Los destinatarios lo ignoran: tu política no se aplica."
+  fix:
+    - "Comprueba que solo hay un TXT en _dmarc.{domain} y que empieza exactamente por v=DMARC1;"
+    - "Separa las etiquetas con punto y coma y quita las comillas parásitas que añade la interfaz del DNS."
+sa.dmarc_temperror:
+  title: "DMARC no evaluado: error temporal de DNS"
+  why: "La consulta DNS a _dmarc.{domain} no se completó. El mensaje se evaluó sin DMARC."
+  fix:
+    - "Repite la prueba. Si el error vuelve, comprueba que todos los servidores DNS de {domain} responden."
+sa.arc_signed:
+  title: "El mensaje lleva una firma ARC"
+  why: "Un retransmisor intermedio (lista de distribución, reenvío, pasarela de seguridad) selló el resultado de autenticación que vio. Información neutra."
+  fix:
+    - "Nada que corregir."
+sa.arc_valid:
+  title: "Cadena ARC válida"
+  why: "Los sellos ARC puestos por los retransmisores están intactos. Un destinatario puede usarlos para aceptar un mensaje reenviado cuyo SPF o DKIM se rompió en el camino."
+  fix:
+    - "Nada que corregir."
+sa.arc_invalid:
+  title: "Firma ARC presente pero no válida"
+  why: "Un retransmisor puso encabezados ARC que ya no se verifican, a menudo porque un equipo posterior modificó el mensaje. Impacto bajo, pero el mensaje pierde la protección de ARC en caso de reenvío."
+  fix:
+    - "Si el retransmisor es tuyo (pasarela antispam, lista de distribución), comprueba que firma ARC después de sus propias modificaciones."
+    - "Si no, no hagas nada: es el retransmisor intermedio quien debe corregirlo."
+sa.arc_trusted:
+  title: "Cadena ARC sellada por un retransmisor de confianza"
+  why: "El mensaje pasó por un retransmisor cuya firma ARC reconoce el servidor de pruebas. Señal favorable."
+  fix:
+    - "Nada que corregir."
+sa.env_and_hdr_spf_match:
+  title: "Remitente reconocido por la lista de bienvenida SPF por defecto"
+  why: "La dirección figura en la lista de bienvenida SPF incluida con SpamAssassin, y el sobre coincide con From. Bonificación reservada a grandes remitentes conocidos."
+  fix:
+    - "Nada que corregir."
+sa.user_in_def_dkim_wl:
+  title: "Remitente en la lista de bienvenida DKIM por defecto"
+  why: "SpamAssassin incluye una lista de grandes remitentes conocidos, reconocidos por su firma DKIM. El mensaje forma parte de ella y recibe una bonificación alta."
+  fix:
+    - "Nada que corregir."
+sa.user_in_def_spf_wl:
+  title: "Remitente en la lista de bienvenida SPF por defecto"
+  why: "El remitente figura en la lista de dominios conocidos incluida con SpamAssassin, validada por SPF. Bonificación alta."
+  fix:
+    - "Nada que corregir."
+sa.user_in_def_welcomelist:
+  title: "Remitente en la lista de bienvenida por defecto"
+  why: "El remitente figura en la lista de bienvenida incluida con SpamAssassin y está autenticado. Bonificación grande, reservada a servicios muy conocidos."
+  fix:
+    - "Nada que corregir."
+sa.to_eq_fm_spf_fail:
+  title: "Destinatario igual al remitente y SPF en fallo"
+  why: "El mensaje dice venir de la misma dirección del destinatario y el SPF falla: es el esquema de la estafa « tu cuenta de correo ha sido hackeada ». Un envío legítimo lo activa cuando un formulario del sitio envía al propietario usando su dirección como remitente, desde un servidor no autorizado."
+  fix:
+    - "En el formulario del sitio, pon en From una dirección técnica del dominio (por ejemplo sitio@{domain}) enviada por SMTP autenticado."
+    - "Coloca la dirección del visitante en Reply-To, nunca en From."
+  fix_by_provider:
+    wordpress: "Contact Form 7: pestaña Correo electrónico, campo De = tu dirección técnica, encabezados adicionales = Reply-To: [your-email]."
+sa.to_eq_fm_dom_spf_fail:
+  title: "Mismo dominio como destinatario y remitente, con SPF en fallo"
+  why: "El mensaje parece venir del dominio del destinatario, pero desde un servidor que su SPF no autoriza. Suele tratarse de un sitio web o de una impresora que envía « internamente » sin pasar por el correo oficial."
+  fix:
+    - "Haz que estos envíos pasen por el servidor SMTP del correo del dominio, con autenticación."
+    - "O bien añade la IP {ip} del servidor web al SPF si la controlas y es fija."
+sa.dkimwl_wl_high:
+  title: "Dominio firmante de alta confianza en DKIMwl"
+  why: "El dominio que firmó el mensaje ({dkim_domain}) está clasificado en alta confianza por la lista DKIMwl. Señal favorable."
+  fix:
+    - "Nada que corregir."
+sa.dkimwl_wl_med:
+  title: "Dominio firmante de confianza media en DKIMwl"
+  why: "El dominio firmante {dkim_domain} es conocido por DKIMwl con confianza media. Señal neutra o favorable."
+  fix:
+    - "Nada que corregir."
+sa.dkimwl_wl_medhi:
+  title: "Dominio firmante de confianza media alta en DKIMwl"
+  why: "El dominio firmante {dkim_domain} está bien valorado por DKIMwl, lo que quita un punto a la puntuación."
+  fix:
+    - "Nada que corregir."
+sa.dkimwl_bl:
+  title: "Dominio firmante bloqueado en DKIMwl"
+  why: "El dominio que firma el mensaje ({dkim_domain}) está clasificado como remitente bloqueado por DKIMwl. Si ese dominio es el de tu herramienta de envío y no el tuyo, es su reputación global la que te penaliza."
+  fix:
+    - "Firma con tu propio dominio {domain} en lugar de con el dominio compartido de la herramienta de envío."
+    - "Si el dominio bloqueado es el tuyo, busca la causa (cuenta comprometida, lista comprada) y después contacta con DKIMwl."
+sa.dkimwl_blocked:
+  title: "Consulta a DKIMwl rechazada por el servidor de pruebas"
+  why: "Aviso administrativo: DKIMwl rechazó responder al servidor que analiza el mensaje. Esto no afecta a tu envío."
+  fix:
+    - "Ninguna acción por tu parte. El resultado de DKIMwl simplemente no aparece en esta prueba."

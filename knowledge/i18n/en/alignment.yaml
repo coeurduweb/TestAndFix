@@ -1,0 +1,56 @@
+alignment.none_aligned:
+  title: Neither SPF nor DKIM is aligned with {domain}
+  why: The message may be authenticated, but on behalf of another domain ({envelope_domain}, {dkim_domain}). For DMARC and for Gmail, nothing shows that {domain} authorized it.
+  fix:
+    - "Configure the DKIM signature with d={domain} in {provider}: this is the strongest alignment."
+    - If the service allows it, also set up a custom Return-Path on a subdomain of {domain}.
+    - "Run the test again: at least one of the two must appear as aligned."
+  fix_by_provider:
+    brevo: "Settings, Senders, Domains, IPs, Domains, Authenticate: the brevo1 and brevo2._domainkey CNAME records align DKIM; the “Branded” CNAME aligns the Return-Path."
+    mailchimp: "Account & billing, Domains, Start authentication: the two DKIM CNAME records align the signature with {domain}."
+    sendgrid: "Settings, Sender Authentication, Domain Authentication: the em… CNAME aligns the Return-Path, s1 and s2._domainkey align DKIM."
+    amazon_ses: Verify {domain} with Easy DKIM to align DKIM; to align SPF, set up a custom MAIL FROM on a subdomain of {domain}.
+    mailjet: Authenticate the domain (DKIM mailjet._domainkey). The custom Return-Path bnc3.{domain} pointing to bnc3.mailjet.com is reserved for paid accounts, available on request from support.
+    postmark: Publish the domain's DKIM key and the custom Return-Path CNAME pointing to pm.mtasv.net. Postmark notes that DMARC passes through DKIM even if SPF is not aligned.
+    hubspot: Connect the sending domain in Settings, Content, Domains & URLs, Email Sending. On HubSpot's shared network, the Return-Path cannot be customized, so alignment goes through DKIM.
+    microsoft_365: "Enable DKIM for {domain}: Microsoft 365 does not sign a custom domain until DKIM is configured for it."
+alignment.spf_not_aligned:
+  title: SPF passes for {envelope_domain}, not for {domain}
+  why: Your DMARC relies on DKIM alone. This is not an error, but if the signature breaks along the way (mailing list, antivirus), nothing authenticates {domain} anymore.
+  fix:
+    - If {provider} offers a custom Return-Path domain, set it up on a subdomain of {domain} (for example bounce.{domain}).
+    - Otherwise, no action is needed as long as DKIM stays aligned.
+  fix_by_provider:
+    amazon_ses: "Set up a custom MAIL FROM: MX 10 feedback-smtp.<region>.amazonses.com and TXT v=spf1 include:amazonses.com ~all on the chosen subdomain."
+    postmark: Create the custom Return-Path CNAME (a subdomain of {domain}) pointing to pm.mtasv.net, with the name shown in DNS Settings.
+    sendgrid: With automated security, the em… CNAME is enough. Check that it is validated in Sender Authentication.
+    mailchimp: "Mailchimp uses its own Return-Path domain: alignment goes through DKIM, nothing more to do."
+alignment.dkim_not_aligned:
+  title: DKIM passes for {dkim_domain}, not for {domain}
+  why: DMARC only passes thanks to SPF. As soon as a recipient forwards the message (address forwarding, mailing list), SPF breaks and DMARC fails, with rejection if {domain} is set to p=reject.
+  fix:
+    - Configure a DKIM signature with d={domain} in {provider}.
+    - Publish the DKIM records provided, then run the test again.
+alignment.spf_only:
+  title: DMARC passes only thanks to SPF
+  why: "The message is not signed: only SPF authenticates {domain}. Messages forwarded by your recipients will fail DMARC, and Gmail requires SPF and DKIM for bulk mail."
+  fix:
+    - Enable DKIM for {domain} in the sending service ({provider}).
+    - "Keep SPF as it is: the two complement each other."
+alignment.relaxed_only:
+  title: Alignment relies on a subdomain of {domain}
+  why: This is valid and common with sending services. Just keep in mind that switching to strict alignment (adkim=s or aspf=s) would make these messages fail.
+  fix:
+    - Do not set adkim=s or aspf=s in your DMARC record as long as this service signs with a subdomain.
+alignment.freemail_from:
+  title: The message is sent in the name of {domain} by a server that does not depend on it
+  why: An address at {domain} can only be authenticated by the servers of {domain}. Sent through {provider}, it fails DMARC, and the policy published by {domain} ({dmarc_record}) leads most recipients to reject the message or send it to spam.
+  fix:
+    - Use a sending address on your own domain (for example contact@your-domain.com), authenticated in {provider}.
+    - If needed, keep the {domain} address as Reply-To to receive replies.
+alignment.multiple_from:
+  title: The message contains several From addresses or headers
+  why: With several senders, the recipient does not know which domain to check. DMARC cannot apply, and many servers reject these messages as malformed.
+  fix:
+    - Configure your software to send only one From header containing a single address.
+    - Put the other addresses in Reply-To or Cc.

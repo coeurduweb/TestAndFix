@@ -1,0 +1,81 @@
+dnssec.bogus:
+  title: "A assinatura DNSSEC de {domain} é inválida"
+  why: "Os resolvedores que validam DNSSEC recusam todas as respostas de {domain}. Para eles, seu SPF, suas chaves DKIM e seu DMARC deixam de existir: suas mensagens ficam retidas ou recusadas, e o e-mail para {domain} não pode mais ser entregue."
+  fix:
+    - "Verifique a zona com o analisador DNSViz (dnsviz.net) ou com a ferramenta DNSSEC Analyzer da Verisign para descobrir o registro com problema."
+    - "Se você trocou recentemente de provedor de DNS, remova no registrador o DS antigo, depois reative o DNSSEC no novo provedor e publique o DS dele."
+    - "Em caso de urgência, remova o registro DS no registrador: a zona volta a ficar sem assinatura, mas pode ser resolvida depois que o TTL do DS expirar."
+  fix_by_provider:
+    cloudflare_dns: "Em DNS, Settings, seção DNSSEC, verifique o status; se o DS exibido for diferente do publicado no registrador, substitua este último pelo valor indicado pelo Cloudflare."
+dnssec.ds_mismatch:
+  title: "O registro DS de {domain} não corresponde mais às suas chaves DNSSEC"
+  why: "O registro anuncia uma chave que a zona de {domain} não publica mais. Os resolvedores que validam consideram todas as suas respostas DNS como falsificadas: SPF, DKIM, DMARC e MX ficam invisíveis."
+  fix:
+    - "Obtenha as chaves publicadas pelo seu provedor de DNS atual (registros DNSKEY, ou o valor DS fornecido pela interface dele)."
+    - "No registrador, remova o DS antigo e adicione o do provedor atual."
+    - "Aguarde a expiração do TTL do DS antigo (valor visível com dig DS {domain}) antes de refazer o teste."
+  fix_by_provider:
+    cloudflare_dns: "Em DNS, Settings, DNSSEC, copie o registro DS proposto e cole-o no registrador no lugar do antigo."
+dnssec.dnskey_missing:
+  title: "{domain} anuncia DNSSEC, mas a zona não está mais assinada"
+  why: "Um DS permanece no registro, enquanto a zona de {domain} não está mais assinada. Os resolvedores que validam recusam então todas as respostas dela, e seu e-mail deixa de funcionar para parte dos destinatários."
+  fix:
+    - "Escolha entre reativar o DNSSEC no seu provedor de DNS atual ou remover o DS."
+    - "Para remover o DS, apague-o na interface DNSSEC do seu registrador."
+    - "Para reativar, ative o DNSSEC no provedor de DNS e depois substitua o DS do registrador pelo novo valor."
+dnssec.rrsig_expired:
+  title: "As assinaturas DNSSEC de {domain} expiraram"
+  why: "As assinaturas da sua zona não são mais válidas. Os resolvedores que validam recusam as respostas de {domain}, o que torna invisíveis o seu SPF, as suas chaves DKIM e o seu DMARC."
+  fix:
+    - "Refaça a assinatura da zona no seu provedor de DNS ou no seu servidor (por exemplo rndc sign {domain} com BIND, ou o comando de reassinatura do seu software)."
+    - "Configure uma reassinatura automática (assinatura online gerenciada pelo servidor DNS) para que isso não se repita."
+    - "Se a zona não puder ser reassinada rapidamente, remova o DS no registrador."
+dnssec.rrsig_expiring:
+  title: "As assinaturas DNSSEC de {domain} vão expirar em breve"
+  why: "Se a zona não for reassinada antes do vencimento, {domain} ficará ilegível para os resolvedores que validam, e o seu e-mail junto com ele."
+  fix:
+    - "Verifique se a reassinatura automática está ativa no seu provedor de DNS ou no seu servidor."
+    - "Refaça este teste amanhã: a data de expiração deve ter avançado."
+dnssec.unsigned:
+  title: "A zona DNS de {domain} não está assinada (DNSSEC)"
+  why: "Sem DNSSEC, um atacante posicionado na rede pode falsificar as respostas DNS de {domain}, por exemplo os seus MX. Não é um critério de entregabilidade, mas é um pré-requisito para o DANE, a proteção mais sólida do transporte de e-mail."
+  fix:
+    - "Ative o DNSSEC no seu provedor de DNS."
+    - "Publique no registrador o registro DS fornecido pelo provedor (muitas vezes automático quando registrador e provedor são o mesmo)."
+    - "Confira o resultado em dnsviz.net antes de depender dele."
+  fix_by_provider:
+    cloudflare_dns: "Em DNS, Settings, clique em Enable DNSSEC e depois adicione no registrador o registro DS exibido."
+dnssec.algorithm_not_recommended:
+  title: "A zona {domain} está assinada com um algoritmo não recomendado"
+  why: "O algoritmo usado para assinar a sua zona não é recomendado ou é proibido para assinatura. Resolvedores podem deixar de validá-lo e tratar a sua zona como não assinada ou inválida."
+  fix:
+    - "Peça ao seu provedor de DNS uma troca de algoritmo (rollover) para ECDSAP256SHA256 (13)."
+    - "Durante a troca, publique o novo DS no registrador antes de remover o antigo, respeitando os TTL."
+dnssec.nsec3_iterations:
+  title: "A zona {domain} usa NSEC3 com iterações adicionais"
+  why: "As iterações NSEC3 não trazem nenhuma segurança e tornam a validação mais pesada. Acima de certo limite, alguns resolvedores consideram a zona não segura ou com erro, o que pode impedir a resolução dos seus registros de e-mail."
+  fix:
+    - "Defina os parâmetros NSEC3 da zona como 0 iterações e um sal vazio."
+    - "Se o seu provedor de DNS gerenciar a assinatura, peça que ele aplique os valores da RFC 9276."
+dnssec.mx_zone_bogus:
+  title: "O servidor MX de {domain} está em uma zona DNSSEC quebrada"
+  why: "O nome do seu servidor de recebimento não é mais resolvido pelos resolvedores que validam. As respostas e as devoluções endereçadas a {domain} não podem mais ser entregues por esses remetentes."
+  fix:
+    - "Identifique o domínio que hospeda o nome do MX e avise o responsável por ele (muitas vezes o seu provedor de e-mail)."
+    - "Se for um dos seus domínios, aplique a correção da entrada “assinatura DNSSEC inválida” nesta zona."
+dnssec.ds_missing:
+  title: "A zona {domain} está assinada, mas o registrador não tem registro DS"
+  why: "Seu provedor de DNS assina a zona, mas sem DS no registrador a cadeia de confiança para aí: nenhum resolvedor valida {domain}. Você tem o trabalho do DNSSEC sem a proteção dele, e o DANE não pode funcionar."
+  fix:
+    - "No seu provedor de DNS, obtenha o registro DS de {domain} (ou a chave KSK com o algoritmo, se o registrador pedir a chave)."
+    - "No registrador, abra a seção DNSSEC do domínio e adicione esse DS, do tipo de resumo 2 (SHA-256)."
+    - "Depois da propagação, confira a cadeia com dnsviz.net: um erro de cópia tornaria toda a zona inválida para os resolvedores que validam."
+  fix_by_provider:
+    cloudflare_dns: "Em DNS, Settings, seção DNSSEC, clique em Enable DNSSEC (ou em DS record, se o DNSSEC já estiver ativo) e copie os valores para o registrador. Com o Cloudflare Registrar, o DS é publicado automaticamente, o que pode levar de um a dois dias."
+dnssec.ds_sha1:
+  title: "O DS de {domain} usa apenas SHA-1"
+  why: "A delegação DNSSEC de {domain} depende de um resumo SHA-1, cuja publicação o padrão agora proíbe. Os validadores ainda o aceitam hoje, mas a delegação não segue mais as recomendações."
+  fix:
+    - "No seu provedor de DNS, obtenha o DS do tipo 2 (SHA-256) correspondente à mesma chave."
+    - "Adicione-o no registrador, ao lado do DS atual."
+    - "Depois que o novo DS estiver publicado e o TTL do antigo tiver expirado, remova o DS do tipo 1."

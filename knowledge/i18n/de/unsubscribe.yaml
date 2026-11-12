@@ -1,0 +1,105 @@
+unsubscribe.list_unsubscribe_missing:
+  title: Diese Marketing-Nachricht hat keinen List-Unsubscribe-Header
+  why: "Gmail und Yahoo verlangen diesen Header bei Marketing-Nachrichten großer Absender. Ohne ihn zeigt der Webmail seine Abmeldeschaltfläche nicht an: Die Leser klicken stattdessen auf „Spam“, was den Ruf von {domain} verschlechtert."
+  fix:
+    - Fügen Sie einen Header List-Unsubscribe mit einer https-Abmeldeadresse hinzu, die jedem Empfänger eigen ist.
+    - "Fügen Sie gleichzeitig List-Unsubscribe-Post: List-Unsubscribe=One-Click für die Abmeldung mit einem Klick hinzu."
+    - Signieren Sie diese beiden Header mit DKIM.
+  fix_by_provider:
+    mailchimp: Mailchimp fügt List-Unsubscribe den Kampagnen hinzu. Fehlt er, prüfen Sie, dass Sie wirklich eine Kampagne und keine Nachricht über die transaktionale API (Mandrill) versenden, bei der Sie ihn selbst ergänzen müssen.
+    sendgrid: "Aktivieren Sie Settings > Tracking > Subscription Tracking oder verwenden Sie Abmeldegruppen (Unsubscribe Groups) im API-Aufruf: SendGrid fügt die Header dann hinzu."
+    amazon_ses: Fügen Sie die Header List-Unsubscribe und List-Unsubscribe-Post in Ihre Nachrichten ein oder nutzen Sie die Abonnementverwaltung von SES (Kontaktlisten), die sie hinzufügt.
+    wordpress: Ein Newsletter-Plugin (MailPoet, The Newsletter Plugin, FluentCRM) verwaltet den Header. Vermeiden Sie es, einen Newsletter über wp_mail() ohne Plugin zu versenden.
+    postfix: "Postfix fügt diesen Header nicht hinzu: Er muss von der Anwendung geschrieben werden, die die Nachricht erzeugt, vor der DKIM-Signatur."
+unsubscribe.one_click_post_missing:
+  title: Die Abmeldung mit einem Klick (List-Unsubscribe-Post) ist nicht aktiviert
+  why: "Die Nachricht hat einen List-Unsubscribe, aber nicht den Header List-Unsubscribe-Post. Gmail verlangt beide für Massenversand von Marketing: Ohne diesen Header betrachtet Gmail die Abmeldung mit einem Klick als nicht angeboten."
+  fix:
+    - "Fügen Sie die Zeile List-Unsubscribe-Post: List-Unsubscribe=One-Click hinzu."
+    - Prüfen Sie, dass List-Unsubscribe eine https-Adresse enthält, die eine POST-Anfrage annimmt und ohne Bestätigung abmeldet.
+    - Nehmen Sie beide Header in die DKIM-Signatur auf (Parameter h=).
+unsubscribe.mailto_only:
+  title: Die Abmeldung bietet nur eine E-Mail-Adresse (mailto)
+  why: Yahoo akzeptiert mailto, Gmail verlangt aber die Abmeldung mit einem Klick nach RFC 8058, die eine https-Adresse voraussetzt. Für Gmail ist diese Nachricht deshalb nicht konform.
+  fix:
+    - Fügen Sie in List-Unsubscribe an erster Stelle eine https-Abmeldeadresse ein und behalten Sie das mailto an zweiter Stelle.
+    - "Fügen Sie List-Unsubscribe-Post: List-Unsubscribe=One-Click hinzu."
+unsubscribe.http_not_https:
+  title: Die Abmeldeadresse verwendet http statt https
+  why: Die RFC 8058 verlangt für die Abmeldung mit einem Klick eine https-Adresse. Mit http bieten Gmail und andere Webmails die Abmeldeschaltfläche nicht an.
+  fix:
+    - Ersetzen Sie in List-Unsubscribe http:// durch https://.
+    - Prüfen Sie, dass das Zertifikat der Abmeldedomain gültig ist.
+unsubscribe.not_dkim_signed:
+  title: Die Abmeldeheader sind nicht durch DKIM abgedeckt
+  why: "Keine gültige DKIM-Signatur deckt List-Unsubscribe und List-Unsubscribe-Post ab. Die RFC 8058 verlangt dann von den Webmails, keine Abmeldung mit einem Klick anzubieten: Ihre Konfiguration nützt nichts."
+  fix:
+    - Nehmen Sie list-unsubscribe und list-unsubscribe-post in die Liste der signierten Header auf (Parameter h= von DKIM).
+    - Fügen Sie die Header vor dem Signierschritt hinzu, nicht danach.
+    - Fügt ein Relais diese Header nach Ihrer Signatur hinzu, lassen Sie sie von der Anwendung ergänzen.
+  fix_by_provider:
+    postfix: "Bei OpenDKIM fügen Sie List-Unsubscribe und List-Unsubscribe-Post zu SignHeaders in opendkim.conf hinzu und starten Sie OpenDKIM neu. Bei rspamd fügen Sie sie zu sign_headers in dkim_signing.conf hinzu."
+unsubscribe.post_value_invalid:
+  title: Der Wert von List-Unsubscribe-Post ist falsch
+  why: "Der Header hat den Wert „{value}“ statt List-Unsubscribe=One-Click. Die Webmails erkennen die Abmeldung mit einem Klick dann nicht."
+  fix:
+    - "Schreiben Sie genau: List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - Fügen Sie weder Anführungszeichen, Semikolons noch andere Parameter hinzu.
+unsubscribe.syntax_invalid:
+  title: Der Header List-Unsubscribe ist fehlerhaft geschrieben
+  why: Die Adressen in List-Unsubscribe stehen nicht in spitzen Klammern oder sind falsch getrennt. Die Webmails ignorieren den Header dann und zeigen keine Abmeldeschaltfläche an.
+  fix:
+    - Setzen Sie jede Adresse in spitze Klammern < >.
+    - Trennen Sie die Adressen durch ein Komma, die https-Adresse zuerst.
+unsubscribe.multiple_https:
+  title: List-Unsubscribe enthält mehrere https-Adressen
+  why: Die RFC 8058 sieht nur eine https-Adresse vor. Bei mehreren kann der Webmail diejenige wählen, die die Anfrage nicht mit einem Klick verarbeitet.
+  fix:
+    - Behalten Sie nur eine https-Adresse, die die Anfrage per POST mit einem Klick annimmt.
+    - Behalten Sie gegebenenfalls ein mailto an zweiter Stelle.
+unsubscribe.endpoint_not_working:
+  title: Die Abmeldeadresse mit einem Klick antwortet nicht korrekt
+  why: "Die Abmeldeanfrage an {url} erhielt die Antwort {value}. Webmails senden diese Anfrage ohne Cookie und folgen keinen Weiterleitungen: Scheitert sie, bleibt der Empfänger eingetragen und meldet Ihre Nachrichten irgendwann als Spam."
+  fix:
+    - Stellen Sie sicher, dass die Abmeldeadresse eine POST-Anfrage ohne Cookie oder Sitzung annimmt und mit dem Code 200 antwortet.
+    - "Antworten Sie nicht mit einer Weiterleitung: Verarbeiten Sie die Abmeldung direkt an dieser Adresse."
+    - Ermitteln Sie den Kontakt über das Token, das in der Adresse selbst enthalten ist.
+unsubscribe.body_link_missing:
+  title: Der Nachrichtentext hat keinen Abmeldelink
+  why: "Gmail und Yahoo verlangen einen gut sichtbaren Abmeldelink im Text von Marketing-Nachrichten, und das französische Recht verlangt eine einfache Möglichkeit, weitere Sendungen abzulehnen. Ohne diesen Link ist die Schaltfläche „Spam“ der einzige Weg, keine Nachrichten mehr zu erhalten."
+  fix:
+    - Fügen Sie in der Fußzeile einen Link „Abmelden“ hinzu, der zu einer Abmeldeseite auf {domain} führt.
+    - Die Seite muss ohne Passwort oder Anmeldung abmelden.
+  fix_by_provider:
+    mailchimp: Behalten Sie den Platzhalter *|UNSUB|* im Block Footer der Kampagne.
+    brevo: Behalten Sie den Fußzeilenblock mit dem Abmeldelink bei, den der Brevo-Editor einfügt.
+    wordpress: "In MailPoet enthält die Standardfußzeile den Link [link:subscription_unsubscribe_url]: Entfernen Sie ihn nicht."
+unsubscribe.body_link_hidden:
+  title: Der Abmeldelink ist schwer zu sehen
+  why: "Der Abmeldelink ist winzig oder fast in der Farbe des Hintergrunds. Gmail und Yahoo verlangen, dass er klar sichtbar ist: Ein versteckter Link bringt den Leser dazu, auf „Spam“ zu klicken."
+  fix:
+    - Zeigen Sie den Link in lesbarer Größe und mit einer kontrastreichen Farbe zum Hintergrund an.
+    - Platzieren Sie ihn am Anfang der Fußzeile, nicht nach mehreren Zeilen rechtlicher Hinweise.
+unsubscribe.requires_login:
+  title: Die Abmeldung verlangt eine Anmeldung
+  why: Der Abmeldelink führt zu einer Anmeldeseite. Yahoo verlangt eine Abmeldung ohne Anmeldung, und die meisten Leser geben auf und melden die Nachricht als Spam.
+  fix:
+    - Verwenden Sie im Link ein eindeutiges Token, das den Kontakt identifiziert, und melden Sie ihn ohne Passwort ab.
+    - Bieten Sie die detaillierte Verwaltung der Einstellungen auf derselben Seite an, ohne sie aufzuzwingen.
+unsubscribe.mailto_domain_unreachable:
+  title: Die E-Mail-Adresse für die Abmeldung kann keine Nachrichten empfangen
+  why: "Die Abmeldeadresse {value} liegt auf einer Domain, die keine Post empfängt. Abmeldeanfragen, die Webmails senden, gehen verloren."
+  fix:
+    - Verwenden Sie eine Abmeldeadresse auf einer Domain mit MX-Eintrag, zum Beispiel abmeldung@{domain}.
+    - Lassen Sie die an diese Adresse eingehenden Nachrichten automatisch von Ihrem Versandtool verarbeiten.
+unsubscribe.on_transactional:
+  title: "Transaktionsnachricht ohne Abmeldeheader: zulässig"
+  why: Gmail verlangt die Abmeldung mit einem Klick nicht für transaktionale Nachrichten. Enthält diese Nachricht auch Werbung, können die Empfänger sie als werblich einstufen und melden.
+  fix:
+    - Halten Sie transaktionale Nachrichten frei von Werbeinhalten.
+    - Versenden Sie Werbung in getrennten Nachrichten, mit List-Unsubscribe.
+unsubscribe.list_id_missing:
+  title: Die Nachricht gibt nicht an, von welcher Liste sie stammt (List-Id)
+  why: List-Id ermöglicht Empfängern und Webmails, Ihre Sendungen nach Liste zu sortieren. Sein Fehlen wird nicht bestraft, aber er hilft, Ihre verschiedenen Newsletter zu unterscheiden.
+  fix:
+    - Fügen Sie einen Header List-Id mit einer stabilen Kennung pro Liste hinzu.

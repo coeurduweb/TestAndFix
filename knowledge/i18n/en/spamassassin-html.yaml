@@ -1,0 +1,317 @@
+sa.html_message:
+  title: The message contains HTML
+  why: "Information: the message has an HTML part. Zero score, which is the norm for a newsletter."
+  fix:
+    - Nothing to fix. Always send a text version (multipart/alternative) alongside the HTML.
+sa.html_mime_no_html_tag:
+  title: HTML message without an html tag
+  why: The message contains only HTML, and this HTML does not even have an <html> tag. It is a fragment pasted as is, which is what scripts and some editors produce.
+  fix:
+    - "Send a complete document: <!DOCTYPE html>, <html>, <head> with meta charset, <body>."
+    - Add a text part.
+sa.html_image_only_04:
+  title: Almost textless HTML message with an image (0 to 400 bytes of text)
+  why: "The HTML contains one or more images and less than 400 bytes of text: in practice, the message is a poster. Filters do not read images, which is the technique of image spam. A common case: a flyer exported from Canva and pasted into the body."
+  fix:
+    - Add real text to the HTML (headline, paragraphs, call to action) instead of putting it in the image.
+    - Aim for at least a few hundred words of real text; keep the images for illustration.
+    - Set a descriptive alt attribute on each image.
+sa.html_image_only_08:
+  title: HTML message with an image and very little text (400 to 800 bytes)
+  why: "Images and 400 to 800 bytes of text: the main content is in the image. Penalty of more than 1.5 points."
+  fix:
+    - Add real text to the HTML (headline, paragraphs, call to action) instead of putting it in the image.
+    - Aim for at least a few hundred words of real text; keep the images for illustration.
+    - Set a descriptive alt attribute on each image.
+sa.html_image_only_12:
+  title: HTML message with an image and little text (800 to 1,200 bytes)
+  why: "Images and 800 to 1,200 bytes of text. More than 2 points: this is the most penalized bracket, typical of newsletters made of one large banner and two lines."
+  fix:
+    - Add real text to the HTML (headline, paragraphs, call to action) instead of putting it in the image.
+    - Aim for at least a few hundred words of real text; keep the images for illustration.
+    - Set a descriptive alt attribute on each image.
+sa.html_image_only_16:
+  title: HTML message with an image and little text (1,200 to 1,600 bytes)
+  why: Images and 1,200 to 1,600 bytes of text. The text-to-image ratio remains low.
+  fix:
+    - Add real text to the HTML (headline, paragraphs, call to action) instead of putting it in the image.
+    - Aim for at least a few hundred words of real text; keep the images for illustration.
+    - Set a descriptive alt attribute on each image.
+sa.html_image_only_20:
+  title: HTML message with an image and little text (1,600 to 2,000 bytes)
+  why: Images and 1,600 to 2,000 bytes of text. Still penalized at 1.5 points.
+  fix:
+    - Add real text to the HTML (headline, paragraphs, call to action) instead of putting it in the image.
+    - Aim for at least a few hundred words of real text; keep the images for illustration.
+    - Set a descriptive alt attribute on each image.
+sa.html_image_only_24:
+  title: HTML message with an image and little text (2,000 to 2,400 bytes)
+  why: Images and 2,000 to 2,400 bytes of text. One more paragraph is often enough to leave this bracket.
+  fix:
+    - Add real text to the HTML (headline, paragraphs, call to action) instead of putting it in the image.
+    - Aim for at least a few hundred words of real text; keep the images for illustration.
+    - Set a descriptive alt attribute on each image.
+sa.html_image_only_28:
+  title: HTML message with an image and little text (2,400 to 2,800 bytes)
+  why: Images and 2,400 to 2,800 bytes of text. The last penalized bracket, with a noticeable penalty.
+  fix:
+    - Add real text to the HTML (headline, paragraphs, call to action) instead of putting it in the image.
+    - Aim for at least a few hundred words of real text; keep the images for illustration.
+    - Set a descriptive alt attribute on each image.
+sa.html_image_only_32:
+  title: HTML message with an image and some text (2,800 to 3,200 bytes)
+  why: "Images and 2,800 to 3,200 bytes of text. Negligible score: the message is almost out of the thresholds."
+  fix:
+    - Add real text to the HTML (headline, paragraphs, call to action) instead of putting it in the image.
+    - Aim for at least a few hundred words of real text; keep the images for illustration.
+    - Set a descriptive alt attribute on each image.
+sa.html_image_ratio_02:
+  title: Very little text compared with the surface of the images
+  why: The text is tiny compared with the surface of the declared images. Negligible score, but the indicator points to the HTML_IMAGE_ONLY rules.
+  fix:
+    - Add HTML text, or reduce the declared dimensions of the images (width, height).
+sa.html_image_ratio_04:
+  title: Little text compared with the surface of the images
+  why: The text-to-image-surface ratio is low. Negligible score.
+  fix:
+    - Add HTML text, or reduce the declared dimensions of the images (width, height).
+sa.html_image_ratio_06:
+  title: Text-to-image ratio rather low
+  why: The text-to-image-surface ratio is still low. Negligible score.
+  fix:
+    - Add HTML text, or reduce the declared dimensions of the images (width, height).
+sa.html_image_ratio_08:
+  title: Text-to-image ratio a little low
+  why: The text-to-image-surface ratio is just under the threshold. Negligible score.
+  fix:
+    - Add HTML text, or reduce the declared dimensions of the images (width, height).
+sa.html_short_link_img_1:
+  title: Very short HTML with a clickable image
+  why: "The HTML is under 1 KB and contains a clickable image. It is the spam format of “click on the poster”. Negligible score here, but combined with a short link it weighs 2 points (SHORTENER_SHORT_IMG)."
+  fix:
+    - Add text around the clickable image, and an equivalent text link.
+sa.html_short_link_img_2:
+  title: Short HTML with a clickable image
+  why: The HTML is 1 to 1.5 KB and contains a clickable image. Negligible score.
+  fix:
+    - Add text around the clickable image, and an equivalent text link.
+sa.html_short_link_img_3:
+  title: Fairly short HTML with a clickable image
+  why: The HTML is 1.5 to 2 KB with a clickable image. Low penalty.
+  fix:
+    - Add text around the clickable image, and an equivalent text link.
+sa.html_font_low_contrast:
+  title: Text color too close to the background
+  why: "Some of the text is almost the same color as its background, so it is invisible or unreadable. Spammers hide text this way to fool filters. In a newsletter, this often comes from white text on a background image that SpamAssassin does not see, or from a preheader colored like the background."
+  fix:
+    - Declare a background color (bgcolor or background-color) on the cell holding the light text, in addition to the background image.
+    - "Hide the preheader with display:none and mso-hide:all rather than with a color identical to the background."
+sa.html_font_size_huge:
+  title: Very large HTML font (24 and above)
+  why: "The message uses a very large font size. Negligible score: this is information about a very emphatic style."
+  fix:
+    - Nothing required. Keep very large sizes for a short headline.
+sa.html_font_size_large:
+  title: Large HTML font (18 to 24)
+  why: The message uses a large font size. Information with no effect.
+  fix:
+    - Nothing to fix.
+sa.html_font_face_bad:
+  title: Invalid HTML font name
+  why: "A <font face=\"...\"> tag contains a value that is not a font name (digits, special characters). Negligible score."
+  fix:
+    - "Use simple font names separated by commas: Arial, Helvetica, sans-serif."
+sa.t_kam_html_font_invalid:
+  title: Invalid HTML color
+  why: "A color attribute (color, bgcolor) contains an unreadable value: missing #, five-digit code, unknown name. Test rule with no weight, but it feeds into combined rules (CONTENT_AFTER_HTML)."
+  fix:
+    - "Write colors as full hexadecimal with the hash sign: #1a3c6e."
+sa.html_obfuscate_05_10:
+  title: 5 to 10% of HTML tags split words
+  why: Tags are inserted in the middle of words (Pro<b>mo</b>tion). Spammers do this to hide keywords. An editor that applies a style to part of a word produces the same effect.
+  fix:
+    - Find words split by tags (<span>, <b>, <font>) in the middle of a word, and clean up the HTML.
+    - If the HTML comes from a copy and paste from Word or Google Docs, paste the text without formatting, then reapply the styles.
+sa.html_obfuscate_10_20:
+  title: 10 to 20% of HTML tags split words
+  why: A notable share of tags split words. Low penalty.
+  fix:
+    - Find words split by tags (<span>, <b>, <font>) in the middle of a word, and clean up the HTML.
+    - If the HTML comes from a copy and paste from Word or Google Docs, paste the text without formatting, then reapply the styles.
+sa.html_obfuscate_20_30:
+  title: 20 to 30% of HTML tags split words
+  why: About one tag in four splits a word. Penalty of 2 points.
+  fix:
+    - Find words split by tags (<span>, <b>, <font>) in the middle of a word, and clean up the HTML.
+    - If the HTML comes from a copy and paste from Word or Google Docs, paste the text without formatting, then reapply the styles.
+sa.html_obfuscate_90_100:
+  title: Almost all HTML tags split words
+  why: "Almost all tags are placed in the middle of words: a deliberate obfuscation technique, or very badly generated HTML. 2 points."
+  fix:
+    - Find words split by tags (<span>, <b>, <font>) in the middle of a word, and clean up the HTML.
+    - If the HTML comes from a copy and paste from Word or Google Docs, paste the text without formatting, then reapply the styles.
+sa.html_tag_balance_body:
+  title: Unbalanced opening and closing body tags
+  why: A </body> is missing or there is an extra <body>, often because a template was inserted into another. Low penalty.
+  fix:
+    - Keep a single <body>...</body> pair, and remove those in the pasted blocks.
+sa.html_tag_balance_head:
+  title: Unbalanced opening and closing head tags
+  why: The HTML contains a <head> without </head>, or the reverse. A common case of a template split into pieces by a CMS. Nearly one point.
+  fix:
+    - Close the head tag before <body>, and check the final generated HTML, not the template.
+sa.html_tag_balance_center:
+  title: Unbalanced center tags
+  why: The HTML contains <center> tags that do not close properly. SpamAssassin sees badly generated spam HTML and adds 3.5 points. This occurs with old newsletter templates.
+  fix:
+    - "Replace the <center> tags with align=\"center\" on tables, or with text-align:center in the style."
+    - Otherwise, check that each <center> has its </center>.
+sa.html_extra_close:
+  title: Too many closing tags in the HTML
+  why: The HTML closes tags that were never opened. Negligible score, but rendering can be unpredictable in Outlook.
+  fix:
+    - Run the HTML through a validator, and remove orphan closing tags.
+sa.html_text_invisible_font:
+  title: Text made invisible by color or font size
+  why: Several text blocks are invisible because of their color or size. Negligible score, but it is a sign of filter poisoning.
+  fix:
+    - "Delete the unnecessary hidden text. For a preheader, use a single block hidden with display:none."
+sa.html_text_invisible_style:
+  title: A lot of text hidden by CSS, and other spam signs
+  why: "The message contains more than five elements hidden with display:none or visibility:hidden, combined with another defect. Newsletter editors hide mobile or desktop blocks this way, which can be enough to cross the threshold if the sending also has an infrastructure problem."
+  fix:
+    - "Reduce the number of hidden blocks: a single preheader and a limited number of mobile variants."
+    - Fix the other defect that comes with the rule (often a missing reverse DNS).
+sa.html_nonelement_30_40:
+  title: 30 to 40% of HTML tags are not standard
+  why: A large share of the tags are not standard HTML. Office tags (<o:p>, <v:...>) pasted from Word, or generated for Outlook, are often the cause. Negligible score.
+  fix:
+    - Clean up HTML pasted from Word, and limit Outlook-specific tags to conditional blocks.
+sa.html_comment_saved_url:
+  title: The HTML is a saved web page
+  why: The HTML contains the “saved from url” comment that Internet Explorer adds when a web page is saved. Sending a web page as is, is a spammer's practice.
+  fix:
+    - Delete the <!-- saved from url=... --> comment at the top of the file.
+    - Build the message with an email editor rather than from a saved web page.
+sa.html_title_subj_diff:
+  title: The HTML title is much longer than the subject
+  why: "The <title> tag of the HTML is more than 3.5 times the length of the subject. This happens when the template keeps a long generic title (“Company newsletter, November edition and news”). More than 2 points."
+  fix:
+    - Put the same text as the subject in <title>, or a short title.
+    - In your sending tool, check whether the template's title is filled with the campaign subject.
+sa.html_short_center:
+  title: Very short HTML centered by a center tag
+  why: HTML under 384 bytes centered with <center>. The format of minimalist spam. Moderate penalty.
+  fix:
+    - Add real content, and replace <center> with style.
+sa.html_off_page:
+  title: HTML element placed off the page
+  why: An element is positioned at -100 px or more at the top or left, so off the screen. A hidden-text technique, also used by some templates for the preheader.
+  fix:
+    - Hide the preheader with display:none rather than with negative positioning.
+    - "Sign the message with DKIM: the rule no longer applies."
+sa.html_entity_ascii:
+  title: ASCII text written as HTML entities
+  why: Ordinary letters are written as entities (&#80;&#114;&#111;...) instead of text. A word-hiding technique. Some generators also encode all email addresses this way.
+  fix:
+    - Write the text in plain characters, in UTF-8. Use entities only for the characters that require them (&amp;, &lt;).
+sa.html_embeds:
+  title: HTML with an embedded object
+  why: The HTML contains an <embed>, <object> or <applet> tag. No common mail software displays it. Negligible score.
+  fix:
+    - Replace the embedded video or animation with a clickable image linking to the page that hosts it.
+sa.html_attach:
+  title: HTML attachment
+  why: The message attaches an HTML file. Phishing uses these to display a fake login page outside link filters. Negligible score, but many gateways block these attachments.
+  fix:
+    - Put the content in the body of the message or in a PDF, or offer a link to your site.
+sa.html_charset_faraway:
+  title: HTML character set from an unexpected language
+  why: The HTML declares an Asian or Cyrillic character set, while the test server only accepts certain languages. It only triggers if the server has restricted ok_locales.
+  fix:
+    - "Declare <meta charset=\"utf-8\"> and encode the whole message in UTF-8."
+sa.html_shrt_cmnt_obfu_many:
+  title: Many short HTML comments inside words
+  why: Short HTML comments are inserted in the middle of words, a keyword-hiding technique.
+  fix:
+    - Remove the HTML comments from the body of the message, or at least those stuck to text.
+sa.obfuscating_comment:
+  title: HTML comments that split words
+  why: An HTML comment is placed between two letters (Gra<!-- -->tuit). Some editors leave formatting comments in the middle of text.
+  fix:
+    - Remove the HTML comments stuck to text. Keep only the Outlook conditional comments between blocks.
+sa.many_span_in_text:
+  title: Many span tags inserted into words
+  why: <span> tags open and close in the middle of words. Visual editors produce this when the color or weight of a few letters is changed. Close to 2.5 points.
+  fix:
+    - "Clean up the text: apply styles to whole words, not to pieces of words."
+    - Paste the text without formatting into the editor, then reapply the styles.
+sa.content_after_html:
+  title: Content after the closing html tag, with other signs
+  why: Text is found after </html>. Spammers place random text there to fool filters. A tool that adds a footer or a pixel after the document does the same.
+  fix:
+    - Place all the content (footer, tracking pixel, legal notices) before </body></html>.
+sa.content_after_html_weak:
+  title: Content after the closing html tag
+  why: Text follows the </html> tag, often a signature or legal notice added by the outgoing server or an antivirus. 1 point.
+  fix:
+    - If your server adds a footer, configure it to insert it before </body>, or turn it off.
+    - Otherwise, move any content located after </html> into the template.
+sa.mixed_href_case:
+  title: href attribute written in mixed case
+  why: Links are written sometimes as <a href=, sometimes as <A HREF= or <a HREF=. This mix comes from HTML assembled from different sources, or from spam software. Close to 2 points.
+  fix:
+    - Write all tags and attributes in lowercase. An HTML formatter does it automatically.
+sa.mixed_img_case:
+  title: img tag written in mixed case
+  why: An image tag is written in mixed case (<Img). A sign of hand-made HTML, or of HTML altered by spam software.
+  fix:
+    - Write <img in lowercase.
+sa.ac_div_bonanza:
+  title: Ten or more empty div elements in a row
+  why: "The HTML contains at least ten <div> tags in a row, often empty. Negligible score: this is a leftover of an editor's layout."
+  fix:
+    - Delete the empty divs. Use margins or table spacing.
+sa.ac_br_bonanza:
+  title: Thirty or more line breaks in a row
+  why: The HTML contains at least thirty consecutive <br> tags. A technique to push text out of view, or a layout made with line breaks. Negligible score.
+  fix:
+    - Replace runs of <br> with CSS spacing (padding, margin).
+sa.long_invisible_text:
+  title: Long block of hidden text
+  why: The message contains a long block of invisible text. Spammers put text there to “poison” Bayesian filters.
+  fix:
+    - Delete unnecessary hidden text blocks. A preheader should be one sentence.
+sa.word_invis:
+  title: A word made invisible
+  why: A word is hidden by a zero font size or a transparent color. A hiding technique, but newsletter templates also use it for preheader spacing. 3 points.
+  fix:
+    - Remove the elements with font-size:0 or color:transparent that contain text.
+    - "For the preheader, use display:none. For spacing, use &zwnj;&nbsp; characters in a hidden block."
+sa.t_remote_image:
+  title: The message loads a remote image
+  why: "The message displays an image hosted on an external server, without subscription text. Test rule with no weight: simple indication."
+  fix:
+    - Nothing required. Add text that explains why the recipient is receiving the message.
+sa.dc_image_spam_html:
+  title: Possible image spam (HTML)
+  why: The message contains a large image, almost no text and no link. The profile of image spam that displays its text in a GIF.
+  fix:
+    - Put the text in HTML, and add at least one link to your site.
+sa.dc_image_spam_text:
+  title: Possible image spam with little text
+  why: A large image, almost no text and no link. Same profile as DC_IMAGE_SPAM_HTML.
+  fix:
+    - Add real text and a link to your site.
+sa.long_img_uri:
+  title: Image address with a very long identifier
+  why: An image is loaded from an address that contains a segment of 45 characters or more, like tracking pixels. Sending tools produce addresses of this type. Low penalty.
+  fix:
+    - Host the images of the message at readable addresses under your domain.
+sa.uri_img_wp_redir:
+  title: Image served by the WordPress.com image proxy
+  why: "An image goes through i0.wp.com or i2.wp.com, the image acceleration service of Jetpack. Spammers use this proxy to hide the origin of their images: SpamAssassin adds one point. This happens when a newsletter reuses the images of a WordPress article with Jetpack active."
+  fix:
+    - "Use the direct address of the image on your site (https://{domain}/wp-content/uploads/...)."
+  fix_by_provider:
+    wordpress: Turn off the Jetpack image accelerator (Site Accelerator), or copy the original address of the image from the media library.

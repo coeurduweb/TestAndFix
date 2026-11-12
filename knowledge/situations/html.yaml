@@ -1,0 +1,372 @@
+# Famille html : structure et code de la partie text/html.
+# Les seuils nommés config.* sont des réglages internes de l'outil.
+# Les réglages ASF de Microsoft Defender cités ici sont désactivés par défaut : ils ne s'appliquent
+# que chez les organisations Microsoft 365 qui les ont activés. Ils montrent ce que les filtres jugent suspect.
+
+- id: html.invalid_structure
+  family: html
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "html.parse_errors.count > config.max_html_parse_errors"
+    notes: "Balises non fermées, imbrication incorrecte, attributs cassés relevés par un analyseur HTML5. Google demande un HTML conforme aux standards."
+  sa_rules: []
+  title: "Le HTML contient des erreurs de structure"
+  why: >
+    L'analyse relève {value} erreurs de structure. Google demande un HTML conforme aux standards :
+    un code cassé s'affiche différemment selon les clients et ressemble aux gabarits bricolés du spam.
+  fix:
+    - "Passez le HTML dans un validateur (validator.w3.org, onglet Validate by Direct Input) et corrigez les balises non fermées."
+    - "Si vous collez du HTML exporté d'un traitement de texte, repartez d'un modèle d'e-mail propre."
+  references:
+    - https://support.google.com/mail/answer/81126
+    - https://html.spec.whatwg.org/multipage/parsing.html
+
+- id: html.no_doctype
+  family: html
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "body.has_html && !html.has_doctype"
+    notes: "Sans doctype, les clients qui rendent dans un navigateur passent en mode quirks."
+  sa_rules: []
+  title: "Le HTML n'a pas de déclaration doctype"
+  why: >
+    Sans doctype, les webmails et les applications affichent le message en mode de compatibilité :
+    marges, tailles et alignements changent d'un client à l'autre.
+  fix:
+    - "Ajoutez <!DOCTYPE html> sur la première ligne de la partie HTML."
+    - "Encadrez le contenu par html, head (avec meta charset) et body."
+  example_good: |
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+    <body>...</body>
+    </html>
+  references:
+    - https://html.spec.whatwg.org/multipage/syntax.html#the-doctype
+
+- id: html.script_tag
+  family: html
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "html.elements('script').count > 0"
+    notes: "Microsoft Defender, option ASF JavaScript or VBScript in HTML : spam à haute confiance."
+  sa_rules: []
+  title: "Le HTML contient du JavaScript"
+  why: >
+    Aucun client de messagerie n'exécute les scripts, mais leur présence est un indice fort de
+    message malveillant. Microsoft propose de classer ces messages en spam à haute confiance.
+  fix:
+    - "Supprimez toutes les balises script du message."
+    - "Remplacez les interactions (compteur, formulaire, carrousel) par un lien vers une page de {domain}."
+  example_bad: "<script src=\"https://example.com/tracker.js\"></script>"
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: html.event_handlers
+  family: html
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "html.attributes.any(a => a.name ~ /^on[a-z]+$/i)"
+    notes: "Attributs onclick, onload, onmouseover... Même traitement que le JavaScript par les filtres."
+  sa_rules: []
+  title: "Le HTML contient des attributs JavaScript (onclick, onload...)"
+  why: >
+    L'attribut {value} est du JavaScript. Il ne fonctionne dans aucun client de messagerie et il est
+    traité par les filtres comme un script.
+  fix:
+    - "Supprimez tous les attributs qui commencent par on (onclick, onload, onmouseover)."
+    - "Pour un effet au survol, utilisez la pseudo-classe CSS :hover dans le bloc style."
+  example_bad: "<a href=\"https://{domain}/offre\" onclick=\"track()\">Voir l'offre</a>"
+  example_good: "<a href=\"https://{domain}/offre\">Voir l'offre</a>"
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: html.iframe
+  family: html
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "html.elements('iframe','frame','frameset').count > 0"
+    notes: "Microsoft Defender, option ASF Frame or iframe tags in HTML : spam à haute confiance."
+  sa_rules: []
+  title: "Le HTML contient une iframe"
+  why: >
+    Les iframes ne s'affichent pas dans la plupart des clients et servent à charger du contenu
+    extérieur caché. Microsoft propose de classer ces messages en spam à haute confiance.
+  fix:
+    - "Supprimez l'iframe."
+    - "Pour une vidéo ou une carte, mettez une image cliquable qui renvoie vers la page de {domain} où elle est intégrée."
+  example_good: "<a href=\"https://{domain}/video\"><img src=\"https://{domain}/img/video.jpg\" alt=\"Voir la vidéo de présentation\" width=\"600\"></a>"
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: html.form
+  family: html
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "html.elements('form').count > 0 || html.elements('input','textarea','select').count > 0"
+    notes: "Microsoft Defender, option ASF Form tags in HTML : spam à haute confiance. Les formulaires dans le message sont typiques de l'hameçonnage."
+  sa_rules: []
+  title: "Le HTML contient un formulaire"
+  why: >
+    Un formulaire dans un e-mail sert le plus souvent à voler des identifiants. Microsoft propose de
+    classer ces messages en spam à haute confiance, et beaucoup de clients désactivent le formulaire.
+  fix:
+    - "Supprimez le formulaire du message."
+    - "Mettez un bouton qui renvoie vers un formulaire hébergé sur {domain}, en HTTPS."
+  example_good: "<a href=\"https://{domain}/avis\" style=\"display:inline-block;padding:12px 24px;background:#1a5fb4;color:#ffffff;text-decoration:none;border-radius:4px\">Donner mon avis</a>"
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: html.object_embed
+  family: html
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "html.elements('object','embed','applet').count > 0"
+    notes: "Microsoft Defender, options ASF Embed tags in HTML et Object tags in HTML : spam à haute confiance."
+  sa_rules: []
+  title: "Le HTML contient des balises object ou embed"
+  why: >
+    Ces balises servent à charger des modules ou des documents dans la page. Elles ne fonctionnent
+    pas dans les clients de messagerie et Microsoft propose de classer ces messages en spam.
+  fix:
+    - "Supprimez les balises object, embed et applet."
+    - "Remplacez le contenu intégré par une image et un lien vers {domain}."
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: html.meta_refresh
+  family: html
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "html.elements('meta').any(m => m.http_equiv ~ /refresh/i)"
+    notes: "Redirection automatique vers une autre page, technique d'hameçonnage."
+  sa_rules: []
+  title: "Le HTML contient une redirection automatique (meta refresh)"
+  why: >
+    Une balise meta refresh tente d'envoyer le lecteur vers une autre page sans clic. C'est une
+    technique d'hameçonnage : les filtres la sanctionnent et les clients l'ignorent.
+  fix:
+    - "Supprimez la balise meta http-equiv='refresh'."
+    - "Si le HTML vient d'une page web, repartez d'un modèle conçu pour l'e-mail."
+  example_bad: "<meta http-equiv=\"refresh\" content=\"0;url=https://exemple.test/\">"
+  references:
+    - https://html.spec.whatwg.org/multipage/semantics.html#attr-meta-http-equiv-refresh
+
+- id: html.base_href
+  family: html
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "html.elements('base').count > 0"
+    notes: "La balise base change la cible de tous les liens relatifs ; certains clients l'ignorent, d'autres l'appliquent."
+  sa_rules: []
+  title: "Le HTML contient une balise base"
+  why: >
+    La balise base change la destination de tous les liens relatifs. Les clients ne la traitent pas
+    tous de la même façon : vos liens risquent de pointer ailleurs, et les filtres s'en méfient.
+  fix:
+    - "Supprimez la balise base."
+    - "Écrivez tous les liens et toutes les images en adresse complète, par exemple https://{domain}/page."
+  references:
+    - https://html.spec.whatwg.org/multipage/semantics.html#the-base-element
+
+- id: html.external_stylesheet
+  family: html
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "html.elements('link').any(l => l.rel ~ /stylesheet/i) || html.styles.contains('@import')"
+    notes: "Google documente la prise en charge des blocs style intégrés au message, pas des feuilles de style externes."
+  sa_rules: []
+  title: "La mise en forme dépend d'une feuille de style externe"
+  why: >
+    Le message charge sa feuille de style depuis {url}. La plupart des clients ne la chargent pas :
+    le destinataire voit un message sans mise en forme.
+  fix:
+    - "Copiez les règles CSS nécessaires dans un bloc style placé dans le head du message."
+    - "Pour les règles essentielles (couleurs, tailles, largeurs), passez-les aussi en attribut style sur les éléments."
+    - "Supprimez la balise link rel='stylesheet' et les @import."
+  example_bad: "<link rel=\"stylesheet\" href=\"https://{domain}/css/newsletter.css\">"
+  example_good: "<style>.btn{background:#1a5fb4;color:#ffffff}</style>"
+  references:
+    - https://developers.google.com/workspace/gmail/design/css
+
+- id: html.external_fonts
+  family: html
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "html.styles.contains('@font-face') || html.elements('link').any(l => l.href ~ /fonts\\./i)"
+    notes: "Polices web chargées depuis un serveur externe. Faible impact sur la délivrabilité, impact sur le rendu."
+  sa_rules: []
+  title: "Le message charge des polices de caractères externes"
+  why: >
+    Les polices externes ne sont pas affichées par tous les clients et ajoutent une requête vers un
+    serveur tiers. Sans police de repli, le texte peut s'afficher dans une police inattendue.
+  fix:
+    - "Déclarez toujours une pile de polices de repli : font-family: 'Votre police', Arial, Helvetica, sans-serif."
+    - "Vérifiez le rendu du message avec la police de repli seule."
+  references:
+    - https://developers.google.com/workspace/gmail/design/css
+
+- id: html.base64_inline_heavy
+  family: html
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "html.data_uri_bytes > config.max_data_uri_bytes"
+    notes: "Images encodées en data:image/...;base64 directement dans le HTML."
+  sa_rules: []
+  title: "Le HTML contient des images encodées en base64"
+  why: >
+    Les images intégrées en base64 alourdissent le HTML de {value}. Plusieurs clients ne les
+    affichent pas, et le message devient assez lourd pour être tronqué par Gmail.
+  fix:
+    - "Hébergez les images sur {domain} ou sur votre outil d'envoi, puis remplacez chaque src='data:...' par l'adresse https de l'image."
+    - "Gardez seulement les très petites icônes en ligne si vous y tenez, ou mieux, hébergez-les aussi."
+  example_bad: "<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...\">"
+  example_good: "<img src=\"https://{domain}/img/logo.png\" alt=\"Logo\" width=\"160\" height=\"40\">"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2397
+    - https://mailchimp.com/help/gmail-is-clipping-my-email/
+
+- id: html.hidden_text_color
+  family: html
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "html.text_nodes.any(t => t.words >= config.hidden_min_words && contrast(t.color, t.effective_background) < config.min_hidden_contrast)"
+    notes: "Texte de la même couleur que son fond (blanc sur blanc). Google : ne pas utiliser HTML et CSS pour cacher du contenu. Le fond est calculé en remontant les éléments parents ; un fond en image donne un calcul incertain, à signaler comme tel."
+  sa_rules: []
+  title: "Du texte est caché par sa couleur (texte blanc sur fond blanc)"
+  why: >
+    Une partie du texte a la même couleur que le fond. Google demande de ne pas cacher de contenu
+    avec HTML et CSS : c'est une technique de spam connue et pénalisée.
+  fix:
+    - "Supprimez le texte invisible."
+    - "Si c'est un texte d'aperçu (preheader), utilisez le champ prévu par votre outil d'envoi."
+    - "Si c'est voulu pour un fond en image, ajoutez une couleur de fond de secours sur le même élément."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: html.hidden_text_size
+  family: html
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "html.text_nodes.any(t => t.words >= config.hidden_min_words && (t.font_size == 0 || t.display == 'none' || t.visibility == 'hidden' || t.max_height == 0 || t.opacity == 0))"
+    notes: "Texte rendu invisible par la taille ou l'affichage. Exception admise : un texte d'aperçu court en tête de message, compté à part."
+  sa_rules: []
+  title: "Du texte est caché par sa taille ou par display:none"
+  why: >
+    Le message contient {value} mots invisibles. Google demande de ne pas cacher de contenu avec HTML
+    et CSS : les filtres y voient du bourrage de texte pour tromper l'analyse.
+  fix:
+    - "Supprimez les blocs de texte invisibles."
+    - "Gardez seulement un texte d'aperçu court, et réglez-le dans le champ prévu par votre outil."
+  fix_by_provider:
+    mailchimp: "Renseignez le texte d'aperçu dans le champ Preview text de la campagne au lieu d'un bloc caché."
+    brevo: "Renseignez le texte d'aperçu dans le champ prévu à l'étape Objet de la campagne."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: html.obfuscated_entities
+  family: html
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "html.text.numeric_entities_for_ascii_letters > config.max_ascii_entities"
+    notes: "Lettres ordinaires écrites en entités numériques (&#80;&#114;...) pour masquer des mots aux filtres."
+  sa_rules: []
+  title: "Des mots sont écrits en codes HTML pour être masqués"
+  why: >
+    Des lettres ordinaires sont écrites sous forme de codes numériques HTML. Cette technique sert à
+    cacher des mots aux filtres, qui la repèrent et la sanctionnent.
+  fix:
+    - "Écrivez le texte en caractères normaux dans le modèle."
+    - "Si votre éditeur produit ces codes, désactivez l'option d'encodage des caractères ou changez d'éditeur."
+  example_bad: "&#80;&#114;&#111;&#109;&#111;"
+  example_good: "Promo"
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: html.fixed_width_wide
+  family: html
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "html.max_fixed_width_px > config.max_email_width_px"
+    notes: "Tableau ou bloc de largeur fixe supérieure au réglage interne."
+  sa_rules: []
+  title: "Le message a une largeur fixe trop grande"
+  why: >
+    Un bloc mesure {value} pixels de large. Sur mobile, le message oblige à défiler sur le côté ou
+    s'affiche en tout petit, ce qui augmente les suppressions sans lecture.
+  fix:
+    - "Donnez au conteneur principal une largeur maximale adaptée à la lecture, par exemple width='600' avec style='max-width:600px;width:100%'."
+    - "Ajoutez une règle @media (max-width: 600px) qui passe les colonnes en largeur 100 %."
+  example_good: "<table role=\"presentation\" width=\"600\" style=\"max-width:600px;width:100%\">"
+  references:
+    - https://developers.google.com/workspace/gmail/design/css
+
+- id: html.style_head_only
+  family: html
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "html.styles.in_head.rules > 0 && html.inline_style_attributes == 0"
+    notes: "Gmail prend en charge les blocs style (documentation Google). D'autres clients peuvent retirer ou ignorer ce bloc : les styles en ligne restent le choix sûr."
+  sa_rules: []
+  title: "Toute la mise en forme est dans le bloc style du head"
+  why: >
+    Aucun élément n'a de style en ligne. Les clients qui retirent le bloc style afficheront le
+    message sans couleurs ni mise en page.
+  fix:
+    - "Passez les styles essentiels en attribut style sur chaque élément avec un outil d'inlining CSS."
+    - "Gardez le bloc style pour les règles @media et les états :hover."
+  references:
+    - https://developers.google.com/workspace/gmail/design/css
+
+- id: html.conditional_comments
+  family: html
+  severity: info
+  penalty: 0
+  detect:
+    signal: "html.comments.any(c => c ~ /^\\[if (!)?mso/i)"
+    notes: "Commentaires conditionnels pour Outlook sur Windows. Usage normal, aucune pénalité. Signalés seulement pour vérifier leur contenu."
+  sa_rules: []
+  title: "Le HTML contient des commentaires conditionnels pour Outlook"
+  why: >
+    Ces commentaires servent à corriger l'affichage dans Outlook pour Windows. Ils sont normaux. Ils
+    deviennent un problème seulement s'ils cachent un contenu différent de celui vu ailleurs.
+  fix:
+    - "Vérifiez que le texte à l'intérieur des blocs [if mso] et [if !mso] dit la même chose dans les deux versions."
+    - "Testez l'affichage dans Outlook pour Windows avant un envoi important."
+  references:
+    - https://learn.microsoft.com/en-us/previous-versions/office/developer/office-2007/aa338201(v=office.12)
+
+- id: html.lang_missing
+  family: html
+  severity: info
+  penalty: 0
+  detect:
+    signal: "body.has_html && html.root.lang == null"
+    notes: "Accessibilité : sans attribut lang, les lecteurs d'écran lisent le texte avec la mauvaise prononciation. Pas d'effet connu sur le filtrage."
+  sa_rules: []
+  title: "La langue du message n'est pas déclarée"
+  why: >
+    Sans attribut lang, un lecteur d'écran peut lire votre texte français avec une prononciation
+    anglaise. Cela ne change pas le filtrage mais gêne une partie de vos lecteurs.
+  fix:
+    - "Ajoutez lang='fr' sur la balise html, et dir='ltr'."
+  example_good: "<html lang=\"fr\" dir=\"ltr\">"
+  references:
+    - https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html

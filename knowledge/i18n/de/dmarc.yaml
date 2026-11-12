@@ -1,0 +1,216 @@
+dmarc.missing:
+  title: Die Domain {domain} hat keine DMARC-Richtlinie
+  why: "Ohne DMARC kann jeder {domain} fälschen, ohne blockiert zu werden, und Sie erhalten keine Berichte über die Nachrichten, die in Ihrem Namen versandt werden. Gmail, Yahoo und Outlook.com verlangen DMARC von Absendern in großer Zahl und schicken die übrigen in den Spam-Ordner oder weisen sie ab."
+  fix:
+    - "Richten Sie eine Adresse für den Empfang der Berichte ein, zum Beispiel dmarc@{domain}."
+    - "Veröffentlichen Sie einen TXT-Eintrag auf _dmarc.{domain}: v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+    - "Lesen Sie die Berichte einige Wochen lang, korrigieren Sie nicht authentifizierte Dienste und wechseln Sie dann zu p=quarantine und danach zu p=reject."
+  fix_by_provider:
+    google_workspace: "Fügen Sie den TXT-Eintrag _dmarc bei Ihrem DNS-Anbieter hinzu (nicht in der Google-Konsole). Google empfiehlt, mit p=none zu beginnen und 48 Stunden zu warten, nachdem SPF oder DKIM eingerichtet wurde."
+    microsoft_365: "Fügen Sie den TXT-Eintrag _dmarc bei Ihrem DNS-Anbieter hinzu. Für die Domain onmicrosoft.com wird DMARC im Microsoft-365-Verwaltungscenter erstellt."
+    ovh: "DNS-Zone, Eintrag hinzufügen, Typ DMARC (eigenes Formular) oder TXT, Subdomain _dmarc. OVHcloud empfiehlt p=none und die Auswertung der Berichte über mehrere Wochen."
+    o2switch: "o2switch dokumentiert DMARC nicht: Ergänzen Sie in cPanel unter Zone Editor einen TXT-Eintrag mit dem Namen _dmarc.{domain}."
+    cpanel: "Email, Email Deliverability, Manage, Abschnitt DMARC: Install the Suggested Record (cPanel 124 und neuer). cPanel gibt an, dass DMARC gültiges SPF und DKIM voraussetzt."
+    plesk: "Websites und Domains, DNS: Ergänzen oder prüfen Sie den TXT-Eintrag _dmarc.{domain}. Je nach Serverkonfiguration hat Plesk vielleicht schon einen angelegt."
+    ionos: "Domain, Zahnrad, DNS, Eintrag hinzufügen, TXT, Hostname _dmarc. Verwenden Sie keine übersetzten Werte aus manchen Beispielen: Gültig sind nur none, quarantine und reject."
+    gandi: "Fügen Sie den TXT-Eintrag _dmarc hinzu. Gandi nennt das Beispiel p=reject und warnt, dass es weitergeleitete Nachrichten blockieren kann: Beginnen Sie mit p=none."
+    infomaniak: "Manager, Globale Sicherheit: Der DMARC-Assistent legt den Eintrag an (einfacher oder erweiterter Modus)."
+    zoho: "Fügen Sie den TXT-Eintrag _dmarc bei Ihrem DNS-Anbieter hinzu und orientieren Sie sich dabei an der DMARC-Seite der Zoho-Mail-Hilfe."
+    proton: "Settings, All settings, Domain names, Review, Reiter DMARC: Übernehmen Sie den vorgeschlagenen Eintrag. Proton empfiehlt danach p=quarantine."
+    brevo: "Brevo verlangt einen DMARC-Eintrag. Angegebener Wert: v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com. Wenn bereits ein DMARC existiert, ergänzen Sie nur ; rua=mailto:rua@dmarc.brevo.com am Ende und behalten Sie einen einzigen Eintrag."
+    mailchimp: "Der Ablauf Account & billing, Domains enthält einen TXT-Eintrag _dmarc, dessen Wert in Ihren Anweisungen angezeigt wird."
+    sendgrid: "Die Domain-Authentifizierung von SendGrid schlägt den TXT-Eintrag _dmarc v=DMARC1; p=none; vor."
+    amazon_ses: "AWS empfiehlt, mit p=none zu beginnen und dann zu quarantine und reject zu wechseln. Für eine SPF-Ausrichtung konfigurieren Sie eine eigene MAIL-FROM-Domain."
+    postmark: "Postmark empfiehlt DMARC unabhängig vom Volumen und beginnt mit p=none."
+    sparkpost: "Auf der Plattform Bird ist vor jedem Versand ein DMARC Pflicht. Angegebener Mindestwert: v=DMARC1; p=none; rua=mailto:dmarc-agg@dmarc.bird.com;"
+    hubspot: "Settings, Content, Domains & URLs, Email Sending: HubSpot erzeugt den Wert des TXT-Eintrags _dmarc, der veröffentlicht werden muss."
+    cloudflare_dns: "Email, DMARC Management, Enable: Cloudflare legt den Eintrag an oder ergänzt ihn um seine rua-Adresse (nur Root-Domain, Funktion in der Beta)."
+dmarc.subdomain_no_policy:
+  title: Weder {domain} noch seine Hauptdomain veröffentlichen ein DMARC
+  why: "Sie senden von einer Subdomain aus, aber keine DMARC-Richtlinie deckt sie ab. Die Anforderungen von Gmail, Yahoo und Outlook.com sind nicht erfüllt, und die Subdomain kann gefälscht werden."
+  fix:
+    - "Veröffentlichen Sie ein DMARC auf der Hauptdomain: _dmarc.<Hauptdomain> mit p=none und rua=, das auch alle ihre Subdomains abdeckt."
+    - "Wenn die Subdomain {domain} eine eigene Richtlinie haben soll, veröffentlichen Sie zusätzlich einen TXT-Eintrag auf _dmarc.{domain}."
+    - "Ergänzen Sie sp=, um die Richtlinie für bestehende Subdomains festzulegen, und np=, um die für nicht existierende Subdomains festzulegen."
+dmarc.multiple_records:
+  title: Die Domain {domain} veröffentlicht mehrere DMARC-Einträge
+  why: "Bei zwei DMARC-Einträgen ignorieren die Empfänger beide: {domain} hat dann weder Richtlinie noch Berichte, als hätte es kein DMARC."
+  fix:
+    - "Notieren Sie die beiden Einträge auf _dmarc.{domain}."
+    - "Führen Sie sie zu einem einzigen zusammen: ein einziger Wert p=, und alle Berichtsadressen in rua=, durch Kommas getrennt."
+    - "Löschen Sie den anderen Eintrag."
+  fix_by_provider:
+    brevo: "Brevo verlangt, nur einen DMARC-Eintrag zu behalten: Ergänzen Sie rua=mailto:rua@dmarc.brevo.com in der Liste rua= Ihres bestehenden Eintrags, statt einen zweiten anzulegen."
+dmarc.syntax_invalid:
+  title: Der DMARC-Eintrag von {domain} wird wegen seiner Syntax ignoriert
+  why: "Ihr Eintrag beginnt nicht genau mit v=DMARC1. Die Empfänger behandeln ihn, als gäbe es ihn nicht: keine Richtlinie, keine Berichte."
+  fix:
+    - "Der Eintrag beginnt mit v=DMARC1; (Großschreibung beachten)."
+    - "Trennen Sie die Tags durch Semikolons und verwenden Sie das Gleichheitszeichen (p=none, nicht p:none)."
+    - "Veröffentlichen Sie: {suggested_record}."
+dmarc.policy_invalid:
+  title: Die DMARC-Richtlinie von {domain} hat einen ungültigen Wert
+  why: "Der Wert von p= (oder sp=, np=) wird nicht erkannt. Ihre strikte Richtlinie wird nicht angewandt: Im besten Fall beschränkt sich der Empfänger auf p=none, im schlimmsten ignoriert er Ihr DMARC."
+  fix:
+    - "Verwenden Sie nur none, quarantine oder reject, auf Englisch und klein geschrieben."
+    - "Veröffentlichen Sie: {suggested_record}."
+dmarc.record_at_apex:
+  title: Das DMARC von {domain} steht an der falschen Stelle
+  why: "Die Empfänger suchen DMARC auf _dmarc.{domain}. Ein Eintrag direkt auf der Domain wird nie gelesen, deshalb gilt {domain} als Domain ohne DMARC."
+  fix:
+    - "Legen Sie denselben TXT-Eintrag mit dem Namen _dmarc an (die Oberfläche hängt oft .{domain} selbst an)."
+    - "Löschen Sie den Eintrag v=DMARC1 von der Domain selbst."
+dmarc.policy_none:
+  title: Die DMARC-Richtlinie von {domain} ist im Beobachtungsmodus (p=none)
+  why: "p=none erfüllt das Minimum, das Gmail, Yahoo und Outlook.com verlangen, fordert aber keine Behandlung betrügerischer Nachrichten: Ein Fälscher kann {domain} weiterhin verwenden."
+  fix:
+    - "Werten Sie die Berichte an die Adresse rua= aus, um legitime nicht authentifizierte Dienste zu finden."
+    - "Korrigieren Sie diese (ausgerichtetes SPF oder DKIM), wechseln Sie dann zu p=quarantine und schließlich zu p=reject."
+    - "Für eine schrittweise Verschärfung schlägt RFC 9989 t=y vor (die Richtlinie wird eine Stufe darunter angewandt) statt pct=."
+dmarc.policy_none_stale:
+  title: "{domain} steht seit mehr als sechs Monaten auf p=none"
+  why: "Die Beobachtung dient dazu, den Wechsel zu einer aktiven Richtlinie vorzubereiten. Nach sechs Monaten reichen die Berichte in der Regel für die Entscheidung, und {domain} bleibt fälschbar, solange Sie nicht vorankommen."
+  fix:
+    - "Prüfen Sie in den DMARC-Berichten, dass Ihre Versanddienste SPF oder DKIM in Ausrichtung bestehen."
+    - "Wechseln Sie zu p=quarantine, gegebenenfalls mit t=y für einige Wochen."
+    - "Wenn die Berichte keine legitime Ablehnung zeigen, wechseln Sie zu p=reject."
+dmarc.pct_partial:
+  title: "Die DMARC-Richtlinie von {domain} betrifft nur einen Teil der Nachrichten (pct={value})"
+  why: "pct= sollte die Richtlinie auf einen Prozentsatz der Nachrichten anwenden, wurde aber aus dem Standard entfernt, weil er nicht zuverlässig angewandt wird. Das Ergebnis hängt vom Empfänger ab, und das BIMI-Logo wird bei Gmail nicht akzeptiert, solange pct nicht 100 ist."
+  fix:
+    - "Entfernen Sie pct= (oder setzen Sie pct=100, wenn Sie BIMI für Gmail vorbereiten)."
+    - "Für eine Testphase verwenden Sie stattdessen t=y: Die Richtlinie wird dann eine Stufe darunter angewandt."
+dmarc.pct_zero:
+  title: "Die DMARC-Richtlinie von {domain} ist wirkungslos gemacht (pct=0)"
+  why: "Bei pct=0 wird die Richtlinie quarantine oder reject auf keine Nachricht angewandt. Sie zeigen eine strikte Richtlinie, die {domain} nicht schützt."
+  fix:
+    - "Wenn Sie noch testen, ersetzen Sie pct=0 durch t=y, das Tag, das RFC 9989 vorsieht."
+    - "Wenn die Tests abgeschlossen sind, entfernen Sie pct=0."
+dmarc.testing_flag:
+  title: "Die DMARC-Richtlinie von {domain} ist im Testmodus (t=y)"
+  why: "Ihre Richtlinie wird eine Stufe niedriger angewandt, als angezeigt wird. Das ist während einer Umstellung gewollt, der Schutz bleibt aber teilweise."
+  fix:
+    - "Entfernen Sie t=y, sobald die Berichte zufriedenstellend sind, damit p={value} vollständig angewandt wird."
+dmarc.sp_weaker:
+  title: "Die Subdomains von {domain} haben eine schwächere DMARC-Richtlinie (sp=)"
+  why: "Ihre Hauptdomain ist geschützt, aber sp= lässt ihre Subdomains unter einer schwächeren Richtlinie. Ein Angreifer kann von factures.{domain} aus senden, ohne blockiert zu werden."
+  fix:
+    - "Prüfen Sie in den Berichten, dass keine legitime Subdomain die DMARC-Prüfung nicht besteht."
+    - "Richten Sie sp= auf p= aus oder entfernen Sie sp=, damit die Subdomains p= übernehmen."
+    - "Ergänzen Sie np=reject, um nicht existierende Subdomains zu blockieren."
+dmarc.np_absent:
+  title: "{domain} blockiert nicht ausdrücklich seine nicht existierenden Subdomains (np=)"
+  why: "Angreifer erfinden oft Subdomains, die nicht existieren. Das Tag np=reject blockiert sie, ohne Ihre echten Subdomains zu verändern."
+  fix:
+    - "Ergänzen Sie np=reject in Ihrem DMARC-Eintrag."
+dmarc.rua_missing:
+  title: "Das DMARC von {domain} fordert keine Berichte an (rua= fehlt)"
+  why: "Ohne rua= wissen Sie nicht, wer in Ihrem Namen sendet und welche Dienste fehlschlagen. Dann ist ein sicherer Wechsel zu einer strikteren Richtlinie nicht möglich."
+  fix:
+    - "Richten Sie eine eigene Adresse ein, zum Beispiel dmarc@{domain}, oder verwenden Sie die Adresse eines Dienstes zur Auswertung von Berichten."
+    - "Ergänzen Sie rua=mailto: mit dieser Adresse in Ihrem Eintrag."
+  fix_by_provider:
+    cloudflare_dns: "Email, DMARC Management, Enable fügt eine rua-Adresse von Cloudflare hinzu und zeigt die Berichte im Dashboard an."
+    brevo: "Sie können rua=mailto:rua@dmarc.brevo.com hinzufügen, die von Brevo angegebene Adresse."
+dmarc.rua_invalid_uri:
+  title: "Eine Berichtsadresse des DMARC von {domain} ist falsch geschrieben"
+  why: "Eine Adresse ohne mailto: wird nicht verstanden: Sie erhalten die Berichte nicht, und wenn auch p= ungültig ist, wird Ihr DMARC gar nicht angewandt."
+  fix:
+    - "Stellen Sie jeder Adresse mailto: voran und trennen Sie die Adressen durch Kommas ohne Leerzeichen."
+    - "Veröffentlichen Sie: {suggested_record}."
+dmarc.rua_external_unauthorized:
+  title: "Die externe DMARC-Berichtsadresse von {domain} hat diese Berichte nicht autorisiert"
+  why: "Ihre Berichte werden an eine andere Domain geschickt, die ihre Zustimmung nicht veröffentlicht hat. Die Empfänger senden sie deshalb nicht: Sie erhalten nichts."
+  fix:
+    - "Bitten Sie den Inhaber der Domain der Adresse rua=, den TXT-Eintrag {domain}._report._dmarc.<seine Domain> mit dem Wert v=DMARC1 zu veröffentlichen (Auswertungsdienste übernehmen das in der Regel für Sie)."
+    - "Oder verwenden Sie eine Adresse von {domain}, die an die externe Adresse weiterleitet."
+dmarc.ruf_present:
+  title: "Das DMARC von {domain} fordert detaillierte Fehlerberichte an (ruf=)"
+  why: "Berichte ruf= können Auszüge aus Nachrichten und persönliche Adressen enthalten. Sie werden selten versandt, und die Adresse, die sie empfängt, muss geschützt sein."
+  fix:
+    - "Behalten Sie ruf= nur, wenn jemand sie wirklich auswertet, und sorgen Sie dafür, dass die Adresse geschützt ist."
+    - "Andernfalls entfernen Sie ruf= und das dazugehörige Tag fo=."
+dmarc.fo_without_ruf:
+  title: "Das Tag fo= im DMARC von {domain} hat keine Wirkung"
+  why: "fo= legt die Fehlerberichte fest, aber es ist keine Adresse ruf= angegeben: Das Tag bewirkt nichts."
+  fix:
+    - "Entfernen Sie fo= oder ergänzen Sie eine Adresse ruf=, wenn Sie diese Berichte wirklich wollen."
+dmarc.obsolete_tags:
+  title: "Das DMARC von {domain} enthält gestrichene Tags (ri=, rf=)"
+  why: "Diese Tags gibt es im aktuellen Standard nicht mehr. Sie stören nicht, verlängern den Eintrag aber unnötig."
+  fix:
+    - "Entfernen Sie ri= und rf= aus dem Eintrag."
+dmarc.unknown_tags:
+  title: "Das DMARC von {domain} enthält ein unbekanntes Tag"
+  why: "Ein falsch geschriebenes Tag wird ohne Fehlermeldung ignoriert: Die Einstellung, von der Sie glauben, sie gesetzt zu haben, existiert nicht."
+  fix:
+    - "Korrigieren Sie die Schreibweise des Tags, das der Test meldet."
+    - "Veröffentlichen Sie: {suggested_record}."
+dmarc.psd_misused:
+  title: "Das DMARC von {domain} erklärt sich zum öffentlichen Suffix (psd=y)"
+  why: "psd=y ist den Registrierungsstellen für Domains vorbehalten. Auf Ihrer Domain kann es Empfängern vortäuschen, dass {domain} und seine Subdomains getrennte Organisationen sind. So bricht die Ausrichtung Ihrer Versand-Subdomains."
+  fix:
+    - "Entfernen Sie psd=y oder ersetzen Sie es durch psd=n, wenn Sie bestätigen wollen, dass {domain} Ihre Organisationsdomain ist."
+dmarc.strict_alignment_breaks:
+  title: "Die strikte Ausrichtung des DMARC von {domain} lässt diese Nachricht scheitern"
+  why: "Ihr Versanddienst verwendet eine Subdomain von {domain}, was bei lockerer Ausrichtung genügt. Mit adkim=s oder aspf=s zählt diese Subdomain nicht mehr, und die Nachricht scheitert an DMARC."
+  fix:
+    - "Entfernen Sie adkim=s und aspf=s (der lockere Modus r ist der Standardwert)."
+    - "Oder lassen Sie DKIM genau mit d={domain} signieren, wenn Ihnen die strikte Ausrichtung wichtig ist."
+  fix_by_provider:
+    amazon_ses: "AWS gibt an, dass die SPF-Ausrichtung einer eigenen MAIL-FROM-Domain voraussetzt, aspf=s nicht zu setzen."
+    google_workspace: "Das Beispiel in der Google-Dokumentation enthält adkim=s; aspf=s. Übernehmen Sie es nicht unverändert, wenn ein Drittdienst von einer Subdomain aus sendet."
+dmarc.fail_reject:
+  title: "Diese Nachricht scheitert an DMARC, und {domain} verlangt ihre Ablehnung"
+  why: "Keine Authentifizierung, die auf {domain} ausgerichtet ist, besteht, und Ihre Richtlinie p=reject verlangt, diese Nachrichten abzuweisen. Bei Gmail, Yahoo oder Outlook.com würde diese Nachricht abgelehnt."
+  fix:
+    - "Ermitteln Sie den Dienst, der diese Nachricht versandt hat ({provider}, IP {ip})."
+    - "Authentifizieren Sie {domain} in diesem Dienst: zuerst DKIM mit d={domain}, und ausgerichtetes SPF, wenn der Dienst es erlaubt."
+    - "Wenn dieser Dienst nicht für {domain} senden soll, erfüllt die Richtlinie ihren Zweck. Lockern Sie sie nicht."
+dmarc.fail_quarantine:
+  title: "Diese Nachricht scheitert an DMARC, und {domain} verlangt ihre Quarantäne"
+  why: "Keine Authentifizierung, die auf {domain} ausgerichtet ist, besteht. Ihre Richtlinie verlangt, diese Nachrichten als verdächtig zu behandeln: Bei den meisten Empfängern landen sie im Spam-Ordner."
+  fix:
+    - "Ermitteln Sie den Dienst, der diese Nachricht versandt hat ({provider}, IP {ip})."
+    - "Richten Sie DKIM mit d={domain} in diesem Dienst ein und, wenn möglich, ausgerichtetes SPF."
+    - "Wiederholen Sie den Test: DMARC muss pass anzeigen."
+dmarc.fail_none:
+  title: "Diese Nachricht scheitert an DMARC (Richtlinie p=none)"
+  why: "Ihre Richtlinie verlangt nichts, aber der Fehler ist sichtbar: Gmail verlangt die Ausrichtung bei Massenversand, und Yahoo verlangt, dass DMARC besteht. Diese Nachricht riskiert den Spam-Ordner, und Sie können die Richtlinie nie verschärfen, ohne diesen Versandstrom zu korrigieren."
+  fix:
+    - "Ermitteln Sie den Dienst ({provider}, IP {ip}) und authentifizieren Sie {domain} in diesem Dienst (DKIM mit d={domain})."
+    - "Prüfen Sie in den DMARC-Berichten, dass kein anderer Dienst im gleichen Fall ist."
+dmarc.temperror:
+  title: "Das DMARC von {domain} konnte nicht gelesen werden (vorübergehender DNS-Fehler)"
+  why: "Der Empfänger konnte Ihre Richtlinie nicht lesen. Je nach Empfänger wird die Nachricht verzögert oder ohne DMARC behandelt."
+  fix:
+    - "Wiederholen Sie den Test, um zu bestätigen, dass der Fehler wiederkehrt."
+    - "Prüfen Sie, dass alle Nameserver von {domain} antworten und die DNSSEC-Signatur gültig ist."
+dmarc.duplicate_tag:
+  title: "Das Tag {value} steht zweimal im DMARC von {domain}"
+  why: "Ein wiederholtes Tag macht den Eintrag ungültig, nach der Syntax, die DMARC von DKIM übernimmt. Je nach Empfänger wird Ihr DMARC ganz ignoriert oder nur einer der beiden Werte berücksichtigt: Sie wissen nicht mehr, welche Richtlinie gilt."
+  fix:
+    - "Öffnen Sie den TXT-Eintrag _dmarc.{domain} bei Ihrem DNS-Anbieter."
+    - "Behalten Sie nur ein Vorkommen von {value} mit dem gewünschten Wert. Für mehrere Berichtsadressen setzen Sie sie in ein einziges Tag rua=, durch Kommas getrennt."
+    - "Vorgeschlagener korrigierter Eintrag: {suggested_record}."
+dmarc.inherited:
+  title: "{domain} wendet die DMARC-Richtlinie von {value} an"
+  why: "Kein Eintrag auf _dmarc.{domain}: Die Empfänger wenden den Eintrag von {value} an, mit dessen Tag sp= (oder p=, falls es keins gibt). Das ist das normale Verhalten von DMARC für eine Subdomain. Man muss nur wissen, welche Richtlinie daraus folgt."
+  fix:
+    - "Nichts zu tun, wenn die Richtlinie von {value} auch für {domain} passt."
+    - "Für eine eigene Richtlinie von {domain}, zum Beispiel p=none, solange Sie ein neues Versandtool einrichten, veröffentlichen Sie einen TXT-Eintrag auf _dmarc.{domain}, der mit v=DMARC1 beginnt."
+    - "Um alle Subdomains auf einmal zu regeln, passen Sie stattdessen sp= im Eintrag von {value} an."
+dmarc.invalid_tag_value:
+  title: "Ungültiger Wert im DMARC von {domain}: {value}"
+  why: "Die Empfänger ignorieren einen Wert, den sie nicht verstehen, und wenden den Standardwert des Tags an. Die Einstellung, von der Sie glauben, sie gesetzt zu haben (Ausrichtung, Berichtsoptionen), gibt es daher nicht."
+  fix:
+    - "Öffnen Sie den TXT-Eintrag _dmarc.{domain} bei Ihrem DNS-Anbieter."
+    - "Korrigieren Sie das gemeldete Tag: adkim und aspf akzeptieren r oder s, fo akzeptiert 0, 1, d oder s, durch Doppelpunkte getrennt."
+    - "Vorgeschlagener korrigierter Eintrag: {suggested_record}."
+dmarc.strict_alignment:
+  title: "Das DMARC von {domain} verlangt eine strikte Ausrichtung ({value})"
+  why: "Bei strikter Ausrichtung scheitert eine Nachricht, die mit einer Subdomain von {domain} signiert oder versandt wurde, an DMARC. Viele Versandtools verwenden aber eine Subdomain für die Rückadresse (em…, mg., bounce.): Die strikte Ausrichtung entzieht ihnen die SPF-Ausrichtung."
+  fix:
+    - "Behalten Sie die strikte Ausrichtung nur, wenn alle Ihre Versände genau {domain} verwenden, bei DKIM (d=) wie bei der Rückadresse."
+    - "Andernfalls entfernen Sie adkim=s und aspf=s: Der lockere Modus (r) ist der Standardwert."
+    - "Prüfen Sie in Ihren DMARC-Berichten, dass keine legitime Quelle scheitert, bevor Sie die strikte Ausrichtung beibehalten."

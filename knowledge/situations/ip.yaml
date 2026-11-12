@@ -1,0 +1,234 @@
+# Famille ip : vérificateur d'adresse IP (réputation, réseau, sources tierces). Variables :
+# {ip}, {value} (valeur mesurée : plage, score, nombre de moteurs ou de collections) et
+# {url} (fiche de la source consultée). Les listes noires DNS sont traitées dans la famille
+# blacklist et le reverse DNS dans la famille rdns.
+# Le code passe sa propre gravité pour ip.abuseipdb_reported (selon le score) et
+# ip.virustotal_flagged (selon le nombre de moteurs) : la pénalité de la fiche ne sert que
+# de valeur par défaut. Sources relues le 2026-11-10.
+
+- id: ip.not_public
+  family: ip
+  severity: info
+  penalty: 0
+  detect:
+    signal: "ip in special_purpose_ranges"
+    notes: "Adresse d'une plage réservée (privée RFC 1918, partagée RFC 6598, boucle locale, lien local, documentation...) : aucune requête n'est envoyée aux sources. {value} est le libellé de la plage."
+  sa_rules: []
+  title: "L'adresse {ip} n'est pas une adresse publique"
+  why: >
+    {ip} relève de cette catégorie : {value}. Ce n'est pas une adresse d'envoi sur Internet :
+    aucune liste noire ni aucun service de réputation ne la connaît, et ce n'est pas
+    l'adresse que voient les destinataires de vos messages.
+  fix:
+    - "Cherchez l'adresse publique par laquelle vos messages sortent : dans les en-têtes d'un message reçu, repérez l'en-tête Received ajouté par le premier serveur extérieur à votre réseau ; l'IP entre crochets après from est votre adresse de sortie."
+    - "Ou demandez à votre hébergeur ou à votre service d'envoi l'adresse IP de sortie de vos messages."
+    - "Relancez la vérification avec cette adresse publique."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6890
+    - https://www.rfc-editor.org/rfc/rfc1918
+    - https://www.iana.org/assignments/iana-ipv4-special-registry/
+
+- id: ip.virustotal_flagged
+  family: ip
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "virustotal.ip.malicious >= 1 || virustotal.ip.suspicious >= 2"
+    notes: "Gravité fixée par le code : 3 moteurs « malveillant » ou plus high 1,5, sinon medium 0,5. Seuils internes de l'outil. VirusTotal ne produit pas de verdict propre : il agrège ceux des éditeurs."
+  sa_rules: []
+  title: "{value} moteur(s) de VirusTotal classent l'IP {ip} comme malveillante"
+  why: >
+    VirusTotal agrège des dizaines de listes de sécurité. Un moteur isolé se trompe souvent ;
+    plusieurs moteurs d'accord signalent en général un contenu malveillant hébergé sur
+    cette adresse ou une machine compromise.
+  fix:
+    - "Ouvrez {url} : l'onglet Detection indique quels moteurs signalent l'adresse et avec quel verdict."
+    - "Si l'adresse est à vous, cherchez un site piraté ou un fichier malveillant hébergé, supprimez-le, puis relancez l'analyse sur VirusTotal."
+    - "Pour un moteur qui se trompe, écrivez à l'éditeur de ce moteur avec le lien de la fiche VirusTotal : VirusTotal indique ne pas pouvoir modifier les résultats lui-même."
+  references:
+    - https://docs.virustotal.com/docs/false-positive-contacts
+
+- id: ip.otx_pulses
+  family: ip
+  severity: info
+  penalty: 0
+  detect:
+    signal: "otx.ip.pulse_count > 0 && otx.ip.validation == []"
+    notes: "Les pulses d'OTX AlienVault sont des collections d'indicateurs publiées par les membres de la communauté ; {value} est leur nombre pour cette adresse."
+  sa_rules: []
+  title: "L'IP {ip} figure dans {value} collection(s) d'indicateurs OTX"
+  why: >
+    Les collections (pulses) d'OTX AlienVault sont publiées par des membres de la
+    communauté. Y figurer est un indice à lire, pas un verdict : une adresse partagée ou
+    réattribuée apparaît souvent dans des collections sans rapport avec son usage actuel.
+  fix:
+    - "Ouvrez {url} et regardez la date et le sujet de chaque collection."
+    - "Ne retenez que les collections récentes qui parlent de spam, d'hameçonnage ou de logiciel malveillant ; si l'adresse est à vous, cherchez la cause comme pour un signalement d'abus."
+  references:
+    - https://docs.levelblue.com/documentation/usm-anywhere/user-guide/otx/about-otx.md
+
+- id: ip.prefix_not_announced
+  family: ip
+  severity: low
+  penalty: 0
+  detect:
+    signal: "ripestat.prefix_overview(ip).announced == false"
+    notes: "Le champ announced de l'appel prefix-overview de RIPEstat vaut false : aucune route vers ce préfixe n'est observée. {value} est le préfixe."
+  sa_rules: []
+  title: "Aucun réseau n'annonce l'adresse {ip} sur Internet"
+  why: >
+    Les tables de routage observées par RIPEstat ne contiennent aucune route vers {ip}. Une
+    adresse non annoncée ne peut ni envoyer ni recevoir de courrier sur Internet : c'est
+    souvent une faute de frappe, ou une adresse rendue par son ancien titulaire.
+  fix:
+    - "Vérifiez l'adresse saisie : comparez-la à celle que donne votre hébergeur ou à celle de l'en-tête Received ajouté par le premier serveur extérieur dans un message reçu."
+    - "Si l'adresse est bien la vôtre et vient d'être attribuée, demandez à votre hébergeur si le préfixe est annoncé, puis relancez la vérification plus tard."
+  references:
+    - https://stat.ripe.net/docs/data-api/api-endpoints/prefix-overview
+
+# Fiche activée le 2026-11-11 : le test qui exigeait le texte de repli a été levé.
+- id: ip.abuseipdb_reported
+  family: ip
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "abuseipdb.score >= 25 || abuseipdb.total_reports > 0"
+    notes: "Gravité fixée par le code selon le score de confiance d'AbuseIPDB : 75 % et plus high 2, 25 % et plus medium 1, en dessous low 0,3. Seuils internes de l'outil. AbuseIPDB indique que le poids des signalements décroît avec le temps et que les scores sont recalculés chaque jour."
+  sa_rules: []
+  title: "L'IP {ip} est signalée sur AbuseIPDB (score {value} %)"
+  why: >
+    Des administrateurs ont signalé {ip} pour des abus : spam, attaques, balayage de ports.
+    Quelques signalements anciens sur une IP partagée sont fréquents ; un score élevé
+    indique une activité récente et répétée.
+  fix:
+    - "Ouvrez {url} et lisez les catégories et commentaires des signalements, avec leurs dates."
+    - "Si l'adresse est à vous, cherchez la machine ou le compte compromis (mot de passe volé, site piraté, serveur SMTP ouvert) et corrigez la cause."
+    - "N'attendez pas de retrait sur demande : AbuseIPDB ne documente pas de procédure de retrait pour le titulaire de l'adresse. Le poids des signalements décroît avec le temps et le score baisse une fois les abus arrêtés."
+    - "Si l'adresse appartient à votre hébergeur ou à votre service d'envoi, transmettez-lui le lien {url}."
+  references:
+    - https://www.abuseipdb.com/faq.html
+
+
+# Réputation d'un domaine sur la même page que celle d'une IP (US-069, 2026-11-11). Variables :
+# {domain} (nom vérifié), {ip}, {host} (nom du serveur web ou de mail qui porte l'IP), {value}
+# (rôle, âge, type de menace ou nombre selon l'entrée), {list_name}, {delist_url}, {url} (fiche
+# de la source). Le code passe sa propre gravité au premier niveau pour ip.domain_ip_listed
+# (celle de l'inscription), ip.domain_virustotal (nombre de moteurs) et ip.domain_urlhaus.
+
+- id: ip.domain_not_found
+  family: ip
+  severity: critical
+  penalty: 10
+  detect:
+    signal: "dns.A(domain).rcode == NXDOMAIN && dns.AAAA(domain).rcode == NXDOMAIN"
+    notes: "Réponse NXDOMAIN des serveurs faisant autorité, obtenue par résolution itérative depuis la racine. La note tombe à 0 : il n'y a rien à évaluer."
+  sa_rules: []
+  title: "Le domaine {domain} n'existe pas"
+  why: >
+    Les serveurs DNS faisant autorité répondent que {domain} n'existe pas (NXDOMAIN). Un nom
+    inexistant ne peut ni recevoir ni envoyer de courrier, et aucune source ne peut juger sa
+    réputation.
+  fix:
+    - "Vérifiez l'orthographe du nom saisi."
+    - "Si le domaine est à vous, vérifiez chez votre bureau d'enregistrement qu'il est bien enregistré, qu'il n'a pas expiré et que ses serveurs DNS sont déclarés."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8020
+
+- id: ip.domain_ip_listed
+  family: ip
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "domain.addresses(web: A/AAAA, mail: MX).any(ip => dnsbl.major.listed(ip))"
+    notes: "Listes majeures seulement (Spamhaus ZEN, Barracuda, SpamCop). Gravité reprise de l'inscription (SBL, XBL, PBL...)."
+  sa_rules: []
+  title: "L'IP {ip} du {value} {host} est inscrite sur {list_name}"
+  why: >
+    Cette adresse sert {domain}. L'IP d'un serveur de mail inscrite sur {list_name} voit ses
+    messages refusés ou classés en indésirables par les serveurs qui consultent cette liste.
+    L'IP d'un site web inscrite signale en général un hébergement partagé avec des sites
+    abusifs, ou un site compromis.
+  fix:
+    - "Lisez la raison et la procédure de retrait dans la ligne de l'adresse {ip}, plus bas sur cette page."
+    - "Si l'adresse appartient à votre hébergeur ou à votre service de messagerie, transmettez-lui l'inscription : c'est à lui de demander le retrait."
+    - "Si le serveur est à vous, corrigez la cause (compte ou site compromis, envois non sollicités) avant de demander le retrait sur {delist_url}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5782
+
+- id: ip.domain_recent
+  family: ip
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "rdap.created(registrable_domain) > now - 30 days"
+    notes: "Date de création lue dans le RDAP du registre (événement registration). Sans date connue, la situation n'est pas déclenchée."
+  sa_rules: []
+  title: "Le domaine {domain} a été créé il y a {value}"
+  why: >
+    Un domaine de moins de 30 jours n'a encore aucun historique : les filtres de messagerie
+    lui accordent peu de confiance, et les campagnes d'hameçonnage utilisent justement des
+    domaines neufs.
+  fix:
+    - "Si le domaine est à vous, augmentez progressivement le volume de vos envois et publiez SPF, DKIM et DMARC dès le départ."
+    - "Si le domaine se présente comme celui d'un service connu, comparez-le au domaine officiel de ce service."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9083
+
+- id: ip.domain_safe_browsing
+  family: ip
+  severity: critical
+  penalty: 4
+  detect:
+    signal: "safebrowsing.v4.lookup(['http://' + domain + '/', 'https://' + domain + '/']).matches != []"
+    notes: "API Lookup v4, types MALWARE, SOCIAL_ENGINEERING, UNWANTED_SOFTWARE, POTENTIALLY_HARMFUL_APPLICATION. {value} est le type de menace en clair."
+  sa_rules: []
+  title: "Google Safe Browsing classe le domaine {domain} comme dangereux ({value})"
+  why: >
+    Google a inscrit la page d'accueil de {domain} dans ses listes de sites dangereux. Les
+    navigateurs qui utilisent Safe Browsing, dont Chrome, affichent une page d'alerte rouge sur
+    cette adresse.
+  fix:
+    - "Si le domaine est à vous, le site a probablement été piraté : nettoyez-le, puis demandez un réexamen dans Google Search Console, rapport Problèmes de sécurité."
+    - "Sinon, ne saisissez aucune information sur ce site."
+  references:
+    - https://developers.google.com/safe-browsing/v4/lookup-api
+    - https://search.google.com/search-console/security-issues
+
+- id: ip.domain_virustotal
+  family: ip
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "virustotal.domain.malicious >= 1 || virustotal.domain.suspicious >= 2"
+    notes: "Gravité fixée par le code : 3 moteurs « malveillant » ou plus high 1,5, sinon medium 0,5. Seuils internes de l'outil."
+  sa_rules: []
+  title: "{value} moteur(s) de VirusTotal classent le domaine {domain} comme malveillant"
+  why: >
+    VirusTotal agrège des dizaines de listes de sécurité. Un moteur isolé se trompe souvent ;
+    plusieurs moteurs d'accord signalent en général un site qui héberge ou a hébergé un contenu
+    malveillant.
+  fix:
+    - "Ouvrez la fiche VirusTotal {url} : l'onglet Detection indique quels moteurs signalent le domaine et avec quel verdict."
+    - "Si le domaine est à vous, cherchez un site piraté ou un fichier malveillant hébergé, supprimez-le, puis relancez l'analyse sur VirusTotal."
+    - "Pour un moteur qui se trompe, écrivez à l'éditeur de ce moteur avec le lien de la fiche VirusTotal."
+  references:
+    - https://docs.virustotal.com/docs/false-positive-contacts
+
+- id: ip.domain_urlhaus
+  family: ip
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "urlhaus.host(domain).query_status == ok"
+    notes: "Gravité fixée par le code : au moins une adresse encore en ligne high 1,5, seulement des adresses hors ligne low 0,3. {value} est le nombre d'adresses recensées."
+  sa_rules: []
+  title: "URLhaus recense {value} adresse(s) malveillante(s) sur {domain}"
+  why: >
+    URLhaus, tenu par abuse.ch, recense les adresses qui distribuent des logiciels
+    malveillants. Des fichiers de {domain} y figurent : le site héberge ou a hébergé un logiciel
+    malveillant.
+  fix:
+    - "Si le site est à vous, ouvrez la fiche URLhaus {url} pour voir les adresses concernées, supprimez ces fichiers et corrigez la faille qui a permis de les déposer."
+    - "Changez les mots de passe d'accès au site (FTP, administration, base de données) et mettez à jour les extensions."
+  references:
+    - https://urlhaus.abuse.ch/api/

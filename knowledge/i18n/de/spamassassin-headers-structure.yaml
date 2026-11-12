@@ -1,0 +1,365 @@
+sa.missing_date:
+  title: Header Date fehlt
+  why: Die Nachricht hat keinen Header Date, obwohl er Pflicht ist. Skripte, die Header von Hand erzeugen, vergessen ihn oft, und mehrere Anbieter lehnen Nachrichten ab, die RFC 5322 nicht einhalten.
+  fix:
+    - Fügen Sie einen Header Date im Format RFC 5322 hinzu oder lassen Sie die Versandbibliothek ihn erzeugen (PHPMailer, Symfony Mailer und Nodemailer tun das).
+sa.missing_from:
+  title: Header From fehlt
+  why: Die Nachricht nennt keinen Absender. Der Header From ist nach RFC 5322 Pflicht, Gmail verlangt seine Einhaltung, und DMARC beruht vollständig darauf.
+  fix:
+    - Fügen Sie einen Header From mit einer Adresse Ihrer Domain hinzu.
+sa.missing_headers:
+  title: Header To fehlt
+  why: Die Nachricht hat keinen Header To. Das ist der Fall, wenn alle Empfänger im Blindkopie stehen, was mit unerwünschten Massenversänden einhergeht.
+  fix:
+    - Fügen Sie einen Header To mit der Adresse des Empfängers hinzu oder Ihre eigene Adresse, wenn Sie im Bcc senden.
+    - Verwenden Sie für Massenversände ein Werkzeug, das eine Nachricht pro Empfänger sendet.
+sa.missing_mid:
+  title: Header Message-ID fehlt
+  why: Die Nachricht hat keine eindeutige Kennung. Die meisten Server fügen beim Versand eine hinzu; ihr Fehlen zeigt ein Skript, das die Nachricht direkt übergibt. Gmail kann eine Nachricht ohne gültige Message-ID ablehnen.
+  fix:
+    - "Erzeugen Sie eine eindeutige Message-ID der Form <Kennung@{domain}> oder lassen Sie die Versandbibliothek das tun."
+    - Prüfen Sie, dass Ihr ausgehender SMTP-Server eine Message-ID ergänzt, wenn sie fehlt.
+  fix_by_provider:
+    postfix: "Setzen Sie in main.cf always_add_missing_headers = yes, damit Postfix fehlende Header Date, Message-ID und From ergänzt."
+sa.missing_subject:
+  title: Header Subject fehlt
+  why: "Die Nachricht hat überhaupt keinen Betreff (der Header fehlt, er ist nicht nur leer). Knapp 2 Punkte: ein häufiger Fehler von Versandskripten."
+  fix:
+    - Fügen Sie einen klaren, beschreibenden Betreff hinzu.
+sa.missing_mimeole:
+  title: Header X-MSMail-Priority ohne X-MimeOLE
+  why: Die Nachricht trägt einen Prioritätsheader von Outlook Express, aber nicht den Header, der ihn immer begleitet. PHP-Bibliotheken fügen X-MSMail-Priority aus Nachahmung hinzu, und SpamAssassin erkennt das.
+  fix:
+    - "Entfernen Sie die Header X-MSMail-Priority und X-Priority, die das Skript hinzufügt: Sie bringen nichts."
+    - "Signieren Sie die Nachricht mit DKIM, falls Sie sie behalten: Die Regel greift dann nicht mehr."
+sa.missing_mime_hb_sep:
+  title: Fehlende Leerzeile zwischen MIME-Headern und Inhalt
+  why: "Ein MIME-Teil hat keine Leerzeile zwischen seinen Headern und seinem Inhalt. Die Nachricht ist fehlerhaft aufgebaut und kann beim Empfänger falsch angezeigt werden. Symbolische Bewertung."
+  fix:
+    - Verwenden Sie eine Versandbibliothek, um das MIME aufzubauen, statt es von Hand zusammenzusetzen.
+sa.no_headers_message:
+  title: Nachricht fast ohne Header
+  why: "Date, To, Message-ID und Received fehlen alle: Die Nachricht wurde eingespeist, ohne einen normalen Versandweg zu durchlaufen."
+  fix:
+    - Senden Sie den Test über Ihren echten Versandserver, mit einer Bibliothek, die die Pflicht-Header erzeugt.
+sa.date_in_future_03_06:
+  title: Das Datum der Nachricht liegt 3 bis 6 Stunden in der Zukunft
+  why: "Der Header Date nennt eine Zeit, die 3 bis 6 Stunden nach dem Eintreffen auf dem Server liegt. Typische Ursache: falsch angegebene Zeitzone (Pariser Zeit mit +0000 geschrieben oder umgekehrt). Mehr als 3 Punkte."
+  fix:
+    - Prüfen Sie Uhrzeit und Zeitzone des Servers oder Rechners, der die Nachricht erzeugt (NTP aktiviert, Zeitzone Europe/Paris).
+    - Erzeugen Sie in einem Skript das Date im Moment des Versands mit dem korrekten Zeitversatz, nicht eine lokale Uhrzeit gefolgt von +0000.
+    - Bei einem geplanten Versand muss das Date der tatsächliche Versandzeitpunkt sein, nicht der Zeitpunkt der Kampagnenerstellung.
+sa.date_in_future_06_12:
+  title: Das Datum der Nachricht liegt 6 bis 12 Stunden in der Zukunft
+  why: Das Date liegt 6 bis 12 Stunden vor dem Empfang. Falsche Uhr oder Zeitzone des Servers oder ein falsch angegebener Versatz zwischen Kontinenten.
+  fix:
+    - Prüfen Sie Uhrzeit und Zeitzone des Servers oder Rechners, der die Nachricht erzeugt (NTP aktiviert, Zeitzone Europe/Paris).
+    - Erzeugen Sie in einem Skript das Date im Moment des Versands mit dem korrekten Zeitversatz, nicht eine lokale Uhrzeit gefolgt von +0000.
+    - Bei einem geplanten Versand muss das Date der tatsächliche Versandzeitpunkt sein, nicht der Zeitpunkt der Kampagnenerstellung.
+sa.date_in_future_12_24:
+  title: Das Datum der Nachricht liegt 12 bis 24 Stunden in der Zukunft
+  why: "Das Date liegt 12 bis 24 Stunden vor dem Empfang. Spammer datieren in die Zukunft, um oben in der Liste zu bleiben; ein falsch eingestellter Server erzeugt denselben Effekt. Mehr als 3 Punkte."
+  fix:
+    - Prüfen Sie Uhrzeit und Zeitzone des Servers oder Rechners, der die Nachricht erzeugt (NTP aktiviert, Zeitzone Europe/Paris).
+    - Erzeugen Sie in einem Skript das Date im Moment des Versands mit dem korrekten Zeitversatz, nicht eine lokale Uhrzeit gefolgt von +0000.
+    - Bei einem geplanten Versand muss das Date der tatsächliche Versandzeitpunkt sein, nicht der Zeitpunkt der Kampagnenerstellung.
+sa.date_in_future_24_48:
+  title: Das Datum der Nachricht liegt 1 bis 2 Tage in der Zukunft
+  why: Das Date liegt ein bis zwei Tage vor dem Empfang. Uhr des Rechners oder des Servers ist verstellt.
+  fix:
+    - Prüfen Sie Uhrzeit und Zeitzone des Servers oder Rechners, der die Nachricht erzeugt (NTP aktiviert, Zeitzone Europe/Paris).
+    - Erzeugen Sie in einem Skript das Date im Moment des Versands mit dem korrekten Zeitversatz, nicht eine lokale Uhrzeit gefolgt von +0000.
+    - Bei einem geplanten Versand muss das Date der tatsächliche Versandzeitpunkt sein, nicht der Zeitpunkt der Kampagnenerstellung.
+sa.date_in_future_48_96:
+  title: Das Datum der Nachricht liegt 2 bis 4 Tage in der Zukunft
+  why: Das Date liegt zwei bis vier Tage vor dem Empfang. Die Uhr des Versandsystems ist stark verstellt.
+  fix:
+    - Prüfen Sie Uhrzeit und Zeitzone des Servers oder Rechners, der die Nachricht erzeugt (NTP aktiviert, Zeitzone Europe/Paris).
+    - Erzeugen Sie in einem Skript das Date im Moment des Versands mit dem korrekten Zeitversatz, nicht eine lokale Uhrzeit gefolgt von +0000.
+    - Bei einem geplanten Versand muss das Date der tatsächliche Versandzeitpunkt sein, nicht der Zeitpunkt der Kampagnenerstellung.
+sa.date_in_future_96_q:
+  title: Das Datum der Nachricht liegt 4 Tage bis 4 Monate in der Zukunft
+  why: "Das Date liegt weit vor dem Empfang. Fehler im Datum des Skripts (Monat und Tag vertauscht, Jahr falsch eingegeben) oder eine nicht synchronisierte Uhr. Knapp 3,5 Punkte."
+  fix:
+    - Prüfen Sie Uhrzeit und Zeitzone des Servers oder Rechners, der die Nachricht erzeugt (NTP aktiviert, Zeitzone Europe/Paris).
+    - Erzeugen Sie in einem Skript das Date im Moment des Versands mit dem korrekten Zeitversatz, nicht eine lokale Uhrzeit gefolgt von +0000.
+    - Bei einem geplanten Versand muss das Date der tatsächliche Versandzeitpunkt sein, nicht der Zeitpunkt der Kampagnenerstellung.
+sa.t_date_in_future_q_plus:
+  title: Das Datum der Nachricht liegt mehr als 4 Monate in der Zukunft
+  why: Das Date liegt mehr als vier Monate nach dem Empfang. Testregel ohne Gewicht, aber der Datumsfehler ist offensichtlich.
+  fix:
+    - Prüfen Sie Uhrzeit und Zeitzone des Servers oder Rechners, der die Nachricht erzeugt (NTP aktiviert, Zeitzone Europe/Paris).
+    - Erzeugen Sie in einem Skript das Date im Moment des Versands mit dem korrekten Zeitversatz, nicht eine lokale Uhrzeit gefolgt von +0000.
+    - Bei einem geplanten Versand muss das Date der tatsächliche Versandzeitpunkt sein, nicht der Zeitpunkt der Kampagnenerstellung.
+sa.date_in_past_03_06:
+  title: Das Datum der Nachricht liegt 3 bis 6 Stunden in der Vergangenheit
+  why: "Die Nachricht ist 3 bis 6 Stunden vor ihrem Eintreffen datiert. Der Versand blieb in der Warteschlange, eine Kampagne wurde vorbereitet und später mit ihrem Erstellungsdatum verschickt, oder die Zeitzone ist falsch angegeben."
+  fix:
+    - Erzeugen Sie den Header Date im Moment des tatsächlichen Versands, besonders bei verzögerten, in die Warteschlange gestellten oder erneut gesendeten Nachrichten.
+    - Prüfen Sie Uhr und Zeitzone des Servers, der die Nachricht erzeugt.
+    - Hat die Nachricht in einer Warteschlange gelegen, suchen Sie den Grund, warum sie nicht sofort gesendet wurde (überlasteter Relay-Server, verspäteter WordPress-Cron).
+sa.date_in_past_06_12:
+  title: Das Datum der Nachricht liegt 6 bis 12 Stunden in der Vergangenheit
+  why: "Die Nachricht ist 6 bis 12 Stunden vor ihrem Eintreffen datiert. Gleiche Ursachen: Warteschlange, wiederverwendetes Erstellungsdatum, Zeitzone."
+  fix:
+    - Erzeugen Sie den Header Date im Moment des tatsächlichen Versands, besonders bei verzögerten, in die Warteschlange gestellten oder erneut gesendeten Nachrichten.
+    - Prüfen Sie Uhr und Zeitzone des Servers, der die Nachricht erzeugt.
+    - Hat die Nachricht in einer Warteschlange gelegen, suchen Sie den Grund, warum sie nicht sofort gesendet wurde (überlasteter Relay-Server, verspäteter WordPress-Cron).
+sa.date_in_past_12_24:
+  title: Das Datum der Nachricht liegt 12 bis 24 Stunden in der Vergangenheit
+  why: Die Nachricht ist vom Vortag datiert, bezogen auf ihr Eintreffen. Oft eine Nachricht, die in einer Warteschlange festsaß und dann freigegeben wurde.
+  fix:
+    - Erzeugen Sie den Header Date im Moment des tatsächlichen Versands, besonders bei verzögerten, in die Warteschlange gestellten oder erneut gesendeten Nachrichten.
+    - Prüfen Sie Uhr und Zeitzone des Servers, der die Nachricht erzeugt.
+    - Hat die Nachricht in einer Warteschlange gelegen, suchen Sie den Grund, warum sie nicht sofort gesendet wurde (überlasteter Relay-Server, verspäteter WordPress-Cron).
+sa.date_in_past_24_48:
+  title: Das Datum der Nachricht liegt 1 bis 2 Tage in der Vergangenheit
+  why: Die Nachricht kam ein bis zwei Tage nach ihrem Datum an. Server, die nach einer vorübergehenden Ablehnung lange wiederholen, erzeugen diese Lücke.
+  fix:
+    - Erzeugen Sie den Header Date im Moment des tatsächlichen Versands, besonders bei verzögerten, in die Warteschlange gestellten oder erneut gesendeten Nachrichten.
+    - Prüfen Sie Uhr und Zeitzone des Servers, der die Nachricht erzeugt.
+    - Hat die Nachricht in einer Warteschlange gelegen, suchen Sie den Grund, warum sie nicht sofort gesendet wurde (überlasteter Relay-Server, verspäteter WordPress-Cron).
+sa.date_in_past_48_96:
+  title: Das Datum der Nachricht liegt 2 bis 4 Tage in der Vergangenheit
+  why: Die Nachricht trägt ein Datum, das zwei bis vier Tage vor ihrem Eintreffen liegt.
+  fix:
+    - Erzeugen Sie den Header Date im Moment des tatsächlichen Versands, besonders bei verzögerten, in die Warteschlange gestellten oder erneut gesendeten Nachrichten.
+    - Prüfen Sie Uhr und Zeitzone des Servers, der die Nachricht erzeugt.
+    - Hat die Nachricht in einer Warteschlange gelegen, suchen Sie den Grund, warum sie nicht sofort gesendet wurde (überlasteter Relay-Server, verspäteter WordPress-Cron).
+sa.date_in_past_96_xx:
+  title: Das Datum der Nachricht liegt mehr als 4 Tage in der Vergangenheit
+  why: "Die Nachricht ist mehr als vier Tage vor ihrem Eintreffen datiert. Weitergeleitete Spam-Nachrichten oder unverändert wiederverwendete alte Vorlagen haben dieses Profil. Knapp 3,5 Punkte."
+  fix:
+    - Erzeugen Sie den Header Date im Moment des tatsächlichen Versands, besonders bei verzögerten, in die Warteschlange gestellten oder erneut gesendeten Nachrichten.
+    - Prüfen Sie Uhr und Zeitzone des Servers, der die Nachricht erzeugt.
+    - Hat die Nachricht in einer Warteschlange gelegen, suchen Sie den Grund, warum sie nicht sofort gesendet wurde (überlasteter Relay-Server, verspäteter WordPress-Cron).
+sa.invalid_date:
+  title: Header Date hat ein ungültiges Format
+  why: "Der Header Date hat nicht das erwartete Format: Monat auf Französisch, ISO-Format wie 2026-11-10 oder fehlende Zeitzone. Skripte, die das Datum selbst formatieren, machen dabei oft Fehler."
+  fix:
+    - "Formatieren Sie das Datum nach RFC 5322: Tag und Monat abgekürzt auf Englisch, Uhrzeit, numerischer Zeitversatz."
+    - "In PHP verwenden Sie date(DATE_RFC2822) oder lassen PHPMailer es erzeugen."
+sa.invalid_date_tz_absurd:
+  title: Unmögliche Zeitzone im Date
+  why: Der Zeitversatz des Date existiert nicht (zum Beispiel +0160 oder +2500). Rechenfehler im Code, der das Datum erzeugt.
+  fix:
+    - Erzeugen Sie den Versatz mit der Datumsfunktion der Programmiersprache, statt ihn von Hand zu berechnen.
+sa.msgid_from_mta_header:
+  title: Message-ID von einem Relay-Server ergänzt
+  why: Die Nachricht wurde ohne Message-ID gesendet, und ein Zwischenserver hat sie ergänzt. Symbolische Bewertung, zeigt aber eine unvollständige Versandsoftware.
+  fix:
+    - Lassen Sie die Message-ID von der Anwendung erzeugen, die die Nachricht erstellt.
+sa.msgid_short:
+  title: Message-ID ungewöhnlich kurz
+  why: Die Message-ID hat weniger als 16 Zeichen oder ihr linker Teil weniger als 5. Sie ist möglicherweise nicht eindeutig. Symbolische Bewertung.
+  fix:
+    - "Erzeugen Sie eine lange, eindeutige Kennung (Zeitstempel plus Zufallswert), gefolgt von @{domain}."
+sa.msgid_multiple_at:
+  title: Message-ID mit mehreren @
+  why: Die Message-ID enthält zwei @-Zeichen, oft weil der Code eine vollständige E-Mail-Adresse nach dem @ eingefügt hat. Ungültiges Format.
+  fix:
+    - "Bilden Sie die Message-ID mit nur der Domain nach dem @: <Kennung@{domain}>."
+sa.msgid_hdr_malf:
+  title: Header MessageID falsch geschrieben
+  why: "Die Nachricht enthält einen Header „MessageID“ ohne Bindestrich, den es nicht gibt. Die Versandsoftware wollte Message-ID schreiben."
+  fix:
+    - Korrigieren Sie den Headernamen im Versandcode zu Message-ID.
+sa.invalid_msgid:
+  title: Message-ID nicht konform
+  why: "Die Message-ID hält sich nicht an die Form <Kennung@Domain>: spitze Klammern fehlen, oder es gibt ein Leerzeichen oder einen Akzent. Empfänger können Diskussionsstränge dann schlecht zuordnen."
+  fix:
+    - Setzen Sie die Kennung in spitze Klammern und verwenden Sie nur ASCII-Zeichen ohne Leerzeichen.
+sa.subj_all_caps:
+  title: Betreff vollständig in Großbuchstaben
+  why: Der Betreff ist durchgehend in Großbuchstaben geschrieben. Moderate Abwertung, aber genau das melden Leser am ehesten als Spam.
+  fix:
+    - Schreiben Sie den Betreff in Kleinbuchstaben mit einem großen Anfangsbuchstaben; behalten Sie Großbuchstaben für höchstens ein Wort.
+sa.subject_needs_encoding:
+  title: Betreff mit nicht kodierten Zeichen
+  why: Der Betreff enthält Akzente oder Sonderzeichen, die roh statt kodiert gesendet werden. Manche Programme zeigen dann unlesbare Zeichen an.
+  fix:
+    - "Deklarieren Sie den Betreff als UTF-8 und lassen Sie die Bibliothek ihn kodieren (=?UTF-8?Q?...?=)."
+    - In PHP mit mail() kodieren Sie den Betreff mit mb_encode_mimeheader().
+sa.subj_illegal_chars:
+  title: Zu viele unkodierte 8-Bit-Zeichen im Betreff
+  why: "Der Betreff enthält mehrere nicht kodierte 8-Bit-Zeichen. Ein französischer Betreff mit Akzenten, den ein Skript ohne Kodierung sendet, löst diese Regel mit 1,5 Punkten aus."
+  fix:
+    - Kodieren Sie den Betreff nach RFC 2047 (UTF-8, quoted-printable oder base64).
+  fix_by_provider:
+    wordpress: "Verwenden Sie wp_mail() statt mail(): WordPress kodiert den Betreff korrekt."
+sa.bad_enc_header:
+  title: Schlecht kodierter Header
+  why: "Ein Header enthält ein kodiertes Wort (=?UTF-8?Q?...), das durch ein Leerzeichen zerteilt oder nicht mit ?= geschlossen ist. Der Text erscheint mit Codes. Symbolische Bewertung."
+  fix:
+    - Verwenden Sie die Kodierfunktion der Versandbibliothek, statt die Zeichenkette von Hand zusammenzusetzen.
+sa.hdrs_lcase:
+  title: Header mit ungewöhnlicher Schreibweise
+  why: "Einige Header sind ungewöhnlich geschrieben („from:“, „Content-type:“). Spamprogramme haben erkennbare Schreibgewohnheiten. Symbolische Bewertung."
+  fix:
+    - "Verwenden Sie die Standardschreibweise: From, To, Subject, Message-ID, Content-Type."
+sa.t_many_hdrs_lcase:
+  title: Mehrere Header mit ungewöhnlicher Schreibweise
+  why: Mehrere Header sind ungewöhnlich geschrieben. Testregel ohne Gewicht.
+  fix:
+    - Verwenden Sie die Standardschreibweise der Headernamen.
+sa.unclosed_bracket:
+  title: Ein Header enthält eine nicht geschlossene eckige Klammer
+  why: "Ein Header enthält „[123“ ohne schließende Klammer, oft eine schlecht gefüllte Vorlagenvariable oder ein abgeschnittener Header. Knapp 1,5 Punkte."
+  fix:
+    - Lesen Sie die erzeugten Header (Betreff, From, X-Header) durch und korrigieren Sie die Variable, die diese Klammer erzeugt.
+sa.unresolved_template:
+  title: Ein Header enthält eine nicht ersetzte Vorlagenvariable
+  why: "Ein Header enthält eine Marke wie %NOM oder %EMAIL, die unverändert geblieben ist: Die Versandsoftware hat ihre Variable nicht ersetzt. Das ist das Kennzeichen schlecht konfigurierter Spamprogramme."
+  fix:
+    - Finden Sie den Header mit dem %-Zeichen und korrigieren Sie die Variable in der Vorlage oder im Skript.
+sa.pling_query:
+  title: Betreff mit Ausrufe- und Fragezeichen
+  why: "Der Betreff enthält sowohl „!“ als auch „?“. Geringe Abwertung, aber ein reißerisches Merkmal im Betreff."
+  fix:
+    - Behalten Sie im Betreff nur ein starkes Satzzeichen oder keines.
+sa.gappy_subject:
+  title: Betreff mit gesperrt geschriebenen Buchstaben
+  why: Der Betreff enthält ein Wort, das Buchstabe für Buchstabe mit Trennzeichen geschrieben ist, eine Technik, um Stichwortfilter zu umgehen. Geringe Abwertung.
+  fix:
+    - Schreiben Sie die Wörter im Betreff normal.
+sa.subj_dollars:
+  title: Betreff beginnt mit einem Dollarbetrag
+  why: Der Betreff beginnt mit einem Betrag in Dollar. Geringe Abwertung.
+  fix:
+    - Beginnen Sie den Betreff mit einem Wort, das den Inhalt beschreibt, statt mit einem Preis.
+sa.subj_buy:
+  title: "Betreff beginnt mit „Buy“"
+  why: "Der Betreff beginnt mit „Buy“ oder „Buying“. Die Regel betrifft nur Englisch."
+  fix:
+    - Formulieren Sie den Betreff so um, dass er das Angebot beschreibt statt eines Kaufbefehls.
+sa.xprio:
+  title: Header X-Priority bei einer nicht authentifizierten Nachricht
+  why: Die Nachricht trägt einen Prioritätsheader und ist nicht authentifiziert. Symbolische Bewertung, aber sie dient als Bedingung für andere, schwerere Regeln.
+  fix:
+    - "Entfernen Sie den Header X-Priority: Er verbessert die Zustellbarkeit nicht."
+    - Signieren Sie die Nachricht mit DKIM.
+sa.xprio_short_subj:
+  title: Hohe Priorität und sehr kurzer Betreff
+  why: "Die Nachricht fordert eine Priorität, und ihr Betreff hat weniger als 9 Zeichen („Dringend“, „Rechnung“). Eine häufige Kombination bei Betrugsversuchen."
+  fix:
+    - Entfernen Sie X-Priority und schreiben Sie einen beschreibenden Betreff.
+sa.x_ip:
+  title: Header X-IP vorhanden
+  why: Die Nachricht enthält einen Header X-IP, den manche Webmail-Dienste und Skripte hinzufügen. Symbolische Bewertung.
+  fix:
+    - Nichts Dringendes. Wenn Ihr Skript ihn hinzufügt, können Sie ihn entfernen.
+sa.spammy_xmailer:
+  title: Versandprogramm, das für Spam bekannt ist
+  why: Der Header X-Mailer nennt eine alte, bestimmte Version von Outlook oder Outlook Express, die Spamprogramme seit Jahren nachahmen. Knapp 2,5 Punkte.
+  fix:
+    - "Entfernen oder korrigieren Sie den Header X-Mailer Ihres Skripts: Ahmen Sie kein Programm nach, das Sie nicht verwenden."
+sa.php_script:
+  title: Nachricht von einem PHP-Skript gesendet
+  why: Der Header X-PHP-Script zeigt einen Versand über die Funktion mail() von PHP auf einem Shared Hosting. Gehackte Websites verschicken Spam über diesen Weg.
+  fix:
+    - Senden Sie die E-Mails der Website per authentifiziertem SMTP über Ihr Postfach statt über mail().
+  fix_by_provider:
+    wordpress: Installieren Sie eine SMTP-Erweiterung (WP Mail SMTP, FluentSMTP, Post SMTP) und konfigurieren Sie den Server Ihres Postfachs.
+    cpanel: Legen Sie in cPanel eine E-Mail-Adresse an und verwenden Sie deren SMTP-Server mit Authentifizierung in der Anwendung.
+sa.php_script_mua:
+  title: Nachricht von einem PHP-Skript ohne Version gesendet
+  why: "Die Nachricht stammt von mail() in PHP und nennt „X-Mailer: PHP“ ohne Version. Das ist die Signatur eines schnell geschriebenen Skripts."
+  fix:
+    - Gehen Sie über eine Bibliothek (PHPMailer, Symfony Mailer) mit authentifiziertem SMTP.
+sa.php_nover_mua:
+  title: Versandprogramm „PHP“ ohne Version angegeben
+  why: Der Header X-Mailer lautet nur „PHP“. Echte Mailprogramme nennen ihren Namen und ihre Version.
+  fix:
+    - Entfernen Sie den Header X-Mailer aus dem Skript oder verwenden Sie eine Versandbibliothek.
+    - "Signieren Sie die Nachricht mit DKIM: Die Regel greift dann nicht mehr."
+sa.php_orig_script:
+  title: Ursprüngliches PHP-Skript angegeben und weitere Bot-Merkmale
+  why: Der Header X-PHP-Originating-Script nennt das PHP-Skript, das die Nachricht gesendet hat, und der Inhalt weist Merkmale automatischen Spams auf. Auf einer Website kann das ein missbrauchtes Formular bedeuten.
+  fix:
+    - Prüfen Sie im Header, welche PHP-Datei die Nachricht gesendet hat; ist sie Ihnen unbekannt, ist die Website wahrscheinlich kompromittiert.
+    - Lassen Sie legitime Versände über authentifiziertes SMTP laufen.
+sa.xm_phpmailer_forged:
+  title: Unvollständiger X-Mailer-Header von PHPMailer
+  why: "Der Header X-Mailer nennt PHPMailer mit dem Wort „version“, aber ohne Nummer. Die echten Header von PHPMailer geben die Version an: Dieser wurde erfunden oder verändert."
+  fix:
+    - Lassen Sie PHPMailer seinen X-Mailer standardmäßig schreiben oder setzen Sie seine Eigenschaft XMailer auf ein Leerzeichen, damit dieser Header nicht gesendet wird.
+sa.mailing_list_multi:
+  title: Header eines Mailinglisten-Verwalters
+  why: "Die Nachricht trägt mehrere Header von Mailinglisten. SpamAssassin erkennt sie als Listenversand und lockert andere Regeln. Trotzdem positiv mit einem Punkt."
+  fix:
+    - "Nichts zu korrigieren: Diese Header sind nützlich. Behalten Sie List-Unsubscribe und List-Id."
+sa.list_prtl_same_user:
+  title: Unvollständige Listen-Header und Absender gleich Empfänger
+  why: Die Nachricht hat einen List-Unsubscribe, aber keinen List-Id, und der Absender trägt dieselbe Kennung wie der Empfänger. Kombination falscher Listenversände.
+  fix:
+    - Fügen Sie einen stimmigen Header List-Id hinzu, wenn Sie eine Mailingliste versenden.
+    - Verwenden Sie eine eigene Versandadresse und signieren Sie mit DKIM.
+sa.header_spam:
+  title: Header, wie ihn Spamprogramme typischerweise setzen
+  why: "Die Nachricht enthält einen Header, den man fast nur in Spamprogrammen findet (Newsletter-ID, UID, X-Company-Address, Antivirus …). Manche selbst gebauten Werkzeuge fügen sie ohne Grund hinzu."
+  fix:
+    - Suchen Sie im Rohtext der Nachricht den betreffenden Header und entfernen Sie ihn aus Ihrem Werkzeug oder Skript.
+sa.ratware_zero_tz:
+  title: Date mit +0000 und Absender im Format eines Spamprogramms
+  why: Das Datum steht in Weltzeit, die Nachricht ist in HTML, und die Adresse ist aus dem Namen nach einem Muster abgeleitet, das aus Spamprogrammen bekannt ist.
+  fix:
+    - Erzeugen Sie das Date mit Ihrer tatsächlichen Zeitzone und fügen Sie dem Text einen Textteil hinzu.
+sa.forged_mua_outlook:
+  title: Die Nachricht gibt sich als von Outlook gesendet, hat aber nicht deren Merkmale
+  why: Der Header X-Mailer nennt Outlook, aber die Message-ID entspricht nicht dem, was Outlook erzeugt. Ein Skript, das Outlook nachahmt, um seriös zu wirken, erreicht das Gegenteil.
+  fix:
+    - Entfernen Sie den Header X-Mailer, der Outlook nachahmt, aus Ihrem Skript oder Werkzeug.
+sa.forged_outlook_html:
+  title: "„Outlook“-Nachricht ohne Textteil"
+  why: Outlook sendet immer eine Textversion zusammen mit dem HTML. Eine Nachricht, die sich als von Outlook ausgibt, aber nur HTML enthält, ist nachgeahmt. Geringe Bewertung.
+  fix:
+    - Fügen Sie einen Textteil hinzu und entfernen Sie den X-Mailer von Outlook, wenn Sie nicht aus Outlook senden.
+sa.forged_outlook_tags:
+  title: "„Outlook“-HTML ohne die Struktur, die Outlook erzeugt"
+  why: Outlook erzeugt immer ein vollständiges HTML. Eine „Outlook“-Nachricht ohne diese Tags wurde anderswo gefertigt. Geringe Bewertung.
+  fix:
+    - Erzeugen Sie ein vollständiges HTML-Dokument (html, head, meta charset, body) und ahmen Sie den X-Mailer von Outlook nicht nach.
+sa.dos_outlook_to_mx:
+  title: "„Outlook“-Nachricht direkt an den Server des Empfängers übergeben"
+  why: "Die Nachricht gibt sich als von Outlook gesendet aus, wurde aber direkt an den Empfangsserver übergeben, ohne einen Versandserver zu durchlaufen. Outlook geht immer über einen Server: Das ist das Merkmal eines Bots. Knapp 3 Punkte."
+  fix:
+    - Senden Sie über den SMTP-Server Ihres Postfachs und entfernen Sie den X-Mailer, der Outlook nachahmt.
+sa.mimeole_direct_to_mx:
+  title: Header X-MimeOLE und direkte Übergabe an den Server
+  why: Die Nachricht trägt den Header X-MimeOLE von Microsoft-Software und wird direkt an den Empfangsserver übergeben. Typische Kombination bei infizierten Rechnern.
+  fix:
+    - Gehen Sie über den SMTP-Server Ihres Postfachs oder signieren Sie die Nachrichten mit DKIM.
+sa.dos_body_high_no_mid:
+  title: Text mit 8-Bit-Zeichen und ohne Message-ID
+  why: "Die Nachricht hat keine Message-ID, und ihr Text enthält akzentuierte Zeichen. Für eine französische Nachricht, die ein Skript ohne Message-ID sendet, kostet das knapp 4 Punkte."
+  fix:
+    - "Fügen Sie eine Message-ID hinzu (siehe MISSING_MID): Das genügt, um diese Regel zu entfernen."
+sa.cte_8bit_mismatch:
+  title: Text als 7 Bit deklariert, enthält aber Akzente
+  why: Der Textteil deklariert sich als 7 Bit (reines ASCII), enthält aber akzentuierte Zeichen. Der Text kann beim Empfänger verfälscht erscheinen.
+  fix:
+    - "Deklarieren Sie für den Textteil Content-Transfer-Encoding: quoted-printable (oder 8bit) und charset=UTF-8."
+sa.has_x_outgoing_spam_stat:
+  title: Header X-OutGoing-Spam-Status vorhanden
+  why: Der Versandserver hat den Header X-OutGoing-Spam-Status hinzugefügt (cPanel tut das mit seinem ausgehenden Filter). SpamAssassin hält einem solchen Header nicht vertrauen und vergibt einen Punkt.
+  fix:
+    - Betreiben Sie den cPanel-Server selbst, deaktivieren Sie das Hinzufügen dieses Headers bei ausgehenden Nachrichten oder versenden Sie über ein Relay, das ihn nicht ergänzt.
+  fix_by_provider:
+    cpanel: Der Header stammt vom ausgehenden Filter von Exim unter cPanel; nur der Serveradministrator (WHM) kann ihn deaktivieren.
+sa.rand_mktg_header:
+  title: Marketing-Tracking-Header mit teilweise zufälligem Namen
+  why: Die Nachricht enthält einen Kampagnen-Tracking-Header, dessen Name sich von Versand zu Versand ändert, ein Muster aus Spamprogrammen.
+  fix:
+    - Verwenden Sie feste Namen für Tracking-Header oder entfernen Sie sie.
+sa.jh_spammy_headers:
+  title: Seltener Header, der vor allem in Spam vorkommt
+  why: "Die Nachricht enthält einen Header wie Complaint-To, Tracking-Code oder List-Open, den man fast nur in Spam findet."
+  fix:
+    - Entfernen Sie diesen Header aus Ihrer Versandsoftware.
+sa.no_dns_for_from:
+  title: Die Envelope-Domain hat weder MX noch IP-Adresse
+  why: "{envelope_domain}, die Domain, die Rückläufer (Bounces) empfängt, existiert nicht im DNS oder hat weder MX noch A. Fehlermeldungen gehen verloren, und viele Server lehnen einen nicht erreichbaren Absender ab."
+  fix:
+    - Verwenden Sie einen Return-Path unter einer Domain, die Post empfängt (MX-Eintrag).
+    - "Ist {envelope_domain} eine technische Subdomain des Versandwerkzeugs, veröffentlichen Sie den MX oder den Eintrag, den das Werkzeug verlangt."

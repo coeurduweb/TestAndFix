@@ -1,0 +1,317 @@
+sa.freemail_from:
+  title: "Der Absender nutzt einen kostenlosen E-Mail-Dienst"
+  why: "Die Absenderadresse liegt bei einem öffentlichen E-Mail-Dienst. Die Punktzahl ist nahezu null, aber diese Regel dient als Bedingung für andere, schwerere Regeln, und ein Unternehmen, das von Gmail oder Orange aus schreibt, wirkt weniger vertrauenswürdig als eine Adresse der eigenen Domain."
+  fix:
+    - "Verwenden Sie für geschäftliche Versände eine Adresse Ihrer eigenen Domain."
+    - "Senden Sie nie einen Newsletter mit einer Gmail-, Outlook.com- oder Yahoo-Adresse als From: Von einem anderen Dienst gesendet, kann die Nachricht DMARC für diese Domain nicht bestehen, und Yahoo veröffentlicht eine Ablehnungsrichtlinie."
+sa.freemail_replyto:
+  title: "Reply-To bei einem kostenlosen E-Mail-Dienst, der sich vom Absender unterscheidet"
+  why: "Antworten gehen an eine kostenlose Adresse, die nicht die des Absenders ist. Das ist das Muster von Betrugsmaschen (man schreibt von einer Adresse und empfängt die Antworten an anderer Stelle), aber auch das eines Formulars, das die Gmail-Adresse des Besuchers als Reply-To einträgt."
+  fix:
+    - "Handelt es sich um ein Kontaktformular, ist das erwartet: Prüfen Sie nur, dass der From eine Adresse Ihrer Domain ist, die per SPF und DKIM authentifiziert wird."
+    - "Setzen Sie für eine Kampagne als Reply-To eine Adresse Ihrer Domain."
+sa.freemail_forged_replyto:
+  title: "Reply-To bei einem kostenlosen E-Mail-Dienst, obwohl der Absender keiner ist"
+  why: "Die Nachricht stammt von einer Unternehmensadresse, bittet aber, an eine Gmail-, Outlook- oder ähnliche Adresse zu antworten. Das ist typisch für CEO-Fraud und gefälschte Rechnungen, daher ein Abzug von mehr als 2 Punkten."
+  fix:
+    - "Setzen Sie als Reply-To eine Adresse Ihrer Domain oder entfernen Sie den Header Reply-To."
+    - "Setzt ein Formular Ihrer Website die Adresse des Besuchers als Reply-To, akzeptieren Sie diesen Abzug oder kopieren Sie die Adresse des Besuchers besser in den Nachrichtentext."
+  fix_by_provider:
+    wordpress: "In Contact Form 7 oder WPForms löst der Header Reply-To: [your-email] diese Regel aus, wenn der Besucher eine kostenlose Adresse hat. Für eine interne Benachrichtigung ist das unbedenklich."
+sa.freemail_reply:
+  title: "Der Nachrichtentext nennt eine kostenlose Adresse, die sich vom Absender unterscheidet"
+  why: "Die Nachricht fordert dazu auf, an eine andere kostenlose Adresse zu schreiben als die, von der sie gesendet wird. Betrüger nutzen das, um Antworten an ein Postfach zu leiten, das noch nicht gemeldet wurde."
+  fix:
+    - "Nennen Sie im Text eine Kontaktadresse, die mit dem Absender identisch ist, oder eine Adresse Ihrer Domain."
+sa.freemail_envfrom_end_digit:
+  title: "Kostenlose Envelope-Adresse, die mit einer Ziffer endet"
+  why: "Die Envelope-Adresse ist ein kostenloses Postfach wie jean.dupont75@gmail.com. Massenhaft erstellte Konten von Spammern haben oft dieses Format. Geringer Abzug."
+  fix:
+    - "Senden Sie von einer Adresse Ihrer Domain, um diese Regel und die benachbarten Regeln zu vermeiden."
+sa.freemail_replyto_end_digit:
+  title: "Kostenloses Reply-To, das mit einer Ziffer endet"
+  why: "Die Antwortadresse ist ein kostenloses Postfach, dessen Kennung mit einer Ziffer endet. Schwaches Signal, das sich zu den anderen Freemail-Regeln addiert."
+  fix:
+    - "Verwenden Sie als Reply-To eine Adresse Ihrer Domain."
+sa.freemail_forged_fromdomain:
+  title: "Kostenloser Absender, versendet über eine andere Envelope-Domain"
+  why: "Das From ist eine kostenlose Adresse (Gmail, Orange ...), aber die Envelope gehört zu einer anderen Domain. Das erzeugt ein Versandtool oder eine Website, die mit einer Gmail-Adresse als Absender konfiguriert ist. Die Nachricht kann dann nicht auf die Domain des kostenlosen Anbieters ausgerichtet werden und scheitert an DMARC überall dort, wo diese Domain einen DMARC-Eintrag veröffentlicht."
+  fix:
+    - "Verwenden Sie als Absender eine Adresse Ihrer eigenen Domain, authentifiziert im Versandtool."
+    - "Haben Sie keine Domain, senden Sie über das Webmail des kostenlosen Anbieters selbst, nicht über einen Drittdienst."
+sa.header_from_different_domains:
+  title: "Die Domain des From unterscheidet sich von der Envelope-Domain"
+  why: "Das From zeigt {domain}, der Return-Path gehört aber zu {envelope_domain}. Das ist die Standardeinstellung vieler Versandtools (Brevo, Mailchimp, Mailjet), die Rückläufe auf ihrer eigenen Domain verwalten. Geringer Abzug, aber SPF ist dann für DMARC nicht ausgerichtet."
+  fix:
+    - "Konfigurieren Sie im Versandtool einen eigenen Return-Path unter {domain}, zum Beispiel bounce.{domain}."
+    - "Andernfalls stellen Sie sicher, dass DKIM mit {domain} signiert, damit DMARC trotzdem besteht."
+  fix_by_provider:
+    brevo: "Authentifizieren Sie {domain} im Bereich Domains von Brevo: Die DKIM-Signatur erfolgt dann mit Ihrer Domain, und DMARC besteht über DKIM, auch wenn der Return-Path nicht unter {domain} liegt."
+    mailchimp: "Authentifizieren Sie {domain} im Bereich Domains von Mailchimp: Die DKIM-Signatur erfolgt dann mit Ihrer Domain, und DMARC besteht über DKIM, auch wenn der Return-Path nicht unter {domain} liegt."
+    amazon_ses: "Konfigurieren Sie in der SES-Identität ein eigenes MAIL FROM (Subdomain von {domain})."
+sa.replyto_without_to_cc:
+  title: "Reply-To vorhanden, ohne Empfänger in To oder Cc"
+  why: "Die Nachricht hat eine Antwortadresse, aber keinen sichtbaren Empfänger: Alle Empfänger stehen in Blindkopie (Bcc). Das ist die Art eines Massenversands aus einem Postfach mit der Liste in Bcc, ein im Spam häufiges Schema."
+  fix:
+    - "Fügen Sie einen Header To hinzu: die Adresse des Empfängers bei einem Einzelversand oder Ihre eigene Adresse, wenn Sie die Liste in Bcc behalten."
+    - "Ab einigen Dutzend Empfängern verwenden Sie ein Versandtool, das jede Nachricht einzeln adressiert."
+sa.to_no_brkts_dynip:
+  title: "Empfänger ohne spitze Klammern und IP mit Reverse DNS eines Privatanschlusses"
+  why: "Das To enthält eine nackte Adresse (ohne „Name <...>“), und die Nachricht stammt von einer IP mit dem Reverse DNS eines Heimanschlusses. Diese Kombination ist typisch für infizierte Rechner, die Spam versenden, daher ein Abzug von 3 Punkten."
+  fix:
+    - "Schreiben Sie den Empfänger mit Namen und spitzen Klammern: „Vorname Nachname“ <adresse@beispiel.de>. Versandtools tun das, wenn das Namensfeld ausgefüllt ist."
+    - "Ergänzen Sie den Header List-Unsubscribe und einen Abmeldelink: Mehrere Varianten dieser Regel greifen dann nicht mehr."
+sa.to_no_brkts_from_mssp:
+  title: "Empfänger ohne spitze Klammern und schlecht formatierter Absender"
+  why: "Die Adresse des Empfängers ist nackt, und das From ist ohne Leerzeichen zwischen Name und spitzer Klammer geschrieben (Name<Adresse>). Diese beiden Formatierungsfehler zusammen verraten ein selbst gebautes Versandskript."
+  fix:
+    - "Schreiben Sie den Empfänger mit Namen und spitzen Klammern: „Vorname Nachname“ <adresse@beispiel.de>. Versandtools tun das, wenn das Namensfeld ausgefüllt ist."
+    - "Ergänzen Sie den Header List-Unsubscribe und einen Abmeldelink: Mehrere Varianten dieser Regel greifen dann nicht mehr."
+sa.to_no_brkts_html_img:
+  title: "Empfänger ohne spitze Klammern, HTML mit nur einem Bild"
+  why: "Nackte Empfängeradresse und eine HTML-Nachricht, die nur aus einem Bild besteht. Symbolischer Wert, aber das ist das Profil von Bild-Spam."
+  fix:
+    - "Schreiben Sie den Empfänger mit Namen und spitzen Klammern: „Vorname Nachname“ <adresse@beispiel.de>. Versandtools tun das, wenn das Namensfeld ausgefüllt ist."
+    - "Ergänzen Sie den Header List-Unsubscribe und einen Abmeldelink: Mehrere Varianten dieser Regel greifen dann nicht mehr."
+sa.to_no_brkts_html_only:
+  title: "Empfänger ohne spitze Klammern und Nachricht nur in HTML"
+  why: "Nackte Empfängeradresse und Nachricht ohne Textversion. Das erzeugen die Funktion mail() von PHP oder ein selbst geschriebenes Skript, das rohes HTML sendet. Abzug nahe 2 Punkten."
+  fix:
+    - "Schreiben Sie den Empfänger mit Namen und spitzen Klammern: „Vorname Nachname“ <adresse@beispiel.de>. Versandtools tun das, wenn das Namensfeld ausgefüllt ist."
+    - "Ergänzen Sie den Header List-Unsubscribe und einen Abmeldelink: Mehrere Varianten dieser Regel greifen dann nicht mehr."
+sa.to_no_brkts_msft:
+  title: "Empfänger ohne spitze Klammern und Outlook-Header"
+  why: "Die Nachricht gibt vor, von Outlook zu stammen, aber die Empfängeradresse ist nackt, was Outlook normalerweise nicht tut. Versandsoftware, die Outlook nachahmt, wird gezielt erfasst."
+  fix:
+    - "Schreiben Sie den Empfänger mit Namen und spitzen Klammern: „Vorname Nachname“ <adresse@beispiel.de>. Versandtools tun das, wenn das Namensfeld ausgefüllt ist."
+    - "Ergänzen Sie den Header List-Unsubscribe und einen Abmeldelink: Mehrere Varianten dieser Regel greifen dann nicht mehr."
+sa.to_no_brkts_nordns_html:
+  title: "Empfänger ohne spitze Klammern, IP ohne Reverse DNS, nur HTML"
+  why: "Nackte Empfängeradresse, Nachricht nur in HTML und IP ohne Reverse DNS: drei Merkmale, die einen improvisierten Server beschreiben."
+  fix:
+    - "Schreiben Sie den Empfänger mit Namen und spitzen Klammern: „Vorname Nachname“ <adresse@beispiel.de>. Versandtools tun das, wenn das Namensfeld ausgefüllt ist."
+    - "Ergänzen Sie den Header List-Unsubscribe und einen Abmeldelink: Mehrere Varianten dieser Regel greifen dann nicht mehr."
+sa.to_no_brkts_pcnt:
+  title: "Empfänger ohne spitze Klammern und Prozentangaben im Text"
+  why: "Nackte Empfängeradresse und hervorgehobene Prozentangaben („-50 %“): das Profil einer Werbeaktion, die ohne Versandtool und ohne Abmeldelink verschickt wurde."
+  fix:
+    - "Schreiben Sie den Empfänger mit Namen und spitzen Klammern: „Vorname Nachname“ <adresse@beispiel.de>. Versandtools tun das, wenn das Namensfeld ausgefüllt ist."
+    - "Ergänzen Sie den Header List-Unsubscribe und einen Abmeldelink: Mehrere Varianten dieser Regel greifen dann nicht mehr."
+sa.to_malformed:
+  title: "Der Header To ist fehlerhaft"
+  why: "Das Feld To enthält keine gültige Adresse. Häufig ist ein Platzhalter für Serienbriefe leer geblieben oder nicht ersetzt worden, oder es steht ein Name ohne Adresse darin."
+  fix:
+    - "Prüfen Sie den Platzhalter für den Empfänger im Versandtool oder im Skript."
+    - "Verwenden Sie das Format „Name“ <adresse@domain.de> oder eine Adresse allein."
+sa.to_in_subj:
+  title: "Die Adresse des Empfängers steht im Betreff"
+  why: "Der Betreff enthält die vollständige E-Mail-Adresse des Empfängers, ein übliches Verfahren bei Spam und gefälschten Mailbox-Meldungen („contact@beispiel.de: Ihr Postfach ist voll“). Geringer Abzug."
+  fix:
+    - "Personalisieren Sie den Betreff mit dem Vornamen statt mit der E-Mail-Adresse."
+sa.to_eq_fm_html_only:
+  title: "Absender identisch mit dem Empfänger, nur HTML"
+  why: "Die Nachricht scheint vom Empfänger selbst zu stammen und enthält nur HTML. Das ist die Form gefälschter Kontowarnungen. Auch ein Formular, das dem Inhaber der Website mit dessen eigener Adresse als Absender schreibt, löst sie aus."
+  fix:
+    - "Verwenden Sie im From eine technische Adresse der Domain, die sich von der Empfangsadresse unterscheidet."
+    - "Fügen Sie der Nachricht eine Textversion hinzu und signieren Sie sie mit DKIM."
+sa.to_eq_fm_dom_html_only:
+  title: "Gleiche Domain für Absender und Empfänger, nur HTML"
+  why: "Die Nachricht gibt vor, aus dem Inneren des empfangenden Unternehmens zu stammen, ohne Authentifizierung und ohne Textversion. Phishing-Mails im Stil „IT-Abteilung“ nutzen dieses Muster. Legitimer Fall: Benachrichtigungen einer Website, die vom Webserver gesendet werden."
+  fix:
+    - "Lassen Sie diese Nachrichten von der Domain mit DKIM signieren oder über den authentifizierten SMTP-Server der Mailbox senden."
+    - "Fügen Sie einen Textteil hinzu (multipart/alternative)."
+sa.to_eq_fm_direct_mx:
+  title: "Absender identisch mit dem Empfänger, direkt an den Server zugestellt"
+  why: "Die Nachricht wird von einem an sich selbst gesendet und direkt an den Empfangsserver übergeben, ohne einen Versandserver zu durchlaufen. Symbolischer Wert, aber die folgende Regel mit nur HTML wiegt schwer."
+  fix:
+    - "Senden Sie über den SMTP-Server Ihres Mail-Dienstes statt direkt an den MX."
+sa.to_eq_fm_html_direct:
+  title: "Absender identisch mit dem Empfänger, nur HTML und direkte Zustellung"
+  why: "Die Nachricht scheint vom Empfänger zu stammen, enthält nur HTML und wurde direkt an den Empfangsserver übergeben. Das ist genau das Schema gefälschter Hinweise „Passwort abgelaufen“: allein schon über 3,5 Punkte."
+  fix:
+    - "Setzen Sie nie die Adresse des Empfängers als From: Verwenden Sie eine eigene Versandadresse."
+    - "Senden Sie über Ihren authentifizierten SMTP-Server und fügen Sie eine Textversion hinzu."
+sa.localpart_in_subject:
+  title: "Die Kennung des Empfängers erscheint im Betreff"
+  why: "Der Betreff enthält den Teil vor dem @ der Empfängeradresse („jdupont, Ihr Angebot“). Spammer personalisieren so, wenn sie nur die Adresse haben. Ein Werkzeug, das den Platzhalter für die Adresse statt des Vornamens einsetzt, erzeugt den gleichen Effekt."
+  fix:
+    - "Personalisieren Sie den Betreff mit dem echten Vornamen des Kontakts oder gar nicht."
+    - "Prüfen Sie, dass der Platzhalter nicht auf die Adresse zurückfällt, wenn der Vorname leer ist."
+sa.from_in_to_and_subj:
+  title: "Die Absenderadresse steht auch im To und im Betreff"
+  why: "Dieselbe Adresse ist Absender und Empfänger und wird zusätzlich im Betreff genannt. Das ist die Signatur gefälschter Nachrichten wie „Ihr Postfach {domain} wird deaktiviert“."
+  fix:
+    - "Entfernen Sie die Adresse aus dem Betreff und verwenden Sie eine Absenderadresse, die sich von der des Empfängers unterscheidet."
+sa.from_blank_name:
+  title: "Der Name des Absenders ist leer"
+  why: "Das From hat die Form \"\" <adresse>: ein leeres Namensfeld in Anführungszeichen. Das ist das Ergebnis einer nicht ausgefüllten Namensvariable in einem Skript oder CMS."
+  fix:
+    - "Tragen Sie den Namen des Absenders (Name des Unternehmens oder der Person) im Versandtool ein."
+    - "Ist kein Name verfügbar, schreiben Sie nur die Adresse, ohne leere Anführungszeichen."
+  fix_by_provider:
+    wordpress: "Tragen Sie das Feld From Name des SMTP-Plugins aus; ohne dieses schreiben manche Plugins einen leeren Namen."
+sa.from_no_user:
+  title: "Die Absenderadresse hat keine Kennung vor dem @"
+  why: "Die Absenderadresse hat die Form @beispiel.de oder <>. Empfänger können nicht antworten, und Filter sehen darin eine konstruierte Adresse."
+  fix:
+    - "Korrigieren Sie die Absendervariable des Skripts: Die Kennung vor dem @ ist leer."
+sa.from_excess_base64:
+  title: "Der Absendername ist ohne Notwendigkeit in Base64 kodiert"
+  why: "Der Absendername ist in Base64 kodiert, obwohl er keine Akzente enthält. Manche Werkzeuge tun das standardmäßig, und Spammer tun es, um den Namen vor den Filtern zu verbergen. Symbolischer Wert."
+  fix:
+    - "Lassen Sie die Versandbibliothek nur kodieren, wenn es nötig ist, und dann in Quoted-Printable statt in Base64."
+sa.from_illegal_chars:
+  title: "Das From enthält nicht kodierte Zeichen"
+  why: "Der Absendername enthält Akzentbuchstaben oder Sonderzeichen, die roh gesendet werden, ohne die für Header vorgesehene Kodierung. Manche Programme zeigen sie falsch an."
+  fix:
+    - "Kodieren Sie den Absendernamen nach RFC 2047 (Bibliotheken tun das, wenn Sie den Zeichensatz UTF-8 angeben)."
+sa.from_local_digits:
+  title: "Die Absenderadresse enthält eine lange Ziffernfolge"
+  why: "Die Kennung der Absenderadresse enthält mindestens 11 Ziffern am Stück, das Format automatisch erzeugter Adressen. Symbolischer Wert."
+  fix:
+    - "Verwenden Sie eine lesbare Absenderadresse (contact@, newsletter@)."
+sa.from_local_hex:
+  title: "Die Absenderadresse enthält eine lange hexadezimale Zeichenfolge"
+  why: "Die Kennung der Absenderadresse sieht aus wie ein Zufallscode (mindestens 11 Zeichen aus 0-9 und a-f). Typisch für Adressen, die von einem Werkzeug erzeugt werden. Symbolischer Wert."
+  fix:
+    - "Zeigen Sie im From eine lesbare Adresse; technische Kennungen belassen Sie im Return-Path."
+sa.from_local_novowel:
+  title: "Die Absenderadresse enthält eine Konsonantenfolge"
+  why: "Die Kennung vor dem @ enthält sieben Konsonanten am Stück, ein Zeichen für eine zufällige Adresse. Das kann auch Kürzel oder regionale Namen treffen."
+  fix:
+    - "Verwenden Sie nach Möglichkeit eine besser lesbare Absenderadresse (contact@, info@)."
+sa.from_domain_novowel:
+  title: "Die Domain des Absenders enthält eine Konsonantenfolge"
+  why: "Die Domain {domain} enthält sieben aufeinanderfolgende Konsonanten, ein Muster zufällig erzeugter Domains. Eine Abkürzung oder ein zusammengesetzter Name kann die Regel ohne Grund auslösen."
+  fix:
+    - "Nichts Dringendes, wenn die Domain alt und authentifiziert ist. Für eine neue Versanddomain wählen Sie einen aussprechbaren Namen."
+sa.from_starts_with_nums:
+  title: "Die Absenderadresse beginnt mit mehreren Ziffern"
+  why: "Die Kennung beginnt mit mindestens drei Ziffern, gefolgt von Buchstaben (123info@...). Ein Format, das bei Wegwerfadressen häufig vorkommt."
+  fix:
+    - "Verwenden Sie eine Absenderadresse, deren Kennung mit einem Wort beginnt."
+sa.from_misspaced:
+  title: "Kein Leerzeichen zwischen Name und Adresse im From"
+  why: "Das From ist als \"Name\"<adresse> ohne Leerzeichen geschrieben. Der Standard toleriert das, aber nur wenige seriöse Programme schreiben es so: Es ist das Kennzeichen selbst gebauter Versandskripte."
+  fix:
+    - "Fügen Sie ein Leerzeichen zwischen dem Namen in Anführungszeichen und der öffnenden spitzen Klammer ein."
+sa.from_wsp_lead:
+  title: "Leerzeichen nach der öffnenden spitzen Klammer im From"
+  why: "Die Absenderadresse ist als < contact@beispiel.de> geschrieben, mit einem Leerzeichen nach der Klammer. Dieser Fehler stammt aus einer falsch zusammengesetzten Verkettung in einem Skript, und SpamAssassin bestraft ihn mit mehr als 3 Punkten."
+  fix:
+    - "Korrigieren Sie die Erstellung des From-Headers, sodass innerhalb der spitzen Klammern kein Leerzeichen steht."
+sa.from_wsp_trail:
+  title: "Leerzeichen vor der schließenden spitzen Klammer im From"
+  why: "Die Adresse ist als <contact@beispiel.de > geschrieben, mit einem Leerzeichen vor der schließenden Klammer, oft ein Leerzeichen, das am Ende eines Eingabefelds geblieben ist. Mehr als 2 Punkte."
+  fix:
+    - "Entfernen Sie die Leerzeichen am Ende des Werts (trim), bevor Sie das From erstellen."
+sa.from_unbal1:
+  title: "Schließende spitze Klammer im From fehlt"
+  why: "Das From öffnet eine spitze Klammer, die nie geschlossen wird. Der Header ist ungültig, und manche Programme zeigen den Absender nicht an."
+  fix:
+    - "Korrigieren Sie die Absenderzeichenkette im Skript oder in der Einstellung des Tools: \"Name\" <adresse>."
+sa.from_addr_ws:
+  title: "Die Absenderadresse enthält ein Leerzeichen"
+  why: "Die aus dem From extrahierte E-Mail-Adresse enthält ein Leerzeichen, wodurch sie ungültig wird. Oft ein Kopieren und Einfügen oder eine falsch verkettete Variable. Knapp 3 Punkte."
+  fix:
+    - "Entfernen Sie das Leerzeichen aus der Absenderadresse in der Einstellung oder im Code."
+sa.from_long_dom:
+  title: "Ungewöhnlich lange Domain des Absenders"
+  why: "Die erste Ebene der Absenderdomain hat mindestens 30 Zeichen ohne Punkt. Automatisch erzeugte Wegwerfdomains haben oft dieses Profil."
+  fix:
+    - "Senden Sie von einer kurzen, erkennbaren Domain; lange Domains behalten Sie gegebenenfalls für das Web."
+sa.fromspace:
+  title: "Leerzeichen nach dem öffnenden Anführungszeichen des Absendernamens"
+  why: "Der Absendername beginnt mit einem Anführungszeichen, gefolgt von einem Leerzeichen (\" Atelier Martin\"). Ein eigenwilliges Format, das in Spam-Software vorkommt."
+  fix:
+    - "Entfernen Sie das führende Leerzeichen des Absendernamens in der Einstellung des Tools."
+sa.apostrophe_from:
+  title: "Die Absenderadresse enthält ein Apostroph"
+  why: "Die E-Mail-Adresse selbst (nicht der Name) enthält ein Apostroph. Das ist erlaubt, aber selten, und oft ein Zeichen dafür, dass ein Name falsch in der Adresse steht."
+  fix:
+    - "Prüfen Sie, dass das Apostroph nicht zum angezeigten Namen („L'Atelier“) gehört, der in die Adresse kopiert wurde."
+sa.name_email_diff:
+  title: "Der Absendername ist eine andere E-Mail-Adresse"
+  why: "Der angezeigte Name ist eine E-Mail-Adresse, die sich von der Versandadresse unterscheidet, zum Beispiel „service@bank.de“ <x@autre.com>. Das ist eine klassische Methode der Identitätsvortäuschung."
+  fix:
+    - "Tragen Sie im Absendernamen einen klaren Namen ein (Unternehmen oder Person), keine Adresse."
+sa.from_suspicious_ntld:
+  title: "Die Domain des Absenders verwendet eine häufig missbrauchte Endung"
+  why: "Die Endung der Domain {domain} gehört zu den neuen Endungen, die von Spammern massenhaft genutzt werden (günstige Domains). Der Abzug trifft auch legitime Unternehmen, die sie gewählt haben."
+  fix:
+    - "Für Versände bevorzugen Sie eine Domain in .fr, .com oder einer etablierten Branchenendung."
+    - "Behalten Sie diese Domain, aber pflegen Sie SPF, DKIM und DMARC sorgfältig, um es auszugleichen."
+sa.from_suspicious_ntld_fp:
+  title: "Missbrauchte Domainendung ohne Anzeichen eines Gesprächs"
+  why: "Die Endung von {domain} steht auf der Liste der missbrauchten Endungen, und die Nachricht ist weder eine Antwort noch ein Listenversand. Knapp 2 Punkte."
+  fix:
+    - "Versenden Sie Kampagnen von einer Domain mit einer verbreiteteren Endung oder über eine Mailingliste, die die Header List-* ergänzt."
+sa.pds_from_2_emails:
+  title: "Das From enthält zwei verschiedene Adressen"
+  why: "Der From-Header zeigt im Namen eine Adresse und verwendet für den Versand eine andere. Betrüger nutzen das, um eine vertrauenswürdige Adresse anzuzeigen. Fast 3,5 Punkte."
+  fix:
+    - "Ersetzen Sie den angezeigten Namen durch einen klaren Namen; im From darf nur eine Adresse erscheinen."
+sa.pds_from_name_to_domain:
+  title: "Der Absendername enthält die Domain des Empfängers"
+  why: "Der angezeigte Name des Absenders ist die Domain des Empfängers („beispiel.de“). Verfahren gefälschter Mitteilungen der Postfachverwaltung. Symbolischer Wert, aber aufschlussreich."
+  fix:
+    - "Verwenden Sie als Absendernamen Ihre eigene Marke."
+sa.t_fromname_equals_to:
+  title: "Der Absendername ist die Adresse des Empfängers"
+  why: "Der angezeigte Name des Absenders ist die Adresse des Empfängers selbst. Gefälschte Mailbox-Hinweise tun das, um intern zu wirken."
+  fix:
+    - "Verwenden Sie Ihren Namen oder Ihre Marke als Absendernamen."
+sa.t_fromname_spoofed_email:
+  title: "Der Absendername ahmt eine andere Adresse nach"
+  why: "Der angezeigte Name enthält eine Adresse, die nicht zur tatsächlichen Versandadresse passt. Testregel ohne Gewicht, aber das Muster ist das der Identitätsvortäuschung."
+  fix:
+    - "Setzen Sie keine E-Mail-Adresse in den Absendernamen."
+sa.t_pds_to_eq_from_name:
+  title: "Der Absendername übernimmt die Adresse des Empfängers"
+  why: "Der angezeigte Absendername ist die Adresse des Empfängers. Testregel ohne Gewicht."
+  fix:
+    - "Zeigen Sie als Absender Ihren eigenen Namen oder Ihre Marke."
+sa.hk_random_from:
+  title: "Die Kennung der Absenderadresse wirkt zufällig"
+  why: "Die Kennung vor dem @ sieht aus wie eine zufällig gezogene Zeichenfolge. Massenhaft erzeugte Spam-Adressen haben dieses Profil."
+  fix:
+    - "Verwenden Sie lesbare Adressen (contact@, newsletter@, bounce@): Kennungen, denen bounce- oder mail- vorangeht oder die + oder = enthalten, werden von der Regel ignoriert."
+sa.hk_random_envfrom:
+  title: "Die Kennung der Envelope-Adresse wirkt zufällig"
+  why: "Die Envelope-Adresse (Return-Path) hat eine Kennung mit zufälligem Aussehen. Versandtools verwenden kodierte Kennungen, aber mit + oder = (VERP), die die Regel ignoriert."
+  fix:
+    - "Verwenden Sie lesbare Adressen (contact@, newsletter@, bounce@): Kennungen, denen bounce- oder mail- vorangeht oder die + oder = enthalten, werden von der Regel ignoriert."
+sa.hk_random_replyto:
+  title: "Die Kennung der Antwortadresse wirkt zufällig"
+  why: "Die Antwortadresse sieht aus wie eine zufällige Zeichenfolge, was an ein Wegwerfpostfach erinnert, das zum Empfang der Antworten angelegt wurde."
+  fix:
+    - "Verwenden Sie lesbare Adressen (contact@, newsletter@, bounce@): Kennungen, denen bounce- oder mail- vorangeht oder die + oder = enthalten, werden von der Regel ignoriert."
+sa.sorted_recips:
+  title: "Die Empfängerliste ist alphabetisch sortiert"
+  why: "Die Nachricht ist an eine lange Liste sichtbarer Empfänger gerichtet, alphabetisch geordnet: Verhalten einer Software, die eine Adressdatei durchläuft. Die Empfänger sehen außerdem alle Adressen, was ein Datenschutzproblem darstellt."
+  fix:
+    - "Senden Sie nicht dieselbe Nachricht an Dutzende sichtbarer Empfänger: ein Versand pro Empfänger über ein geeignetes Tool."
+sa.suspicious_recips:
+  title: "Die Empfänger haben sehr ähnliche Adressen"
+  why: "Viele Empfänger haben fast identische Adressen (contact1@, contact2@ ...), ein Zeichen für eine erzeugte oder gekaufte Liste. Mehr als 2,5 Punkte."
+  fix:
+    - "Senden Sie eine Nachricht pro Empfänger und entfernen Sie erzeugte oder erratene Adressen aus Ihrer Liste."
+sa.spoofed_freemail:
+  title: "Kostenlose Mailadresse ohne Nachweis der Herkunft"
+  why: "Das From ist eine Gmail-, Outlook- oder ähnliche Adresse, die Nachricht wurde aber weder per SPF noch per DKIM authentifiziert, noch von den Servern des Anbieters gesendet. Jemand nutzt die kostenlose Adresse also von einem anderen Server aus."
+  fix:
+    - "Senden Sie Nachrichten von einer kostenlosen Adresse nur über den Anbieter selbst (Webmail oder SMTP des Anbieters)."
+    - "Für eine Website oder ein Tool verwenden Sie eine Adresse Ihrer Domain."
+sa.forged_gmail_rcvd:
+  title: "Absender gmail.com ohne Weg über die Server von Google"
+  why: "Die Absenderadresse ist @gmail.com, aber die Nachricht ist nicht über Google gelaufen. Sie kann daher nicht auf gmail.com ausgerichtet werden und scheitert an DMARC bei Empfängern, die das prüfen."
+  fix:
+    - "Verwenden Sie keine @gmail.com-Adresse als Absender in einer Website oder einem Versandtool: Nehmen Sie eine Adresse Ihrer Domain."
+    - "Wenn Sie bei Gmail bleiben möchten, konfigurieren Sie das Tool so, dass es über smtp.gmail.com mit Ihrem Konto sendet."
+  fix_by_provider:
+    wordpress: "Im SMTP-Plugin wählen Sie entweder den Modus Gmail (OAuth) oder Sie ersetzen die From-Adresse durch eine Adresse Ihrer Domain."
+sa.forged_yahoo_rcvd:
+  title: "Absender yahoo.com ohne Weg über die Server von Yahoo"
+  why: "Die Absenderadresse ist @yahoo.com, aber die Nachricht ist nicht über Yahoo gelaufen. Yahoo veröffentlicht ein strenges DMARC: Solche Nachrichten werden von vielen Empfängern abgelehnt."
+  fix:
+    - "Ersetzen Sie für Versände von einer Website oder einem Tool die Yahoo-Adresse durch eine Adresse Ihrer Domain."

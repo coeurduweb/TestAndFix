@@ -1,0 +1,95 @@
+mx.domain_nxdomain:
+  title: El dominio remitente {domain} no existe
+  why: "El DNS responde que {domain} no existe. Los destinatarios no pueden verificar al remitente ni responderle: la mayoría rechaza el mensaje, y el resto lo clasifica como spam."
+  fix:
+    - Comprueba la ortografía del dominio en la dirección de envío configurada en tu programa o servicio de envío.
+    - Si el dominio es el correcto, comprueba con tu registrador que no ha caducado y que sus servidores de nombres (NS) están bien declarados.
+    - Una vez resuelto el dominio, publica como mínimo un MX, un SPF y un DMARC.
+mx.missing:
+  title: El dominio {domain} no tiene registro MX
+  why: Sin MX, las respuestas y los rechazos dirigidos a {domain} se envían al servidor web del dominio, que en general no los acepta. Algunos filtros también penalizan a un remitente cuyo dominio no recibe correo.
+  fix:
+    - Si {domain} debe recibir correo, añade los MX que te indique tu proveedor de correo.
+    - "Si {domain} nunca debe recibir correo, publica un Null MX (0 .) y envía tus mensajes con una dirección Reply-To y un Return-Path en un dominio que sí reciba."
+  fix_by_provider:
+    google_workspace: En la consola de administración de Google, sigue el asistente de configuración de MX y copia exactamente el valor propuesto para tu dominio.
+    microsoft_365: "En el centro de administración de Microsoft 365, Configuración, Dominios, selecciona {domain} y añade el registro MX indicado en la pestaña Registros DNS."
+    cloudflare_dns: "En DNS, Records, añade un registro de tipo MX: nombre @, servidor de correo y prioridad que te indique tu proveedor."
+mx.cname_target:
+  title: Un MX de {domain} apunta a un alias CNAME
+  why: El destino de un MX debe ser un nombre que tenga directamente una dirección. Con un CNAME, algunos servidores se niegan a entregar o a verificar tu dominio, y los mensajes dirigidos a {domain} pueden perderse.
+  fix:
+    - Identifica el destino final del CNAME (el nombre que tiene el registro A).
+    - Sustituye en el MX el nombre alias por ese nombre final, o crea para ese nombre un registro A en lugar del CNAME.
+    - Mantén la misma prioridad y elimina el MX antiguo.
+mx.ip_literal:
+  title: Un MX de {domain} contiene una dirección IP en lugar de un nombre
+  why: "Un MX no puede contener una dirección IP. El valor se interpreta como un nombre que no existe: el correo dirigido a {domain} falla o pasa al MX siguiente, y las comprobaciones del dominio remitente fallan."
+  fix:
+    - Crea un nombre para el servidor, por ejemplo mx.{domain}, con un registro A hacia la dirección IP correspondiente.
+    - Sustituye la IP por ese nombre en el registro MX.
+mx.target_nxdomain:
+  title: Los MX de {domain} apuntan a nombres que no existen
+  why: Los servidores anunciados en los MX de {domain} no tienen ninguna dirección. Ya no se puede entregar ningún mensaje a ese dominio, y algunos destinatarios rechazan tus envíos porque la dirección remitente parece no válida.
+  fix:
+    - "Compara los MX publicados con los que te indica hoy tu proveedor de correo: a veces cambian durante una migración."
+    - Corrige los nombres erróneos o crea el registro A que falta del servidor de destino.
+    - Elimina los MX de un proveedor antiguo que ya no existen.
+mx.private_address:
+  title: Un MX de {domain} apunta a una dirección privada
+  why: El servidor de correo de {domain} se anuncia con una dirección interna, inaccesible desde Internet. Los mensajes dirigidos a este dominio se quedan en cola y después vuelven con error.
+  fix:
+    - Sustituye la dirección interna por la dirección pública del servidor en el registro A del MX.
+    - Si esta dirección privada sirve para un DNS interno, separa la vista interna de la zona pública.
+mx.unreachable:
+  title: Ningún servidor MX de {domain} responde en el puerto 25
+  why: Los servidores de recepción de {domain} no responden. Las respuestas y los rechazos dirigidos a ese dominio se acumulan y después vuelven con error, y las verificaciones por devolución de llamada de algunos destinatarios fallan.
+  fix:
+    - Comprueba que el servicio SMTP funciona en el servidor indicado por el MX y que escucha en el puerto 25.
+    - "Revisa el cortafuegos del servidor y el del alojamiento: el puerto 25 de entrada debe estar abierto."
+    - Si el MX apunta a un servidor antiguo, sustitúyelo por el de tu proveedor actual.
+mx.null_mx_on_sending_domain:
+  title: "{domain} declara que no recibe correo (Null MX) pero envía"
+  why: El Null MX anuncia públicamente que {domain} no recibe correo. Un destinatario puede entonces rechazar tus envíos, y nadie puede responderte ni devolverte un rechazo.
+  fix:
+    - "Si {domain} debe enviar, elimina el MX «0 .» y publica los MX de tu proveedor de correo."
+    - Si {domain} realmente no debe recibir, usa para el sobre (Return-Path) un dominio que sí reciba, por ejemplo el de tu servicio de envío, y añade un Reply-To válido.
+mx.null_mx_mixed:
+  title: "{domain} mezcla un Null MX con otros MX"
+  why: El Null MX dice «este dominio no recibe», los otros MX dicen lo contrario. Según el software del destinatario, tus mensajes o las respuestas a {domain} se tratarán de forma impredecible.
+  fix:
+    - Decide si {domain} recibe correo.
+    - Si lo recibe, elimina el registro MX «0 .»; si no, elimina todos los demás MX.
+mx.envelope_domain_cannot_receive:
+  title: El dominio de retorno {envelope_domain} no puede recibir los rechazos
+  why: Los avisos de no entrega se envían a la dirección de retorno (Return-Path). Si {envelope_domain} no tiene MX ni dirección, nunca verás las direcciones no válidas de tu lista, y varios servidores rechazan directamente el mensaje.
+  fix:
+    - Añade a {envelope_domain} los MX de tu servicio de envío, o el registro que este indique para su dominio de retorno personalizado.
+    - Si no, usa como Return-Path una dirección de un dominio que reciba correo.
+  fix_by_provider:
+    postfix: "El Return-Path toma la dirección de sobre: revisa sender_canonical_maps y la opción -f de sendmail en tu aplicación."
+mx.postmaster_rejected:
+  title: La dirección postmaster@{domain} es rechazada
+  why: Los operadores de correo y las listas negras contactan con postmaster@{domain} cuando hay un problema. Si esta dirección no existe, no se te avisará, y varios procedimientos de salida de listas negras exigen que funcione.
+  fix:
+    - Crea el alias postmaster@{domain} (y abuse@{domain}) en tu correo.
+    - Haz que apunte a un buzón que se lea de verdad.
+  fix_by_provider:
+    google_workspace: En la consola de administración, añade postmaster como dirección alternativa (alias) de un usuario o de un grupo.
+    microsoft_365: En el centro de administración de Exchange, añade postmaster@{domain} como dirección adicional de un buzón o de un grupo.
+    cpanel: En Email, Reenviadores, añade postmaster@{domain} hacia tu buzón principal.
+    postfix: "Añade postmaster: tu-cuenta en /etc/aliases y ejecuta newaliases, o una línea en virtual_alias_maps."
+mx.some_target_without_address:
+  title: Un MX de {domain} no tiene dirección IP
+  why: "El servidor {value} está anunciado como MX, pero su nombre no da ninguna dirección. Los remitentes lo saltan tras una consulta inútil; si tiene la prioridad más alta, el correo solo pasa por los demás MX."
+  fix:
+    - En la zona DNS de {domain}, localiza el MX que designa {value}.
+    - Si este servidor ya no existe, elimina ese MX.
+    - Si existe, crea el registro A (y AAAA si tiene dirección IPv6) de {value}, o corrige la errata en el MX.
+mx.host_unreachable:
+  title: El MX {value} no responde en el puerto 25
+  why: "Los demás MX de {domain} responden, pero no {value} ({ip}). Los remitentes que llegan a él esperan y luego prueban el MX siguiente: el correo llega, pero con retraso."
+  fix:
+    - Repite la prueba para descartar una caída puntual.
+    - Si el fallo se confirma, comprueba que el servicio SMTP de {value} funciona y que el puerto 25 de entrada está abierto en su cortafuegos y en el de su alojamiento.
+    - Si este servidor ya no se usa, retira su MX de la zona de {domain}.

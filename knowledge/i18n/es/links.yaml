@@ -1,0 +1,143 @@
+links.shortener:
+  title: "El mensaje usa un acortador de enlaces"
+  why: "El enlace {url} pasa por un acortador público. Estos dominios se comparten con spammers: su reputación recae sobre tu mensaje, y el destinatario no ve adónde va."
+  fix:
+    - "Sustituye el enlace acortado por la dirección completa de la página en {domain}."
+    - "Si la dirección es demasiado larga, crea una redirección corta en tu propio dominio, por ejemplo https://{domain}/promo."
+    - "Si necesitas el seguimiento de clics, usa el de tu herramienta de envío con un dominio de seguimiento personalizado."
+links.text_url_mismatch:
+  title: "Un enlace muestra una dirección y lleva a otra"
+  why: "El texto del enlace muestra una dirección, pero el clic lleva a {url}. Es una señal típica de phishing: los filtros antiphishing penalizan con fuerza esta discrepancia."
+  fix:
+    - "Si el texto del enlace es una dirección, haz que apunte exactamente a esa dirección."
+    - "Si no, escribe un texto de enlace descriptivo, por ejemplo «Ver mi pedido», en lugar de una dirección."
+    - "Si la diferencia viene del seguimiento de clics, configura un dominio de seguimiento en un subdominio de {domain}."
+links.http_not_https:
+  title: "Algunos enlaces usan http en lugar de https"
+  why: "El enlace {url} no está cifrado. Los navegadores lo marcan como no seguro, y un enlace sin cifrar es una señal negativa para los filtros que evalúan la calidad de los enlaces."
+  fix:
+    - "Sustituye http:// por https:// en todos los enlaces de la plantilla."
+    - "Si la página no responde en HTTPS, instala un certificado en el sitio (Let's Encrypt es gratuito en la mayoría de los proveedores de alojamiento)."
+  fix_by_provider:
+    sendgrid: "Si el http viene del seguimiento de clics, activa SSL en el dominio de seguimiento: Settings > Sender Authentication > Link Branding, y luego sigue el procedimiento SSL click tracking de SendGrid."
+links.ip_literal:
+  title: "Un enlace apunta a una dirección IP en lugar de a un nombre de dominio"
+  why: "El enlace {url} usa una dirección IP. Los sitios legítimos tienen un nombre de dominio: los filtros, incluidos los de Microsoft, tratan estos enlaces como sospechosos."
+  fix:
+    - "Sustituye la dirección IP por el nombre de dominio del sitio, por ejemplo https://{domain}/."
+    - "Si el servicio no tiene nombre, crea un subdominio de {domain} que apunte a esa IP e instala un certificado."
+links.nonstandard_port:
+  title: "Un enlace apunta a un puerto inusual"
+  why: "El enlace {url} apunta a un puerto distinto de los puertos web habituales. Microsoft propone aumentar la puntuación de spam de estos mensajes, y algunas redes corporativas bloquean esos puertos."
+  fix:
+    - "Sirve la página en el puerto 443 (HTTPS estándar) y quita el número de puerto del enlace."
+    - "Si la aplicación funciona en otro puerto, colócala detrás de un proxy inverso en un subdominio de {domain}."
+links.uribl_listed:
+  title: "Un enlace del mensaje apunta a un dominio en lista negra"
+  why: "El dominio del enlace {url} figura en {list_name}. Los filtros consultan estas listas para cada enlace: basta a menudo con un solo dominio listado para enviar el mensaje a no deseados."
+  fix:
+    - "Si el dominio no es tuyo, quita este enlace del mensaje o sustitúyelo por otra fuente."
+    - "Si es tu dominio o tu dominio de seguimiento, consulta el diagnóstico de la familia de listas negras, corrige la causa y luego pide la retirada en {delist_url}."
+    - "Comprueba que el enlace no pase por un acortador o por un dominio de seguimiento compartido."
+links.domain_recent:
+  title: "Un enlace apunta a un dominio creado hace muy poco"
+  why: "El dominio del enlace {url} se registró hace {value}. Los dominios nuevos se usan masivamente para phishing: los filtros les conceden poca confianza."
+  fix:
+    - "Si es posible, haz que el enlace apunte a una página de tu dominio principal {domain}, más antiguo."
+    - "Si el nuevo dominio debe quedarse, publícalo con un sitio real y aumenta poco a poco el volumen de los envíos que lo citan."
+links.broken:
+  title: "Un enlace del mensaje está roto"
+  why: "El enlace {url} responde con un error {value}. El lector llega a una página de error, y un enlace muerto es señal de un mensaje descuidado para los filtros que siguen los enlaces."
+  fix:
+    - "Abre el enlace en un navegador para confirmar el error."
+    - "Corrige la dirección en la plantilla, o restablece la página en el sitio."
+    - "Si la página se ha movido, añade una redirección 301 de la dirección antigua a la nueva."
+links.redirect_chain:
+  title: "Un enlace pasa por varias redirecciones"
+  why: "El enlace {url} pasa por {value} redirecciones antes de llegar. Cada paso ralentiza la apertura y puede pasar por un dominio de mala reputación. Las cadenas largas son típicas del spam."
+  fix:
+    - "Pon en el mensaje la dirección final de la página, después de las redirecciones."
+    - "Deja como máximo una redirección: la del seguimiento de clics de tu herramienta de envío."
+links.open_redirect:
+  title: "Un enlace pasa por una redirección abierta de un sitio externo"
+  why: "El enlace {url} usa la redirección de otro sitio para ocultar el destino real. Esta técnica se usa para eludir los filtros, que la reconocen."
+  fix:
+    - "Sustituye este enlace por la dirección directa de la página de destino."
+    - "Si copiaste el enlace de un buscador o de una red social, abre la página y copia la dirección que aparece en la barra del navegador."
+links.tracking_domain_unbranded:
+  title: "Los enlaces de seguimiento usan el dominio compartido de la herramienta de envío"
+  why: "Los clics pasan por el dominio de {provider}, compartido con todos sus clientes. Si uno de ellos envía spam, ese dominio puede verse penalizado, y tus enlaces con él."
+  fix:
+    - "Configura un dominio de seguimiento personalizado en un subdominio, por ejemplo clic.{domain}."
+    - "Publica el registro CNAME que indica tu herramienta de envío, y luego activa el dominio en sus ajustes."
+  fix_by_provider:
+    sendgrid: "Settings > Sender Authentication > Link Branding > Brand your links: elige un subdominio de {domain} y publica los CNAME mostrados."
+    mailgun: "En el dominio de envío, sección Tracking, indica un dominio de seguimiento en {domain} y publica el CNAME que se muestra."
+    amazon_ses: "Crea un configuration set con un dominio de redirección personalizado (custom redirect domain) para el seguimiento de clics, y luego publica el CNAME hacia el punto de conexión de seguimiento de tu región."
+links.executable_target:
+  title: "Un enlace descarga un archivo ejecutable"
+  why: "El enlace {url} descarga directamente un archivo de tipo {value}. Gmail rechaza este tipo de archivo como adjunto, y los filtros tratan igual un enlace a un ejecutable."
+  fix:
+    - "Sustituye el enlace directo por un enlace a una página de descarga de {domain} que explique el archivo."
+    - "Si es un programa, distribúyelo desde una tienda de aplicaciones o una página de descarga firmada."
+links.unsafe_scheme:
+  title: "Un enlace usa un protocolo peligroso (javascript:, data:, file:)"
+  why: "El enlace {url} no es una dirección web. Los clientes lo desactivan, y los filtros ven en él un intento de ejecutar código o abrir un archivo local."
+  fix:
+    - "Sustituye cada enlace de este tipo por una dirección https de una página de {domain}."
+    - "Si el editor de tu herramienta creó un enlace javascript:void(0), elimina el enlace o dale un destino real."
+links.userinfo_in_url:
+  title: "Un enlace contiene un @ que oculta su destino real"
+  why: "En {url}, todo lo que precede al @ lo ignora el navegador: el enlace parece llevar a un sitio y lleva a otro. Es una técnica de phishing conocida y penalizada."
+  fix:
+    - "Elimina la parte usuario:contraseña@ del enlace."
+    - "Si el enlace debe transmitir un identificador, pásalo como parámetro de consulta después del ?."
+links.punycode_lookalike:
+  title: "Un enlace usa un dominio con acentos que imita a un dominio conocido"
+  why: "El enlace {url} usa un nombre de dominio escrito con caracteres que se parecen a los de un dominio conocido. Es una técnica de suplantación que vigilan los filtros y los navegadores."
+  fix:
+    - "Si este dominio no es tuyo, quita el enlace."
+    - "Si es tu dominio con acentos, en los correos prefiere su versión sin acentos en {domain}."
+links.free_hosting_or_dyndns:
+  title: "Un enlace apunta a un alojamiento gratuito o a un DNS dinámico"
+  why: "El enlace {url} está alojado en un servicio donde cualquiera puede crear una página gratis. Estos servicios se usan mucho para phishing, y su reputación es baja."
+  fix:
+    - "Aloja la página en tu propio dominio {domain}."
+    - "Si usas un generador de páginas, vincula a él un subdominio de {domain}."
+links.cloud_share:
+  title: "El mensaje remite a un recurso compartido de archivos con poca explicación"
+  why: "Un mensaje corto que remite a un archivo compartido se parece a los falsos envíos de facturas. Los filtros y los destinatarios desconfían de él."
+  fix:
+    - "Explica en unas pocas frases qué contiene el archivo y por qué lo envías."
+    - "Si se trata de un documento esperado (factura, presupuesto), adjunta un PDF o ponlo a disposición en un área de cliente en {domain}."
+links.no_link_to_sender_domain:
+  title: "Ningún enlace lleva al sitio del remitente"
+  why: "El mensaje procede de {domain}, pero ningún enlace lleva a ese dominio. Los filtros comparan el dominio de envío con los enlaces: una diferencia total recuerda a los envíos hechos en nombre de terceros."
+  fix:
+    - "Añade al menos un enlace a tu sitio en {domain}, por ejemplo en el logotipo y en el pie de página."
+    - "Si vendes en un marketplace, añade también un enlace a tu propio sitio."
+links.localhost_or_staging:
+  title: "Un enlace apunta a un entorno de prueba o a una red privada"
+  why: "El enlace {url} solo funciona en tu red o en tu servidor de pruebas. El destinatario encuentra un error y el mensaje parece no haber sido revisado."
+  fix:
+    - "Sustituye la dirección de prueba por la dirección pública, en {domain}."
+    - "En tu aplicación, ajusta la dirección base del sitio (por ejemplo APP_URL o siteurl) al valor de producción."
+  fix_by_provider:
+    wordpress: "Revisa Ajustes > Generales > Dirección del sitio, y busca la dirección antigua en la base de datos con WP-CLI: wp search-replace 'https://preprod.{domain}' 'https://{domain}' --dry-run."
+links.too_many:
+  title: "El mensaje contiene muchos enlaces para poco texto"
+  why: "El mensaje contiene {value} enlaces. Una gran densidad de enlaces respecto al texto es un perfil típico del spam, y multiplica el riesgo de caer en un dominio mal reputado."
+  fix:
+    - "Mantén una llamada a la acción principal y algunos enlaces secundarios."
+    - "Elimina los enlaces duplicados que llevan a la misma página."
+links.empty_href:
+  title: "Algunos enlaces no tienen destino"
+  why: "Algunos botones o enlaces no llevan a ninguna parte. El lector hace clic sin resultado, y el mensaje parece inacabado."
+  fix:
+    - "Asigna una dirección https a cada enlace, o elimina la etiqueta a que rodea el texto."
+    - "Verifica en particular los iconos de redes sociales del pie de página."
+links.mailto_only:
+  title: "El mensaje solo contiene enlaces de correo (mailto)"
+  why: "Todos los enlaces abren un correo nuevo. No penaliza, pero el lector no tiene forma de comprobar quién eres en un sitio web."
+  fix:
+    - "Añade un enlace a tu sitio en {domain}, por ejemplo en la firma."

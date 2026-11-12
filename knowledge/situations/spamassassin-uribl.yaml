@@ -1,0 +1,542 @@
+# Famille spamassassin, groupe uribl. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/uribl.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.uribl_black
+  family: spamassassin
+  severity: medium
+  penalty: 0.9
+  detect:
+    signal: spamassassin.hit(URIBL_BLACK)
+    notes: 'score SA 4.0.x : 1.7 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_BLACK'')
+      : un domaine extrait des URL du corps est listé noir sur multi.uribl.com.'
+  sa_rules:
+  - URIBL_BLACK
+  title: Un lien pointe vers un domaine de la liste noire URIBL
+  why: Un domaine présent dans les liens du message figure dans la liste noire URIBL, réservée aux domaines
+    vus dans du spam. Cela suffit à alourdir nettement le score, même si votre propre domaine est propre.
+  fix:
+  - 'Repérez le lien concerné ({url}) : c''est parfois un domaine tiers (raccourcisseur, image, réseau
+    social) et non le vôtre.'
+  - Retirez ou remplacez ce lien, puis renvoyez le test.
+  - Si le domaine listé est le vôtre, cherchez la cause (site piraté, campagne non sollicitée) avant de
+    demander le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://uribl.com/
+- id: sa.uribl_grey
+  family: spamassassin
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: spamassassin.hit(URIBL_GREY)
+    notes: 'score SA 4.0.x : 0.424 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_GREY'')
+      : domaine listé gris sur multi.uribl.com.'
+  sa_rules:
+  - URIBL_GREY
+  title: Un lien pointe vers un domaine de la liste grise URIBL
+  why: La liste grise URIBL regroupe des domaines d'envoi en nombre qui reçoivent des plaintes, sans être
+    des spammeurs avérés. Les domaines de suivi de clics des outils de newsletter y figurent parfois.
+  fix:
+  - Identifiez le domaine listé ({url}). S'il s'agit du domaine de suivi de votre outil d'envoi, configurez
+    un domaine de suivi personnalisé sous votre propre domaine.
+  - Si c'est votre domaine, réduisez les plaintes (désinscription visible, envois sollicités) puis demandez
+    le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://uribl.com/
+- id: sa.uribl_red
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URIBL_RED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_RED'')
+      : domaine listé rouge sur multi.uribl.com.'
+  sa_rules:
+  - URIBL_RED
+  title: Un lien pointe vers un domaine de la liste rouge URIBL
+  why: La liste rouge URIBL signale des domaines surveillés par URIBL sans être assez avérés pour la liste
+    noire. SpamAssassin ne la note presque pas, mais c'est un avertissement.
+  fix:
+  - Vérifiez le domaine signalé ({url}) et retirez le lien s'il ne vous appartient pas.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://uribl.com/
+- id: sa.uribl_blocked
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URIBL_BLOCKED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_BLOCKED'')
+      : URIBL a refusé la requête (volume ou résolveur public).'
+  sa_rules:
+  - URIBL_BLOCKED
+  title: Requête URIBL refusée au serveur de test
+  why: 'Avis d''administration : URIBL n''a pas répondu au serveur d''analyse. Les liens n''ont pas été
+    contrôlés sur cette liste, mais votre message n''est pas en cause.'
+  fix:
+  - Aucune action de votre part.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://uribl.com/
+- id: sa.uribl_dbl_spam
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_SPAM)
+    notes: 'score SA 4.0.x : 2.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_SPAM'')
+      : domaine des URL listé dans dbl.spamhaus.org comme domaine de spam.'
+  sa_rules:
+  - URIBL_DBL_SPAM
+  title: Un lien pointe vers un domaine Spamhaus DBL (spam)
+  why: Un domaine cité dans le message est inscrit dans la Spamhaus DBL comme domaine de spam. C'est un
+    des signaux de lien les plus lourds, et beaucoup de passerelles bloquent sur cette liste.
+  fix:
+  - 'Repérez le lien concerné ({url}) : c''est parfois un domaine tiers (raccourcisseur, image, réseau
+    social) et non le vôtre.'
+  - Retirez ou remplacez ce lien, puis renvoyez le test.
+  - Si le domaine listé est le vôtre, cherchez la cause (site piraté, campagne non sollicitée) avant de
+    demander le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/dbl/
+- id: sa.uribl_dbl_phish
+  family: spamassassin
+  severity: critical
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_PHISH)
+    notes: 'score SA 4.0.x : 2.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_PHISH'')
+      : domaine listé dans la DBL comme domaine d''hameçonnage. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - URIBL_DBL_PHISH
+  title: Un lien pointe vers un domaine Spamhaus DBL (hameçonnage)
+  why: Un lien mène à un domaine classé comme site d'hameçonnage par Spamhaus. Si c'est votre domaine,
+    il a probablement été piraté pour héberger une fausse page de connexion.
+  fix:
+  - 'Repérez le lien concerné ({url}) : c''est parfois un domaine tiers (raccourcisseur, image, réseau
+    social) et non le vôtre.'
+  - Retirez ou remplacez ce lien, puis renvoyez le test.
+  - Si le domaine listé est le vôtre, cherchez la cause (site piraté, campagne non sollicitée) avant de
+    demander le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/dbl/
+- id: sa.uribl_dbl_malware
+  family: spamassassin
+  severity: critical
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_MALWARE)
+    notes: 'score SA 4.0.x : 2.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_MALWARE'')
+      : domaine listé dans la DBL comme diffuseur de logiciel malveillant. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - URIBL_DBL_MALWARE
+  title: Un lien pointe vers un domaine Spamhaus DBL (logiciel malveillant)
+  why: Un lien mène à un domaine qui distribue des logiciels malveillants selon Spamhaus. Sur un site
+    WordPress, c'est souvent le signe d'un fichier injecté dans wp-content.
+  fix:
+  - 'Repérez le lien concerné ({url}) : c''est parfois un domaine tiers (raccourcisseur, image, réseau
+    social) et non le vôtre.'
+  - Retirez ou remplacez ce lien, puis renvoyez le test.
+  - Si le domaine listé est le vôtre, cherchez la cause (site piraté, campagne non sollicitée) avant de
+    demander le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/dbl/
+- id: sa.uribl_dbl_abuse_spam
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_ABUSE_SPAM)
+    notes: 'score SA 4.0.x : 2 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_ABUSE_SPAM'')
+      : domaine listé dans la DBL comme abusé (spam).'
+  sa_rules:
+  - URIBL_DBL_ABUSE_SPAM
+  title: Un lien pointe vers un domaine légitime mais détourné pour du spam
+  why: Spamhaus signale un domaine légitime dont des pages sont utilisées par des spammeurs (service d'hébergement,
+    de formulaire ou de partage). Le lien vous pénalise par association.
+  fix:
+  - Remplacez le lien vers ce service partagé par un lien vers une page de votre propre domaine.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/dbl/
+- id: sa.uribl_dbl_abuse_redir
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_ABUSE_REDIR)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_ABUSE_REDIR'')
+      : domaine listé dans la DBL comme redirecteur abusé.'
+  sa_rules:
+  - URIBL_DBL_ABUSE_REDIR
+  title: Un lien passe par un redirecteur détourné par des spammeurs
+  why: Le lien passe par un service de redirection ou de raccourcissement que les spammeurs utilisent
+    aussi. SpamAssassin ne le note presque pas, mais d'autres filtres le font.
+  fix:
+  - Mettez l'adresse finale en clair au lieu d'un lien raccourci ou redirigé.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+- id: sa.uribl_dbl_abuse_phish
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_ABUSE_PHISH)
+    notes: 'score SA 4.0.x : 2.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_ABUSE_PHISH'')
+      : domaine abusé pour du phishing selon la DBL.'
+  sa_rules:
+  - URIBL_DBL_ABUSE_PHISH
+  title: Un lien pointe vers un domaine légitime détourné pour l'hameçonnage
+  why: Un domaine légitime présent dans les liens sert aussi à héberger des pages d'hameçonnage. Les filtres
+    pénalisent fortement ces liens.
+  fix:
+  - Hébergez le contenu concerné (formulaire, document) sur votre propre domaine plutôt que sur ce service.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/dbl/
+- id: sa.uribl_dbl_abuse_malw
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_ABUSE_MALW)
+    notes: 'score SA 4.0.x : 2.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_ABUSE_MALW'').'
+  sa_rules:
+  - URIBL_DBL_ABUSE_MALW
+  title: Un lien pointe vers un domaine légitime détourné pour diffuser des logiciels malveillants
+  why: Le domaine du lien est un service légitime dont certaines adresses distribuent des logiciels malveillants
+    (stockage de fichiers, partage). Le lien vous pénalise lourdement.
+  fix:
+  - Joignez le fichier ou hébergez-le sur votre site plutôt que de passer par ce service de partage.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/dbl/
+- id: sa.uribl_dbl_blocked
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_BLOCKED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_BLOCKED'')
+      : la DBL a refusé la requête (volume).'
+  sa_rules:
+  - URIBL_DBL_BLOCKED
+  title: Requête Spamhaus DBL refusée au serveur de test
+  why: 'Avis d''administration : la DBL n''a pas répondu au serveur d''analyse. Sans rapport avec vos
+    liens.'
+  fix:
+  - Aucune action de votre part.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/returnc/vol/
+- id: sa.uribl_dbl_blocked_opendns
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_BLOCKED_OPENDNS)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_BLOCKED_OPENDNS'')
+      : requête passée par un résolveur public.'
+  sa_rules:
+  - URIBL_DBL_BLOCKED_OPENDNS
+  title: 'Requête Spamhaus DBL refusée : résolveur public'
+  why: 'Avis d''administration : le serveur d''analyse passe par un résolveur DNS public refusé par Spamhaus.
+    Sans rapport avec vos liens.'
+  fix:
+  - Aucune action de votre part.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/returnc/pub/
+- id: sa.uribl_dbl_error
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URIBL_DBL_ERROR)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DBL_ERROR'')
+      : la DBL a été interrogée avec une IP au lieu d''un domaine.'
+  sa_rules:
+  - URIBL_DBL_ERROR
+  title: Erreur de requête Spamhaus DBL
+  why: 'Avis technique : un lien contient une adresse IP au lieu d''un nom de domaine et a été soumis
+    à la DBL, qui ne traite que des domaines. Le résultat n''est pas exploitable.'
+  fix:
+  - Remplacez les liens vers des adresses IP par des liens vers un nom de domaine (voir aussi NUMERIC_HTTP_ADDR).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+- id: sa.uribl_abuse_surbl
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(URIBL_ABUSE_SURBL)
+    notes: 'score SA 4.0.x : 1.25 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_ABUSE_SURBL'')
+      : domaine listé dans multi.surbl.org, catégorie abuse.'
+  sa_rules:
+  - URIBL_ABUSE_SURBL
+  title: Un lien pointe vers un domaine de la liste ABUSE de SURBL
+  why: 'Le domaine du lien figure dans la catégorie ABUSE de SURBL : domaines vus dans du spam ou des
+    envois abusifs.'
+  fix:
+  - 'Repérez le lien concerné ({url}) : c''est parfois un domaine tiers (raccourcisseur, image, réseau
+    social) et non le vôtre.'
+  - Retirez ou remplacez ce lien, puis renvoyez le test.
+  - Si le domaine listé est le vôtre, cherchez la cause (site piraté, campagne non sollicitée) avant de
+    demander le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.surbl.org/
+- id: sa.uribl_cr_surbl
+  family: spamassassin
+  severity: high
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(URIBL_CR_SURBL)
+    notes: 'score SA 4.0.x : 1.263 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_CR_SURBL'')
+      : domaine listé dans la catégorie CR (cracked) de SURBL. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - URIBL_CR_SURBL
+  title: Un lien pointe vers un site piraté selon SURBL
+  why: SURBL classe le domaine du lien comme site légitime compromis. Si c'est votre site, il héberge
+    probablement des pages ajoutées par un pirate.
+  fix:
+  - 'Analysez le site lié ({url}) : extensions et thèmes non mis à jour, fichiers PHP inconnus, comptes
+    administrateurs ajoutés.'
+  - Après nettoyage, demandez le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.surbl.org/
+- id: sa.uribl_ct_surbl
+  family: spamassassin
+  severity: high
+  penalty: 1.1
+  detect:
+    signal: spamassassin.hit(URIBL_CT_SURBL)
+    notes: 'score SA 4.0.x : 2.199 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_CT_SURBL'')
+      : domaine listé dans la catégorie CT (click tracker domains) de SURBL.'
+  sa_rules:
+  - URIBL_CT_SURBL
+  title: Un lien passe par un domaine de suivi listé par SURBL
+  why: Le lien passe par un domaine de suivi de clics que SURBL liste parce qu'il sert à des envois sans
+    consentement confirmé, jusqu'à des adresses pièges. C'est le cas typique d'un outil d'envoi dont le
+    domaine de suivi partagé est aussi utilisé par de mauvais expéditeurs.
+  fix:
+  - Configurez un domaine de suivi personnalisé (sous-domaine de {domain}) dans votre outil d'envoi.
+  - Ou désactivez le suivi des clics pour ce message et testez à nouveau.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.surbl.org/
+- id: sa.uribl_dm_surbl
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URIBL_DM_SURBL)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_DM_SURBL'')
+      : domaine listé dans la catégorie DM (disposable mail domains) de SURBL.'
+  sa_rules:
+  - URIBL_DM_SURBL
+  title: Le message cite un domaine d'adresses jetables (SURBL DM)
+  why: 'Un domaine présent dans le message appartient à un service d''adresses e-mail jetables. SpamAssassin
+    ne le note presque pas : c''est une information.'
+  fix:
+  - Si une adresse jetable figure dans le message (contact, signature), remplacez-la par une adresse de
+    votre domaine.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.surbl.org/
+- id: sa.uribl_mw_surbl
+  family: spamassassin
+  severity: high
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(URIBL_MW_SURBL)
+    notes: 'score SA 4.0.x : 1.263 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_MW_SURBL'')
+      : domaine listé dans la catégorie MW (malware) de SURBL. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - URIBL_MW_SURBL
+  title: Un lien pointe vers un domaine de logiciel malveillant selon SURBL
+  why: 'SURBL associe le domaine du lien à la diffusion de logiciels malveillants. C''est grave si le
+    domaine est le vôtre : votre site sert probablement de relais à une attaque.'
+  fix:
+  - 'Repérez le lien concerné ({url}) : c''est parfois un domaine tiers (raccourcisseur, image, réseau
+    social) et non le vôtre.'
+  - Retirez ou remplacez ce lien, puis renvoyez le test.
+  - Si le domaine listé est le vôtre, cherchez la cause (site piraté, campagne non sollicitée) avant de
+    demander le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.surbl.org/
+- id: sa.uribl_ph_surbl
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(URIBL_PH_SURBL)
+    notes: 'score SA 4.0.x : 0.61 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_PH_SURBL'')
+      : domaine listé dans la catégorie PH (phishing) de SURBL.'
+  sa_rules:
+  - URIBL_PH_SURBL
+  title: Un lien pointe vers un domaine d'hameçonnage selon SURBL
+  why: SURBL classe le domaine du lien comme hébergeur de pages d'hameçonnage.
+  fix:
+  - 'Repérez le lien concerné ({url}) : c''est parfois un domaine tiers (raccourcisseur, image, réseau
+    social) et non le vôtre.'
+  - Retirez ou remplacez ce lien, puis renvoyez le test.
+  - Si le domaine listé est le vôtre, cherchez la cause (site piraté, campagne non sollicitée) avant de
+    demander le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.surbl.org/
+- id: sa.uribl_multi_surbl_headers
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URIBL_MULTI_SURBL_HEADERS)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_hashbl_emails(''multi.surbl.org'',
+      ..., ''ALLFROM/Reply-To'', ''^127\.0\.0\.\d+$'') : les domaines des adresses From et Reply-To sont
+      interrogés sur SURBL. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - URIBL_MULTI_SURBL_HEADERS
+  title: Le domaine de l'expéditeur ou du Reply-To est listé par SURBL
+  why: Ce n'est plus un lien mais l'adresse d'expédition ou de réponse dont le domaine est dans SURBL.
+    Le domaine {domain} a donc une mauvaise réputation en propre.
+  fix:
+  - Vérifiez sur {delist_url} la catégorie et la date d'inscription de {domain}.
+  - Traitez la cause (site piraté, envois non sollicités) avant toute demande de retrait.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.surbl.org/
+- id: sa.surbl_blocked
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SURBL_BLOCKED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''SURBL_BLOCKED'').'
+  sa_rules:
+  - SURBL_BLOCKED
+  title: Requête SURBL refusée au serveur de test
+  why: 'Avis d''administration : SURBL n''a pas répondu au serveur d''analyse. Sans rapport avec vos liens.'
+  fix:
+  - Aucune action de votre part.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.surbl.org/
+- id: sa.uribl_rhs_dob
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(URIBL_RHS_DOB)
+    notes: 'score SA 4.0.x : 1.514 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_RHS_DOB'')
+      : domaine listé dans Day Old Bread (domaines enregistrés depuis quelques jours).'
+  sa_rules:
+  - URIBL_RHS_DOB
+  title: Un lien pointe vers un domaine tout juste créé
+  why: 'Un domaine cité dans le message a été enregistré très récemment. Les spammeurs changent de domaine
+    sans cesse : un lien vers un domaine neuf est suspect, même s''il s''agit du site d''une entreprise
+    qui démarre.'
+  fix:
+  - Si le domaine neuf est le vôtre, attendez quelques jours avant de l'utiliser dans des envois en nombre.
+  - En attendant, faites pointer les liens vers un domaine plus ancien que vous possédez.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jm/20_dob.cf
+- id: sa.uribl_sbl
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(URIBL_SBL)
+    notes: 'score SA 4.0.x : 1.623 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_SBL'')
+      : l''IP d''un serveur de noms (NS) d''un domaine des URL est listée dans la SBL.'
+  sa_rules:
+  - URIBL_SBL
+  title: Le serveur DNS d'un domaine lié est dans la Spamhaus SBL
+  why: Le domaine du lien utilise des serveurs DNS hébergés sur une IP connue de Spamhaus pour héberger
+    du spam. Le lien est pénalisé à cause de son hébergement.
+  fix:
+  - Identifiez le domaine concerné ({url}) et son hébergeur DNS.
+  - Si c'est votre domaine, déplacez sa zone DNS chez un hébergeur réputé.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/sbl/
+- id: sa.uribl_sbl_a
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(URIBL_SBL_A)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_SBL_A'')
+      : l''IP (enregistrement A) d''un domaine des URL est listée dans la SBL.'
+  sa_rules:
+  - URIBL_SBL_A
+  title: Le serveur web d'un domaine lié est dans la Spamhaus SBL
+  why: Le site vers lequel pointe un lien est hébergé sur une IP listée par Spamhaus. Pénalité faible
+    mais révélatrice d'un hébergement mal fréquenté.
+  fix:
+  - Si le site est le vôtre, demandez à l'hébergeur pourquoi son IP est listée ou changez d'hébergement.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/sbl/
+- id: sa.uribl_css
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(URIBL_CSS)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_CSS'')
+      : l''IP d''un NS d''un domaine des URL est listée dans la CSS.'
+  sa_rules:
+  - URIBL_CSS
+  title: Le serveur DNS d'un domaine lié est dans la Spamhaus CSS
+  why: Les serveurs DNS du domaine lié sont sur une IP repérée automatiquement pour envoi de spam. Pénalité
+    faible.
+  fix:
+  - Si le domaine est le vôtre, signalez-le à votre hébergeur DNS.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/css/
+- id: sa.uribl_zen_blocked
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URIBL_ZEN_BLOCKED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_ZEN_BLOCKED'').'
+  sa_rules:
+  - URIBL_ZEN_BLOCKED
+  title: Requête Spamhaus ZEN sur les liens refusée au serveur de test
+  why: 'Avis d''administration : Spamhaus a refusé la requête du serveur d''analyse. Sans rapport avec
+    vos liens.'
+  fix:
+  - Aucune action de votre part.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/returnc/vol/
+- id: sa.uribl_zen_blocked_opendns
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(URIBL_ZEN_BLOCKED_OPENDNS)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_uridnsbl(''URIBL_ZEN_BLOCKED_OPENDNS'').'
+  sa_rules:
+  - URIBL_ZEN_BLOCKED_OPENDNS
+  title: 'Requête Spamhaus ZEN sur les liens refusée : résolveur public'
+  why: 'Avis d''administration : le serveur d''analyse interroge Spamhaus via un résolveur public.'
+  fix:
+  - Aucune action de votre part.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_uribl.cf
+  - https://www.spamhaus.org/returnc/pub/

@@ -1,0 +1,106 @@
+mta-sts.missing:
+  title: "{domain} は MTA-STS ポリシーを公開していません"
+  why: "MTA-STS がないと、ネットワーク上の攻撃者が、{domain} 宛のメールを送信側に暗号化せずに配信させることができます。これは送信メールの配信到達性の基準ではなく、受信メールを守るための仕組みです。"
+  fix:
+    - "mta-sts.{domain} サブドメインを作成し、有効な証明書で HTTPS により配信してください。"
+    - "https://mta-sts.{domain}/.well-known/mta-sts.txt に、MX を列挙した testing モードのテキストファイルを公開してください。"
+    - "TXT レコード _mta-sts.{domain} を、v=STSv1 と id= の識別子付きで追加してください。"
+    - "レポートを受け取るために TLS-RPT レコードも公開し、数週間エラーが出なければ enforce モードに切り替えてください。"
+mta-sts.policy_unreachable:
+  title: "{domain} の MTA-STS ポリシーファイルが見つかりません"
+  why: "DNS レコードは MTA-STS ポリシーを示していますが、ファイルが配信されていません。送信側はこれを適用できず、送信側に古いポリシーがキャッシュされている場合は、古いバージョンを適用し続けます。"
+  fix:
+    - "mta-sts.{domain} の A レコードまたは CNAME レコードを、Web サーバーに向けて作成してください。"
+    - "ファイルを、リダイレクトなしで正確なパス /.well-known/mta-sts.txt に配置してください。"
+    - "ブラウザーで https://mta-sts.{domain}/.well-known/mta-sts.txt を開き、200 が返ることを確認してください。"
+  fix_by_provider:
+    cloudflare_dns: "Cloudflare Worker または静的ページで、mta-sts.{domain} からファイルを配信できます。このサブドメインは Web 用なので、プロキシは有効のままで構いません。"
+mta-sts.policy_redirect:
+  title: "{domain} の MTA-STS ポリシーがリダイレクト経由で配信されています"
+  why: "送信側は、MTA-STS ポリシーを読むときにリダイレクトをたどりません。送信側にとっては、ブラウザーで表示されても、あなたのポリシーは存在しないのと同じです。"
+  fix:
+    - "mta-sts.{domain} サブドメインだけ、www や別のサイトへのリダイレクトを無効にしてください。"
+    - "https://mta-sts.{domain}/.well-known/mta-sts.txt で、ファイルを HTTPS により直接配信してください。"
+mta-sts.policy_cert_invalid:
+  title: "mta-sts.{domain} の HTTPS 証明書が無効です"
+  why: "送信側は、期限切れ、自己署名、または別の名前で発行された証明書で配信されている MTA-STS ポリシーを読みません。そのため、あなたのポリシーは無視されます。"
+  fix:
+    - "mta-sts.{domain} だけを対象とする証明書を発行してください（Let's Encrypt で十分です）。"
+    - "そのサブドメインを配信しているサーバーにインストールし、更新を自動化してください。"
+mta-sts.policy_malformed:
+  title: "{domain} の MTA-STS ポリシーファイルの形式が不正です"
+  why: "読めないポリシーは送信側に無視されます。送信側に正しいバージョンがキャッシュされていた場合は、有効期限まで保持されるため、MX の変更を妨げるおそれがあります。"
+  fix:
+    - "1行に1つのキーを、「キー: 値」の形式で、引用符なしに書いてください。"
+    - "version: STSv1 を書き、続けて mode、MX サーバーごとに1行の mx:、そして秒単位の max_age を書いてください。"
+    - "その後、_mta-sts.{domain} レコードの id= の値を変更して、新しいバージョンを知らせてください。"
+mta-sts.wrong_content_type:
+  title: "{domain} の MTA-STS ポリシーが text/plain で配信されていません"
+  why: "送信側の一部はファイルの種類を確認し、HTML や不明な種類で配信されたポリシーを拒否します。"
+  fix:
+    - "Web サーバーが mta-sts.txt を Content-Type: text/plain のヘッダー付きで配信するように設定してください。"
+  fix_by_provider:
+    cpanel: "サブドメインの .htaccess に次の行を追加してください：AddType text/plain .txt"
+mta-sts.testing_mode:
+  title: "{domain} の MTA-STS ポリシーがテストモードです"
+  why: "testing モードでは何も守られません。適用前にレポートを集めるためのモードです。レポートに失敗がもう見られなければ、enforce モードに切り替える時期です。"
+  fix:
+    - "導入以降に受け取った TLS-RPT レポートを読み、失敗している MX がないか確認してください。"
+    - "ポリシーファイルの mode: testing を mode: enforce に置き換えてください。"
+    - "_mta-sts.{domain} レコードの id= の値を変更してください。"
+mta-sts.mode_none:
+  title: "{domain} の MTA-STS ポリシーは無効（mode none）です"
+  why: "mode none は、以前のポリシーを取り消します。撤回の途中であれば正常です。そうでなければ、{domain} は MTA-STS による保護を受けていません。"
+  fix:
+    - "撤回が完了し、max_age が過ぎている場合は、_mta-sts.{domain} レコードとファイルを削除してください。"
+    - "そうでなければ、testing モードに戻してから enforce モードにし、id= の値を変更してください。"
+mta-sts.mx_not_covered:
+  title: "{domain} の MX の一つが、MTA-STS ポリシーで許可されていません"
+  why: "enforce モードでは、MTA-STS を適用する送信側は、ポリシーに含まれていない MX への配信を拒否します。{domain} 宛のメールの一部がブロックされ、その後エラーとして戻ってくるおそれがあります。"
+  fix:
+    - "現在の MX サーバーごとに mx: 行を追加してください（ワイルドカードの *.{domain} は、サブドメイン1階層だけを対象とします）。"
+    - "送信側がファイルを再読み込みするように、_mta-sts.{domain} レコードの id= の値をすぐに変更してください。"
+    - "プロバイダーを変更する場合は、先に max_age の期間中ずっと testing モードに戻してください。"
+mta-sts.enforce_tls_broken:
+  title: "{domain} の MTA-STS ポリシーが、証明書の無効な MX をブロックしています"
+  why: "ポリシーは有効な TLS を要求していますが、MX の一つがそれを提供していません。MTA-STS を適用する送信側は、そのサーバーへの配信を拒否します。受信メールを失うことになります。"
+  fix:
+    - "該当する MX の証明書を修正してください（そのサーバーについて報告された TLS の異常を参照）。"
+    - "修正までの間は、ポリシーを testing モードに戻し、id= の値を変更してください。"
+mta-sts.id_unchanged:
+  title: "{domain} の MTA-STS ポリシーは変更されましたが、識別子は変更されていません"
+  why: "id= の値が変わらない限り、送信側は max_age の期限まで古いポリシーをキャッシュし続けます。あなたの変更はかなり先まで見えず、新しい MX の配信を妨げるおそれがあります。"
+  fix:
+    - "_mta-sts.{domain} レコードの id= の値を変更してください（例：変更の日時を使います）。"
+    - "ポリシーファイルを変更するたびに、例外なく必ず変更してください。"
+mta-sts.txt_malformed:
+  title: "{domain} の _mta-sts レコードが無効です"
+  why: "ハイフンやドットを含む識別子、または競合する2つのレコードがあると、送信側から見てポリシーが存在しないことになります。"
+  fix:
+    - "_mta-sts.{domain} には、v=STSv1 で始まる TXT レコードを1つだけ置いてください。"
+    - "id= の値は32文字以内で、英字と数字だけを使ってください。"
+mta-sts.max_age_short:
+  title: "{domain} の MTA-STS ポリシーの max_age が非常に短いです"
+  why: "期間が短いと、攻撃者はポリシーへのアクセスを数時間遮断するだけで、送信側をオプションの TLS に戻すことができます。"
+  fix:
+    - "ポリシーが enforce で安定したら、max_age を少なくとも 604800（1週間）に設定し、1209600 以上にすることも検討してください。"
+    - "最大値の 31557600 を超えないようにしてください。"
+    - "変更後は id= の値を変更してください。"
+mta-sts.max_age_too_long:
+  title: "{domain} の MTA-STS ポリシーの max_age が上限を超えています"
+  why: "この値は規格で定められた上限を超えています。一部の送信側は、ポリシー全体を拒否します。"
+  fix:
+    - "max_age を最大 31557600 にしてください（604800 から 31557600 の間の値が適切です）。"
+    - "変更後は id= の値を変更してください。"
+mta-sts.tlsrpt_missing:
+  title: "{domain} は TLS-RPT の報告先アドレスなしで MTA-STS を公開しています"
+  why: "暗号化ポリシーは適用しているのに、失敗レポートを受け取っていません。MX や証明書に問題があると、送信側が気づかないうちに配信を止めてしまうおそれがあります。"
+  fix:
+    - "レポート専用のアドレスを作成してください（例：tlsrpt@{domain}）。"
+    - "TXT レコード _smtp._tls.{domain} を、v=TLSRPTv1 と、そのアドレスを指す rua=mailto: とともに公開してください。"
+mta-sts.tlsrpt_malformed:
+  title: "{domain} の TLS-RPT レコードが無効です"
+  why: "送信側は、形式の不正な TLS-RPT レコードを無視します。その結果、暗号化の失敗に関するレポートを受け取れません。"
+  fix:
+    - "レコードの先頭を v=TLSRPTv1 にしてください。"
+    - "rua= の後に、mailto: で始まるアドレス（または https: の URL）を指定してください。"

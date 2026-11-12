@@ -1,0 +1,813 @@
+# Famille headers : en-têtes du message (RFC 5322, RFC 2045 à 2049, RFC 2047, RFC 5321, RFC 6152).
+# Les seuils nommés config.* sont des réglages internes de l'outil : aucune norme ne les fixe,
+# sauf mention contraire dans detect.notes.
+
+- id: headers.message_id_missing
+  family: headers
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "headers.count('Message-ID') == 0"
+    notes: "RFC 5322 §3.6.4 : tout message SHOULD avoir un Message-ID. Google demande un Message-ID valide pour chaque message envoyé à Gmail."
+  sa_rules: []
+  title: "Le message n'a pas d'en-tête Message-ID"
+  why: >
+    Gmail exige un Message-ID valide sur chaque message. Sans lui, le message ressemble à un envoi
+    fabriqué par un script et le fil de discussion ne peut pas être reconstitué chez le destinataire.
+  fix:
+    - "Laissez le serveur d'envoi ajouter le Message-ID au lieu de construire les en-têtes à la main dans votre code."
+    - "Si votre script écrit lui-même les en-têtes, ajoutez une ligne Message-ID au format <identifiant-unique@{domain}>."
+    - "Renvoyez un test et vérifiez que l'en-tête apparaît une seule fois."
+  fix_by_provider:
+    wordpress: "Envoyez par SMTP authentifié avec une extension comme WP Mail SMTP ou FluentSMTP : PHPMailer génère alors le Message-ID. N'ajoutez pas de Message-ID vide dans le tableau $headers de wp_mail()."
+    postfix: "Postfix ajoute le Message-ID manquant pour les messages soumis localement. Pour les messages relayés depuis le réseau, ajoutez always_add_missing_headers = yes dans main.cf puis lancez postfix reload."
+  example_bad: |
+    From: Boutique <contact@{domain}>
+    Subject: Votre commande
+  example_good: |
+    From: Boutique <contact@{domain}>
+    Subject: Votre commande
+    Message-ID: <20261110.4f2a9c@{domain}>
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.4
+    - https://support.google.com/mail/answer/81126
+
+- id: headers.message_id_malformed
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "headers.message_id != null && !headers.message_id.matches_rfc5322_msg_id"
+    notes: "RFC 5322 §3.6.4 : msg-id = \"<\" id-left \"@\" id-right \">\". Absence de chevrons, de @, espaces ou partie droite vide."
+  sa_rules: []
+  title: "Le Message-ID ne respecte pas la syntaxe <identifiant@domaine>"
+  why: >
+    Un Message-ID mal formé est le signe d'un en-tête écrit à la main. Certains filtres le comptent
+    comme un indice de spam, et les réponses risquent de ne pas se rattacher au bon fil.
+  fix:
+    - "Écrivez le Message-ID entre chevrons, avec une partie gauche unique, un @ et un nom de domaine à droite."
+    - "Ne mettez ni espace ni accent dans l'identifiant."
+    - "Le plus simple : supprimez la ligne de votre code et laissez le serveur d'envoi la générer."
+  example_bad: "Message-ID: 4f2a9c-commande"
+  example_good: "Message-ID: <4f2a9c.commande@{domain}>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.4
+
+- id: headers.message_id_localhost
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "headers.message_id.right in ['localhost','localhost.localdomain','localdomain'] || headers.message_id.right.is_ip || !headers.message_id.right.contains('.')"
+    notes: "La partie droite doit identifier le système qui a créé le message (RFC 5322 §3.6.4, recommandation d'unicité). Une partie droite localhost trahit un serveur mal nommé."
+  sa_rules: []
+  title: "Le Message-ID se termine par localhost ou par un nom non qualifié"
+  why: >
+    Un Message-ID en @localhost montre que le serveur qui a fabriqué le message ne connaît pas son
+    propre nom. C'est la signature habituelle des scripts et des serveurs mal configurés.
+  fix:
+    - "Donnez au serveur d'envoi un nom complet, par exemple mail.{domain}, résolu dans le DNS."
+    - "Dans votre code, construisez la partie droite du Message-ID avec {domain} au lieu du nom de la machine."
+  fix_by_provider:
+    postfix: "Dans main.cf, réglez myhostname = mail.{domain} et mydomain = {domain}, puis lancez postfix reload."
+    wordpress: "Le Message-ID de PHPMailer reprend le nom du serveur web. Ajoutez un filtre phpmailer_init qui fixe $phpmailer->Hostname = '{domain}', ou passez par une extension SMTP."
+  example_bad: "Message-ID: <a81f2@localhost.localdomain>"
+  example_good: "Message-ID: <a81f2@{domain}>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.4
+
+- id: headers.date_missing
+  family: headers
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "headers.count('Date') == 0"
+    notes: "RFC 5322 §3.6 : Date (orig-date) fait partie des deux seuls champs obligatoires, avec From."
+  sa_rules: []
+  title: "L'en-tête Date est absent"
+  why: >
+    Date est l'un des deux en-têtes obligatoires de tout e-mail. Sans lui, le message n'est pas
+    conforme à la RFC 5322, que Gmail et Yahoo demandent de respecter, et il sera mal classé dans la boîte.
+  fix:
+    - "Laissez le serveur d'envoi ajouter l'en-tête Date au lieu de l'écrire vous-même."
+    - "Si votre code le génère, utilisez le format RFC 5322, avec le fuseau en +hhmm."
+  fix_by_provider:
+    postfix: "Ajoutez always_add_missing_headers = yes dans main.cf si les messages arrivent d'une autre machine sans Date, puis postfix reload."
+    wordpress: "Passez par une extension SMTP : PHPMailer ajoute l'en-tête Date. Ne le retirez pas dans le filtre wp_mail."
+  example_good: "Date: Tue, 10 Nov 2026 09:30:00 +0100"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+    - https://support.google.com/a/answer/81126
+
+- id: headers.date_future
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "headers.date - received.first.timestamp > config.max_date_skew_future"
+    notes: "Comparaison entre Date et l'horodatage de réception par notre serveur. Le seuil de tolérance est un réglage interne."
+  sa_rules: []
+  title: "La date du message est dans le futur"
+  why: >
+    Une date en avance place le message en tête de boîte de réception pendant des heures. Les filtres
+    connaissent cette astuce et la pénalisent. Dans votre test, l'écart mesuré est de {value}.
+  fix:
+    - "Synchronisez l'horloge du serveur qui génère le message avec NTP (chrony ou systemd-timesyncd)."
+    - "Vérifiez le fuseau horaire déclaré dans votre application : une heure locale suivie de +0000 produit ce décalage."
+  example_bad: "Date: Tue, 10 Nov 2026 18:30:00 +0000"
+  example_good: "Date: Tue, 10 Nov 2026 18:30:00 +0100"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+
+- id: headers.date_too_old
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "received.first.timestamp - headers.date > config.max_date_skew_past"
+    notes: "Message daté longtemps avant sa réception. Le seuil est un réglage interne."
+  sa_rules: []
+  title: "La date du message est très ancienne"
+  why: >
+    Le message porte une date antérieure de {value} à sa réception. Il apparaîtra enfoui dans la boîte
+    du destinataire, et les filtres y voient souvent un message rejoué ou une file bloquée.
+  fix:
+    - "Vérifiez que l'en-tête Date est calculé au moment de l'envoi, pas au moment de la création du brouillon ou du modèle."
+    - "Synchronisez l'horloge du serveur avec NTP."
+    - "Si les messages restent longtemps en file d'attente, cherchez la cause dans les journaux du serveur d'envoi."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.1
+
+- id: headers.date_malformed
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "headers.date != null && !headers.date.parses_rfc5322"
+    notes: "RFC 5322 §3.3 : le fuseau s'écrit + ou - suivi de quatre chiffres. Les fuseaux alphabétiques inconnus SHOULD être traités comme -0000."
+  sa_rules: []
+  title: "L'en-tête Date n'est pas au format standard"
+  why: >
+    Une date illisible est remplacée par l'heure de réception, ou interprétée de travers. Les filtres
+    comptent cette malformation comme un indice d'outil d'envoi artisanal.
+  fix:
+    - "Écrivez la date au format : jour abrégé en anglais, virgule, jour, mois abrégé en anglais, année, heure, fuseau en +hhmm."
+    - "N'écrivez pas le mois en français et n'utilisez pas de fuseau en lettres comme CEST."
+    - "En PHP, utilisez date('r') ou DateTime::RFC2822 au lieu d'un format maison."
+  example_bad: "Date: 10/11/2026 09:30 CEST"
+  example_good: "Date: Tue, 10 Nov 2026 09:30:00 +0100"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+
+- id: headers.date_timezone_inconsistent
+  family: headers
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "abs(headers.date.utc - received.origin.utc) > config.max_tz_skew && headers.date.offset != received.origin.offset"
+    notes: "Le fuseau déclaré dans Date ne correspond pas à celui du premier Received, et l'heure UTC diffère. Indice d'une heure locale annoncée avec le mauvais fuseau."
+  sa_rules: []
+  title: "Le fuseau horaire de Date ne correspond pas à l'heure réelle d'envoi"
+  why: >
+    L'heure indiquée dans Date et celle relevée par le premier serveur diffèrent de {value}. Le
+    destinataire voit une heure fausse, et ce décalage est un indice connu des filtres.
+  fix:
+    - "Réglez le fuseau horaire de votre application (par exemple Europe/Paris) au lieu de forcer +0000."
+    - "En PHP, fixez date.timezone dans php.ini ou appelez date_default_timezone_set('Europe/Paris') avant de générer l'en-tête."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+
+- id: headers.from_missing
+  family: headers
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "headers.count('From') == 0 || headers.from.mailboxes.length == 0"
+    notes: "RFC 5322 §3.6 : From est obligatoire. Sans From, DMARC ne peut pas être évalué."
+  sa_rules: []
+  title: "Le message n'a pas d'expéditeur (From)"
+  why: >
+    From est obligatoire. Sans lui, DMARC n'a aucun domaine à vérifier : la plupart des grands
+    webmails rejettent le message ou le classent directement en indésirables.
+  fix:
+    - "Ajoutez un en-tête From avec une adresse de votre domaine, par exemple contact@{domain}."
+    - "Dans votre outil d'envoi, renseignez le champ Expéditeur ou Adresse d'envoi de la campagne ou du formulaire."
+  fix_by_provider:
+    wordpress: "Dans WP Mail SMTP ou FluentSMTP, renseignez From Email avec une adresse de {domain} et cochez l'option qui force cette adresse pour tous les envois."
+  example_good: "From: Votre entreprise <contact@{domain}>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.2
+
+- id: headers.from_multiple
+  family: headers
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "headers.count('From') > 1 || headers.from.mailboxes.length > 1"
+    notes: "RFC 5322 §3.6 : From apparaît exactement une fois ; s'il contient plusieurs adresses, Sender MUST être présent (§3.6.2). Google : le From doit contenir une seule adresse."
+  sa_rules: []
+  title: "L'en-tête From contient plusieurs adresses ou apparaît plusieurs fois"
+  why: >
+    Google demande une seule adresse dans From. Plusieurs adresses empêchent DMARC de savoir quel
+    domaine vérifier : le message est souvent rejeté.
+  fix:
+    - "Ne gardez qu'une adresse dans From, celle de {domain}."
+    - "Mettez les autres adresses dans Reply-To ou dans Cc si elles doivent recevoir les réponses."
+    - "Vérifiez que votre code n'ajoute pas un second From à celui déjà fourni par la bibliothèque d'envoi."
+  example_bad: "From: Service <contact@{domain}>, Direction <direction@{domain}>"
+  example_good: |
+    From: Service <contact@{domain}>
+    Reply-To: direction@{domain}
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.2
+    - https://support.google.com/mail/answer/81126
+
+- id: headers.from_no_display_name
+  family: headers
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "headers.from.display_name == ''"
+    notes: "Pas une erreur de norme. Le nom d'affichage améliore la reconnaissance par le destinataire."
+  sa_rules: []
+  title: "L'expéditeur n'a pas de nom d'affichage"
+  why: >
+    Le destinataire ne voit que l'adresse brute, souvent tronquée sur mobile. Un expéditeur
+    reconnaissable est moins souvent signalé comme spam.
+  fix:
+    - "Ajoutez un nom d'affichage avant l'adresse : le nom de votre entreprise ou de la personne qui écrit."
+    - "Si le nom contient une virgule, un point ou des caractères accentués, mettez-le entre guillemets droits."
+  fix_by_provider:
+    mailchimp: "Dans la campagne, cliquez sur From, puis remplissez Name avec le nom de votre entreprise."
+    wordpress: "Dans WP Mail SMTP, renseignez From Name et cochez Force From Name."
+  example_bad: "From: contact@{domain}"
+  example_good: "From: Votre entreprise <contact@{domain}>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.4
+
+- id: headers.from_display_name_has_address
+  family: headers
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "headers.from.display_name.contains_email && headers.from.display_name.email_domain != headers.from.domain"
+    notes: "Un nom d'affichage qui contient une adresse d'un autre domaine que {domain} est une technique d'usurpation connue : le client mobile n'affiche souvent que ce nom."
+  sa_rules: []
+  title: "Le nom d'affichage contient une autre adresse e-mail que l'expéditeur réel"
+  why: >
+    Le nom d'affichage montre {value} alors que l'adresse réelle est sur {domain}. C'est la technique
+    d'usurpation la plus répandue : les filtres antihameçonnage la sanctionnent lourdement.
+  fix:
+    - "Remplacez le nom d'affichage par un nom sans adresse : le nom de votre entreprise ou de la personne."
+    - "Si vous voulez que les réponses arrivent à une autre adresse, utilisez Reply-To, pas le nom d'affichage."
+  example_bad: "From: \"support@banque-exemple.fr\" <envoi@{domain}>"
+  example_good: "From: \"Support Votre entreprise\" <support@{domain}>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.4
+    - https://support.google.com/mail/answer/81126
+
+- id: headers.from_display_name_brand_spoof
+  family: headers
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "headers.from.display_name ~ config.protected_brands && !config.brand_domains[match].includes(headers.from.domain)"
+    notes: "Liste interne de marques souvent usurpées (banques, transporteurs, administrations) associées à leurs domaines officiels."
+  sa_rules: []
+  title: "Le nom d'affichage reprend une marque connue qui n'est pas la vôtre"
+  why: >
+    Le nom d'affichage cite {value} alors que le message part de {domain}. Les filtres antihameçonnage
+    comparent ce nom au domaine réel et classent ce type de message comme tentative d'usurpation.
+  fix:
+    - "Utilisez le nom de votre propre entreprise dans le nom d'affichage."
+    - "Si vous envoyez pour le compte de cette marque, envoyez depuis son domaine, avec SPF, DKIM et DMARC configurés par elle."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: headers.reply_to_other_domain
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "headers.reply_to != null && headers.reply_to.org_domain != headers.from.org_domain"
+    notes: "Comparaison des domaines organisationnels. Courant pour un service client externalisé, suspect dans les autres cas."
+  sa_rules: []
+  title: "Les réponses partent vers un autre domaine que l'expéditeur"
+  why: >
+    Le message vient de {domain} mais les réponses iront à {value}. Ce schéma est fréquent dans
+    l'hameçonnage : certains filtres le pénalisent, surtout si le domaine de réponse est récent.
+  fix:
+    - "Si ce n'est pas voulu, supprimez Reply-To ou mettez une adresse de {domain}."
+    - "Si c'est voulu (service client externalisé), créez une adresse sur {domain} qui redirige vers ce service."
+  fix_by_provider:
+    mailchimp: "Dans la campagne, section From, vérifiez l'adresse indiquée : Mailchimp l'utilise aussi comme adresse de réponse."
+    wordpress: "Vérifiez le champ Reply-To de votre extension de formulaire (Contact Form 7, WPForms, Gravity Forms) : c'est souvent là que l'adresse du visiteur est injectée, ce qui est normal pour une notification interne."
+  example_good: "Reply-To: service-client@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.2
+
+- id: headers.reply_to_freemail
+  family: headers
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "headers.reply_to.domain in config.freemail_domains && headers.from.domain not in config.freemail_domains"
+    notes: "Liste interne de messageries gratuites (gmail.com, yahoo.fr, outlook.fr, orange.fr...)."
+  sa_rules: []
+  title: "Les réponses partent vers une messagerie gratuite"
+  why: >
+    Le message part de {domain} mais demande de répondre à une adresse {value}. C'est le schéma
+    typique de la fraude au faux fournisseur : les filtres le repèrent et le sanctionnent.
+  fix:
+    - "Créez une adresse de réponse sur {domain} et utilisez-la dans Reply-To."
+    - "Si vous recevez votre courrier sur une messagerie gratuite, redirigez l'adresse de {domain} vers elle plutôt que d'exposer l'adresse gratuite."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.2
+
+- id: headers.sender_inconsistent
+  family: headers
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "headers.sender != null && headers.sender.org_domain != headers.from.org_domain"
+    notes: "RFC 5322 §3.6.2 : Sender désigne l'agent qui a transmis le message. Outlook affiche alors « de la part de »."
+  sa_rules: []
+  title: "L'en-tête Sender indique un autre domaine que From"
+  why: >
+    Outlook affiche alors « {value} de la part de {domain} », ce qui inquiète le destinataire et
+    augmente les signalements comme spam.
+  fix:
+    - "Supprimez l'en-tête Sender si l'expéditeur réel est bien {domain}."
+    - "Si votre outil d'envoi l'ajoute, configurez un domaine d'envoi authentifié sur {domain} : la plupart des outils retirent alors Sender."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.2
+
+- id: headers.return_path_other_domain
+  family: headers
+  severity: info
+  penalty: 0
+  detect:
+    signal: "envelope.org_domain != headers.from.org_domain"
+    notes: "Informatif. La pénalité éventuelle est portée par la famille alignment (alignement SPF pour DMARC). Ne pas cumuler."
+  sa_rules: []
+  title: "L'adresse de retour (Return-Path) est sur un autre domaine"
+  why: >
+    Les rebonds partent vers {envelope_domain} et non vers {domain}. C'est normal avec un outil
+    d'envoi, mais SPF ne pourra alors pas s'aligner sur {domain} : seul DKIM pourra valider DMARC.
+  fix:
+    - "Dans votre outil d'envoi, configurez un domaine de retour personnalisé (souvent appelé Return-Path, bounce domain ou MAIL FROM) sur un sous-domaine de {domain}."
+    - "Publiez l'enregistrement CNAME ou MX que l'outil vous indique pour ce sous-domaine."
+  fix_by_provider:
+    sendgrid: "Settings > Sender Authentication > Authenticate Your Domain : l'assistant crée un sous-domaine de retour sur {domain}."
+    amazon_ses: "Dans la console SES, identité {domain} > Custom MAIL FROM domain : choisissez un sous-domaine, puis publiez le MX et le TXT SPF indiqués."
+    mailgun: "Le domaine d'envoi déclaré dans Mailgun doit être un sous-domaine de {domain} (par exemple mg.{domain}) : il sert alors de Return-Path."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.4
+    - https://www.rfc-editor.org/rfc/rfc7489#section-3.1
+
+- id: headers.to_missing
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "headers.count('To') == 0 && headers.count('Cc') == 0"
+    notes: "To n'est pas obligatoire selon la RFC 5322, mais son absence est typique des envois en masse en copie cachée."
+  sa_rules: []
+  title: "Le message n'a pas de destinataire visible (To)"
+  why: >
+    Sans To, le message semble envoyé en copie cachée à une liste. C'est un indice classique d'envoi
+    de masse non sollicité pour les filtres.
+  fix:
+    - "Envoyez un message par destinataire, avec son adresse dans To."
+    - "Pour une liste, utilisez un outil d'envoi qui personnalise To pour chaque contact au lieu de la copie cachée."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.3
+
+- id: headers.to_undisclosed
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "headers.to ~ /undisclosed[- ]recipients|destinataires inconnus|recipient list suppressed/i"
+    notes: "Groupe vide de la RFC 5322 §3.4, ajouté par les clients ou serveurs quand tous les destinataires sont en Cci."
+  sa_rules: []
+  title: "Le destinataire affiché est « undisclosed-recipients »"
+  why: >
+    Ce libellé signale un envoi groupé en copie cachée. Les filtres le traitent comme un envoi de
+    masse sans personnalisation, souvent classé en indésirables.
+  fix:
+    - "Ne mettez pas vos contacts en Cci pour un envoi collectif : utilisez un outil d'envoi de newsletters qui adresse chaque message à un seul destinataire."
+    - "Pour quelques destinataires, faites un publipostage (fusion) depuis votre messagerie."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.4
+
+- id: headers.subject_missing
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "headers.count('Subject') == 0"
+    notes: "Microsoft Defender (option ASF Empty messages) classe en spam à haute confiance un message sans objet, sans corps et sans pièce jointe."
+  sa_rules: []
+  title: "Le message n'a pas d'objet"
+  why: >
+    Un message sans objet est rarement ouvert et souvent signalé comme spam. Combiné à un corps vide,
+    il est classé en spam à haute confiance par les filtres Microsoft quand cette option est active.
+  fix:
+    - "Ajoutez un objet qui résume le message en quelques mots."
+    - "Vérifiez que votre modèle ou votre formulaire remplit bien la variable d'objet."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.5
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: headers.subject_empty
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "headers.count('Subject') == 1 && headers.subject.decoded.trim() == ''"
+    notes: "En-tête présent mais vide : souvent une variable de modèle non remplie."
+  sa_rules: []
+  title: "L'objet du message est vide"
+  why: >
+    L'en-tête Subject existe mais ne contient rien. C'est presque toujours une variable de modèle non
+    remplie, et le message apparaît comme « (sans objet) » chez le destinataire.
+  fix:
+    - "Vérifiez la variable qui alimente l'objet dans votre modèle ou votre code."
+    - "Prévoyez un objet par défaut quand la variable est vide."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.5
+
+- id: headers.subject_all_caps
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "headers.subject.letters_upper_ratio >= config.subject_caps_ratio && headers.subject.letters_count >= config.subject_caps_min_letters"
+    notes: "Seuil interne. Les mots tout en majuscules dans l'objet sont un critère classique des filtres de contenu."
+  sa_rules: []
+  title: "L'objet est écrit en majuscules"
+  why: >
+    Un objet en capitales est perçu comme agressif et fait partie des critères historiques des filtres
+    antispam. Il augmente aussi les signalements par les destinataires.
+  fix:
+    - "Réécrivez l'objet en minuscules, avec une majuscule en début de phrase et aux noms propres."
+    - "Pour mettre un mot en valeur, placez-le en tête de l'objet plutôt que de l'écrire en capitales."
+  example_bad: "Subject: PROMOTION EXCEPTIONNELLE SUR TOUT LE SITE"
+  example_good: "Subject: Promotion exceptionnelle sur tout le site jusqu'à dimanche"
+  references:
+    - https://senders.yahooinc.com/best-practices/
+
+- id: headers.subject_emoji_excess
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "headers.subject.emoji_count > config.subject_max_emoji"
+    notes: "Seuil interne. Aucun fournisseur ne publie de limite chiffrée."
+  sa_rules: []
+  title: "L'objet contient beaucoup d'émojis"
+  why: >
+    L'objet compte {value} émojis. Au-delà d'un ou deux, ils font ressembler le message à une
+    promotion agressive et s'affichent mal dans certains clients.
+  fix:
+    - "Gardez un seul émoji, en début ou en fin d'objet, s'il apporte un sens."
+    - "Vérifiez que l'objet reste compréhensible si l'émoji n'est pas affiché."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2047
+
+- id: headers.subject_encoding_broken
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "headers.subject.raw.has_8bit && !smtp.smtputf8 || headers.subject.encoded_words.any_invalid"
+    notes: "RFC 2047 : un en-tête non ASCII s'encode en mots encodés =?charset?B|Q?...?= de 75 caractères au plus. Sans SMTPUTF8 (RFC 6532), les octets 8 bits bruts sont interdits dans les en-têtes."
+  sa_rules: []
+  title: "L'objet contient des accents mal encodés"
+  why: >
+    Les accents de l'objet ne sont pas encodés selon la RFC 2047. Le destinataire risque de voir des
+    caractères parasites comme Ã©, et les filtres comptent cette malformation contre vous.
+  fix:
+    - "Laissez votre bibliothèque d'envoi encoder l'objet : passez-lui une chaîne UTF-8 sans l'encoder vous-même."
+    - "En PHP avec mail(), encodez l'objet avec mb_encode_mimeheader($sujet, 'UTF-8', 'B'), ou mieux, passez à PHPMailer."
+    - "Ne découpez pas un mot encodé au milieu d'un caractère multioctet."
+  example_bad: "Subject: Votre rÃ©servation est confirmÃ©e"
+  example_good: "Subject: =?UTF-8?Q?Votre_r=C3=A9servation_est_confirm=C3=A9e?="
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2047#section-2
+    - https://www.rfc-editor.org/rfc/rfc6532
+
+- id: headers.subject_fake_reply
+  family: headers
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "headers.subject ~ /^\\s*(re|tr|fw|fwd)\\s*:/i && headers.count('In-Reply-To') == 0 && headers.count('References') == 0"
+    notes: "Objet qui imite une réponse ou un transfert sans en-tête de fil (RFC 5322 §3.6.4)."
+  sa_rules: []
+  title: "L'objet commence par RE: ou TR: sans être une vraie réponse"
+  why: >
+    Faire croire à une conversation existante est une technique d'hameçonnage connue. Les filtres
+    vérifient la présence de In-Reply-To et References et sanctionnent l'imitation.
+  fix:
+    - "Retirez RE:, TR: ou FWD: de l'objet d'un premier message."
+    - "Pour une vraie réponse, utilisez la fonction Répondre de votre messagerie, qui ajoute In-Reply-To et References."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.4
+    - https://senders.yahooinc.com/best-practices/
+
+- id: headers.x_mailer_phpmailer
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "headers.x_mailer ~ /PHPMailer/i || headers.count('X-PHP-Originating-Script') > 0"
+    notes: "L'en-tête X-Mailer par défaut de PHPMailer, ou X-PHP-Originating-Script ajouté par mail.add_x_header, révèle un envoi direct depuis un script PHP."
+  sa_rules: []
+  title: "Les en-têtes révèlent un envoi depuis un script PHP"
+  why: >
+    L'en-tête {value} montre que le message sort directement d'un script PHP. Les scripts PHP piratés
+    sont une source majeure de spam : certains filtres ajoutent des points pour ce simple indice.
+  fix:
+    - "Envoyez par SMTP authentifié vers un vrai serveur de messagerie au lieu de la fonction mail()."
+    - "Masquez l'en-tête X-Mailer de PHPMailer en lui donnant la valeur d'un espace."
+    - "Désactivez mail.add_x_header dans php.ini pour supprimer X-PHP-Originating-Script."
+  fix_by_provider:
+    wordpress: "Ajoutez dans une extension maison : add_action('phpmailer_init', function($m){ $m->XMailer = ' '; }); puis configurez WP Mail SMTP ou FluentSMTP pour envoyer par SMTP authentifié."
+    cpanel: "Dans MultiPHP INI Editor, passez mail.add_x_header à Off pour le domaine."
+  example_bad: "X-Mailer: PHPMailer 6.9.1 (https://github.com/PHPMailer/PHPMailer)"
+  references:
+    - https://github.com/PHPMailer/PHPMailer/blob/master/src/PHPMailer.php
+    - https://www.php.net/manual/en/mail.configuration.php
+
+- id: headers.x_mailer_bulk_tool
+  family: headers
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "headers.x_mailer ~ config.known_bulk_spam_tools"
+    notes: "Liste interne de logiciels d'envoi de masse fréquemment utilisés par les spammeurs, tenue à jour à partir des observations."
+  sa_rules: []
+  title: "Le message est envoyé avec un logiciel associé au spam"
+  why: >
+    L'en-tête X-Mailer indique {value}, un logiciel d'envoi de masse très utilisé par les spammeurs.
+    Les filtres reconnaissent sa signature et pénalisent tous les messages qu'il produit.
+  fix:
+    - "Passez par une plateforme d'envoi reconnue qui gère l'authentification, les désinscriptions et les rebonds."
+    - "Si vous gardez ce logiciel, supprimez l'en-tête X-Mailer dans ses réglages, mais sachez que sa signature reste reconnaissable dans le reste du message."
+  references:
+    - https://www.m3aawg.org/published-documents
+
+- id: headers.duplicate_single_instance
+  family: headers
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "any(h in ['Date','From','Sender','Reply-To','To','Cc','Bcc','Message-ID','In-Reply-To','References','Subject'] && headers.count(h) > 1)"
+    notes: "RFC 5322 §3.6 : ces champs apparaissent au plus une fois (Date et From exactement une fois). Google : les en-têtes à instance unique ne doivent figurer qu'une fois."
+  sa_rules: []
+  title: "Un en-tête qui doit être unique apparaît plusieurs fois"
+  why: >
+    L'en-tête {value} apparaît plusieurs fois. Gmail demande que ces en-têtes ne figurent qu'une
+    fois : un doublon rend le message non conforme et peut provoquer un rejet.
+  fix:
+    - "Cherchez dans votre code ou votre extension l'endroit où {value} est ajouté une seconde fois."
+    - "Si un relais ajoute l'en-tête déjà présent, retirez-le de votre application et laissez le relais s'en charger."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6
+    - https://support.google.com/mail/answer/81126
+
+- id: headers.received_too_many
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "headers.count('Received') > config.max_received_hops"
+    notes: "RFC 5321 §6.3 : les serveurs qui détectent les boucles en comptant les Received SHOULD utiliser un seuil élevé, normalement au moins 100. Le seuil d'alerte de l'outil est plus bas et sert de signal, pas de limite de rejet."
+  sa_rules: []
+  title: "Le message a traversé un nombre inhabituel de serveurs"
+  why: >
+    Le message porte {value} en-têtes Received. Une chaîne aussi longue trahit souvent une boucle de
+    redirection ou un relais mal configuré, et un serveur finit par rejeter le message.
+  fix:
+    - "Listez les serveurs dans les en-têtes Received, du bas vers le haut, pour repérer celui qui se répète."
+    - "Supprimez les redirections en chaîne entre boîtes ou entre domaines, et faites partir le message directement de votre serveur d'envoi."
+  fix_by_provider:
+    postfix: "Postfix rejette au-delà de hopcount_limit (postconf hopcount_limit pour voir la valeur). Cherchez la boucle plutôt que d'augmenter cette limite."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-6.3
+
+- id: headers.precedence_bulk
+  family: headers
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "headers.precedence ~ /^(bulk|junk|list)$/i"
+    notes: "RFC 3834 : Precedence n'est pas un champ standard et son usage n'est pas spécifiquement recommandé. Certains filtres l'utilisent pour classer en promotions."
+  sa_rules: []
+  title: "L'en-tête Precedence classe le message en envoi de masse"
+  why: >
+    Precedence: {value} indique un envoi de masse. Sur un message transactionnel (facture, mot de
+    passe), il pousse le message vers les onglets promotions ou les indésirables.
+  fix:
+    - "Retirez Precedence des messages transactionnels."
+    - "Pour empêcher les réponses automatiques, utilisez plutôt Auto-Submitted: auto-generated, défini par la RFC 3834."
+  example_bad: "Precedence: bulk"
+  example_good: "Auto-Submitted: auto-generated"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3834#section-2
+    - https://www.rfc-editor.org/rfc/rfc3834#section-5
+
+- id: headers.mime_version_missing
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "headers.count('MIME-Version') == 0 && (headers.count('Content-Type') > 0 || body.has_8bit)"
+    notes: "RFC 2045 §4 : les messages MIME MUST inclure MIME-Version: 1.0."
+  sa_rules: []
+  title: "L'en-tête MIME-Version est absent"
+  why: >
+    Sans MIME-Version, le client peut ignorer les parties HTML, les pièces jointes et l'encodage des
+    accents. Les filtres y voient un message fabriqué sans bibliothèque d'envoi.
+  fix:
+    - "Ajoutez la ligne MIME-Version: 1.0 dans les en-têtes."
+    - "Mieux : utilisez une bibliothèque d'envoi (PHPMailer, Symfony Mailer, Nodemailer, la bibliothèque email de Python) qui construit les en-têtes MIME correctement."
+  example_good: "MIME-Version: 1.0"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2045#section-4
+
+- id: headers.charset_missing
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "part.type ~ /^text\\// && part.content_type.charset == null && part.body.has_8bit"
+    notes: "RFC 2045 §5.2 : en l'absence de Content-Type, la valeur par défaut est text/plain; charset=us-ascii. Un texte accentué sans charset déclaré sera mal décodé."
+  sa_rules: []
+  title: "Le jeu de caractères n'est pas déclaré"
+  why: >
+    Le texte contient des accents mais aucun charset n'est indiqué : le client suppose de l'ASCII et
+    affiche des caractères parasites à la place des lettres accentuées.
+  fix:
+    - "Déclarez le jeu de caractères dans le Content-Type de chaque partie texte : charset=UTF-8."
+    - "Dans la partie HTML, ajoutez aussi <meta charset='utf-8'> dans le head."
+  example_bad: "Content-Type: text/html"
+  example_good: "Content-Type: text/html; charset=UTF-8"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2045#section-5.2
+    - https://www.rfc-editor.org/rfc/rfc2046#section-4.1.2
+
+- id: headers.charset_mismatch
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "part.content_type.charset == 'utf-8' && !part.body.decoded.valid_utf8 || part.content_type.charset ~ /iso-8859-1|us-ascii/i && part.body.decoded.looks_utf8"
+    notes: "Le charset déclaré ne correspond pas aux octets réels."
+  sa_rules: []
+  title: "Le jeu de caractères déclaré ne correspond pas au texte"
+  why: >
+    La partie est déclarée en {value} mais ses octets sont dans un autre encodage. Les accents
+    s'affichent mal et les filtres de contenu lisent un texte déformé.
+  fix:
+    - "Enregistrez vos modèles en UTF-8 et déclarez charset=UTF-8."
+    - "Si votre base de données est en latin1, convertissez le texte en UTF-8 avant de l'insérer dans le message."
+  example_bad: "Content-Type: text/plain; charset=UTF-8  (texte enregistré en ISO-8859-1)"
+  example_good: "Content-Type: text/plain; charset=UTF-8  (texte enregistré en UTF-8)"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2046#section-4.1.2
+
+- id: headers.line_too_long
+  family: headers
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "message.raw.max_line_length > 998"
+    notes: "RFC 5322 §2.1.1 : chaque ligne MUST faire au plus 998 caractères et SHOULD faire au plus 78, CRLF exclu. RFC 5321 §4.5.3.1.6 : 1 000 octets CRLF compris."
+  sa_rules: []
+  title: "Une ligne du message dépasse 998 caractères"
+  why: >
+    La ligne la plus longue mesure {value} caractères. Au-delà de 998, les serveurs peuvent couper la
+    ligne au hasard, ce qui casse le HTML, invalide la signature DKIM ou fait rejeter le message.
+  fix:
+    - "Encodez la partie HTML en quoted-printable ou en base64 : ces encodages produisent des lignes courtes."
+    - "Ou insérez des retours à la ligne dans le HTML, entre les balises, avant l'envoi."
+  fix_by_provider:
+    wordpress: "Passez par une extension SMTP : PHPMailer choisit automatiquement quoted-printable quand une ligne est trop longue."
+  example_good: "Content-Transfer-Encoding: quoted-printable"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-2.1.1
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.5.3.1.6
+
+- id: headers.8bit_without_8bitmime
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "message.body.has_8bit && smtp.mail_from.body_param != '8BITMIME' && smtp.mail_from.body_param != 'BINARYMIME'"
+    notes: "RFC 6152 : un client qui envoie du contenu 8 bits doit l'annoncer par MAIL FROM ... BODY=8BITMIME, auprès d'un serveur qui annonce 8BITMIME."
+  sa_rules: []
+  title: "Du contenu 8 bits est envoyé sans l'annoncer au serveur"
+  why: >
+    Le message contient des octets 8 bits mais le serveur d'envoi ne l'a pas déclaré (BODY=8BITMIME).
+    Un relais strict peut rejeter le message ou abîmer les accents.
+  fix:
+    - "Encodez les parties texte en quoted-printable ou base64 : le message devient 7 bits et passe partout."
+    - "Ou vérifiez que votre serveur d'envoi annonce BODY=8BITMIME quand il transmet du 8 bits."
+  fix_by_provider:
+    postfix: "Postfix convertit en 7 bits quand le serveur distant n'annonce pas 8BITMIME (disable_mime_output_conversion = no, valeur par défaut). Vérifiez que ce réglage n'a pas été modifié."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6152
+    - https://www.rfc-editor.org/rfc/rfc2045#section-2.8
+
+- id: headers.cte_inconsistent
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "(part.cte == '7bit' && part.body.has_8bit) || (part.is_multipart && part.cte !in ['7bit','8bit','binary']) || (part.cte == 'base64' && !part.body.valid_base64)"
+    notes: "RFC 2045 §2.7 : en 7bit, aucun octet au-dessus de 127. §6.4 : une partie multipart ne peut être encodée qu'en 7bit, 8bit ou binary."
+  sa_rules: []
+  title: "L'encodage de transfert déclaré ne correspond pas au contenu"
+  why: >
+    Une partie déclarée en {value} contient des données qui ne respectent pas cet encodage. Le client
+    peut afficher du texte illisible et les filtres y voient un message mal construit.
+  fix:
+    - "Laissez votre bibliothèque d'envoi choisir Content-Transfer-Encoding au lieu de le forcer."
+    - "Si la partie contient des accents, déclarez quoted-printable ou base64 et encodez vraiment le contenu."
+    - "Ne déclarez jamais base64 ou quoted-printable sur une partie multipart."
+  example_bad: |
+    Content-Type: text/plain; charset=UTF-8
+    Content-Transfer-Encoding: 7bit
+
+    Réservation confirmée
+  example_good: |
+    Content-Type: text/plain; charset=UTF-8
+    Content-Transfer-Encoding: quoted-printable
+
+    R=C3=A9servation confirm=C3=A9e
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2045#section-2.7
+    - https://www.rfc-editor.org/rfc/rfc2045#section-6.4
+
+- id: headers.raw_8bit_in_headers
+  family: headers
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "headers.any(h => h.raw.has_8bit) && !smtp.smtputf8"
+    notes: "Sans l'extension SMTPUTF8 (RFC 6531, RFC 6532), les en-têtes doivent rester en ASCII ; le texte non ASCII s'encode selon la RFC 2047, les noms de fichiers selon la RFC 2231."
+  sa_rules: []
+  title: "Des en-têtes contiennent des caractères accentués non encodés"
+  why: >
+    L'en-tête {value} contient des octets non ASCII bruts. Les clients les affichent de façon
+    imprévisible et certains serveurs rejettent le message.
+  fix:
+    - "Passez les noms d'affichage et les objets accentués à votre bibliothèque d'envoi sous forme de chaîne UTF-8 : elle les encodera."
+    - "Pour les noms de pièces jointes, laissez la bibliothèque appliquer l'encodage RFC 2231."
+  example_bad: "From: Équipe Réservations <contact@{domain}>"
+  example_good: "From: =?UTF-8?Q?=C3=89quipe_R=C3=A9servations?= <contact@{domain}>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2047
+    - https://www.rfc-editor.org/rfc/rfc6532
+    - https://www.rfc-editor.org/rfc/rfc2231
+
+- id: headers.headers_oversized
+  family: headers
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "message.headers_bytes > config.max_headers_bytes"
+    notes: "Google demande d'éviter les en-têtes excessivement volumineux, sans fixer de chiffre. Seuil interne."
+  sa_rules: []
+  title: "Les en-têtes du message sont très volumineux"
+  why: >
+    Les en-têtes pèsent {value}. Google demande d'éviter les en-têtes excessivement gros : ils
+    trahissent souvent des en-têtes de suivi empilés ou une boucle de relais.
+  fix:
+    - "Listez les en-têtes X- ajoutés par vos outils et supprimez ceux qui ne servent pas."
+    - "Vérifiez qu'aucun en-tête n'est répété à chaque passage dans un relais."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: headers.bcc_visible
+  family: headers
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "headers.count('Bcc') > 0 && headers.bcc.mailboxes.length > 0"
+    notes: "RFC 5322 §3.6.3 : le champ Bcc est en principe retiré avant la transmission aux destinataires."
+  sa_rules: []
+  title: "L'en-tête Bcc est visible par le destinataire"
+  why: >
+    Les adresses en copie cachée ont été transmises dans le message reçu. Elles sont exposées à tous
+    les destinataires, ce qui pose un problème de confidentialité et ressemble à un envoi artisanal.
+  fix:
+    - "Ne construisez pas l'en-tête Bcc à la main : passez les destinataires cachés à la bibliothèque d'envoi, qui les met dans l'enveloppe SMTP seulement."
+    - "Pour un envoi collectif, utilisez un outil qui adresse un message par destinataire."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.3

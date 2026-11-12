@@ -1,0 +1,61 @@
+arc.chain_fail:
+  title: The ARC chain of the message is broken
+  why: An intermediary added ARC headers, but they no longer verify. The recipient therefore cannot rely on ARC to make up for a DMARC failure caused by forwarding, and the message risks spam or rejection if {domain} enforces p=quarantine or p=reject.
+  fix:
+    - Find the ARC instance (i=1, i=2…) that fails in the headers, and the server that added it (d= field of the ARC-Seal).
+    - If that server is yours (gateway, antivirus, list), check that it seals the message after its own changes and with a key published in DNS.
+    - If it belongs to a third party, send them the complete headers of the message.
+arc.seal_invalid:
+  title: An ARC seal (ARC-Seal) does not verify
+  why: The seal that protects the ARC chain is invalid. The whole chain is then rejected, and the authentication results it carried are lost.
+  fix:
+    - Read the d= and s= fields of the failing ARC-Seal and query s._domainkey.d in DNS to check that the key exists.
+    - If the key was changed recently, republish the old one until the messages in transit are delivered.
+    - Check that no server placed after the sealer rewrites the ARC headers.
+arc.message_signature_invalid:
+  title: The message was modified after the last ARC seal
+  why: A server placed after the last ARC intermediary modified the signed body or headers. The ARC chain is invalidated, and with it the evidence that could have rescued a DMARC failure.
+  fix:
+    - Identify the next server in the Received headers (footer added, subject changed, antivirus).
+    - Configure that server to add an ARC instance itself after its modification, or to stop modifying the message.
+arc.incomplete_set:
+  title: An ARC instance is incomplete
+  why: One of the three ARC headers of the same instance is missing. The chain is then invalid and no longer useful to the recipient.
+  fix:
+    - Find the incomplete instance (i=) and the server that added it.
+    - Check that this server produces all three headers together, and that no downstream filter removes any of them.
+arc.instance_sequence:
+  title: The ARC instance numbering is inconsistent
+  why: An ARC instance is missing or appears twice. The recipient considers the chain invalid, which removes the benefit of ARC for the message.
+  fix:
+    - Find the gap in the numbering or the duplicate in the headers, and the server that produced it.
+    - Fix that server so it numbers its new instance after the highest one already present.
+arc.cv_inconsistent:
+  title: The cv= field of an ARC seal is inconsistent
+  why: The first seal must show cv=none, and the following ones cv=pass or cv=fail. An inconsistent value invalidates the whole chain.
+  fix:
+    - Identify the server that added the faulty instance (d= field of the ARC-Seal).
+    - Update its ARC software (for example OpenARC or the ARC module of Rspamd), or report the anomaly to its publisher.
+arc.too_many_instances:
+  title: The message carries more than 50 ARC instances
+  why: An ARC chain is limited to 50 links. A number this high almost always signals a forwarding loop between two servers, which will end in rejection.
+  fix:
+    - Read the Received headers to find the two servers that keep sending the message back to each other.
+    - Remove the forwarding rule or alias that creates the loop.
+arc.missing_on_forward:
+  title: The message was relayed without ARC and fails DMARC
+  why: An intermediary passed on or modified the message without attesting to it with ARC. The recipient sees only a DMARC failure and applies the policy of {domain}, which can send the message to spam or get it rejected.
+  fix:
+    - If the intermediary is your server (automatic forwarding, list, gateway), enable ARC sealing on that server.
+    - "Have the original sender sign with DKIM for {domain}: a DKIM signature survives a simple forward, unlike SPF."
+    - For a mailing list, enable the option in its software that replaces the From address with the list's address when the original domain publishes a strict DMARC policy.
+  fix_by_provider:
+    postfix: Add an ARC milter (OpenARC, or Rspamd with its arc module) on the server that forwards.
+arc.valid_untrusted:
+  title: ARC is valid but DMARC fails
+  why: The intermediary correctly attested that the message was authenticated before it passed through. The recipient may deliver the message despite the DMARC failure if it trusts that sealer, but nothing requires it to.
+  fix:
+    - If you run the receiving mail service, add the domain of the ARC sealer to the list of trusted sealers.
+    - On the sender side, the lasting solution remains a DKIM signature aligned with {domain}, which survives forwarding.
+  fix_by_provider:
+    microsoft_365: 'In the Microsoft Defender portal, Email & collaboration, Policies & rules, Threat policies, Email Authentication Settings, ARC tab, click Add and enter the domain from the d= field of the ARC-Seal headers (not your own domain). In PowerShell: Set-ArcConfig -Identity Default -ArcTrustedSealers "sealer-domain.example" (this command replaces the existing list).'

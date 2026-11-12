@@ -1,0 +1,248 @@
+sa.spf_pass:
+  title: SPF gültig für die Envelope-Adresse
+  why: "Die IP {ip} steht im SPF-Eintrag von {envelope_domain}. Das ist das erwartete Verhalten: SpamAssassin gewichtet es kaum, aber ohne SPF fehlt die SPF-Ausrichtung für DMARC."
+  fix:
+    - Nichts zu korrigieren. Halten Sie den SPF-Eintrag von {envelope_domain} bei jedem Hinzufügen oder Entfernen eines Versandwerkzeugs aktuell.
+sa.spf_fail:
+  title: SPF im harten Fehler (-all) für die Envelope-Adresse
+  why: "{envelope_domain} veröffentlicht einen SPF, der mit -all endet, und die IP {ip} steht nicht darin. SpamAssassin gewichtet dieses Ergebnis gering, aber für Gmail, Outlook oder Yahoo ist es ein Authentifizierungsmangel: Ohne gültiges, auf {domain} ausgerichtetes DKIM landet die Nachricht im Spam oder wird abgewiesen. Typischer Fall: Ein neues Werkzeug (CRM, Shop, Formular) sendet im Namen der Domain, ohne im SPF eingetragen worden zu sein."
+  fix:
+    - "Ermitteln Sie, welcher Dienst die IP {ip} besitzt (erkannter Anbieter: {provider})."
+    - "Fügen Sie seinen Mechanismus include: oder ip4: vor dem -all in den SPF-Eintrag von {envelope_domain} ein."
+    - Soll dieser Dienst nicht in Ihrem Namen senden, unterbinden Sie seine Versände im Namen von {domain}.
+sa.spf_softfail:
+  title: SPF im weichen Fehler (~all) für die Envelope-Adresse
+  why: "Die IP {ip} ist im SPF von {envelope_domain} nicht erlaubt, der mit ~all endet. Die Nachricht wird deswegen nicht abgewiesen, verliert aber den Vorteil von SPF, und DMARC schlägt fehl, wenn DKIM nicht ausgerichtet ist. Oft ist es ein vergessenes Versandwerkzeug im SPF."
+  fix:
+    - "Finden Sie heraus, welcher Dienst von {ip} aus sendet ({provider}), und tragen Sie dessen include: in den SPF von {envelope_domain} ein."
+    - Läuft der Versand über einen WordPress-Server oder Shared Hosting, senden Sie die E-Mails besser per authentifiziertem SMTP über Ihr offizielles Postfach.
+  fix_by_provider:
+    wordpress: Installieren Sie eine SMTP-Erweiterung (WP Mail SMTP, FluentSMTP) und senden Sie über den Server Ihres Postfachs statt über die Funktion mail() von PHP.
+sa.spf_neutral:
+  title: SPF neutral (?all) für die Envelope-Adresse
+  why: "Der SPF von {envelope_domain} trifft für die IP {ip} keine Aussage, meist weil er mit ?all endet. Ein neutraler SPF schützt nichts: SpamAssassin bestraft ihn stärker als einen weichen Fehler."
+  fix:
+    - Listen Sie alle Dienste auf, die im Namen von {envelope_domain} senden, und tragen Sie sie im SPF ein.
+    - Ersetzen Sie ?all durch ~all und später durch -all, sobald die DMARC-Berichte bestätigen, dass kein legitimer Versand fehlschlägt.
+sa.spf_none:
+  title: Kein SPF-Eintrag für die Envelope-Adresse
+  why: "{envelope_domain} veröffentlicht keinen SPF. SpamAssassin bestraft das kaum, aber Gmail und Yahoo verlangen mindestens SPF oder DKIM, und jeder kann im Namen dieser Domain senden."
+  fix:
+    - "Legen Sie einen TXT-Eintrag an der Wurzel von {envelope_domain} an, der mit v=spf1 beginnt."
+    - "Fügen Sie einen include: pro Versanddienst hinzu (Postfach, Newsletter, Website) und enden Sie mit ~all."
+sa.spf_helo_pass:
+  title: SPF gültig für den HELO-Namen des Servers
+  why: Der Server stellt sich als {helo} vor, und dieser Name erlaubt die IP {ip} in seinem eigenen SPF. Das ist ein Zeichen für einen gut konfigurierten Server.
+  fix:
+    - Nichts zu korrigieren.
+sa.spf_helo_fail:
+  title: Der HELO-Name des Servers scheitert am SPF
+  why: "Der Server stellt sich als {helo} vor, doch der SPF dieses Namens schließt die IP {ip} aus. Das passiert, wenn ein Server den Namen eines anderen übernimmt oder wenn der SPF des Hostnamens einem IP-Wechsel nicht gefolgt ist."
+  fix:
+    - "Lassen Sie den Server einen Namen angeben, der ihm gehört und dessen Reverse-DNS ({ptr}) übereinstimmt."
+    - Veröffentlichen Sie für diesen Hostnamen einen minimalen SPF, der seine eigene IP erlaubt.
+sa.spf_helo_softfail:
+  title: Der HELO-Name des Servers erhält einen weichen SPF-Fehler
+  why: Der SPF des Namens {helo} deckt die IP {ip} nicht ab und endet mit ~all. Der Server scheint einen Namen zu verwenden, der nicht seiner ist, was SpamAssassin leicht bestraft.
+  fix:
+    - Konfigurieren Sie den HELO-Namen des Servers (myhostname bei Postfix) mit seinem echten Hostnamen.
+    - "Hinterlegen Sie für diesen Hostnamen einen SPF „v=spf1 a -all“."
+  fix_by_provider:
+    postfix: Setzen Sie myhostname in main.cf auf den Namen, der zum Reverse-DNS der IP passt, und laden Sie Postfix neu.
+sa.spf_helo_neutral:
+  title: Der HELO-Name des Servers hat einen neutralen SPF
+  why: "Der SPF des Namens {helo} trifft für die IP {ip} keine Aussage. Die Wirkung ist gering, zeigt aber einen Hostnamen ohne eigenen SPF."
+  fix:
+    - "Veröffentlichen Sie für {helo} den SPF „v=spf1 a -all“, sofern dieser Name auf {ip} zeigt."
+sa.spf_helo_none:
+  title: Der HELO-Name des Servers veröffentlicht keinen SPF
+  why: Der vom Server angegebene Name {helo} hat keinen SPF. Das ist sehr verbreitet und hat fast keinen Einfluss auf die Bewertung, aber ein SPF für den Hostnamen kostet nur eine DNS-Zeile.
+  fix:
+    - "Wenn Sie diesen Server betreiben, fügen Sie für {helo} den TXT-Eintrag „v=spf1 a -all“ hinzu."
+    - Ist es der Server eines Dienstleisters ({provider}), müssen Sie auf Ihrer Seite nichts tun.
+sa.t_spf_permerror:
+  title: SPF im dauerhaften Fehler für die Envelope-Adresse
+  why: "Der SPF von {envelope_domain} kann nicht ausgewertet werden: fehlerhafte Syntax, zwei Einträge v=spf1 oder mehr als 10 DNS-Abfragen. Empfänger behandeln ihn als Fehler, und DMARC kann sich nicht auf SPF verlassen."
+  fix:
+    - "Prüfen Sie, dass es auf {envelope_domain} nur einen TXT-Eintrag gibt, der mit v=spf1 beginnt."
+    - "Zählen Sie include:, a, mx, ptr und exists: Über 10 entfernen Sie ungenutzte Dienste oder ersetzen include: durch ip4:."
+    - Korrigieren Sie Tippfehler (fehlende Leerzeichen, fehlerhaftes ip4, include auf eine nicht mehr existierende Domain).
+sa.t_spf_temperror:
+  title: SPF im vorübergehenden Fehler für die Envelope-Adresse
+  why: "Das Lesen des SPF von {envelope_domain} ist an einer DNS-Störung gescheitert (Zeitüberschreitung, DNS-Server nicht erreichbar). Wiederholt sich das, werden Ihre Nachrichten ohne SPF bewertet."
+  fix:
+    - "Wiederholen Sie den Test: Ein einzelner Fehler erfordert keine Maßnahme."
+    - "Kehrt er zurück, prüfen Sie, dass alle DNS-Server von {envelope_domain} antworten und die in include: genannten Domains existieren."
+sa.t_spf_helo_permerror:
+  title: SPF des HELO-Namens im dauerhaften Fehler
+  why: Der Name {helo} veröffentlicht einen ungültigen SPF. Der Server sendet also mit einem falsch konfigurierten Hostnamen.
+  fix:
+    - "Korrigieren Sie den SPF von {helo} oder ersetzen Sie ihn durch „v=spf1 a -all“."
+sa.t_spf_helo_temperror:
+  title: SPF des HELO-Namens im vorübergehenden Fehler
+  why: Das Lesen des SPF von {helo} ist an einer DNS-Störung gescheitert. Ohne Folgen, wenn es ein Einzelfall ist.
+  fix:
+    - Wiederholen Sie den Test. Bleibt der Fehler bestehen, prüfen Sie, dass die DNS-Zone des Namens {helo} antwortet.
+sa.dkim_signed:
+  title: Die Nachricht trägt eine DKIM-Signatur
+  why: "Die Nachricht ist signiert. SpamAssassin vergibt einen winzigen Punktwert, der aufgehoben wird, sobald die Signatur gültig ist: Nur eine defekte Signatur lässt diesen Punkt stehen."
+  fix:
+    - "Nichts zu korrigieren, wenn auch DKIM_VALID erscheint. Andernfalls siehe die Regel DKIM_INVALID."
+sa.dkim_valid:
+  title: Mindestens eine DKIM-Signatur ist gültig
+  why: "Eine DKIM-Signatur (Domain {dkim_domain}) wurde geprüft: Die Nachricht wurde unterwegs nicht verändert, und die signierende Domain steht dafür ein."
+  fix:
+    - "Nichts zu korrigieren. Prüfen Sie nur, dass die signierende Domain tatsächlich {domain} ist (Regel DKIM_VALID_AU)."
+sa.dkim_valid_au:
+  title: Gültige DKIM-Signatur der Absenderdomain
+  why: "Die gültige Signatur stammt von {domain}, der Domain, die im From sichtbar ist. Das ermöglicht DMARC, auch dann zu bestehen, wenn SPF fehlschlägt."
+  fix:
+    - Nichts zu korrigieren.
+sa.dkim_valid_ef:
+  title: Gültige DKIM-Signatur der Envelope-Domain
+  why: "Die Envelope-Domain {envelope_domain} hat die Nachricht ebenfalls signiert. Ein gutes Zeichen für die Übereinstimmung zwischen Versandwerkzeug und Domain."
+  fix:
+    - Nichts zu korrigieren.
+sa.dkim_invalid:
+  title: DKIM-Signatur vorhanden, aber ungültig
+  why: "Die Nachricht ist signiert (Selektor {selector}, Domain {dkim_domain}), doch die Prüfung schlägt fehl: Der öffentliche Schlüssel fehlt im DNS oder unterscheidet sich, oder die Nachricht wurde nach der Signatur verändert (von einem Virenscanner angehängte Fußzeile, eine Mailingliste, ein Relay). Der SpamAssassin-Wert ist gering, aber DMARC schlägt fehl, wenn auch SPF nicht ausgerichtet ist."
+  fix:
+    - "Prüfen Sie, dass der Eintrag {selector}._domainkey.{dkim_domain} existiert und den aktuellen öffentlichen Schlüssel des Versandwerkzeugs enthält."
+    - "Ist der Schlüssel korrekt, suchen Sie, was die Nachricht nach der Signatur verändert: vom ausgehenden Server hinzugefügte Signatur oder Hinweis, Umschreiben von Links, Durchlauf über eine Mailingliste."
+    - "Kopieren Sie den Schlüssel ohne Zeilenumbruch und ohne fremde Anführungszeichen: Ein in der DNS-Oberfläche abgeschnittener Schlüssel ist die häufigste Fehlerquelle."
+sa.dkim_adsp_all:
+  title: Keine DKIM-Signatur der Domain, obwohl sie alles signieren muss
+  why: "Die From-Domain signiert bekanntermaßen alle ihre Nachrichten, doch diese Nachricht trägt keine gültige Signatur von {domain}. Bei einer bekannten Domain (Bank, Marktplatz) ist das ein starkes Zeichen für Identitätsfälschung."
+  fix:
+    - Senden Sie tatsächlich im Namen von {domain}, signieren Sie mit dem DKIM-Schlüssel von {domain} und nicht mit dem des Versandwerkzeugs.
+    - "Ist {domain} nicht Ihre Domain, verwenden Sie diese Adresse nicht im From: Nehmen Sie eine Adresse Ihrer eigenen Domain."
+sa.dkim_adsp_nxdomain:
+  title: Die Absenderdomain existiert nicht im DNS
+  why: "Die im From angezeigte Domain {domain} existiert nicht im DNS. Empfänger können weder antworten noch etwas prüfen, und viele lehnen solche Nachrichten ab. Typischer Fall: eine Testadresse wie noreply@monsite.local, die in einem Formular oder CMS stehen geblieben ist."
+  fix:
+    - Ersetzen Sie die Absenderadresse durch eine Adresse einer echten Domain, die Ihnen gehört.
+    - Prüfen Sie in WordPress oder im CMS die Adresse „From“ der Benachrichtigungen und Formulare.
+  fix_by_provider:
+    wordpress: "Stellen Sie die Absenderadresse in der SMTP-Erweiterung (Feld From Email) und in jedem Formular ein (Contact Form 7, Registerkarte Mail, Feld Von)."
+sa.dmarc_pass:
+  title: DMARC bestanden
+  why: "SPF oder DKIM besteht und stimmt mit der Domain {domain} des From überein. Das ist das Authentifizierungsniveau, das Gmail und Yahoo für Massenversände erwarten."
+  fix:
+    - "Nichts zu korrigieren. Steht Ihre Richtlinie noch auf p=none, wechseln Sie zu quarantine und dann zu reject, sobald die Berichte sauber sind."
+sa.dmarc_none:
+  title: DMARC im Fehler, Richtlinie p=none
+  why: "Weder SPF noch DKIM sind auf {domain} ausgerichtet. Die Richtlinie p=none verlangt, nichts zu blockieren, doch SpamAssassin vergibt Punkte, und Gmail oder Yahoo werten einen DMARC-Fehler als Authentifizierungsmangel, besonders bei Massenversänden."
+  fix:
+    - "Signieren Sie im Versandwerkzeug mit DKIM im Namen von {domain}: Das ist die robusteste Ausrichtung."
+    - Oder richten Sie einen eigenen Return-Path unter {domain} ein, um SPF auszurichten.
+    - Lesen Sie die DMARC-Berichte (rua), um andere Quellen zu finden, die fehlschlagen.
+sa.dmarc_quar:
+  title: DMARC im Fehler, Richtlinie quarantine
+  why: "Die Nachricht scheitert an DMARC, und {domain} verlangt selbst, dass sie im Spam-Ordner landet. Die Empfänger folgen dieser Vorgabe: Diese Nachricht landet im Spam."
+  fix:
+    - "Aktivieren Sie die DKIM-Signatur von {domain} im Versandwerkzeug ({provider}) und veröffentlichen Sie den gelieferten Schlüssel."
+    - "Prüfen Sie, dass die Signaturdomain d= gleich {domain} oder eine Subdomain von {domain} ist."
+sa.dmarc_reject:
+  title: DMARC im Fehler, Richtlinie reject
+  why: "Die Nachricht scheitert an DMARC, und {domain} verlangt ihre Abweisung. Die meisten großen Anbieter weisen sie einfach ab: Dieser Test hat sie nur erhalten, weil er nicht blockiert."
+  fix:
+    - Lassen Sie diesen Versand vor allen anderen mit DKIM im Namen von {domain} signieren.
+    - Setzen Sie DMARC bis dahin nicht auf p=none zurück, ohne die fehlerhafte Quelle in den rua-Berichten erkannt zu haben.
+sa.dmarc_missing:
+  title: Keine DMARC-Richtlinie veröffentlicht
+  why: "{domain} veröffentlicht keinen DMARC-Eintrag. SpamAssassin bestraft das kaum, aber Gmail und Yahoo verlangen ihn von Massenabsendern, und die Domain bleibt fälschbar."
+  fix:
+    - "Legen Sie einen TXT-Eintrag für _dmarc.{domain} an, mit mindestens v=DMARC1; p=none; und einer rua-Adresse für die Berichte."
+    - Wechseln Sie nach einigen Wochen sauberer Berichte zu p=quarantine und dann zu p=reject.
+sa.dmarc_permerror:
+  title: Ungültiger DMARC-Eintrag
+  why: "Der Eintrag _dmarc.{domain} ist unlesbar (unbekanntes Tag, v=DMARC1 fehlt oder steht falsch, zwei Einträge). Empfänger ignorieren ihn, Ihre Richtlinie wird nicht angewendet."
+  fix:
+    - "Prüfen Sie, dass es auf _dmarc.{domain} nur einen TXT-Eintrag gibt und dieser genau mit v=DMARC1; beginnt."
+    - Trennen Sie die Tags durch Semikolons und entfernen Sie fremde Anführungszeichen, die die DNS-Oberfläche hinzufügt.
+sa.dmarc_temperror:
+  title: "DMARC nicht ausgewertet: vorübergehender DNS-Fehler"
+  why: Die DNS-Abfrage an _dmarc.{domain} war nicht erfolgreich. Die Nachricht wurde ohne DMARC bewertet.
+  fix:
+    - "Wiederholen Sie den Test. Kehrt der Fehler zurück, prüfen Sie, dass alle DNS-Server von {domain} antworten."
+sa.arc_signed:
+  title: Die Nachricht trägt eine ARC-Signatur
+  why: Eine Zwischenstation (Mailingliste, Weiterleitung, Gateway) hat das Authentifizierungsergebnis versiegelt, das sie gesehen hat. Neutrale Information.
+  fix:
+    - Nichts zu korrigieren.
+sa.arc_valid:
+  title: ARC-Kette gültig
+  why: Die von den Relays gesetzten ARC-Siegel sind intakt. Ein Empfänger kann sie nutzen, um eine weitergeleitete Nachricht anzunehmen, deren SPF oder DKIM unterwegs zerstört wurde.
+  fix:
+    - Nichts zu korrigieren.
+sa.arc_invalid:
+  title: ARC-Signatur vorhanden, aber ungültig
+  why: Ein Relay hat ARC-Header gesetzt, die sich nicht mehr verifizieren lassen, meist weil eine nachgelagerte Stelle die Nachricht verändert hat. Geringe Auswirkung, aber die Nachricht verliert den ARC-Schutz bei einer Weiterleitung.
+  fix:
+    - Ist das Relay Ihres (Spam-Gateway, Mailingliste), prüfen Sie, dass es nach seinen eigenen Änderungen ARC signiert.
+    - "Andernfalls keine Maßnahme: Die Zwischenstation muss den Fehler beheben."
+sa.arc_trusted:
+  title: ARC-Kette von einem vertrauenswürdigen Relay gesiegelt
+  why: Die Nachricht ist über ein Relay gelaufen, dessen ARC-Signatur der Testserver anerkennt. Positives Signal.
+  fix:
+    - Nichts zu korrigieren.
+sa.env_and_hdr_spf_match:
+  title: Absender in der Standard-Willkommensliste für SPF
+  why: Die Adresse steht in der mit SpamAssassin gelieferten Willkommensliste für SPF, und die Envelope-Adresse stimmt mit dem From überein. Bonus, der großen, bekannten Absendern vorbehalten ist.
+  fix:
+    - Nichts zu korrigieren.
+sa.user_in_def_dkim_wl:
+  title: Absender in der Standard-Willkommensliste für DKIM
+  why: SpamAssassin liefert eine Liste großer, bekannter Absender mit, die an ihrer DKIM-Signatur erkannt werden. Die Nachricht gehört dazu und erhält einen hohen Bonus.
+  fix:
+    - Nichts zu korrigieren.
+sa.user_in_def_spf_wl:
+  title: Absender in der Standard-Willkommensliste für SPF
+  why: Der Absender steht in der mit SpamAssassin gelieferten Liste bekannter Domains, bestätigt durch SPF. Hoher Bonus.
+  fix:
+    - Nichts zu korrigieren.
+sa.user_in_def_welcomelist:
+  title: Absender in der Standard-Willkommensliste
+  why: Der Absender steht in der mit SpamAssassin gelieferten Willkommensliste und ist authentifiziert. Großer Bonus, nur sehr bekannten Diensten vorbehalten.
+  fix:
+    - Nichts zu korrigieren.
+sa.to_eq_fm_spf_fail:
+  title: Empfänger gleich Absender, und SPF schlägt fehl
+  why: "Die Nachricht gibt vor, von der Adresse des Empfängers selbst zu stammen, und der SPF schlägt fehl: Das ist das Muster des Betrugs „Ihr Postfach wurde gehackt“. Ein legitimer Versand löst es aus, wenn ein Website-Formular den Eigentümer mit seiner eigenen Adresse als Absender anschreibt, von einem nicht autorisierten Server aus."
+  fix:
+    - "Setzen Sie im Formular der Website als From eine technische Adresse der Domain (zum Beispiel site@{domain}), die per authentifiziertem SMTP gesendet wird."
+    - Tragen Sie die Adresse des Besuchers in Reply-To ein, niemals in From.
+  fix_by_provider:
+    wordpress: "Contact Form 7: Registerkarte Mail, Feld Von = Ihre technische Adresse, Zusätzliche Header = Reply-To: [your-email]."
+sa.to_eq_fm_dom_spf_fail:
+  title: Gleiche Domain für Empfänger und Absender, SPF schlägt fehl
+  why: "Die Nachricht stammt scheinbar von der Domain des Empfängers, aber von einem Server, den deren SPF nicht erlaubt. Oft ein Website oder ein Drucker, die „intern“ senden, ohne das offizielle Postfach zu nutzen."
+  fix:
+    - Leiten Sie diese Versände über den SMTP-Server des Postfachs der Domain, mit Authentifizierung.
+    - Oder fügen Sie die IP {ip} des Webservers in den SPF ein, sofern Sie sie verwalten und sie fest ist.
+sa.dkimwl_wl_high:
+  title: Signierende Domain mit hohem Vertrauen bei DKIMwl
+  why: "Die signierende Domain ({dkim_domain}) ist bei DKIMwl als hoch vertrauenswürdig eingestuft. Positives Signal."
+  fix:
+    - Nichts zu korrigieren.
+sa.dkimwl_wl_med:
+  title: Signierende Domain mit mittlerem Vertrauen bei DKIMwl
+  why: "Die signierende Domain {dkim_domain} ist DKIMwl mit mittlerem Vertrauen bekannt. Neutrales bis positives Signal."
+  fix:
+    - Nichts zu korrigieren.
+sa.dkimwl_wl_medhi:
+  title: Signierende Domain mit mittlerem bis hohem Vertrauen bei DKIMwl
+  why: "Die signierende Domain {dkim_domain} ist bei DKIMwl gut bewertet, was dem Ergebnis einen Punkt abzieht."
+  fix:
+    - Nichts zu korrigieren.
+sa.dkimwl_bl:
+  title: Signierende Domain bei DKIMwl gesperrt
+  why: "Die Domain, die die Nachricht signiert ({dkim_domain}), ist bei DKIMwl als gesperrter Absender eingestuft. Ist diese Domain die Ihres Versandwerkzeugs und nicht Ihre eigene, schadet Ihnen deren allgemeiner Ruf."
+  fix:
+    - Signieren Sie mit Ihrer eigenen Domain {domain} statt mit der geteilten Domain des Versandwerkzeugs.
+    - Ist die gesperrte Domain Ihre eigene, suchen Sie die Ursache (kompromittiertes Konto, gekaufte Liste) und wenden Sie sich dann an DKIMwl.
+sa.dkimwl_blocked:
+  title: DKIMwl-Anfrage vom Testserver abgelehnt
+  why: "Verwaltungshinweis: DKIMwl hat die Antwort an den Server verweigert, der die Nachricht analysiert. Das betrifft Ihren Versand nicht."
+  fix:
+    - Keine Maßnahme Ihrerseits. Das DKIMwl-Ergebnis fehlt in diesem Test einfach.

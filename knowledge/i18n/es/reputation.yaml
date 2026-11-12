@@ -1,0 +1,118 @@
+reputation.freemail_from_via_third_party:
+  title: Envías con una dirección de {domain} desde un servicio que no pertenece a {domain}
+  why: "El mensaje lleva una dirección de {domain} pero sale de {provider}, que no puede firmar por {domain} ni aparecer en su SPF. DMARC siempre falla: con la política actual de {domain} ({value}), el mensaje acaba en la carpeta de no deseados o se rechaza."
+  fix:
+    - "Compra un nombre de dominio a tu nombre (por ejemplo, tu-empresa.com) y crea una dirección en él."
+    - Declara ese dominio en tu herramienta de envío y configura SPF, DKIM y DMARC.
+    - Mantén si quieres tu dirección gratuita como Reply-To durante la transición.
+    - "Para un mensaje puntual desde una dirección gratuita, envíalo desde el webmail o los servidores SMTP de ese correo, nunca desde una herramienta de terceros."
+  fix_by_provider:
+    wordpress: "En WP Mail SMTP, no pongas una dirección gmail.com u orange.fr en From Email: usa una dirección del dominio del sitio, o pasa por el mailer Gmail de la extensión si quieres mantener la dirección de Gmail."
+    mailchimp: Mailchimp sustituye automáticamente una dirección de correo gratuita de riesgo por una dirección de su propio subdominio (send.mailchimpapp.com o mail.mailchimpapp.com), y las respuestas siempre van a tu dirección. Para enviar con tu nombre, autentica tu propio dominio en Website > Domains.
+reputation.domain_very_new:
+  title: El dominio de envío acaba de crearse
+  why: "{domain} se registró hace {value}. Los dominios nuevos los usan mucho los spammers, que los cambian a menudo: los filtros les conceden poca confianza mientras no tengan historial de envíos."
+  fix:
+    - Empieza enviando a tus contactos más activos, en volúmenes pequeños, y aumenta poco a poco.
+    - Publica un sitio en {domain} con la identidad de la empresa y el aviso legal.
+    - Configura SPF, DKIM y DMARC desde el primer envío.
+    - Registra {domain} en Gmail Postmaster Tools para seguir su reputación.
+reputation.from_domain_not_resolvable:
+  title: El dominio del remitente no puede recibir correo
+  why: "{domain} no existe en el DNS o no tiene ningún servidor de recepción. Las respuestas y los avisos de no entrega se pierden, y muchos servidores rechazan a un remitente al que no pueden contactar."
+  fix:
+    - Comprueba la ortografía del dominio en el campo remitente.
+    - Si el dominio es el correcto, añade un registro MX hacia tu servicio de correo.
+    - Si el dominio ha caducado, renuévalo en tu registrador antes de cualquier nuevo envío.
+reputation.no_website:
+  title: Ningún sitio web responde en el dominio del remitente
+  why: "https://{domain} no responde. Orange pide a los grandes remitentes un sitio en el dominio del From con la identidad de la empresa, y los destinatarios que quieren comprobar quién eres no encuentran nada."
+  fix:
+    - Publica al menos una página en {domain} con el nombre de la empresa, la dirección, el aviso legal y la política de privacidad.
+    - Si tu sitio está en otro dominio, haz que https://{domain} redirija a él.
+reputation.from_domain_differs_from_links:
+  title: El dominio de envío no es el del sitio que destacas
+  why: "El mensaje sale de {domain}, pero remite sobre todo a {value}. Los filtros y los lectores no relacionan ambos dominios, y la reputación de tu sitio no beneficia a tus envíos."
+  fix:
+    - "Envía desde el dominio de tu sitio o desde uno de sus subdominios, por ejemplo news.{value}."
+    - Si mantienes un dominio separado, haz que redirija a tu sitio y menciónalo en el pie de página.
+reputation.lookalike_domain:
+  title: El dominio de envío se parece al de una marca conocida
+  why: "{domain} se parece mucho a {value}. Los filtros antiphishing vigilan estos dominios cercanos a grandes marcas y penalizan con fuerza sus envíos."
+  fix:
+    - Si este dominio es tuyo desde hace tiempo, publica DMARC con p=reject y un BIMI para reforzar su identidad.
+    - Si lo compraste hace poco, envía mejor desde un dominio que no se preste a confusión.
+reputation.noreply_sender:
+  title: El remitente es una dirección «no responder»
+  why: Los destinatarios no pueden responderte. Microsoft recomienda una dirección que reciba las respuestas, y un lector que no puede responder usa con más facilidad el botón «Spam».
+  fix:
+    - "Usa una dirección que reciba de verdad las respuestas, por ejemplo contact@{domain}."
+    - Si mantienes noreply, añade un Reply-To hacia un buzón que se revise.
+reputation.ip_new_no_history:
+  title: La IP de envío todavía no tiene historial
+  why: "La IP {ip} es nueva o casi nunca ha enviado. Las grandes mensajerías juzgan una IP por su historial: un gran volumen inmediato desde una IP desconocida se trata como spam."
+  fix:
+    - Aumenta el volumen poco a poco durante varias semanas, empezando por tus contactos más activos.
+    - Vigila los rechazos temporales (códigos 4xx) y reduce la velocidad en cuanto aparezcan.
+    - Si tu volumen es bajo, prefiere una IP compartida de tu herramienta de envío, que ya tiene reputación.
+  fix_by_provider:
+    sendgrid: "Activa IP Warmup en la IP dedicada desde Settings > IP Addresses: SendGrid reparte el volumen automáticamente."
+    amazon_ses: Activa el calentamiento automático (standard auto warm-up) en el grupo de IP dedicadas, o usa las IP dedicadas gestionadas.
+reputation.shared_esp_identity:
+  title: "Tus envíos llevan la firma de {provider}, no la tuya"
+  why: "DKIM firma para {dkim_domain} y los rebotes van a {envelope_domain}, dos dominios de {provider}. Tu reputación depende entonces de todos sus clientes, y DMARC no puede alinearse con {domain}."
+  fix:
+    - "Autentica {domain} en {provider}: DKIM con d={domain} y dominio de retorno en un subdominio de {domain}."
+    - Publica los registros DNS que te facilite la herramienta y repite la prueba.
+  fix_by_provider:
+    brevo: "Configuración > Remitentes, dominios e IP dedicadas > Dominios > Añadir un dominio, y después publica los registros Brevo indicados."
+    mailchimp: "Website > Domains > Authenticate: publica los CNAME DKIM que facilita Mailchimp."
+    sendgrid: Settings > Sender Authentication > Authenticate Your Domain.
+    mailjet: "En la configuración de la cuenta de Mailjet, sección de dominios y direcciones de remitente: añade {domain} y después publica los registros SPF y DKIM facilitados."
+reputation.feedback_id_missing:
+  title: El mensaje no tiene cabecera Feedback-ID
+  why: Sin Feedback-ID, Gmail Postmaster Tools no puede indicarte qué campaña genera quejas. Orange también pide esta cabecera a los remitentes de más de 1 000 mensajes al día.
+  fix:
+    - "Añade una cabecera Feedback-ID: campaña:cliente:tipo:IdRemitente."
+    - Mantén el mismo identificador de remitente (último campo, de 5 a 15 caracteres) en todo tu flujo.
+    - Añade la cabecera antes de la firma DKIM, y firma con un dominio verificado en Postmaster Tools.
+reputation.feedback_id_malformed:
+  title: La cabecera Feedback-ID está mal construida
+  why: "La cabecera Feedback-ID no respeta el formato de Google ({value}). Postmaster Tools no podrá agrupar las quejas, y el bucle de retroalimentación no te servirá de nada."
+  fix:
+    - Deja una sola cabecera Feedback-ID por mensaje.
+    - Pon como último campo un identificador de remitente fijo de 5 a 15 caracteres.
+    - Nunca uses un valor propio de cada mensaje (Message-ID, dirección del destinatario).
+    - Incluye feedback-id entre las cabeceras firmadas por DKIM.
+reputation.postmaster_tools_suggested:
+  title: Sigue {domain} en Gmail Postmaster Tools
+  why: Postmaster Tools es el único lugar donde Gmail muestra tu tasa de quejas y tu estado de cumplimiento de los requisitos de los remitentes de gran volumen. Sin él, descubres un problema cuando tus mensajes ya están en spam.
+  fix:
+    - Abre postmaster.google.com con una cuenta de Google y añade {domain}.
+    - Publica en la zona DNS de {domain} el registro TXT de verificación que indica Postmaster Tools.
+    - Consulta cada semana la tasa de spam y la tabla Compliance status.
+reputation.snds_suggested:
+  title: Sigue tu IP en Microsoft SNDS
+  why: "Si {ip} es una IP dedicada para ti, Microsoft SNDS te muestra cómo ve Outlook.com su tráfico: volumen, tasa de quejas y trampas de spam. Es el equivalente de Postmaster Tools para Microsoft."
+  fix:
+    - Abre sendersupport.olc.protection.outlook.com/snds/ y solicita acceso para el rango de IP que contiene {ip}.
+    - Confirma la solicitud con la dirección de contacto propuesta (abuse o postmaster del dominio de la IP).
+reputation.yahoo_cfl_suggested:
+  title: Registra {dkim_domain} en el bucle de retroalimentación de Yahoo
+  why: Yahoo envía el detalle de las quejas a los dominios DKIM registrados en su Complaint Feedback Loop. Sin registro, no sabes qué contactos te denuncian y sigues escribiéndoles.
+  fix:
+    - "Registra el dominio de firma {dkim_domain} en senders.yahooinc.com, sección Complaint Feedback Loop."
+    - Da de baja automáticamente a cada contacto que aparezca en los informes recibidos.
+reputation.signal_spam_fbl_suggested:
+  title: Registra tu IP en el bucle de retroalimentación de Signal Spam
+  why: La Poste transmite las quejas de sus usuarios a través del bucle de retroalimentación de Signal Spam. Sin registro, no ves las denuncias de tus destinatarios laposte.net.
+  fix:
+    - Crea una cuenta en el espacio profesional de Signal Spam y registra la IP {ip} o tu dominio.
+    - Da de baja automáticamente a los contactos que te denuncien.
+reputation.bimi_absent:
+  title: No hay logotipo BIMI para {domain}
+  why: BIMI muestra tu logotipo junto a tus mensajes en las mensajerías que lo admiten. Su ausencia no penaliza la entregabilidad; es un plus de identidad visual.
+  fix:
+    - Pasa primero el DMARC de {domain} a p=quarantine o p=reject, con pct=100 o sin pct.
+    - "Prepara el logotipo en SVG con el perfil SVG Tiny PS (baseProfile='tiny-ps', version='1.2')."
+    - "Para Gmail, obtén un certificado VMC o CMC de una autoridad de certificación, y luego publica el registro default._bimi.{domain} con la dirección del logotipo (l=) y la del certificado (a=)."

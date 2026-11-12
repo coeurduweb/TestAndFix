@@ -1,0 +1,369 @@
+/* DMARC report analyser (Signal). Tokens only; green and red only on what is measured. */
+
+/* domain and period controls */
+.dr-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s5);
+  align-items: flex-end;
+  margin: 0 0 var(--s5);
+}
+.dr-bar .field {
+  min-width: 0;
+}
+.dr-bar .select {
+  min-height: 36px;
+}
+.dr-dates {
+  display: flex;
+  gap: var(--s2);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.dr-dates input {
+  width: 10.5rem;
+}
+
+/* chart: aligned and non aligned are two measured states */
+.dr-chart {
+  display: grid;
+  gap: var(--s2);
+}
+.dr-legend {
+  display: flex;
+  gap: var(--s4);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+}
+.dr-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dr-sw {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.dr-sw--in {
+  background: var(--in);
+}
+.dr-sw--out {
+  background: var(--out);
+}
+.dr-plot {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+.dr-plot svg {
+  display: block;
+  overflow: visible;
+}
+.dr-grid {
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+.dr-base {
+  stroke: var(--rule-strong);
+  stroke-width: 1;
+}
+.dr-tick {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--ink-faint);
+}
+.dr-in {
+  fill: var(--in);
+  fill-opacity: 0.85;
+}
+.dr-out {
+  fill: var(--out);
+}
+.dr-day.is-hover .dr-in,
+.dr-day.is-hover .dr-out {
+  fill-opacity: 1;
+}
+.dr-hit {
+  fill: transparent;
+  cursor: default;
+  outline: none;
+}
+.dr-hit:focus-visible {
+  stroke: var(--focus);
+  stroke-width: 2;
+}
+.dr-tip {
+  position: absolute;
+  top: 0;
+  width: 190px;
+  padding: var(--s2) var(--s3);
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-pop);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+  pointer-events: none;
+}
+.dr-tip strong {
+  color: var(--ink);
+}
+
+/* small tables stacked on phones: one block per row, each value with its column name */
+@media (max-width: 40rem) {
+  .dr-stack thead {
+    display: none;
+  }
+  .dr-stack tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--s1) var(--s2);
+    padding: var(--s2) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .dr-stack tbody tr:nth-child(even) td {
+    background: transparent;
+  }
+  .dr-stack td {
+    border: 0;
+    padding: 0;
+    text-align: left !important;
+  }
+  .dr-stack td:first-child {
+    grid-column: 1 / -1;
+    font-weight: 600;
+  }
+  .dr-stack td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-family: var(--font-ui);
+    font-size: var(--fs-xs);
+    color: var(--ink-3);
+  }
+}
+
+.dr-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+}
+.dr-page.is-over {
+  outline: 2px dashed var(--lab);
+  outline-offset: 8px;
+  border-radius: var(--radius-lg);
+}
+
+/* drop zone */
+.dr-drop {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: var(--s2);
+  width: 100%;
+  padding: var(--s6) var(--s5);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--edge);
+  /* the dashed outline sits over the edge */
+  outline: 1px dashed var(--rule-strong);
+  outline-offset: -8px;
+  cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease-out), outline-color var(--t-fast) var(--ease-out);
+}
+.dr-drop:hover,
+.dr-drop[data-over='true'] {
+  background: var(--surface-hover);
+  outline-color: var(--lab);
+}
+.dr-drop:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.dr-drop > svg {
+  width: 28px;
+  height: 28px;
+  color: var(--lab);
+  stroke-width: 1.6;
+}
+.dr-drop__title {
+  font-size: var(--fs-xl);
+  font-weight: 750;
+  font-stretch: var(--wide);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.dr-drop__hint {
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+}
+.dr-drop__btn {
+  margin-top: var(--s2);
+}
+.dr-file {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.dr-pick {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.dr-pick:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* result of a drop */
+.dr-upload {
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s4) var(--s5);
+  width: 100%;
+  text-align: left;
+}
+.dr-upload__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  max-width: none;
+  font-size: var(--fs-sm);
+}
+.dr-upload__head .dot {
+  align-self: center;
+}
+.dr-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.dr-files li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: var(--s1) var(--s4);
+  align-items: baseline;
+  padding: var(--s2) var(--s3);
+  border-radius: 8px;
+  background: var(--paper-2);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  font-size: var(--fs-sm);
+}
+.dr-files li.dr-files--row {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+}
+.dr-files li.is-bad .dr-files__what {
+  color: var(--out);
+  font-weight: 650;
+}
+.dr-files li.is-watch .dr-files__what {
+  color: var(--warn);
+}
+.dr-files__name {
+  overflow-wrap: anywhere;
+}
+.dr-files__what {
+  color: var(--ink-2);
+}
+@media (max-width: 40rem) {
+  .dr-files li,
+  .dr-files li.dr-files--row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* key figures: one surface, cells split by hairlines, big wide numbers */
+.dr-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  background: var(--rule);
+}
+.dr-kpi {
+  display: grid;
+  gap: var(--s1);
+  align-content: start;
+  padding: var(--s4) var(--s5);
+  background: var(--paper);
+}
+.dr-kpi__label {
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  color: var(--ink-3);
+}
+.dr-kpi__value {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  font-stretch: var(--wider);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.dr-kpi--bad .dr-kpi__value {
+  color: var(--out);
+}
+.dr-kpi--watch .dr-kpi__value {
+  color: var(--warn);
+}
+.dr-kpi--good .dr-kpi__value {
+  color: var(--in);
+}
+.dr-kpi__note {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+/* every source: state, address, who, volume, verdict */
+.dr-sources {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.dr-sources li {
+  display: grid;
+  grid-template-columns: 8px 9.5rem minmax(0, 1fr) auto auto;
+  gap: var(--s2) var(--s4);
+  align-items: center;
+  padding: var(--s2) var(--s3);
+  border-radius: 8px;
+  background: var(--paper-2);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  font-size: var(--fs-sm);
+}
+.dr-sources__who small {
+  display: block;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+}
+.dr-sources__n {
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+@media (max-width: 40rem) {
+  .dr-sources li {
+    grid-template-columns: 8px minmax(0, 1fr) auto;
+  }
+  .dr-sources__who {
+    grid-column: 2 / -1;
+    grid-row: 2;
+  }
+  .dr-sources__n {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .dr-sources li > .tag {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}

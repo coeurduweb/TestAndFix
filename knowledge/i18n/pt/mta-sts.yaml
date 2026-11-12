@@ -1,0 +1,106 @@
+mta-sts.missing:
+  title: "{domain} não publica uma política MTA-STS"
+  why: Sem MTA-STS, um invasor posicionado na rede pode forçar os remetentes a entregar em texto puro o correio destinado a {domain}. Não é um critério de entregabilidade dos seus envios, mas uma proteção do seu recebimento.
+  fix:
+    - Crie o subdomínio mta-sts.{domain} servido em HTTPS com um certificado válido.
+    - Publique em https://mta-sts.{domain}/.well-known/mta-sts.txt um arquivo de texto em modo testing listando os seus MX.
+    - Acrescente o registro TXT _mta-sts.{domain} com v=STSv1 e um identificador id=.
+    - Publique também um registro TLS-RPT para receber os relatórios, e depois passe para o modo enforce após algumas semanas sem erro.
+mta-sts.policy_unreachable:
+  title: O arquivo de política MTA-STS de {domain} não foi encontrado
+  why: O registro DNS anuncia uma política MTA-STS, mas o arquivo não é servido. Os remetentes não conseguem aplicá-la e, se tiverem uma versão antiga em cache, continuam aplicando uma versão desatualizada.
+  fix:
+    - Crie o registro A ou CNAME de mta-sts.{domain} apontando para um servidor web.
+    - Coloque o arquivo exatamente no caminho /.well-known/mta-sts.txt, sem redirecionamento.
+    - Verifique se o endereço https://mta-sts.{domain}/.well-known/mta-sts.txt responde 200 em um navegador.
+  fix_by_provider:
+    cloudflare_dns: Você pode servir o arquivo com um Worker da Cloudflare ou uma página estática em mta-sts.{domain}; o proxy pode continuar ativo para esse subdomínio web.
+mta-sts.policy_redirect:
+  title: A política MTA-STS de {domain} é servida por meio de um redirecionamento
+  why: Os remetentes não seguem redirecionamentos para ler uma política MTA-STS. Para eles, a sua política não existe, mesmo que um navegador a exiba.
+  fix:
+    - Desative, apenas para o subdomínio mta-sts.{domain}, o redirecionamento para www ou para outro site.
+    - Sirva o arquivo diretamente em HTTPS no endereço https://mta-sts.{domain}/.well-known/mta-sts.txt.
+mta-sts.policy_cert_invalid:
+  title: O certificado HTTPS de mta-sts.{domain} é inválido
+  why: Os remetentes recusam ler uma política MTA-STS servida com um certificado expirado, autoassinado ou emitido para outro nome. A sua política é então ignorada.
+  fix:
+    - Emita um certificado que cubra exatamente mta-sts.{domain} (o Let's Encrypt serve).
+    - Instale-o no servidor que serve esse subdomínio e automatize a renovação.
+mta-sts.policy_malformed:
+  title: O arquivo de política MTA-STS de {domain} está malformado
+  why: Uma política ilegível é ignorada pelos remetentes. Se uma versão correta estava em cache deles, eles a manterão até a expiração, o que pode bloquear uma mudança de MX.
+  fix:
+    - "Escreva uma linha por chave, no formato chave: valor, sem aspas."
+    - "Indique version: STSv1, depois mode, uma linha mx: por servidor MX, e max_age em segundos."
+    - Altere em seguida o valor id= do registro _mta-sts.{domain} para sinalizar a nova versão.
+mta-sts.wrong_content_type:
+  title: A política MTA-STS de {domain} não é servida como text/plain
+  why: Uma parte dos remetentes verifica o tipo do arquivo e rejeita uma política servida como HTML ou com um tipo desconhecido.
+  fix:
+    - "Configure o servidor web para servir mta-sts.txt com o cabeçalho Content-Type: text/plain."
+  fix_by_provider:
+    cpanel: "Acrescente no .htaccess do subdomínio: AddType text/plain .txt"
+mta-sts.testing_mode:
+  title: A política MTA-STS de {domain} está em modo de teste
+  why: "O modo testing não protege nada: ele serve para coletar relatórios antes de aplicar a política. Se os relatórios não mostram mais falhas, é hora de passar para enforce."
+  fix:
+    - Leia os relatórios TLS-RPT recebidos desde a implantação e verifique se nenhum MX falha.
+    - "Substitua mode: testing por mode: enforce no arquivo de política."
+    - Altere o valor id= do registro _mta-sts.{domain}.
+mta-sts.mode_none:
+  title: A política MTA-STS de {domain} está desativada (modo none)
+  why: O modo none anula uma política anterior. Isso é normal durante uma remoção; caso contrário, {domain} não tem nenhuma proteção MTA-STS.
+  fix:
+    - Se a remoção estiver concluída e o max_age tiver expirado, apague o registro _mta-sts.{domain} e o arquivo.
+    - Caso contrário, volte ao modo testing, depois enforce, e altere o valor id=.
+mta-sts.mx_not_covered:
+  title: Um MX de {domain} não é autorizado pela política MTA-STS
+  why: No modo enforce, os remetentes que aplicam MTA-STS recusam entregar a um MX ausente da política. Parte do correio destinado a {domain} pode ficar bloqueada e depois voltar com erro.
+  fix:
+    - "Acrescente uma linha mx: para cada servidor MX atual (um curinga como *.{domain} cobre apenas um nível de subdomínio)."
+    - Altere imediatamente o valor id= do registro _mta-sts.{domain} para que os remetentes releiam o arquivo.
+    - Se você mudar de provedor, volte antes ao modo testing durante todo o período do max_age.
+mta-sts.enforce_tls_broken:
+  title: A política MTA-STS de {domain} bloqueia um MX com certificado inválido
+  why: "A sua política exige um TLS válido, mas um dos seus MX não o fornece. Os remetentes que aplicam MTA-STS se recusam a entregar nele: você perde correio recebido."
+  fix:
+    - Corrija o certificado do MX em questão (veja a anomalia TLS sinalizada para esse servidor).
+    - Enquanto isso, volte a política para o modo testing e altere o valor id=.
+mta-sts.id_unchanged:
+  title: A política MTA-STS de {domain} mudou sem mudança de identificador
+  why: Os remetentes mantêm a política antiga em cache enquanto o valor id= não mudar, até o fim do max_age. A sua alteração não será vista por muito tempo, o que pode bloquear um novo MX.
+  fix:
+    - Altere o valor id= do registro _mta-sts.{domain}, por exemplo com a data e a hora da mudança.
+    - Faça isso a cada alteração do arquivo, sem exceção.
+mta-sts.txt_malformed:
+  title: O registro _mta-sts de {domain} é inválido
+  why: Um identificador com hífens ou pontos, ou dois registros concorrentes, tornam a política inexistente aos olhos dos remetentes.
+  fix:
+    - Mantenha um único registro TXT começando com v=STSv1 em _mta-sts.{domain}.
+    - Use um id= de no máximo 32 caracteres, composto apenas de letras e números.
+mta-sts.max_age_short:
+  title: O max_age da política MTA-STS de {domain} é muito curto
+  why: Com uma duração curta, um invasor que bloqueie o acesso à sua política por algumas horas basta para fazer os remetentes voltarem ao TLS opcional.
+  fix:
+    - Depois que a política estiver estável em enforce, eleve o max_age para pelo menos 604800 (uma semana), ou até 1209600 ou mais.
+    - Não ultrapasse 31557600, o valor máximo.
+    - Altere o valor id= após a modificação.
+mta-sts.max_age_too_long:
+  title: O max_age da política MTA-STS de {domain} ultrapassa o máximo
+  why: "O valor ultrapassa o limite fixado pela norma: alguns remetentes rejeitam a política inteira."
+  fix:
+    - Reduza o max_age para no máximo 31557600 (um valor entre 604800 e 31557600 serve).
+    - Altere o valor id= após a modificação.
+mta-sts.tlsrpt_missing:
+  title: "{domain} publica MTA-STS sem endereço de relatórios TLS-RPT"
+  why: Você aplica uma política de criptografia sem receber os relatórios de falha. Se um MX ou um certificado der problema, alguns remetentes deixarão de entregar para você sem que você saiba.
+  fix:
+    - Crie um endereço dedicado aos relatórios, por exemplo tlsrpt@{domain}.
+    - Publique o registro TXT _smtp._tls.{domain} com v=TLSRPTv1 e rua=mailto:esse endereço.
+mta-sts.tlsrpt_malformed:
+  title: O registro TLS-RPT de {domain} é inválido
+  why: "Os remetentes ignoram um registro TLS-RPT malformado: você não recebe nenhum relatório sobre falhas de criptografia."
+  fix:
+    - Comece o registro com v=TLSRPTv1.
+    - "Indique rua= seguido de um endereço prefixado por mailto: (ou de uma URL https:)."

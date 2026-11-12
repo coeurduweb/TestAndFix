@@ -1,0 +1,115 @@
+bulk-sender.spf_and_dkim_required:
+  title: "For bulk sending, SPF and DKIM must both be valid"
+  why: "For a bulk sender, Gmail, Yahoo and Outlook.com require SPF and DKIM, and Orange requires them beyond 1,000 messages a day. One of the two is missing on this message: it risks the spam folder or rejection at these four mail services."
+  fix:
+    - "Publish or correct the SPF record of {envelope_domain} to authorize the IP {ip}."
+    - "Enable DKIM signing for {domain} in your sending tool, and publish the public key in DNS."
+    - "Send a new test: both results must be pass."
+  fix_by_provider:
+    google_workspace: "Google Admin console > Apps > Google Workspace > Gmail > Authenticate email: generate the DKIM key, publish the TXT google._domainkey, then click Start authentication. SPF: v=spf1 include:_spf.google.com ~all."
+    microsoft_365: "Microsoft Defender portal > Email & collaboration > Policies & rules > Threat policies > Email authentication settings > DKIM: publish the two CNAMEs selector1 and selector2, then enable signing for {domain}. SPF: v=spf1 include:spf.protection.outlook.com -all."
+    brevo: "Settings > Senders, domains & dedicated IPs > Domains: authenticate {domain} and publish the records shown."
+    mailchimp: "Website > Domains: add {domain}, then click Authenticate and publish the DKIM CNAMEs shown."
+    sendgrid: "Settings > Sender Authentication > Authenticate Your Domain: publish the CNAMEs provided, which cover DKIM and the return domain for SPF."
+bulk-sender.dmarc_missing:
+  title: "For bulk sending, a DMARC record is mandatory"
+  why: "{domain} has no DMARC record. Gmail, Yahoo and Outlook.com require one from bulk senders, and Orange requires one beyond 1,000 messages a day: without it, your messages are filtered or rejected."
+  fix:
+    - "Publish a TXT record on _dmarc.{domain}."
+    - "Start with p=none and a rua reporting address, to observe your flows before tightening the policy."
+    - "After a few weeks of clean reports, move to p=quarantine, then to p=reject."
+  fix_by_provider:
+    cloudflare_dns: "DNS > Records > Add record: type TXT, name _dmarc, content v=DMARC1; p=none; rua=mailto:dmarc@{domain}."
+    ovh: "Web Cloud > Domain names > {domain} > DNS zone > Add an entry: TXT, subdomain _dmarc, value v=DMARC1; p=none; rua=mailto:dmarc@{domain}."
+bulk-sender.dmarc_not_aligned:
+  title: "For bulk sending, the From domain must be aligned with SPF or DKIM"
+  why: "SPF validates {envelope_domain} and DKIM validates {dkim_domain}, but neither matches {domain}. Gmail, Yahoo and Outlook.com require this alignment for bulk sends: DMARC fails."
+  fix:
+    - "Configure the DKIM signature of your sending tool with d={domain} (signed in your name, not in the tool's name)."
+    - "Or configure a custom return domain on a subdomain of {domain} to align SPF."
+    - "Aim for both alignments, as Microsoft recommends."
+bulk-sender.outlook_high_volume:
+  title: "This message does not meet Outlook.com's requirements for bulk sending"
+  why: "Since May 5, 2025, Outlook.com sends to the junk folder the messages of domains that send more than 5,000 messages a day without valid SPF, valid DKIM and aligned DMARC. Microsoft announces outright rejection on a date not yet set."
+  fix:
+    - "Make SPF pass for {envelope_domain} and DKIM pass for {domain}."
+    - "Publish a DMARC at least at p=none for {domain}, aligned with SPF or DKIM, ideally both."
+    - "If you receive error 550 5.7.515, send a test here again after the fix to confirm all three results."
+bulk-sender.one_click_required:
+  title: "For bulk sending, one-click unsubscribe is mandatory"
+  why: "Since June 1, 2024, Gmail requires one-click unsubscribe on marketing messages from bulk senders, and Yahoo and Orange do too. Gmail asks that requests be processed within 48 hours, Yahoo within 2 days. This message does not comply."
+  fix:
+    - "Add List-Unsubscribe with an https address and List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Sign both headers with DKIM."
+    - "Remove unsubscribed contacts from your sends within 48 hours, including from campaigns already scheduled."
+bulk-sender.ptr_required:
+  title: "The sending IP has no valid reverse DNS"
+  why: "The IP {ip} has no reverse name that resolves back to it. Gmail, Yahoo, Orange and La Poste require one: La Poste may refuse the connection, and the others file the message as spam."
+  fix:
+    - "Ask the host of the IP {ip} to create a PTR record pointing to a name such as mail.{domain}."
+    - "Create the A record of this name pointing to {ip}, so that the round-trip check succeeds."
+    - "Set the server's HELO name to this same name."
+bulk-sender.tls_required:
+  title: "The message was transmitted without TLS encryption"
+  why: "The server {helo} did not encrypt the connection, although our server offered it. Gmail requires TLS for all senders, and Orange only accepts TLS 1.2 or newer."
+  fix:
+    - "Enable outgoing STARTTLS on your sending server, with TLS 1.2 at minimum."
+    - "If you go through a relay or a sending tool, check that outgoing encryption is enabled in its settings."
+  fix_by_provider:
+    postfix: "In main.cf: smtp_tls_security_level = may and smtp_tls_mandatory_protocols = >=TLSv1.2, then run postfix reload."
+    exim: "In the remote_smtp transport configuration, leave hosts_try_tls = * (default value) and check that tls_require_ciphers does not exclude TLS 1.2."
+bulk-sender.rfc5322_format:
+  title: "The message does not follow the RFC 5322 format required by Gmail and Yahoo"
+  why: "Gmail and Yahoo require messages in RFC 5322 format. This message has {value} deviations: for bulk sending, that is enough to get mail classified as spam or rejected."
+  fix:
+    - "Correct the header anomalies listed in the Headers section of this report."
+    - "Build messages with a proven sending library rather than by hand."
+bulk-sender.dkim_key_too_short:
+  title: "The DKIM key is too short"
+  why: "The DKIM key for the selector {selector} is {value} bits long. Gmail requires at least 1,024 bits and recommends 2,048: a shorter key is not accepted."
+  fix:
+    - "Generate a new 2,048-bit key with a new selector."
+    - "Publish the public key at new-selector._domainkey.{domain}, then switch the signature to this selector."
+    - "Delete the old selector a few days later, once the messages in transit have been delivered."
+  fix_by_provider:
+    google_workspace: "Google Admin console > Gmail > Authenticate email: choose a key length of 2048 bits, and generate a new record with a selector prefix other than google if the old one is still published."
+    postfix: "With OpenDKIM: opendkim-genkey -b 2048 -d {domain} -s s2026, publish s2026.txt, then update KeyTable and restart OpenDKIM."
+bulk-sender.spam_rate_above_limit:
+  title: "Your Gmail complaint rate reaches or exceeds 0.3%"
+  why: "Postmaster Tools reports a user-reported spam rate of {value}. At 0.3% or above, Gmail no longer grants you a mitigation measure: your messages are filtered for up to 7 consecutive days below this threshold."
+  fix:
+    - "Stop sending to contacts who have not opened or clicked in several months."
+    - "Check that every contact gave consent, and delete addresses that were bought or imported without consent."
+    - "Make the unsubscribe link visible at the top of the message, and enable one-click unsubscribe."
+    - "Space out your sends if the frequency has recently increased."
+bulk-sender.spam_rate_above_target:
+  title: "Your Gmail complaint rate exceeds the 0.1% target"
+  why: "Your user-reported spam rate is {value}. Gmail recommends staying below 0.1%: you are in the zone where one more campaign could push you above 0.3%."
+  fix:
+    - "In Postmaster Tools, identify the days when the rate rises, and the campaign sent on that day."
+    - "Remove inactive contacts and those who signed up from a dubious source from the target."
+    - "Remind people at the top of the message why they are receiving it."
+bulk-sender.orange_large_sender:
+  title: "This message does not meet Orange's requirements for large senders"
+  why: "Beyond 1,000 messages a day, Orange requires SPF, DKIM and DMARC to all pass, a Feedback-ID header, and one-click unsubscribe. This message is missing {value}."
+  fix:
+    - "Make SPF, DKIM and DMARC pass, with an aligned From on {domain}."
+    - "Add a Feedback-ID header in the format a:b:c:SenderIdentifier, signed by DKIM."
+    - "Add List-Unsubscribe over https and List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Check that https://{domain} shows a site with the company's identity and legal notices."
+    - "Limit yourself to 100 messages per connection and 2 simultaneous connections per IP to Orange's servers."
+  fix_by_provider:
+    postfix: "Create an orange transport in master.cf (a copy of the smtp line, with -o smtp_connection_reuse_count_limit=100, Postfix 3.4 or newer), set orange_destination_concurrency_limit = 2 and orange_destination_recipient_limit = 100 in main.cf, then map orange.fr and wanadoo.fr to this transport in transport_maps."
+bulk-sender.laposte_dkim_required:
+  title: "Without a valid DKIM signature, laposte.net may refuse the message"
+  why: "This message has no valid DKIM signature. La Poste says it refuses messages for this reason, and also rejects messages sent from IPs that SPF does not authorize."
+  fix:
+    - "Enable DKIM signing for {domain} in your sending tool, and publish the public key in your DNS."
+    - "Check that the published key matches the one signing the message (same selector {selector})."
+    - "Check that the IP {ip} appears in the SPF of {envelope_domain}."
+bulk-sender.status_permanent:
+  title: "Gmail's bulk sender status is permanent"
+  why: "Gmail adds up the sends of {domain} and its subdomains. Once you have come close, even once, to 5,000 messages in 24 hours to Gmail accounts, you remain subject to the bulk sender requirements, even if you send less afterwards."
+  fix:
+    - "Apply the bulk sender requirements to all flows of {domain}, subdomains included."
+    - "Track the compliance status in the Compliance status dashboard of Postmaster Tools."

@@ -1,0 +1,325 @@
+# Famille mta-sts : politique MTA-STS (RFC 8461) et rapports TLS-RPT (RFC 8460) du domaine
+# {domain}. MTA-STS concerne la réception : il demande aux expéditeurs d'exiger TLS et un
+# certificat valide pour livrer à {domain}. Une politique fausse en mode enforce bloque le
+# courrier entrant ; une politique absente n'est pas pénalisée par les filtres antispam.
+# Les identifiants gardent le préfixe de la famille : mta-sts.<nom>.
+
+- id: mta-sts.missing
+  family: mta-sts
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dns.TXT('_mta-sts.' + domain) == []"
+    notes: "Aucune politique MTA-STS. Recommandé mais facultatif."
+  sa_rules: []
+  title: "{domain} ne publie pas de politique MTA-STS"
+  why: >
+    Sans MTA-STS, un attaquant placé sur le réseau peut forcer les expéditeurs à livrer en
+    clair le courrier destiné à {domain}. Ce n'est pas un critère de délivrabilité de vos
+    envois, mais une protection de votre réception.
+  fix:
+    - "Créez le sous-domaine mta-sts.{domain} servi en HTTPS avec un certificat valide."
+    - "Publiez à l'adresse https://mta-sts.{domain}/.well-known/mta-sts.txt un fichier texte en mode testing listant vos MX."
+    - "Ajoutez l'enregistrement TXT _mta-sts.{domain} avec v=STSv1 et un identifiant id=."
+    - "Publiez aussi un enregistrement TLS-RPT pour recevoir les rapports, puis passez en mode enforce après quelques semaines sans erreur."
+  example_good: "_mta-sts.{domain}. IN TXT \"v=STSv1; id=20261110T000000\"  et le fichier : version: STSv1 / mode: testing / mx: mx1.{domain} / max_age: 604800"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3
+    - https://www.rfc-editor.org/rfc/rfc8460
+
+- id: mta-sts.policy_unreachable
+  family: mta-sts
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dns.TXT('_mta-sts.' + domain) contains 'v=STSv1' && https.get('https://mta-sts.' + domain + '/.well-known/mta-sts.txt', follow_redirects=false).status != 200"
+    notes: "RFC 8461 §3.3 : seule une réponse 200 est valide et les redirections 3xx ne doivent pas être suivies. Erreurs typiques : 404, sous-domaine sans enregistrement A, certificat absent."
+  sa_rules: []
+  title: "Le fichier de politique MTA-STS de {domain} est introuvable"
+  why: >
+    L'enregistrement DNS annonce une politique MTA-STS, mais le fichier n'est pas servi.
+    Les expéditeurs ne peuvent pas l'appliquer, et si une ancienne politique est en cache
+    chez eux, ils continuent d'appliquer une version périmée.
+  fix:
+    - "Créez l'enregistrement A ou CNAME de mta-sts.{domain} vers un serveur web."
+    - "Placez le fichier à l'emplacement exact /.well-known/mta-sts.txt, sans redirection."
+    - "Vérifiez que l'adresse https://mta-sts.{domain}/.well-known/mta-sts.txt répond 200 dans un navigateur."
+  fix_by_provider:
+    cloudflare_dns: "Vous pouvez servir le fichier avec un Worker Cloudflare ou une page statique sur mta-sts.{domain} ; le proxy peut rester actif pour ce sous-domaine web."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3.3
+
+- id: mta-sts.policy_redirect
+  family: mta-sts
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "https.get('https://mta-sts.' + domain + '/.well-known/mta-sts.txt', follow_redirects=false).status in [301, 302, 303, 307, 308]"
+    notes: "RFC 8461 §3.3 : HTTP 3xx redirects MUST NOT be followed. Fréquent quand un hébergement web redirige tout vers www ou vers HTTPS."
+  sa_rules: []
+  title: "La politique MTA-STS de {domain} est servie via une redirection"
+  why: >
+    Les expéditeurs ne suivent pas les redirections pour lire une politique MTA-STS. Pour
+    eux, votre politique n'existe pas, même si un navigateur l'affiche.
+  fix:
+    - "Désactivez, pour le seul sous-domaine mta-sts.{domain}, la redirection vers www ou vers un autre site."
+    - "Servez le fichier directement en HTTPS à l'adresse https://mta-sts.{domain}/.well-known/mta-sts.txt."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3.3
+
+- id: mta-sts.policy_cert_invalid
+  family: mta-sts
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "https.tls('mta-sts.' + domain).cert_valid == false"
+    notes: "RFC 8461 §3.3 : le serveur doit présenter un certificat valide pour le nom mta-sts.{domain}, rattaché à une autorité de confiance et non expiré."
+  sa_rules: []
+  title: "Le certificat HTTPS de mta-sts.{domain} est invalide"
+  why: >
+    Les expéditeurs refusent de lire une politique MTA-STS servie avec un certificat expiré,
+    auto-signé ou émis pour un autre nom. Votre politique est donc ignorée.
+  fix:
+    - "Émettez un certificat couvrant exactement mta-sts.{domain} (Let's Encrypt convient)."
+    - "Installez-le sur le serveur qui sert ce sous-domaine et automatisez son renouvellement."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3.3
+
+- id: mta-sts.policy_malformed
+  family: mta-sts
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "mtasts.policy.parse_error != null || mtasts.policy.version != 'STSv1' || mtasts.policy.mode not in ['enforce', 'testing', 'none'] || mtasts.policy.max_age == null || (mtasts.policy.mode != 'none' && mtasts.policy.mx == [])"
+    notes: "RFC 8461 §3.2 : le fichier contient des lignes clé: valeur ; version: STSv1, mode, max_age et au moins un mx (sauf en mode none) sont obligatoires."
+  sa_rules: []
+  title: "Le fichier de politique MTA-STS de {domain} est mal formé"
+  why: >
+    Une politique illisible est ignorée par les expéditeurs. Si une version correcte était en
+    cache chez eux, ils la garderont jusqu'à expiration, ce qui peut bloquer un changement de
+    MX.
+  fix:
+    - "Écrivez une ligne par clé, sous la forme clé: valeur, sans guillemets."
+    - "Indiquez version: STSv1, puis mode, une ligne mx: par serveur MX, et max_age en secondes."
+    - "Changez ensuite la valeur id= de l'enregistrement _mta-sts.{domain} pour signaler la nouvelle version."
+  example_bad: "version=STSv1; mode=enforce; mx=mx1.{domain}"
+  example_good: "version: STSv1 / mode: enforce / mx: mx1.{domain} / mx: mx2.{domain} / max_age: 604800 (une clé par ligne)"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3.2
+
+- id: mta-sts.wrong_content_type
+  family: mta-sts
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "https.get('https://mta-sts.' + domain + '/.well-known/mta-sts.txt').content_type does not start with 'text/plain'"
+    notes: "RFC 8461 §3.2 : les expéditeurs SHOULD vérifier que le type de média est text/plain."
+  sa_rules: []
+  title: "La politique MTA-STS de {domain} n'est pas servie en text/plain"
+  why: >
+    Une partie des expéditeurs vérifie le type du fichier et rejette une politique servie en
+    HTML ou en type inconnu.
+  fix:
+    - "Configurez le serveur web pour servir mta-sts.txt avec l'en-tête Content-Type: text/plain."
+  fix_by_provider:
+    cpanel: "Ajoutez dans le .htaccess du sous-domaine : AddType text/plain .txt"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3.2
+
+- id: mta-sts.testing_mode
+  family: mta-sts
+  severity: info
+  penalty: 0
+  detect:
+    signal: "mtasts.policy.mode == 'testing'"
+    notes: "En mode testing, les expéditeurs livrent même si TLS échoue et se contentent d'envoyer un rapport TLS-RPT."
+  sa_rules: []
+  title: "La politique MTA-STS de {domain} est en mode test"
+  why: >
+    Le mode testing ne protège rien : il sert à recueillir des rapports avant d'appliquer la
+    politique. Si les rapports ne montrent plus d'échec, il est temps de passer en enforce.
+  fix:
+    - "Lisez les rapports TLS-RPT reçus depuis la mise en place et vérifiez qu'aucun MX n'échoue."
+    - "Remplacez mode: testing par mode: enforce dans le fichier de politique."
+    - "Changez la valeur id= de l'enregistrement _mta-sts.{domain}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-5
+
+- id: mta-sts.mode_none
+  family: mta-sts
+  severity: info
+  penalty: 0
+  detect:
+    signal: "mtasts.policy.mode == 'none'"
+    notes: "Le mode none sert à retirer proprement une politique (RFC 8461 §8.3)."
+  sa_rules: []
+  title: "La politique MTA-STS de {domain} est désactivée (mode none)"
+  why: >
+    Le mode none annule une politique précédente. C'est normal pendant un retrait ; sinon
+    {domain} ne bénéficie d'aucune protection MTA-STS.
+  fix:
+    - "Si le retrait est terminé et que max_age est écoulé, supprimez l'enregistrement _mta-sts.{domain} et le fichier."
+    - "Sinon, repassez en mode testing puis enforce et changez la valeur id=."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-8.3
+
+- id: mta-sts.mx_not_covered
+  family: mta-sts
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "mtasts.policy.mode == 'enforce' && any(not mtasts.policy.mx_matches(mx.host) for mx in dns.MX(domain))"
+    notes: "RFC 8461 §4.1 : en mode enforce, un expéditeur ne livre pas à un MX qui ne correspond à aucune ligne mx: de la politique. Cas typique : changement de fournisseur de messagerie sans mise à jour du fichier."
+  sa_rules: []
+  title: "Un MX de {domain} n'est pas autorisé par sa politique MTA-STS"
+  why: >
+    En mode enforce, les expéditeurs qui appliquent MTA-STS refusent de livrer à un MX absent
+    de la politique. Une partie du courrier destiné à {domain} peut rester bloquée puis
+    revenir en erreur.
+  fix:
+    - "Ajoutez une ligne mx: pour chaque serveur MX actuel (un joker comme *.{domain} couvre un seul niveau de sous-domaine)."
+    - "Changez immédiatement la valeur id= de l'enregistrement _mta-sts.{domain} pour que les expéditeurs relisent le fichier."
+    - "Si vous changez de fournisseur, repassez d'abord en mode testing pendant toute la durée du max_age."
+  example_bad: "mode: enforce / mx: ancien-mx.fournisseur.example  alors que le MX publié est mx1.nouveau.example"
+  example_good: "mode: enforce / mx: mx1.nouveau.example"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-4.1
+    - https://www.rfc-editor.org/rfc/rfc8461#section-8.3
+
+- id: mta-sts.enforce_tls_broken
+  family: mta-sts
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "mtasts.policy.mode == 'enforce' && any(tls.mx_valid(mx.host) == false for mx in dns.MX(domain))"
+    notes: "En mode enforce, un MX sans STARTTLS ou avec un certificat invalide (expiré, auto-signé, mauvais nom) ne reçoit plus le courrier des expéditeurs MTA-STS (RFC 8461 §4.2 et §5)."
+  sa_rules: []
+  title: "La politique MTA-STS de {domain} bloque un MX au certificat invalide"
+  why: >
+    Votre politique exige un TLS valide, mais un de vos MX ne le fournit pas. Les expéditeurs
+    qui appliquent MTA-STS refusent de lui livrer : vous perdez du courrier entrant.
+  fix:
+    - "Corrigez le certificat du MX concerné (voir l'anomalie TLS signalée pour ce serveur)."
+    - "En attendant, repassez la politique en mode testing et changez la valeur id=."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-4.2
+    - https://www.rfc-editor.org/rfc/rfc8461#section-5
+
+- id: mta-sts.id_unchanged
+  family: mta-sts
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "history.mtasts.policy_hash != mtasts.policy_hash && history.mtasts.id == mtasts.id"
+    notes: "Détection par comparaison avec le test précédent du même domaine : le contenu du fichier a changé mais pas l'id= de l'enregistrement TXT. RFC 8461 §3.1 : les expéditeurs ne relisent le fichier que si id change ou si leur cache expire."
+  sa_rules: []
+  title: "La politique MTA-STS de {domain} a changé sans changement d'identifiant"
+  why: >
+    Les expéditeurs gardent l'ancienne politique en cache tant que la valeur id= ne change pas,
+    jusqu'à la fin du max_age. Votre modification ne sera pas vue avant longtemps, ce qui peut
+    bloquer un nouveau MX.
+  fix:
+    - "Modifiez la valeur id= de l'enregistrement _mta-sts.{domain}, par exemple avec la date et l'heure du changement."
+    - "Faites-le à chaque modification du fichier, sans exception."
+  example_good: "_mta-sts.{domain}. IN TXT \"v=STSv1; id=20261110T1530\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3.1
+    - https://www.rfc-editor.org/rfc/rfc8461#section-8.1
+
+- id: mta-sts.txt_malformed
+  family: mta-sts
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dns.TXT('_mta-sts.' + domain) != [] && (count(r for r in dns.TXT('_mta-sts.' + domain) if r starts with 'v=STSv1') != 1 || not mtasts.txt.id matches /^[A-Za-z0-9]+$/ || len(mtasts.txt.id) > 32)"
+    notes: "RFC 8461 §3.1 : un seul enregistrement commençant par v=STSv1 ; id composé de 1 à 32 lettres ou chiffres (pas de tiret, pas de point). Plusieurs enregistrements : l'expéditeur considère qu'il n'y a pas de politique."
+  sa_rules: []
+  title: "L'enregistrement _mta-sts de {domain} est invalide"
+  why: >
+    Un identifiant contenant des tirets ou des points, ou deux enregistrements concurrents,
+    rendent la politique inexistante aux yeux des expéditeurs.
+  fix:
+    - "Gardez un seul enregistrement TXT commençant par v=STSv1 sur _mta-sts.{domain}."
+    - "Utilisez un id= de 32 caractères au plus, composé seulement de lettres et de chiffres."
+  example_bad: "v=STSv1; id=2026-11-10.1"
+  example_good: "v=STSv1; id=20261110T1"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3.1
+
+- id: mta-sts.max_age_short
+  family: mta-sts
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "mtasts.policy.mode == 'enforce' && mtasts.policy.max_age < 604800"
+    notes: "RFC 8461 §3.2 : max_age plafonné à 31557600 secondes ; §10.2 recommande des valeurs longues (l'exemple de la RFC utilise 604800, soit une semaine). Un max_age court affaiblit la protection contre une suppression de politique par un attaquant."
+  sa_rules: []
+  title: "Le max_age de la politique MTA-STS de {domain} est très court"
+  why: >
+    Avec une durée courte, un attaquant qui bloque l'accès à votre politique pendant
+    quelques heures suffit à faire repasser les expéditeurs en TLS facultatif.
+  fix:
+    - "Une fois la politique stable en enforce, portez max_age à au moins 604800 (une semaine), voire 1209600 ou davantage."
+    - "Ne dépassez pas 31557600, la valeur maximale."
+    - "Changez la valeur id= après la modification."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3.2
+    - https://www.rfc-editor.org/rfc/rfc8461#section-10.2
+
+- id: mta-sts.max_age_too_long
+  family: mta-sts
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "mtasts.policy.max_age > 31557600"
+    notes: "RFC 8461 §3.2 : valeur maximale 31557600 secondes. Au-delà la politique est non conforme."
+  sa_rules: []
+  title: "Le max_age de la politique MTA-STS de {domain} dépasse le maximum"
+  why: >
+    La valeur dépasse la limite fixée par la norme : certains expéditeurs rejettent la
+    politique entière.
+  fix:
+    - "Ramenez max_age à 31557600 au plus (une valeur entre 604800 et 31557600 convient)."
+    - "Changez la valeur id= après la modification."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-3.2
+
+- id: mta-sts.tlsrpt_missing
+  family: mta-sts
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "dns.TXT('_smtp._tls.' + domain) == [] && dns.TXT('_mta-sts.' + domain) != []"
+    notes: "TLS-RPT (RFC 8460) n'est signalé que si {domain} publie MTA-STS ou DANE : sans rapports, les échecs de livraison causés par la politique restent invisibles."
+  sa_rules: []
+  title: "{domain} publie MTA-STS sans adresse de rapports TLS-RPT"
+  why: >
+    Vous appliquez une politique de chiffrement sans recevoir les rapports d'échec. Si un MX
+    ou un certificat pose problème, des expéditeurs cesseront de vous livrer sans que vous
+    le sachiez.
+  fix:
+    - "Créez une adresse dédiée aux rapports, par exemple tlsrpt@{domain}."
+    - "Publiez l'enregistrement TXT _smtp._tls.{domain} avec v=TLSRPTv1 et rua=mailto:cette adresse."
+  example_good: "_smtp._tls.{domain}. IN TXT \"v=TLSRPTv1; rua=mailto:tlsrpt@{domain}\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8460#section-3
+
+- id: mta-sts.tlsrpt_malformed
+  family: mta-sts
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "dns.TXT('_smtp._tls.' + domain) != [] && (not tlsrpt.record starts with 'v=TLSRPTv1' || tlsrpt.rua == [] || any(not (u starts with 'mailto:' || u starts with 'https:') for u in tlsrpt.rua))"
+    notes: "RFC 8460 §3 : v=TLSRPTv1 en premier, puis rua= avec une ou plusieurs URI mailto: ou https: séparées par des virgules."
+  sa_rules: []
+  title: "L'enregistrement TLS-RPT de {domain} est invalide"
+  why: >
+    Les expéditeurs ignorent un enregistrement TLS-RPT mal formé : vous ne recevez aucun
+    rapport sur les échecs de chiffrement.
+  fix:
+    - "Commencez l'enregistrement par v=TLSRPTv1."
+    - "Indiquez rua= suivi d'une adresse préfixée par mailto: (ou d'une URL https:)."
+  example_bad: "v=TLSRPTv1; rua=tlsrpt@{domain}"
+  example_good: "v=TLSRPTv1; rua=mailto:tlsrpt@{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8460#section-3

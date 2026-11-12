@@ -1,0 +1,115 @@
+bulk-sender.spf_and_dkim_required:
+  title: Bei Massenversand müssen SPF und DKIM beide gültig sein
+  why: "Gmail, Yahoo und Outlook.com verlangen für Absender im Massenversand SPF und DKIM, und Orange verlangt sie oberhalb von 1.000 Nachrichten pro Tag. Dieser Nachricht fehlt eines der beiden: Bei diesen vier Diensten riskiert sie den Spam-Ordner oder eine Ablehnung."
+  fix:
+    - "Veröffentlichen oder korrigieren Sie den SPF-Eintrag von {envelope_domain}, damit die IP {ip} senden darf."
+    - "Aktivieren Sie die DKIM-Signatur von {domain} in Ihrem Versandtool und veröffentlichen Sie den öffentlichen Schlüssel im DNS."
+    - "Senden Sie einen neuen Test: Beide Ergebnisse müssen pass sein."
+  fix_by_provider:
+    google_workspace: "Admin-Konsole > Apps > Google Workspace > Gmail > E-Mails authentifizieren: Erzeugen Sie den DKIM-Schlüssel, veröffentlichen Sie den TXT-Eintrag google._domainkey und klicken Sie dann auf Authentifizierung starten. SPF: v=spf1 include:_spf.google.com ~all."
+    microsoft_365: "Microsoft-Defender-Portal > Richtlinien und Regeln > Bedrohungsrichtlinien > E-Mail-Authentifizierungseinstellungen > DKIM: Veröffentlichen Sie die beiden CNAME selector1 und selector2 und aktivieren Sie dann die Signatur für {domain}. SPF: v=spf1 include:spf.protection.outlook.com -all."
+    brevo: "Einstellungen > Absender, Domains und dedizierte IPs > Domains: Authentifizieren Sie {domain} und veröffentlichen Sie die angegebenen Einträge."
+    mailchimp: "Website > Domains: Fügen Sie {domain} hinzu, klicken Sie dann auf Authenticate und veröffentlichen Sie die angegebenen DKIM-CNAME-Einträge."
+    sendgrid: "Settings > Sender Authentication > Authenticate Your Domain: Veröffentlichen Sie die bereitgestellten CNAME-Einträge, die DKIM und die Return-Path-Domain für SPF abdecken."
+bulk-sender.dmarc_missing:
+  title: Bei Massenversand ist ein DMARC-Eintrag Pflicht
+  why: "{domain} hat keinen DMARC-Eintrag. Gmail, Yahoo und Outlook.com verlangen ihn von Absendern im Massenversand, Orange oberhalb von 1.000 Nachrichten pro Tag. Ohne ihn werden Ihre Nachrichten gefiltert oder abgewiesen."
+  fix:
+    - "Veröffentlichen Sie einen TXT-Eintrag für _dmarc.{domain}."
+    - "Beginnen Sie mit p=none und einer Adresse für Berichte (rua), um Ihre Versandströme zu beobachten, bevor Sie die Richtlinie verschärfen."
+    - "Wechseln Sie nach einigen Wochen sauberer Berichte zu p=quarantine und danach zu p=reject."
+  fix_by_provider:
+    cloudflare_dns: "DNS > Records > Add record: Typ TXT, Name _dmarc, Inhalt v=DMARC1; p=none; rua=mailto:dmarc@{domain}."
+    ovh: "Web Cloud > Domainnamen > {domain} > DNS-Zone > Eintrag hinzufügen: Typ TXT, Subdomain _dmarc, Wert v=DMARC1; p=none; rua=mailto:dmarc@{domain}."
+bulk-sender.dmarc_not_aligned:
+  title: Bei Massenversand muss die From-Domain auf SPF oder DKIM ausgerichtet sein
+  why: "SPF ist für {envelope_domain} gültig und DKIM für {dkim_domain}, aber keines der beiden stimmt mit {domain} überein. Gmail, Yahoo und Outlook.com verlangen diese Ausrichtung bei Massenversand: DMARC schlägt fehl."
+  fix:
+    - "Konfigurieren Sie die DKIM-Signatur Ihres Versandtools mit d={domain} (Signatur auf Ihren Namen, nicht auf den Namen des Tools)."
+    - "Oder konfigurieren Sie eine eigene Return-Path-Domain auf einer Subdomain von {domain}, um SPF auszurichten."
+    - "Streben Sie beide Ausrichtungen an, wie Microsoft es empfiehlt."
+bulk-sender.outlook_high_volume:
+  title: Diese Nachricht erfüllt nicht die Anforderungen von Outlook.com für Massenversand
+  why: "Seit dem 5. Mai 2025 verschiebt Outlook.com Nachrichten von Domains, die mehr als 5.000 Nachrichten pro Tag senden, ohne gültiges SPF, gültiges DKIM und ausgerichtetes DMARC in den Ordner Junk-E-Mail. Microsoft kündigt an, dass solche Nachrichten künftig ganz abgelehnt werden, zu einem noch nicht festgelegten Termin."
+  fix:
+    - "Sorgen Sie dafür, dass SPF für {envelope_domain} und DKIM für {domain} bestehen."
+    - "Veröffentlichen Sie für {domain} ein DMARC mindestens mit p=none, ausgerichtet auf SPF oder DKIM, idealerweise auf beide."
+    - "Wenn Sie den Fehler 550 5.7.515 erhalten, senden Sie nach der Korrektur hier einen neuen Test, um alle drei Ergebnisse zu bestätigen."
+bulk-sender.one_click_required:
+  title: Bei Massenversand ist die Abmeldung mit einem Klick Pflicht
+  why: "Gmail verlangt seit dem 1. Juni 2024 die Abmeldung mit einem Klick bei Marketingnachrichten von Absendern im Massenversand, Yahoo und Orange ebenfalls. Gmail verlangt, Abmeldungen innerhalb von 48 Stunden zu bearbeiten, Yahoo innerhalb von 2 Tagen. Diese Nachricht ist nicht konform."
+  fix:
+    - "Fügen Sie List-Unsubscribe mit einer https-Adresse hinzu und List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Signieren Sie diese beiden Header mit DKIM."
+    - "Nehmen Sie abgemeldete Kontakte innerhalb von 48 Stunden aus Ihren Sendungen heraus, auch aus bereits geplanten Kampagnen."
+bulk-sender.ptr_required:
+  title: Die Versand-IP hat keinen gültigen Reverse-DNS-Eintrag
+  why: "Die IP {ip} hat keinen Reverse-Namen, der wieder auf sie selbst zurückführt. Gmail, Yahoo, Orange und La Poste verlangen das: La Poste kann die Verbindung ablehnen, und die anderen stufen die Nachricht als Spam ein."
+  fix:
+    - "Bitten Sie den Hoster der IP {ip}, einen PTR-Eintrag auf einen Namen wie mail.{domain} anzulegen."
+    - "Legen Sie den A-Eintrag dieses Namens auf {ip} an, damit die Vorwärts-Rückwärts-Prüfung gelingt."
+    - "Setzen Sie den HELO-Namen des Servers auf denselben Namen."
+bulk-sender.tls_required:
+  title: Die Nachricht wurde ohne TLS-Verschlüsselung übertragen
+  why: "Der Server {helo} hat die Verbindung nicht verschlüsselt, obwohl unser Server dies anbot. Gmail verlangt TLS von allen Absendern, und Orange akzeptiert nur TLS 1.2 oder neuer."
+  fix:
+    - "Aktivieren Sie STARTTLS für ausgehende Verbindungen auf Ihrem Versandserver, mit mindestens TLS 1.2."
+    - "Wenn Sie über ein Relay oder ein Versandtool senden, prüfen Sie, dass die ausgehende Verschlüsselung in dessen Einstellungen aktiviert ist."
+  fix_by_provider:
+    postfix: "In main.cf: smtp_tls_security_level = may und smtp_tls_mandatory_protocols = >=TLSv1.2, dann postfix reload."
+    exim: "Lassen Sie in der Konfiguration des Transports remote_smtp hosts_try_tls = * (Standardwert) stehen und prüfen Sie, dass tls_require_ciphers TLS 1.2 nicht ausschließt."
+bulk-sender.rfc5322_format:
+  title: Die Nachricht entspricht nicht dem Format RFC 5322, das Gmail und Yahoo verlangen
+  why: "Gmail und Yahoo verlangen Nachrichten im Format RFC 5322. Diese Nachricht weist {value} Abweichungen auf: Bei Massenversand reicht das, damit Sendungen als Spam eingestuft oder abgewiesen werden."
+  fix:
+    - "Korrigieren Sie die Auffälligkeiten in den Kopfzeilen, die im Abschnitt Kopfzeilen dieses Berichts aufgeführt sind."
+    - "Erstellen Sie Nachrichten mit einer bewährten Versandbibliothek statt von Hand."
+bulk-sender.dkim_key_too_short:
+  title: Der DKIM-Schlüssel ist zu kurz
+  why: "Der DKIM-Schlüssel des Selektors {selector} hat {value} Bit. Gmail verlangt mindestens 1.024 Bit und empfiehlt 2.048: Ein kürzerer Schlüssel wird nicht akzeptiert."
+  fix:
+    - "Erzeugen Sie einen neuen Schlüssel mit 2.048 Bit und einem neuen Selektor."
+    - "Veröffentlichen Sie den öffentlichen Schlüssel unter neuer-selektor._domainkey.{domain} und stellen Sie die Signatur dann auf diesen Selektor um."
+    - "Entfernen Sie den alten Selektor einige Tage später, sobald die noch unterwegs befindlichen Nachrichten zugestellt sind."
+  fix_by_provider:
+    google_workspace: "Admin-Konsole > Gmail > E-Mails authentifizieren: Wählen Sie eine Schlüssellänge von 2048 Bit und erzeugen Sie einen neuen Eintrag mit einem anderen Selektor-Präfix als google, falls der alte noch veröffentlicht ist."
+    postfix: "Mit OpenDKIM: opendkim-genkey -b 2048 -d {domain} -s s2026, veröffentlichen Sie s2026.txt, aktualisieren Sie dann KeyTable und starten Sie OpenDKIM neu."
+bulk-sender.spam_rate_above_limit:
+  title: Ihre Spam-Beschwerderate bei Gmail erreicht oder überschreitet 0,3 %
+  why: "Postmaster Tools meldet eine Rate von {value} Nutzern, die Ihre Nachrichten als Spam melden. Ab 0,3 % gewährt Gmail keine Abmilderung mehr: Ihre Nachrichten werden bis zu 7 aufeinanderfolgende Tage unter diesem Schwellenwert gefiltert."
+  fix:
+    - "Hören Sie auf, an Kontakte zu senden, die seit mehreren Monaten weder geöffnet noch geklickt haben."
+    - "Prüfen Sie, dass jeder Kontakt zugestimmt hat, und entfernen Sie gekaufte oder ohne Einwilligung importierte Adressen."
+    - "Machen Sie den Abmeldelink oben in der Nachricht sichtbar und aktivieren Sie die Abmeldung mit einem Klick."
+    - "Verteilen Sie Ihre Sendungen zeitlich, wenn die Häufigkeit zuletzt gestiegen ist."
+bulk-sender.spam_rate_above_target:
+  title: Ihre Spam-Beschwerderate bei Gmail liegt über dem Zielwert von 0,1 %
+  why: "Ihre Rate gemeldeter Spam beträgt {value}. Gmail empfiehlt, unter 0,1 % zu bleiben: Sie befinden sich in dem Bereich, in dem eine weitere Kampagne Sie über 0,3 % bringen kann."
+  fix:
+    - "Ermitteln Sie in Postmaster Tools die Tage, an denen die Rate steigt, und die Kampagne, die an diesem Tag versendet wurde."
+    - "Nehmen Sie inaktive Kontakte und solche, die sich aus einer zweifelhaften Quelle angemeldet haben, aus der Zielgruppe heraus."
+    - "Erinnern Sie oben in der Nachricht daran, warum der Kontakt sie erhält."
+bulk-sender.orange_large_sender:
+  title: Diese Nachricht erfüllt nicht die Anforderungen von Orange für große Absender
+  why: "Oberhalb von 1.000 Nachrichten pro Tag verlangt Orange, dass SPF, DKIM und DMARC alle drei bestehen, dazu einen Feedback-ID-Header und die Abmeldung mit einem Klick. Dieser Nachricht fehlt {value}."
+  fix:
+    - "Sorgen Sie dafür, dass SPF, DKIM und DMARC bestehen, mit einem ausgerichteten From auf {domain}."
+    - "Fügen Sie einen Feedback-ID-Header im Format a:b:c:Absenderkennung hinzu, signiert mit DKIM."
+    - "Fügen Sie List-Unsubscribe mit https hinzu und List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Prüfen Sie, dass https://{domain} eine Website mit der Identität des Unternehmens und dem Impressum anzeigt."
+    - "Begrenzen Sie Ihren Versand auf 100 Nachrichten pro Verbindung und 2 gleichzeitige Verbindungen pro IP zu den Servern von Orange."
+  fix_by_provider:
+    postfix: "Erstellen Sie in master.cf einen Transport orange (Kopie der Zeile smtp, mit -o smtp_connection_reuse_count_limit=100, Postfix 3.4 oder neuer), setzen Sie in main.cf orange_destination_concurrency_limit = 2 und orange_destination_recipient_limit = 100, und ordnen Sie dann orange.fr und wanadoo.fr diesem Transport in transport_maps zu."
+bulk-sender.laposte_dkim_required:
+  title: Ohne gültige DKIM-Signatur kann laposte.net die Nachricht ablehnen
+  why: Diese Nachricht hat keine gültige DKIM-Signatur. La Poste gibt an, Nachrichten aus diesem Grund abzulehnen, und weist auch Nachrichten ab, die von IPs ohne SPF-Erlaubnis gesendet wurden.
+  fix:
+    - "Aktivieren Sie die DKIM-Signatur von {domain} in Ihrem Versandtool und veröffentlichen Sie den öffentlichen Schlüssel in Ihrem DNS."
+    - "Prüfen Sie, dass der veröffentlichte Schlüssel zu dem passt, mit dem signiert wird (gleicher Selektor {selector})."
+    - "Prüfen Sie, dass die IP {ip} im SPF-Eintrag von {envelope_domain} steht."
+bulk-sender.status_permanent:
+  title: Der Status als Massenversender bei Gmail ist dauerhaft
+  why: "Gmail addiert die Sendungen von {domain} und seinen Subdomains. Sobald Sie einmal annähernd 5.000 Nachrichten in 24 Stunden an Gmail-Konten versandt haben, unterliegen Sie weiter den Anforderungen für Massenversender, auch wenn Sie danach weniger senden."
+  fix:
+    - "Wenden Sie die Anforderungen für Massenversender auf alle Ströme von {domain} an, auch auf die Subdomains."
+    - "Verfolgen Sie den Konformitätsstatus im Bereich Compliance status von Postmaster Tools."

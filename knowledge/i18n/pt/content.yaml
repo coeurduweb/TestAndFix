@@ -1,0 +1,143 @@
+content.no_text_part:
+  title: A mensagem não tem versão em texto
+  why: A mensagem contém apenas HTML. Os filtros antispam consideram a ausência de versão em texto um indício, e os leitores que exibem o texto puro não veem nada legível.
+  fix:
+    - "Envie a mensagem em multipart/alternative: uma parte text/plain primeiro, depois a parte text/html."
+    - Ative na sua ferramenta a geração automática da versão em texto e releia-a.
+  fix_by_provider:
+    mailchimp: Na campanha, abra Plain-text email e deixe a geração automática ativada, ou escreva a versão em texto.
+    sendgrid: "Na chamada da API v3 /mail/send, forneça duas entradas em content: uma do tipo text/plain e depois uma do tipo text/html."
+    wordpress: Com o PHPMailer, preencha $phpmailer->AltBody em um filtro phpmailer_init, ou use uma extensão SMTP que gere a versão em texto.
+content.text_part_empty:
+  title: A versão em texto da mensagem está vazia
+  why: Uma parte de texto vazia ao lado de um HTML cheio é um truque conhecido para enganar os filtros que leem o texto. Ela é penalizada, e os leitores em modo texto não veem nada.
+  fix:
+    - Preencha a versão em texto com o mesmo conteúdo da versão HTML.
+    - Se a sua ferramenta a gera, verifique se ela não está recebendo uma variável vazia.
+content.text_html_mismatch:
+  title: As versões em texto e em HTML não dizem a mesma coisa
+  why: As duas versões só se parecem em {value}. Uma mensagem cujo texto e HTML divergem é um procedimento de ocultação conhecido pelos filtros, e muitas vezes é um modelo antigo esquecido.
+  fix:
+    - Gere novamente a versão em texto a partir do HTML atual.
+    - Se você a escreve à mão, atualize-a a cada modificação do HTML.
+  fix_by_provider:
+    mailchimp: Em Plain-text email, clique em Regenerate from HTML depois de cada alteração do conteúdo.
+content.text_too_short:
+  title: A mensagem contém muito pouco texto
+  why: O corpo tem apenas {value} palavras. Com tão pouco texto, os filtros não têm elementos para julgar a mensagem e se apoiam sobretudo em links e reputação, muitas vezes em seu prejuízo.
+  fix:
+    - Acrescente algumas frases que expliquem por que o destinatário recebe esta mensagem e o que você oferece.
+    - Acrescente uma assinatura com o nome da empresa e um meio de contato.
+content.url_only_body:
+  title: A mensagem se resume a um link
+  why: Uma mensagem que contém apenas um endereço web é o formato típico do phishing e do spam por link. Quase sempre ela é filtrada.
+  fix:
+    - "Escreva pelo menos algumas frases: quem você é, por que está escrevendo, o que o link contém."
+    - Coloque o link em um texto explícito, em vez de colar o endereço sozinho.
+content.trigger_words:
+  title: O texto acumula fórmulas promocionais agressivas
+  why: A mensagem contém {value} expressões típicas de spam. Isoladas, pesam pouco, mas o acúmulo reforça os outros sinais negativos.
+  fix:
+    - "Substitua as fórmulas genéricas por uma descrição precisa da oferta: produto, preço, data de término."
+    - Troque “clique aqui” por um texto de link que indique para onde ele leva.
+content.excessive_caps:
+  title: O texto contém muitas letras maiúsculas
+  why: Uma parte importante do texto está em maiúsculas. Isso dá um tom agressivo e faz parte dos critérios dos filtros de conteúdo.
+  fix:
+    - Reescreva os trechos em maiúsculas com minúsculas normais.
+    - Para destacar, use negrito ou um título HTML em vez de maiúsculas.
+content.excessive_punctuation:
+  title: A mensagem contém sequências de pontos de exclamação ou símbolos
+  why: Sequências como “!!!” ou “€€€” são uma marca de spam bem conhecida dos filtros e dos leitores.
+  fix:
+    - Use no máximo um ponto de exclamação por frase.
+    - Escreva os valores em algarismos seguidos da moeda, sem repetir o símbolo.
+content.invisible_characters:
+  title: O texto contém caracteres invisíveis
+  why: "A mensagem contém {value} caracteres invisíveis. Inseridos nas palavras, eles servem para contornar os filtros: estes os detectam e penalizam a mensagem como tentativa de ocultação."
+  fix:
+    - Cole o seu texto em um editor que mostre caracteres invisíveis e apague-os.
+    - "Não copie diretamente de um processador de texto ou de uma página web: cole em texto puro e depois reaplique a formatação."
+content.homoglyphs:
+  title: Algumas palavras misturam vários alfabetos
+  why: "A palavra {value} contém letras de outro alfabeto que se parecem com letras latinas. Essa técnica serve para usurpar marcas e enganar os filtros: ela é fortemente penalizada."
+  fix:
+    - Digite de novo no teclado as palavras assinaladas, em vez de copiá-las.
+    - Se o seu texto foi traduzido automaticamente, releia as palavras que contêm caracteres gregos ou cirílicos.
+content.image_only:
+  title: A mensagem é feita de imagens quase sem texto
+  why: "Fora das imagens, a mensagem quase não tem texto: {value}. Os filtros não conseguem ler o texto das imagens e desconfiam desse formato, muito usado pelo spam. Se as imagens estiverem bloqueadas, o destinatário vê uma mensagem quase vazia."
+  fix:
+    - Escreva o título, a oferta e o botão de ação em texto HTML, e mantenha as imagens apenas como ilustração.
+    - Substitua os botões em imagem por botões em HTML e CSS.
+    - Acrescente um atributo alt descritivo a cada imagem restante.
+  fix_by_provider:
+    mailchimp: Substitua o bloco Image por um bloco Text para o título e a oferta, e use o bloco Button para a chamada para ação.
+    brevo: No editor de arrastar e soltar, use os blocos Título, Texto e Botão no lugar de uma única imagem.
+content.html_clipped_gmail:
+  title: O HTML é pesado o bastante para ser truncado pelo Gmail
+  why: "O HTML pesa {value}. A Mailchimp indica que o Gmail corta as mensagens acima de cerca de 102 KB e exibe “Mensagem cortada”. O link de cancelamento de inscrição e o pixel de medição de abertura, colocados no rodapé, desaparecem então."
+  fix:
+    - Remova os estilos CSS duplicados e os comentários do HTML.
+    - Encurte a mensagem ou divida-a em vários envios.
+    - Substitua as imagens codificadas em base64 no HTML por imagens hospedadas.
+    - Coloque o link de cancelamento de inscrição alto o bastante no rodapé para que ele continue visível em caso de corte.
+  fix_by_provider:
+    mailchimp: "Evite colar HTML exportado de outra ferramenta em um bloco Code: ele costuma conter estilos duplicados."
+content.mojibake:
+  title: Os acentos aparecem como caracteres estranhos
+  why: "O texto contém sequências como {value}: o UTF-8 foi convertido uma vez a mais. A mensagem parece malfeita para os leitores, e os filtros leem palavras deformadas."
+  fix:
+    - Verifique se os seus modelos estão salvos em UTF-8 e declarados como charset=UTF-8.
+    - "Procure a etapa que converte o texto uma segunda vez: exportação de banco de dados, utf8_encode() em PHP, ou cópia de um arquivo salvo de forma incorreta."
+    - No MySQL, use o conjunto de caracteres utf8mb4 para a conexão e as tabelas.
+content.replacement_characters:
+  title: O texto contém caracteres de substituição (�)
+  why: Algumas letras foram perdidas durante uma conversão de codificação e substituídas por um losango com um ponto de interrogação. O texto fica definitivamente danificado naquele ponto.
+  fix:
+    - Localize as palavras afetadas e digite-as de novo no modelo original.
+    - "Corrija a cadeia de processamento: o texto deve ser lido e gravado em UTF-8 em cada etapa."
+content.mixed_languages:
+  title: A mensagem mistura vários idiomas
+  why: "A mensagem está escrita em grande parte em {value}. Uma mistura de idiomas costuma indicar um modelo mal traduzido ou um template padrão esquecido, e desorienta o destinatário."
+  fix:
+    - Traduza os blocos que ficaram no idioma do modelo original, muitas vezes o rodapé e os botões.
+    - Se você escreve para vários públicos, envie uma versão por idioma.
+  fix_by_provider:
+    mailchimp: Os textos do rodapé e da página de cancelamento de inscrição se traduzem em Audience > Settings > Audience name and defaults, campo de idioma.
+content.unreplaced_merge_tags:
+  title: Algumas tags de personalização não foram substituídas
+  why: "O destinatário vê a tag {value} em vez do seu conteúdo. A mensagem parece automática e malfeita, o que aumenta as denúncias como spam."
+  fix:
+    - Verifique a grafia exata da tag na documentação da sua ferramenta de envio.
+    - Preencha o campo correspondente para todos os contatos, ou defina um valor padrão.
+    - Envie um teste para um contato real da lista, em vez de um endereço de teste vazio.
+  fix_by_provider:
+    mailchimp: Verifique a tag em Audience > Settings > Audience fields and *|MERGE|* tags, e defina um valor padrão para o campo.
+content.placeholder_text:
+  title: A mensagem contém texto de preenchimento
+  why: "Encontra-se “{value}” na mensagem: um bloco do modelo não foi redigido. A mensagem parece não ter sido revisada, e esse texto é conhecido pelos filtros."
+  fix:
+    - Substitua ou apague o bloco de texto de preenchimento.
+    - Releia a prévia completa, incluindo a versão para celular, antes de cada envio.
+content.sender_identity_missing:
+  title: A mensagem não diz claramente quem a envia
+  why: Nenhuma razão social nem endereço aparece nesta mensagem comercial. Na França, uma mensagem de prospecção deve permitir identificar o anunciante, e um remetente anônimo é mais frequentemente denunciado como spam.
+  fix:
+    - Acrescente no rodapé o nome da empresa, o endereço postal e um link para o seu site em {domain}.
+    - Lembre em uma frase por que o destinatário recebe esta mensagem (inscrição, compra, conta de cliente).
+  fix_by_provider:
+    mailchimp: "O endereço vem da tag *|LIST:ADDRESS|* do rodapé: preencha-o em Audience > Settings > Audience name and defaults."
+    brevo: "Preencha o endereço da empresa nas configurações da conta: o bloco Rodapé do editor o utiliza."
+content.text_part_base64:
+  title: A parte de texto está codificada em base64 sem necessidade
+  why: O texto é quase todo em ASCII, mas está codificado em base64. Essa precaução inútil é comum no spam para esconder o conteúdo dos filtros simples, e alguns filtros a pontuam.
+  fix:
+    - "Codifique as partes de texto em quoted-printable: os acentos continuam legíveis e o texto continua visível."
+    - No PHPMailer, defina $mail->Encoding = 'quoted-printable'.
+content.empty_message:
+  title: A mensagem está completamente vazia
+  why: "Sem assunto, texto nem anexo: os filtros da Microsoft classificam esse tipo de mensagem como spam com alta confiança quando a opção está ativa, e ela não tem nenhuma chance de ser lida em outro lugar."
+  fix:
+    - Verifique se o seu aplicativo realmente transmite o conteúdo do modelo no momento do envio.
+    - Teste o envio com uma mensagem preenchida antes de relançar uma campanha.

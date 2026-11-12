@@ -1,0 +1,160 @@
+sa.uribl_black:
+  title: "A link points to a domain on the URIBL blacklist"
+  why: "A domain in the links of the message is on the URIBL blacklist, which is reserved for domains seen in spam. This is enough to noticeably raise the score, even if your own domain is clean."
+  fix:
+    - "Find the link concerned ({url}): it is sometimes a third-party domain (shortener, image, social network) rather than yours."
+    - "Remove or replace this link, then send the test again."
+    - "If the listed domain is yours, look for the cause (hacked site, unsolicited campaign) before requesting removal via {delist_url}."
+sa.uribl_grey:
+  title: "A link points to a domain on the URIBL grey list"
+  why: "The URIBL grey list groups sending domains that generate many complaints without being proven spammers. Click-tracking domains of newsletter tools are sometimes listed there."
+  fix:
+    - "Identify the listed domain ({url}). If it is your sending tool's tracking domain, set up a custom tracking domain under your own domain."
+    - "If it is your domain, reduce complaints (visible unsubscribe, solicited sends), then request removal via {delist_url}."
+sa.uribl_red:
+  title: "A link points to a domain on the URIBL red list"
+  why: "The URIBL red list flags domains that URIBL is watching without being proven enough for the blacklist. SpamAssassin barely scores it, but it is a warning."
+  fix:
+    - "Check the flagged domain ({url}) and remove the link if it does not belong to you."
+sa.uribl_blocked:
+  title: "URIBL query refused to the test server"
+  why: "Administrative notice: URIBL did not answer the analysis server. The links were not checked against this list, but your message is not the cause."
+  fix:
+    - "No action is needed on your part."
+sa.uribl_dbl_spam:
+  title: "A link points to a Spamhaus DBL domain (spam)"
+  why: "A domain cited in the message is listed in the Spamhaus DBL as a spam domain. It is one of the heaviest link signals, and many gateways block on this list."
+  fix:
+    - "Find the link concerned ({url}): it is sometimes a third-party domain (shortener, image, social network) rather than yours."
+    - "Remove or replace this link, then send the test again."
+    - "If the listed domain is yours, look for the cause (hacked site, unsolicited campaign) before requesting removal via {delist_url}."
+sa.uribl_dbl_phish:
+  title: "A link points to a Spamhaus DBL domain (phishing)"
+  why: "A link leads to a domain that Spamhaus classifies as a phishing site. If it is your domain, it was probably hacked to host a fake login page."
+  fix:
+    - "Find the link concerned ({url}): it is sometimes a third-party domain (shortener, image, social network) rather than yours."
+    - "Remove or replace this link, then send the test again."
+    - "If the listed domain is yours, look for the cause (hacked site, unsolicited campaign) before requesting removal via {delist_url}."
+sa.uribl_dbl_malware:
+  title: "A link points to a Spamhaus DBL domain (malware)"
+  why: "A link leads to a domain that distributes malware according to Spamhaus. On a WordPress site, this is often the sign of a file injected into wp-content."
+  fix:
+    - "Find the link concerned ({url}): it is sometimes a third-party domain (shortener, image, social network) rather than yours."
+    - "Remove or replace this link, then send the test again."
+    - "If the listed domain is yours, look for the cause (hacked site, unsolicited campaign) before requesting removal via {delist_url}."
+sa.uribl_dbl_abuse_spam:
+  title: "A link points to a legitimate domain hijacked for spam"
+  why: "Spamhaus flags a legitimate domain whose pages are used by spammers (hosting, form or sharing service). The link penalizes you by association."
+  fix:
+    - "Replace the link to this shared service with a link to a page on your own domain."
+sa.uribl_dbl_abuse_redir:
+  title: "A link goes through a redirector hijacked by spammers"
+  why: "The link goes through a redirect or shortening service that spammers also use. SpamAssassin barely scores it, but other filters do."
+  fix:
+    - "Put the final address in plain form instead of a shortened or redirected link."
+sa.uribl_dbl_abuse_phish:
+  title: "A link points to a legitimate domain hijacked for phishing"
+  why: "A legitimate domain in the links is also used to host phishing pages. Filters penalize these links heavily."
+  fix:
+    - "Host the content concerned (form, document) on your own domain rather than on this service."
+sa.uribl_dbl_abuse_malw:
+  title: "A link points to a legitimate domain hijacked to distribute malware"
+  why: "The link's domain is a legitimate service some of whose addresses distribute malware (file storage, sharing). The link penalizes you heavily."
+  fix:
+    - "Attach the file or host it on your site rather than going through this sharing service."
+sa.uribl_dbl_blocked:
+  title: "Spamhaus DBL query refused to the test server"
+  why: "Administrative notice: the DBL did not answer the analysis server. Unrelated to your links."
+  fix:
+    - "No action is needed on your part."
+sa.uribl_dbl_blocked_opendns:
+  title: "Spamhaus DBL query refused: public resolver"
+  why: "Administrative notice: the analysis server goes through a public DNS resolver refused by Spamhaus. Unrelated to your links."
+  fix:
+    - "No action is needed on your part."
+sa.uribl_dbl_error:
+  title: "Spamhaus DBL query error"
+  why: "Technical notice: a link contains an IP address instead of a domain name and was submitted to the DBL, which only handles domains. The result cannot be used."
+  fix:
+    - "Replace links to IP addresses with links to a domain name (see also NUMERIC_HTTP_ADDR)."
+sa.uribl_abuse_surbl:
+  title: "A link points to a domain on the SURBL ABUSE list"
+  why: "The link's domain is in SURBL's ABUSE category: domains seen in spam or abusive sending."
+  fix:
+    - "Find the link concerned ({url}): it is sometimes a third-party domain (shortener, image, social network) rather than yours."
+    - "Remove or replace this link, then send the test again."
+    - "If the listed domain is yours, look for the cause (hacked site, unsolicited campaign) before requesting removal via {delist_url}."
+sa.uribl_cr_surbl:
+  title: "A link points to a hacked site according to SURBL"
+  why: "SURBL classifies the link's domain as a compromised legitimate site. If it is your site, it probably hosts pages added by an attacker."
+  fix:
+    - "Analyze the linked site ({url}): extensions and themes not updated, unknown PHP files, administrator accounts added."
+    - "After cleaning, request removal via {delist_url}."
+sa.uribl_ct_surbl:
+  title: "A link goes through a tracking domain listed by SURBL"
+  why: "The link goes through a click-tracking domain that SURBL lists because it is used for sends without confirmed consent, including to spam traps. This is the typical case of a sending tool whose shared tracking domain is also used by bad senders."
+  fix:
+    - "Set up a custom tracking domain (subdomain of {domain}) in your sending tool."
+    - "Or turn off click tracking for this message and test again."
+sa.uribl_dm_surbl:
+  title: "The message cites a disposable email address domain (SURBL DM)"
+  why: "A domain in the message belongs to a disposable email address service. SpamAssassin barely scores it: it is information."
+  fix:
+    - "If a disposable address appears in the message (contact, signature), replace it with an address on your domain."
+sa.uribl_mw_surbl:
+  title: "A link points to a malware domain according to SURBL"
+  why: "SURBL associates the link's domain with malware distribution. It is serious if the domain is yours: your site is probably serving as a relay for an attack."
+  fix:
+    - "Find the link concerned ({url}): it is sometimes a third-party domain (shortener, image, social network) rather than yours."
+    - "Remove or replace this link, then send the test again."
+    - "If the listed domain is yours, look for the cause (hacked site, unsolicited campaign) before requesting removal via {delist_url}."
+sa.uribl_ph_surbl:
+  title: "A link points to a phishing domain according to SURBL"
+  why: "SURBL classifies the link's domain as a host of phishing pages."
+  fix:
+    - "Find the link concerned ({url}): it is sometimes a third-party domain (shortener, image, social network) rather than yours."
+    - "Remove or replace this link, then send the test again."
+    - "If the listed domain is yours, look for the cause (hacked site, unsolicited campaign) before requesting removal via {delist_url}."
+sa.uribl_multi_surbl_headers:
+  title: "The sender or Reply-To domain is listed by SURBL"
+  why: "This is no longer a link but the sending or reply address whose domain is in SURBL. The domain {domain} therefore has a bad reputation of its own."
+  fix:
+    - "Check the category and listing date of {domain} at {delist_url}."
+    - "Address the cause (hacked site, unsolicited sends) before any removal request."
+sa.surbl_blocked:
+  title: "SURBL query refused to the test server"
+  why: "Administrative notice: SURBL did not answer the analysis server. Unrelated to your links."
+  fix:
+    - "No action is needed on your part."
+sa.uribl_rhs_dob:
+  title: "A link points to a domain just created"
+  why: "A domain cited in the message was registered very recently. Spammers constantly change domains: a link to a new domain is suspicious, even if it is the website of a company just starting out."
+  fix:
+    - "If the new domain is yours, wait a few days before using it in bulk sends."
+    - "In the meantime, point the links to an older domain that you own."
+sa.uribl_sbl:
+  title: "The DNS server of a linked domain is in the Spamhaus SBL"
+  why: "The link's domain uses DNS servers hosted on an IP that Spamhaus knows for hosting spam. The link is penalized because of its hosting."
+  fix:
+    - "Identify the domain concerned ({url}) and its DNS host."
+    - "If it is your domain, move its DNS zone to a reputable host."
+sa.uribl_sbl_a:
+  title: "The web server of a linked domain is in the Spamhaus SBL"
+  why: "The site a link points to is hosted on an IP listed by Spamhaus. Low penalty, but it reveals a poorly reputed hosting."
+  fix:
+    - "If the site is yours, ask the host why its IP is listed or change hosting."
+sa.uribl_css:
+  title: "The DNS server of a linked domain is in the Spamhaus CSS"
+  why: "The linked domain's DNS servers are on an IP automatically flagged for sending spam. Low penalty."
+  fix:
+    - "If the domain is yours, report it to your DNS host."
+sa.uribl_zen_blocked:
+  title: "Spamhaus ZEN query on links refused to the test server"
+  why: "Administrative notice: Spamhaus refused the analysis server's query. Unrelated to your links."
+  fix:
+    - "No action is needed on your part."
+sa.uribl_zen_blocked_opendns:
+  title: "Spamhaus ZEN query on links refused: public resolver"
+  why: "Administrative notice: the analysis server queries Spamhaus through a public resolver."
+  fix:
+    - "No action is needed on your part."

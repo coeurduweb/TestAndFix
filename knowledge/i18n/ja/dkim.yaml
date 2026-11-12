@@ -1,0 +1,254 @@
+dkim.missing:
+  title: "メールに DKIM の署名がありません"
+  why: "DKIM がなければ、メールが {domain} から送られたものであり、改ざんされていないことを証明できません。また、DKIM は転送後も残る唯一の認証方式です。DKIM がないと、SPF が壊れた時点で DMARC も失敗します。"
+  fix:
+    - "このメールを送信しているサービス（{provider}）で、DKIM 署名を有効にしてください。"
+    - "提供されたレコード（TXT または、セレクター._domainkey.{domain} 上の CNAME）を、{domain} の DNS に公開してください。"
+    - "サービスの管理画面に戻って検証を実行し、その後このテストをやり直してください。"
+  fix_by_provider:
+    google_workspace: "Google 管理コンソール、メニュー > Apps > Google Workspace > Gmail > Authenticate email（ドキュメントどおりの英語の表示名）で、2048 ビットの鍵を生成し（既定のセレクター接頭辞は google）、google._domainkey.{domain} の TXT をお使いの DNS ホストに公開してから、Start authentication をクリックしてください。"
+    microsoft_365: "Microsoft Defender ポータル、Email & collaboration、Policies & rules、Threat policies、Email authentication settings、DKIM タブの順に進んでください。{domain} を選択し、ボタンを有効にします。エラーウィンドウには、公開すべき 2 つの CNAME（selector1._domainkey と selector2._domainkey）が表示されます。正確な値は Get-DkimSigningConfig -Identity {domain} | Format-List Selector1CNAME,Selector2CNAME でも取得できます。"
+    ovh: "MX Plan：ドメインの一般情報タブで、赤い DKIM バッジを選び、有効化してください。Email Pro と Exchange：関連ドメインタブで、DKIM バッジから有効化してください。DNS ゾーンが同じ OVHcloud アカウントにない場合は、表示された 2 つの CNAME（ovhmo…-selector1._domainkey の形式）を先に公開してください。"
+    o2switch: "o2switch では DKIM がデフォルトで有効です。cPanel の Email、Email Deliverability（または「認証」）、Manage（管理）で確認してください。DNS が別の場所にある場合は、表示された default._domainkey.{domain} の TXT をコピーしてください。"
+    cpanel: "Email、Email Deliverability、Manage、DKIM の項目で、必要に応じて Generate Local DKIM Key を実行し、default._domainkey.{domain} の TXT を設定するかコピーしてください（鍵はデフォルトで 2048 ビットです）。"
+    plesk: "Websites & Domains、{domain}、Mail タブ、Mail Settings で、「Use DKIM spam protection system to sign outgoing email messages」にチェックを入れてください。DNS が外部にある場合は、default._domainkey.{domain} と _domainkey.{domain} のレコードをコピーしてください。"
+    ionos: "IONOS の DNS サーバーを使っている場合、DKIM はデフォルトで有効です。外部の DNS を使う場合は、IONOS が示す CNAME を公開してください。その中には、s1-ionos._domainkey（宛先は s1.dkim.ionos.com）と s2-ionos._domainkey（宛先は s2.dkim.ionos.com）が含まれます。"
+    gandi: "Domain、{domain}、Email タブ、Settings & Security、Edit の順に進み、「DKIM Signature」を有効にしてください（DNS は LiveDNS）。外部の DNS を使う場合は、gm1._domainkey、gm2._domainkey、gm3._domainkey の 3 つの CNAME を、それぞれ gm1.gandimail.net.、gm2.gandimail.net.、gm3.gandimail.net. に向けて公開してください。"
+    infomaniak: "DNS ゾーンが Infomaniak にある場合、DKIM はデフォルトで有効です。そうでない場合は、Manager、Service Mail、グローバルセキュリティ、DKIM の順に進むと、公開すべきレコードが表示されます。"
+    zoho: "mailadmin.zoho.com、Domains、{domain}、Email Configuration、DKIM、Add の順に進み、セレクター（例：zoho）を選択してください。セレクター._domainkey.{domain} の TXT を公開し、Verify をクリックしてから、鍵を有効にしてください。"
+    proton: "Settings、All settings、Domain names、Review、DKIM タブの順に進み、表示された宛先とともに、protonmail._domainkey、protonmail2._domainkey、protonmail3._domainkey の 3 つの CNAME を公開してください。"
+    brevo: "Settings、Senders、Domains、IPs、Domains、Authenticate の順に進んでください。アカウントに応じて、brevo1._domainkey と brevo2._domainkey の CNAME（2048 ビットの鍵）、または提示された TXT（1024 ビット）を公開してください。"
+    mailchimp: "プロフィールアイコン、Account & billing、Domains タブ、Start authentication の順に進み、表示された 2 つの CNAME を公開してください。"
+    mailjet: "Account、Domains & Sender addresses、SPF/DKIM Authentication の順に進み、mailjet._domainkey.{domain} の TXT を公開してください。鍵は 2048 ビットを選んでください（初期設定で提示されます）。"
+    sendgrid: "Settings、Sender Authentication、Domain Authentication、Get Started の順に進み、表示された s1._domainkey と s2._domainkey（および em…）の CNAME を公開してください。"
+    mailgun: "Sending、Domains の順に進み、2048 ビットの鍵の TXT（表示されたセレクター、例：mx._domainkey）を公開してください。または、Automatic Sender Security を有効にする場合は、pdk1._domainkey と pdk2._domainkey の CNAME を公開してください。"
+    amazon_ses: "SES コンソール、Configuration、Identities、Create identity（Domain）、Easy DKIM で RSA_2048_BIT を選択してから、表示された宛先をコピーして、トークン._domainkey.{domain} の CNAME を 3 つ公開してください（宛先はリージョンによって異なります）。"
+    postmark: "Sender Signatures、お使いのドメイン、DNS Settings の順に進み、名前が pm._domainkey.{domain} で終わる TXT を公開してください。"
+    sparkpost: "Bird プラットフォーム：Email、Domains の順に進み、表示された セレクター._domainkey.{domain} の TXT を公開してください。従来の SparkPost API：表示されたセレクターの TXT（例：scph0820）。"
+    hubspot: "Settings、Content、Domains & URLs、Email Sending タブ、Connect sending domain の順に進み、生成された 2 つの CNAME を公開してください。"
+    cloudflare_dns: "DKIM の CNAME は DNS only モード（グレーの雲アイコン）で追加してください。Brevo と HubSpot は、これらのレコードについて CNAME flattening（CNAME フラット化）を無効にするよう求めています。"
+dkim.signature_invalid:
+  title: "{dkim_domain} の DKIM 署名が検証されません"
+  why: "署名は存在しますが、メールや公開されている鍵と一致しなくなっています。受信者から見れば、メールに署名がないのと同じです。さらに、DKIM の失敗は署名がないことよりも重く扱われます。"
+  fix:
+    - "{selector}._domainkey.{dkim_domain} に公開されている鍵を、送信サービスが示す鍵と比べてください。鍵を更新した後、古い鍵が公開されたままになっていることがあります。"
+    - "署名の後でメールを変更するソフトウェアがないか確認してください（送信時のウイルス対策、法的な注記の追加、件名の書き換えなど）。該当するものがあれば、署名をそのソフトウェアより後に行うように配置してください。"
+    - "原因を切り分けるため、中継を通さずに、サービスから直接テストメールを送信してください。"
+dkim.body_hash_mismatch:
+  title: "DKIM 署名の後にメール本文が変更されました"
+  why: "受信した内容は、{dkim_domain} が署名したものとは異なります。そのため署名は拒否され、SPF も失敗している場合は DMARC も失敗します。"
+  fix:
+    - "Received ヘッダーで、署名の後に位置するサーバーを探してください（メーリングリスト、ウイルス対策のゲートウェイ、法的な注記を追加するツールなど）。"
+    - "そのサーバーの後で署名されるようにするか、本文の変更を無効にしてください。"
+    - "c=relaxed/relaxed の正規化を使ってください。空白や改行コードの変更に対して、より寛容です。"
+    - "変更がお客様の管理外のメーリングリストによるものである場合、このケースはそのリスト側の ARC の問題になります。"
+  fix_by_provider:
+    microsoft_365: "免責事項を追加するフロールールは本文を変更します。Microsoft 365 の DKIM 署名の前に適用されるよう確認するか、このフローについてはそのルールを削除してください。"
+    postfix: "コンテンツ用の milter（ウイルス対策、免責事項など）が OpenDKIM の後で動作している場合は、smtpd_milters の順序を入れ替え、OpenDKIM が最後に署名するようにしてください。"
+dkim.key_not_found:
+  title: "DKIM の鍵 {selector}._domainkey.{dkim_domain} が見つかりません"
+  why: "メールには署名がありますが、受信者は検証に使う公開鍵を見つけられません。そのため署名は検証に失敗し、メールは DKIM による認証を受けられなくなります。"
+  fix:
+    - "送信サービスの管理画面を開き、DKIM レコードの正確な名前と値を確認してください。"
+    - "DNS ゾーンに、{selector}._domainkey という名前で作成してください。管理画面がドメインを自動的に追加する場合は、もう一度入力しないでください。"
+    - "dig TXT {selector}._domainkey.{dkim_domain} で確認し、そのあとサービスで検証を再実行してください。"
+dkim.key_cname_dangling:
+  title: "DKIM の CNAME {selector}._domainkey.{dkim_domain} の宛先が存在しません"
+  why: "お客様の DNS はプロバイダーの鍵を参照していますが、プロバイダーがその鍵を公開していません。署名を検証できず、失敗します。"
+  fix:
+    - "CNAME の宛先を、プロバイダー（{provider}）の管理画面に表示されている値と比べ、1 文字ずつ修正してください。"
+    - "このサービスでドメインがまだ有効で、認証されていることを確認してください。"
+  fix_by_provider:
+    amazon_ses: "Easy DKIM の CNAME の宛先はリージョンによって異なります。SES コンソールからコピーしてください。手で組み立てないでください。"
+    microsoft_365: "宛先には 2 つの形式があります。旧形式は selector1-…._domainkey.<tenant>.onmicrosoft.com、新形式は、2025 年 5 月以降に追加されたドメイン向けの selector1-…._domainkey.<tenant>.<letter>-v1.dkim.mail.microsoft です。Get-DkimSigningConfig が返す値をコピーしてください。"
+    cloudflare_dns: "DNS、Records で CNAME を編集し、プロキシを DNS only に切り替えてください。"
+dkim.key_revoked:
+  title: "DKIM の鍵 {selector}._domainkey.{dkim_domain} は失効しています"
+  why: "このセレクターで公開されている鍵は、意図的に空になっています。鍵が取り下げられたためです。この鍵でまだ署名しているメールは、DKIM に失敗します。"
+  fix:
+    - "サーバーまたは送信サービスを、有効なセレクターで署名するように設定してください。"
+    - "失効が誤りであった場合は、対応する公開鍵を {selector}._domainkey.{dkim_domain} に再公開してください。"
+dkim.key_syntax_error:
+  title: "DKIM の鍵 {selector}._domainkey.{dkim_domain} のレコードが読み取れません"
+  why: "公開鍵が DNS に正しく入力されていないため、誰もお客様の署名を検証できません。すべての署名が失敗します。"
+  fix:
+    - "サービスの管理画面から値をコピーしてください。改行や BEGIN/END のヘッダーは含めないでください。"
+    - "DNS の管理画面で長さに制限がある場合は、値を 255 文字以内の複数の文字列に分け、引用符で囲んでください。文字は追加しないでください。"
+    - "dig TXT {selector}._domainkey.{dkim_domain} で確認し、p= の後で鍵が 1 つの連続した値になっているか確かめてください。"
+  fix_by_provider:
+    cpanel: "Email Deliverability、Manage で、Copy ボタンまたは Split 表示を使うと、分割済みの鍵が得られます。"
+    mailjet: "DNS ホストが長い値を拒否する場合、Mailjet は 1024 ビットの鍵を生成することを提案します。2048 ビットの鍵は、複数の文字列に分けることを優先してください。"
+dkim.multiple_key_records:
+  title: "{dkim_domain} の DKIM セレクター {selector} に複数の鍵があります"
+  why: "同じ場所に 2 つの鍵が公開されています。受信者によって検証の成否が分かれるため、結果を予測できません。"
+  fix:
+    - "{selector}._domainkey.{dkim_domain} には、サービスが現在使っている鍵だけを残してください。"
+    - "鍵を更新する場合は、同じ名前に 2 つの鍵を置くのではなく、新しいセレクター名を使ってください。"
+dkim.key_dns_temperror:
+  title: "{dkim_domain} の DKIM 鍵を読み取れませんでした（一時的な DNS エラー）"
+  why: "受信者は時間内に鍵を取得できませんでした。受信者の判断では、メールの配信を遅らせるか、署名なしとして評価します。"
+  fix:
+    - "テストをやり直し、同じエラーが繰り返されるか確認してください。"
+    - "{dkim_domain} のすべてのネームサーバーが応答していること、およびゾーンの DNSSEC 署名が有効であることを確認してください。"
+dkim.key_below_1024:
+  title: "DKIM の鍵 {selector}._domainkey.{dkim_domain} は短すぎ（{value} ビット）、拒否されます"
+  why: "1024 ビット未満の鍵は解読されやすく、規格上も受け入れてはならないとされています。お客様の署名は無効として扱われます。"
+  fix:
+    - "送信サービスで、新しいセレクターの下に 2048 ビットの鍵を生成してください。"
+    - "それを公開し、反映されるのを待ってから、署名をそのセレクターに切り替えてください。"
+    - "その後、古い鍵を削除してください。"
+dkim.key_1024:
+  title: "DKIM の鍵 {selector}._domainkey.{dkim_domain} は {value} ビットしかありません"
+  why: "1024 ビットの鍵はまだ受け入れられていますが、推奨されていません。規格は 2048 ビットを推奨しており、弱い鍵では {domain} の署名が偽造されるおそれがあります。"
+  fix:
+    - "新しいセレクターの下に 2048 ビットの鍵を作成し、公開してから、署名をそちらに切り替えてください。"
+    - "移行中のメールのために、古い鍵を数日間公開したままにしてから、削除してください。"
+  fix_by_provider:
+    google_workspace: "Authenticate email で、2048 ビットを選んで新しいレコードを生成してください。古いセレクターがまだ使われている場合は、新しいセレクターの接頭辞を指定してください。"
+    microsoft_365: "Exchange Online の PowerShell で、Rotate-DkimSigningConfig -Identity {domain} -KeySize 2048 を実行してください（New-DkimSigningConfig の既定のサイズは 1024 です）。"
+    sendgrid: "2021 年 5 月以降に作成された認証はすでに 2048 ビットです。古いものについては、s1 以外のカスタムセレクターを使って新しいドメイン認証を作成してください。"
+    brevo: "CNAME 方式（brevo1/brevo2._domainkey）は 2048 ビット、TXT 方式は 1024 ビットを使います。アカウントで CNAME が利用できる場合は、そちらに切り替えてください。"
+    mailjet: "SPF/DKIM Authentication で、鍵を 2048 ビットで再生成してください。"
+    amazon_ses: "アイデンティティの Authentication で Easy DKIM を編集し、RSA_2048_BIT を選択してください。"
+    postmark: "Postmark は、2048 ビットの選択肢がない 1024 ビットの鍵を案内しています。選択はプロバイダーに依存します。"
+    cpanel: "Generate Local DKIM Key で新しい鍵を生成してください（cPanel では既定で 2048 ビットです）。"
+dkim.rsa_sha1:
+  title: "DKIM 署名が禁止されたアルゴリズム rsa-sha1 を使っています"
+  why: "SHA-1 はもう安全とは見なされておらず、規格上この署名を検証してはならないとされています。最新の受信者は、お客様の署名を無視します。"
+  fix:
+    - "署名ソフトウェアを rsa-sha256（a=rsa-sha256）に設定してください。"
+    - "そのアルゴリズムに対応していない場合は、ソフトウェアを更新してください。"
+  fix_by_provider:
+    postfix: "OpenDKIM の場合は、opendkim.conf で SignatureAlgorithm を rsa-sha256 に設定し、サービスを再起動してください。"
+dkim.from_not_signed:
+  title: "DKIM 署名が From ヘッダーを対象にしていません"
+  why: "表示される送信者を保護しない署名は、規格により拒否されます。そのため、お客様のメールは署名なしと見なされます。"
+  fix:
+    - "署名対象のヘッダーの一覧に From を追加してください（h= またはソフトウェアの同等の設定）。"
+    - "少なくとも From、To、Subject、Date、Message-ID、MIME-Version、Content-Type に署名してください。"
+  fix_by_provider:
+    postfix: "OpenDKIM の場合、From が OmitHeaders に含まれていれば削除してください。既定では、OpenDKIM は From に署名します。"
+dkim.from_not_oversigned:
+  title: "From ヘッダーがオーバーサインされていません"
+  why: "オーバーサインがないと、第三者が署名を壊さずに 2 つ目の From をメールに追加できます。現時点でペナルティはありませんが、簡単な保護策です。"
+  fix:
+    - "署名ソフトウェアを、h= の中で From を 2 回指定するように設定してください（from:from）。"
+  fix_by_provider:
+    postfix: "OpenDKIM の場合は、opendkim.conf の OversignHeaders に From を追加してください。"
+dkim.length_tag:
+  title: "DKIM 署名が署名対象の本文を制限しています（l=）"
+  why: "l= を使うと、第三者が署名を壊さずに、メールの末尾にテキストやリンクを追加できます。そのため、一部の受信者はこの署名を無視します。"
+  fix:
+    - "本文全体に署名するため、署名ソフトウェアの本文長オプションを無効にしてください。"
+  fix_by_provider:
+    postfix: "OpenDKIM の場合は、BodyLengthDB を空のままにし、本文の長さを設定しないでください。"
+dkim.key_testing_flag:
+  title: "DKIM の鍵 {selector}._domainkey.{dkim_domain} はテストモード（t=y）です"
+  why: "フラグ t=y は、受信者にお客様のメールを署名されていないものとして扱うよう求めます。DKIM は動作していますが、何の効果もありません。"
+  fix:
+    - "テストで問題がないことを確認したら、{selector}._domainkey.{dkim_domain} のレコードから t=y を削除してください。"
+    - "その他のタグ（v=DKIM1、k=rsa、p=）は変更しないでください。"
+dkim.signature_expired:
+  title: "DKIM 署名が配送前に期限切れになりました（x=）"
+  why: "署名には、到着時点ですでに過ぎている有効期限が設定されていました。署名は拒否され、メールは DKIM による認証を失います。"
+  fix:
+    - "署名の有効期間を延ばすか（少なくとも数日）、x= を削除してください。"
+    - "署名サーバーの時刻を確認してください。時計が遅れていたり進んでいたりすると、x= と t= の値が狂います。"
+  fix_by_provider:
+    postfix: "OpenDKIM の場合は、SignatureTTL を増やすか 0 に設定して、x= を追加しないようにしてください。"
+dkim.timestamp_future:
+  title: "DKIM 署名の日付が未来になっています"
+  why: "署名するサーバーの時計が進んでいます。一部の受信者はこうした署名を無視します。同じ時計の誤りは、お客様のメールの日付も狂わせます。"
+  fix:
+    - "NTP（chrony または systemd-timesyncd）でサーバーの時刻を同期してください。"
+    - "テストをやり直し、署名の t= の値を確認してください。"
+dkim.selector_invalid:
+  title: "DKIM セレクター「{selector}」に無効な文字が含まれています"
+  why: "セレクター名が有効な DNS 名ではありません。多くの場合、空白を誤ってコピーしたことが原因です。鍵が見つからず、署名は失敗します。"
+  fix:
+    - "署名ソフトウェアの設定でセレクターを修正してください（使用できるのは文字、数字、ハイフンのみです）。"
+    - "修正後の名前に ._domainkey.{dkim_domain} を付けた名前で、鍵を公開してください。"
+dkim.auid_mismatch:
+  title: "DKIM 署名の i= フィールドが {dkim_domain} のドメインに属していません"
+  why: "署名は、署名ドメインの外にある i= のアイデンティティを宣言しています。規格ではこの署名を拒否する必要があります。そのため、お客様のメールは DKIM による認証を失います。"
+  fix:
+    - "署名の設定から i= を削除するか、{dkim_domain} のアドレスに設定してください。"
+dkim.key_algorithm_mismatch:
+  title: "公開されている DKIM の鍵が、署名のアルゴリズムと一致しません"
+  why: "公開されている鍵は別の種類です（例：rsa の代わりに ed25519）。または、SHA-256 を許可していません。受信者は署名を検証できません。"
+  fix:
+    - "署名の a= と、{selector}._domainkey.{dkim_domain} の k= および h= を比べてください。"
+    - "そのセレクターの下に正しい種類の鍵を公開するか、レコードから h=sha1 を削除してください。"
+dkim.ed25519_only:
+  title: "メールは ed25519 でのみ署名されています"
+  why: "ed25519 にまだ対応していない受信者は、この署名を無視します。その受信者にとって、メールは署名されていないことになり、DMARC は SPF だけに頼ることになります。"
+  fix:
+    - "別のセレクターを使って、2 つ目の rsa-sha256 署名（2048 ビットの鍵）を追加してください。"
+    - "ed25519 の署名は、補助としてそのまま残してください。"
+dkim.esp_domain_only:
+  title: "メールは {domain} ではなく、{dkim_domain}（{provider}）によって署名されています"
+  why: "この署名が証明するのは、{provider} がメールを送信したことだけです。{domain} がそれを許可したことは証明しません。DMARC には整合した署名が必要ですが、それがありません。わずかな転送でも、メールは失敗します。"
+  fix:
+    - "{provider} で {domain} を認証し、d={domain} で署名するようにしてください。"
+    - "提供された DKIM レコードを公開してから、管理画面で検証を再実行してください。"
+  fix_by_provider:
+    brevo: "Settings、Senders、Domains、IPs、Domains、Authenticate の順に進み、brevo1._domainkey と brevo2._domainkey を公開してください。"
+    mailchimp: "Account & billing、Domains、Start authentication の順に進み、2 つの CNAME を公開してください。"
+    sendgrid: "Settings、Sender Authentication、Domain Authentication の順に進んでください。"
+    mailjet: "Account、Domains & Sender addresses、SPF/DKIM Authentication の順に進んでください。"
+    amazon_ses: "Easy DKIM を使って、ドメインをアイデンティティとして検証してください。これにより、SES は d={domain} で署名します。"
+    hubspot: "Settings、Content、Domains & URLs、Email Sending、Connect sending domain の順に進んでください。"
+dkim.canonicalization_simple:
+  title: "DKIM 署名が厳格な正規化（c=simple）を使っています"
+  why: "c=simple では、中継サーバーが空白を再エンコードするだけで署名が壊れます。ここでもおそらくこれが起きています。"
+  fix:
+    - "署名ソフトウェアで正規化を relaxed/relaxed に設定してください。"
+  fix_by_provider:
+    postfix: "OpenDKIM の場合は、opendkim.conf で Canonicalization を relaxed/relaxed に設定してください。"
+dkim.headers_not_signed:
+  title: "{dkim_domain} の DKIM 署名が {value} を対象にしていません"
+  why: "誰かがこれらのヘッダーを変更しても、署名は有効なままです。{dkim_domain} が署名したメールは、DKIM を壊さずに、別の件名、別の日付、別の宛先で再送される可能性があります。"
+  fix:
+    - "署名を行うサービス（{provider}）で、署名対象ヘッダーの一覧を探し、Subject、Date、To、Cc、Message-ID を追加してください。"
+    - "自社のサーバーでは、署名者の署名対象ヘッダーの一覧を補完してください（OpenDKIM は SignHeaders、Rspamd は sign_headers）。"
+    - "テストをやり直してください。署名の h= タグに、これらのヘッダーが含まれている必要があります。"
+dkim.key_service_type:
+  title: "DKIM の鍵 {selector}（{dkim_domain}）はメールに使えません"
+  why: "s={value} タグは、この鍵を他のサービス用に予約しています。受信者はこの鍵を無視しなければなりません。そのため、セレクター {selector} で行ったすべての署名は、鍵が存在しないかのように失敗します。"
+  fix:
+    - "DNS ホストで、{selector}._domainkey.{dkim_domain} の TXT レコードを開いてください。"
+    - "s= タグを削除するか（既定値はすべてのサービスを対象とします）、s=email と書いてください。"
+    - "鍵の残りの部分（p=）には触れず、そのあと検証を再実行してください。"
+dkim.selector_not_discovered:
+  title: "一般的な {value} 個のセレクターの中に DKIM の鍵が見つかりません"
+  why: "DNS では、ドメインの鍵の一覧を取得できません。セレクターを知っている必要があります。{domain} については、一般的な {value} 個のセレクターのどれも応答しません。ただし、お使いのサービスはアカウント固有のセレクターを使っている可能性があり、それは推測できません。"
+  fix:
+    - "{domain} から送信されたメールのソースを開き、DKIM-Signature ヘッダーを探してください。s= タグがセレクター、d= タグがドメインを示します。"
+    - "そのセレクターを検証ツールに入力し、鍵を確認してください。"
+    - "署名されたメールがない場合は、{domain} 向けに送信するツールごとに DKIM を有効にし、そのツールが提供する鍵を公開してください。"
+dkim.wildcard:
+  title: "{domain} の DNS がどの DKIM セレクターにも応答します"
+  why: "ワイルドカード（*）のレコードは、作り物のセレクターに対しても応答します。そのため、ここに一覧された鍵は実際の鍵ではなく、そのコピーかもしれません。また、セレクターを忘れて署名された場合も、鍵がないとは検出されません。"
+  fix:
+    - "{domain} の DNS ゾーンで、*._domainkey という名前のレコード、またはこの名前を覆う * を探してください。"
+    - "それを削除し、各セレクターをそれぞれの名前（セレクター._domainkey.{domain}）で公開してください。"
+    - "ワイルドカードが意図的なもの（サービスが管理するゾーン）である場合は、信頼できる確認のために、実際のセレクターを入力してください。"
+dkim.selector_cname_dangling:
+  title: "DKIM の CNAME {selector}._domainkey.{dkim_domain} の宛先が存在しません"
+  why: "{selector}._domainkey.{dkim_domain} は {value} を指していますが、これは存在しません。このセレクターで署名されたメールは DKIM に失敗します。さらに、そのサービスの他のセレクターも動作しません。"
+  fix:
+    - "{provider} で {dkim_domain} のドメイン認証を開き、{selector}._domainkey.{dkim_domain} に期待される値を正確にコピーしてください。"
+    - "{dns_host} で CNAME を修正するか、{dkim_domain} がこのサービスをもう使っていない場合は削除してください。"
+  fix_by_provider:
+    microsoft_365: "Microsoft Defender ポータルの DKIM ページ（https://security.microsoft.com/authentication?viewid=DKIM）で {dkim_domain} を開き、表示された CNAME の値を {value} と比べてください。Exchange Online のコマンド Get-DkimSigningConfig -Identity {dkim_domain} | Format-List Selector1CNAME,Selector2CNAME でも同じ値が得られます。"
+    cloudflare_dns: "Cloudflare の DNS、Records で、この CNAME を DNS only（グレーの雲）のままにしてください。Cloudflare は、メールや DKIM に使うレコードをプロキシしないよう推奨しています。"
+dkim.standby_selector_dangling:
+  title: "予備の鍵 {selector}._domainkey.{dkim_domain} の宛先が存在しません"
+  why: "{twin} は動作していますが、{provider} のもう一方のセレクターである {selector} は {value} を指しており、これは存在しません。{provider} が {twin} で署名している間は何も失敗しません。しかし、サービスが {selector} に切り替えると（鍵のローテーション）、そのメールは検証できなくなります。"
+  fix:
+    - "{provider} で {selector} に期待される値と、公開されている宛先（{value}）を比べてください。"
+    - "違いがある場合は、{dns_host} で CNAME {selector}._domainkey.{dkim_domain} を修正してください。"
+    - "同じ場合は、鍵がプロバイダー側で公開されていません。{selector}._domainkey.{dkim_domain} が応答するまで、DKIM の鍵のローテーションを実行しないでください。"
+  fix_by_provider:
+    microsoft_365: "Microsoft Defender ポータルの DKIM ページ（https://security.microsoft.com/authentication?viewid=DKIM）で {dkim_domain} を開いてください。Rotate DKIM keys ボタンを押すと {selector} で署名されるため、宛先が応答するまでは使わないでください。Get-DkimSigningConfig -Identity {dkim_domain} | Format-List Selector1CNAME,Selector2CNAME で期待される値を取得できます。"
+    cloudflare_dns: "Cloudflare の DNS、Records で、この CNAME を DNS only（グレーの雲）のままにしてください。Cloudflare は、メールや DKIM に使うレコードをプロキシしないよう推奨しています。"

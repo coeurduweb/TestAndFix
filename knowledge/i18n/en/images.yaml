@@ -1,0 +1,83 @@
+images.missing_alt:
+  title: "Some images have no alternative text"
+  why: "These images have no alt attribute (their list is shown below the issue). When images are blocked, which remains the default setting in several email clients, the reader only sees an empty frame in their place."
+  fix:
+    - "Add an alt attribute to each image that says what it shows or what it does (for example “See the winter collection”)."
+    - "For a purely decorative image, use alt=\"\"."
+  fix_by_provider:
+    mailchimp: "Click the image, then Edit, and fill in the Alt text field."
+    brevo: "Select the image in the editor, then fill in the Alternative text field in the right-hand panel."
+images.http_insecure:
+  title: "Some images are loaded over unencrypted http"
+  why: "The image {url} is loaded without encryption. Some clients do not display it or show a warning, and Microsoft's filters can increase the spam score."
+  fix:
+    - "Replace http:// with https:// in the address of each image."
+    - "Check that the server hosting the images has a valid certificate."
+images.third_party_host:
+  title: "Some images are hosted on a third-party site"
+  why: "The image {url} is loaded from a site that is neither {domain} nor your sending tool. If that site removes it or has a bad reputation, the image disappears or takes your message down with it."
+  fix:
+    - "Download the image and host it on {domain} or in the image library of your sending tool."
+    - "Check that you have the right to use this image."
+images.ip_host:
+  title: "An image is loaded from an IP address"
+  why: "The image {url} is loaded from an IP address instead of a domain name. This is a sign of an improvised server, which filters, including Microsoft's, count against the message."
+  fix:
+    - "Host the image on a domain name, for example https://{domain}/img/."
+images.unreachable:
+  title: "An image in the message does not load"
+  why: "The image {url} returns {status}. The reader sees an empty frame or a broken icon, and a half-empty message looks suspicious."
+  fix:
+    - "Open the image address in a browser to confirm the error."
+    - "Fix the path in the template, or put the image back online."
+    - "If your host blocks requests without a referrer, allow direct loading of images from the folder concerned."
+images.wrong_content_type:
+  title: "The address of an image returns something other than an image"
+  why: "The address {url} returns content of type {value} instead of an image: often a login page or an error page. The image will not display."
+  fix:
+    - "Check that the image is public and does not require a login."
+    - "Use the direct link to the image file, not the one from the sharing page."
+images.too_heavy:
+  title: "An image is very heavy"
+  why: "The image {url} weighs {value}. On mobile, it takes time to display and uses data: the reader often closes the message before seeing it."
+  fix:
+    - "Resize the image to the dimensions at which it is displayed in the message, with a margin only for high-density screens."
+    - "Compress photos as JPEG, and logos and flat graphics as PNG."
+images.image_heavy:
+  title: "Images largely outweigh the text"
+  why: "Most of the message is made of images. When they are blocked, the reader sees almost nothing, and filters have little text to judge the message by."
+  fix:
+    - "Move the key information (offer, date, price, button) out of the images and write it as HTML text."
+    - "Keep images to illustrate, not to carry the message."
+images.inline_cid_many:
+  title: "The message embeds many images as inline attachments"
+  why: "The message carries {value} images embedded through cid:. Each one adds weight to the message, and some clients also display them as attachments, which looks like a suspicious send."
+  fix:
+    - "Host the images on {domain} or with your sending tool, and reference them by an https address."
+    - "Keep at most the logo as an embedded image, if you want it to display without a download."
+  fix_by_provider:
+    microsoft_365: "In Outlook, an image pasted into the body becomes an embedded image. For a newsletter, use a sending tool rather than your mail client."
+    wordpress: "If a notification plugin adds images as embedded attachments, disable this option and use images hosted on the site."
+images.tracking_pixel:
+  title: "The message contains an open-tracking pixel"
+  why: "The message contains an invisible image that measures opens. This is common in newsletters, but organizations that have enabled the Web bugs option in Microsoft Defender classify these messages as spam with high confidence."
+  fix:
+    - "For transactional messages and personal exchanges, turn off open tracking in your tool."
+    - "For newsletters sent to companies on Microsoft 365, compare delivery rates with and without the pixel."
+images.tracking_pixel_without_content:
+  title: "The message contains only a tracking pixel and almost nothing else"
+  why: "An almost empty message with a tracking pixel is mainly used to check that the address is active. This is a spammer practice, and filters recognize it."
+  fix:
+    - "Check that the template content is actually passed on when the message is sent."
+    - "If the message is a technical test, remove the tracking pixel."
+images.missing_dimensions:
+  title: "Some images have no declared width"
+  why: "Without a declared width, a large image can overflow in Outlook for Windows, and the layout shifts when images are blocked."
+  fix:
+    - "Add the width attribute (in pixels, without a unit) to each image, and height if the width-to-height ratio is fixed."
+    - "Add style='max-width:100%;height:auto' for mobile display."
+images.redirecting_src:
+  title: "An image address goes through a redirect"
+  why: "The image {url} is served after a redirect. Display is slower, and some image proxies do not follow every redirect."
+  fix:
+    - "Put the final address of the image file in the message."

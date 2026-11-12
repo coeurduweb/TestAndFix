@@ -1,0 +1,105 @@
+unsubscribe.list_unsubscribe_missing:
+  title: "Esta mensagem de marketing não tem o cabeçalho List-Unsubscribe"
+  why: "O Gmail e o Yahoo exigem esse cabeçalho nas mensagens de marketing dos grandes remetentes. Sem ele, o webmail não exibe o botão de cancelamento de inscrição: os leitores clicam em “Spam” no lugar, o que degrada a reputação de {domain}."
+  fix:
+    - "Adicione um cabeçalho List-Unsubscribe com um endereço https de cancelamento próprio para cada destinatário."
+    - "Acrescente ao mesmo tempo List-Unsubscribe-Post: List-Unsubscribe=One-Click, para o cancelamento em um clique."
+    - "Assine esses dois cabeçalhos com DKIM."
+  fix_by_provider:
+    mailchimp: "O Mailchimp acrescenta List-Unsubscribe às campanhas. Se ele faltar, verifique se você está enviando uma campanha, e não uma mensagem pela API transacional (Mandrill), onde você precisa acrescentá-lo por conta própria."
+    sendgrid: "Ative Settings > Tracking > Subscription Tracking, ou use grupos de cancelamento (Unsubscribe Groups) na chamada da API: o SendGrid então acrescenta os cabeçalhos."
+    amazon_ses: "Acrescente os cabeçalhos List-Unsubscribe e List-Unsubscribe-Post às suas mensagens, ou use o gerenciamento de assinaturas do SES (listas de contatos), que os acrescenta."
+    wordpress: "Uma extensão de newsletter (MailPoet, The Newsletter Plugin, FluentCRM) gerencia o cabeçalho. Evite enviar newsletter com wp_mail() sem extensão."
+    postfix: "O Postfix não acrescenta esse cabeçalho: ele precisa ser escrito pela aplicação que gera a mensagem, antes da assinatura DKIM."
+unsubscribe.one_click_post_missing:
+  title: "O cancelamento em um clique (List-Unsubscribe-Post) não está ativado"
+  why: "A mensagem tem List-Unsubscribe, mas não o cabeçalho List-Unsubscribe-Post. O Gmail exige os dois para envios de marketing em volume: sem ele, o Gmail considera que você não oferece o cancelamento em um clique."
+  fix:
+    - "Adicione a linha List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Verifique se List-Unsubscribe contém um endereço https que aceite uma requisição POST e cancele a inscrição sem pedir confirmação."
+    - "Inclua os dois cabeçalhos na assinatura DKIM (parâmetro h=)."
+unsubscribe.mailto_only:
+  title: "O cancelamento oferece apenas um endereço de e-mail (mailto)"
+  why: "O Yahoo aceita mailto, mas o Gmail exige o cancelamento em um clique da RFC 8058, que requer um endereço https. Para o Gmail, esta mensagem portanto não está em conformidade."
+  fix:
+    - "Adicione um endereço https de cancelamento na primeira posição de List-Unsubscribe, e mantenha o mailto em segundo."
+    - "Adicione List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+unsubscribe.http_not_https:
+  title: "O endereço de cancelamento está em http em vez de https"
+  why: "A RFC 8058 exige um endereço https para o cancelamento em um clique. Com http, o Gmail e os outros webmails não exibem o botão de cancelamento de inscrição."
+  fix:
+    - "Substitua http:// por https:// em List-Unsubscribe."
+    - "Verifique se o certificado do domínio de cancelamento é válido."
+unsubscribe.not_dkim_signed:
+  title: "Os cabeçalhos de cancelamento não estão cobertos pelo DKIM"
+  why: "Nenhuma assinatura DKIM válida cobre List-Unsubscribe e List-Unsubscribe-Post. A RFC 8058 então pede que os webmails não ofereçam o cancelamento em um clique: a sua configuração não serve para nada."
+  fix:
+    - "Adicione list-unsubscribe e list-unsubscribe-post à lista de cabeçalhos assinados (parâmetro h= do DKIM)."
+    - "Acrescente os cabeçalhos antes da etapa de assinatura, e não depois."
+    - "Se um relay acrescentar esses cabeçalhos depois da sua assinatura, peça que a aplicação os acrescente."
+  fix_by_provider:
+    postfix: "Com o OpenDKIM, acrescente List-Unsubscribe e List-Unsubscribe-Post a SignHeaders no opendkim.conf, depois reinicie o OpenDKIM. Com o rspamd, acrescente-os a sign_headers no dkim_signing.conf."
+unsubscribe.post_value_invalid:
+  title: "O valor de List-Unsubscribe-Post está incorreto"
+  why: "O cabeçalho vale “{value}” em vez de List-Unsubscribe=One-Click. Os webmails então não reconhecem o cancelamento em um clique."
+  fix:
+    - "Escreva exatamente: List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Não acrescente aspas, ponto e vírgula nem outro parâmetro."
+unsubscribe.syntax_invalid:
+  title: "O cabeçalho List-Unsubscribe está mal escrito"
+  why: "Os endereços de List-Unsubscribe não estão entre < > ou estão mal separados. Os webmails então ignoram o cabeçalho e não exibem o botão de cancelamento de inscrição."
+  fix:
+    - "Coloque cada endereço entre < >."
+    - "Separe os endereços por vírgula, com o endereço https em primeiro."
+unsubscribe.multiple_https:
+  title: "List-Unsubscribe contém vários endereços https"
+  why: "A RFC 8058 prevê um único endereço https. Com vários, o webmail pode escolher aquele que não processa a requisição em um clique."
+  fix:
+    - "Mantenha um único endereço https, o que aceita a requisição POST em um clique."
+    - "Mantenha, se quiser, um mailto em segundo."
+unsubscribe.endpoint_not_working:
+  title: "O endereço de cancelamento em um clique não responde corretamente"
+  why: "A requisição de cancelamento para {url} recebeu a resposta {value}. Os webmails enviam essa requisição sem cookie e sem seguir redirecionamentos: se ela falhar, o destinatário continua inscrito e acaba denunciando suas mensagens como spam."
+  fix:
+    - "Aceite uma requisição POST sem cookie nem sessão no endereço de cancelamento, e responda com código 200."
+    - "Não responda com redirecionamento: processe o cancelamento diretamente nesse endereço."
+    - "Encontre o contato pelo token presente no próprio endereço."
+unsubscribe.body_link_missing:
+  title: "O corpo da mensagem não tem link de cancelamento"
+  why: "O Gmail e o Yahoo exigem um link de cancelamento bem visível no corpo das mensagens de marketing, e a lei francesa impõe uma forma simples de recusar os envios seguintes. Sem esse link, a única forma de não receber mais é o botão “Spam”."
+  fix:
+    - "Adicione no rodapé um link “Cancelar inscrição” que leve a uma página de cancelamento em {domain}."
+    - "A página deve cancelar a inscrição sem pedir senha nem login."
+  fix_by_provider:
+    mailchimp: "Mantenha a tag *|UNSUB|* no bloco Footer da campanha."
+    brevo: "Mantenha o bloco de rodapé com o link de cancelamento inserido pelo editor do Brevo."
+    wordpress: "No MailPoet, o rodapé padrão contém o link [link:subscription_unsubscribe_url]: não o remova."
+unsubscribe.body_link_hidden:
+  title: "O link de cancelamento é difícil de ver"
+  why: "O link de cancelamento é minúsculo ou quase da cor do fundo. O Gmail e o Yahoo exigem que ele seja claramente visível: um link escondido leva o leitor a clicar em “Spam”."
+  fix:
+    - "Exiba o link em um tamanho legível e em uma cor que contraste com o fundo."
+    - "Coloque-o no início do rodapé, e não depois de várias linhas de avisos legais."
+unsubscribe.requires_login:
+  title: "O cancelamento exige login"
+  why: "O link de cancelamento leva a uma página de login. O Yahoo exige cancelamento sem login, e a maioria dos leitores desiste e depois denuncia a mensagem como spam."
+  fix:
+    - "Coloque no link um token único que identifique o contato, e cancele a inscrição dele sem senha."
+    - "Ofereça a gestão detalhada das preferências na mesma página, sem torná-la obrigatória."
+unsubscribe.mailto_domain_unreachable:
+  title: "O endereço de e-mail de cancelamento não pode receber mensagens"
+  why: "O endereço de cancelamento {value} está em um domínio que não recebe e-mails. Os pedidos de cancelamento enviados pelos webmails se perdem."
+  fix:
+    - "Use um endereço de cancelamento em um domínio que tenha um registro MX, por exemplo cancelamento@{domain}."
+    - "Faça com que as mensagens recebidas nesse endereço sejam processadas automaticamente pela sua ferramenta de envio."
+unsubscribe.on_transactional:
+  title: "Mensagem transacional sem cabeçalho de cancelamento: isso é aceito"
+  why: "O Gmail não exige o cancelamento em um clique para mensagens transacionais. Se esta mensagem também contiver promoção, os destinatários podem julgá-la promocional e denunciá-la."
+  fix:
+    - "Mantenha as mensagens transacionais sem conteúdo promocional."
+    - "Envie a promoção em mensagens separadas, com List-Unsubscribe."
+unsubscribe.list_id_missing:
+  title: "A mensagem não informa de qual lista ela vem (List-Id)"
+  why: "O List-Id permite que os destinatários e os webmails organizem seus envios por lista. A ausência não é penalizada, mas ajuda a distinguir seus diferentes boletins."
+  fix:
+    - "Adicione um cabeçalho List-Id com um identificador estável para cada lista."

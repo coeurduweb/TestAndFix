@@ -1,0 +1,61 @@
+arc.chain_fail:
+  title: Die ARC-Kette der Nachricht ist unterbrochen
+  why: Eine Zwischenstation hat ARC-Header hinzugefügt, die sich nicht mehr verifizieren lassen. Der Empfänger kann sich daher nicht auf ARC stützen, um einen durch die Weiterleitung verursachten DMARC-Fehler auszugleichen. Die Nachricht riskiert Spam oder Abweisung, wenn {domain} p=quarantine oder p=reject anwendet.
+  fix:
+    - Suchen Sie in den Headern die ARC-Instanz (i=1, i=2 …), die fehlschlägt, und den Server, der sie hinzugefügt hat (Feld d= des ARC-Seal).
+    - Wenn dieser Server Ihnen gehört (Gateway, Virenscanner, Liste), prüfen Sie, dass er die Nachricht nach seinen eigenen Änderungen und mit einem im DNS veröffentlichten Schlüssel versiegelt.
+    - Gehört er einem Dritten, senden Sie ihm die vollständigen Header der Nachricht.
+arc.seal_invalid:
+  title: Ein ARC-Siegel (ARC-Seal) lässt sich nicht verifizieren
+  why: Das Siegel, das die ARC-Kette schützt, ist ungültig. Die gesamte Kette wird dann verworfen, und die Authentifizierungsergebnisse, die sie transportierte, gehen verloren.
+  fix:
+    - Lesen Sie die Felder d= und s= des fehlerhaften ARC-Seal und fragen Sie s._domainkey.d im DNS ab, um zu prüfen, ob der Schlüssel existiert.
+    - Wurde der Schlüssel kürzlich geändert, veröffentlichen Sie den alten erneut, bis die unterwegs befindlichen Nachrichten zugestellt sind.
+    - Prüfen Sie, dass kein Server nach dem siegelnden Server die ARC-Header umschreibt.
+arc.message_signature_invalid:
+  title: Die Nachricht wurde nach dem letzten ARC-Siegel verändert
+  why: Ein Server nach der letzten ARC-Zwischenstation hat den signierten Text oder die signierten Header verändert. Die ARC-Kette wird dadurch ungültig, und mit ihr der Nachweis, der einen DMARC-Fehler hätte retten können.
+  fix:
+    - Ermitteln Sie in den Received-Headern den nächsten Server (angehängte Fußzeile, geänderter Betreff, Virenscanner).
+    - Konfigurieren Sie diesen Server so, dass er nach seiner Änderung selbst eine ARC-Instanz hinzufügt, oder dass er die Nachricht nicht mehr verändert.
+arc.incomplete_set:
+  title: Eine ARC-Instanz ist unvollständig
+  why: Einer der drei ARC-Header einer Instanz fehlt. Die Kette ist dann ungültig und für den Empfänger nicht mehr brauchbar.
+  fix:
+    - Ermitteln Sie die unvollständige Instanz (i=) und den Server, der sie hinzugefügt hat.
+    - Prüfen Sie, dass dieser Server alle drei Header gemeinsam erzeugt und dass kein nachgeschalteter Filter einen davon entfernt.
+arc.instance_sequence:
+  title: Die Nummerierung der ARC-Instanzen ist inkonsistent
+  why: Eine ARC-Instanz fehlt oder kommt zweimal vor. Der Empfänger hält die Kette für ungültig, wodurch die Nachricht den Nutzen von ARC verliert.
+  fix:
+    - Ermitteln Sie in den Headern die Lücke in der Nummerierung oder das Duplikat und den Server, der es erzeugt hat.
+    - Korrigieren Sie diesen Server, sodass er seine neue Instanz an die höchste bereits vorhandene Nummer anschließt.
+arc.cv_inconsistent:
+  title: Das Feld cv= eines ARC-Siegels ist inkonsistent
+  why: Das erste Siegel muss cv=none angeben, die folgenden cv=pass oder cv=fail. Ein inkonsistenter Wert macht die gesamte Kette ungültig.
+  fix:
+    - Ermitteln Sie den Server, der die fehlerhafte Instanz hinzugefügt hat (Feld d= des ARC-Seal).
+    - Aktualisieren Sie dessen ARC-Software (zum Beispiel OpenARC oder das ARC-Modul von Rspamd) oder melden Sie die Auffälligkeit dem Hersteller.
+arc.too_many_instances:
+  title: Die Nachricht trägt mehr als 50 ARC-Instanzen
+  why: Eine ARC-Kette ist auf 50 Glieder begrenzt. Eine so hohe Zahl deutet fast immer auf eine Weiterleitungsschleife zwischen zwei Servern hin, die in einer Abweisung endet.
+  fix:
+    - Lesen Sie die Received-Header, um die beiden Server zu finden, die sich die Nachricht gegenseitig zurücksenden.
+    - Entfernen Sie die Weiterleitungsregel oder den Alias, die die Schleife erzeugt.
+arc.missing_on_forward:
+  title: Die Nachricht wurde ohne ARC weitergeleitet und scheitert an DMARC
+  why: Eine Zwischenstation hat die Nachricht weitergeleitet oder verändert, ohne dies mit ARC zu bezeugen. Der Empfänger sieht nur einen DMARC-Fehler und wendet die Richtlinie von {domain} an, wodurch die Nachricht im Spam landen oder abgewiesen werden kann.
+  fix:
+    - Wenn die Zwischenstation Ihr Server ist (automatische Weiterleitung, Liste, Gateway), aktivieren Sie auf diesem Server das ARC-Siegeln.
+    - "Lassen Sie DKIM durch {domain} beim ursprünglichen Absender signieren: Eine DKIM-Signatur übersteht eine einfache Weiterleitung, anders als SPF."
+    - Bei einer Mailingliste aktivieren Sie in deren Software die Option, die die From-Adresse durch die der Liste ersetzt, wenn die Ursprungsdomain eine strenge DMARC-Richtlinie veröffentlicht.
+  fix_by_provider:
+    postfix: Fügen Sie auf dem weiterleitenden Server einen ARC-Milter hinzu (OpenARC oder Rspamd mit seinem Modul arc).
+arc.valid_untrusted:
+  title: ARC ist gültig, DMARC schlägt jedoch fehl
+  why: Die Zwischenstation hat korrekt bezeugt, dass die Nachricht vor ihrem Durchlauf authentifiziert war. Der Empfänger kann die Nachricht trotz des DMARC-Fehlers zustellen, wenn er diesem Siegelnden vertraut, ist dazu aber nicht verpflichtet.
+  fix:
+    - Wenn Sie den Posteingang betreiben, nehmen Sie die Domain des ARC-Siegelnden in die Liste der vertrauenswürdigen Siegelnden auf.
+    - Auf Absenderseite bleibt die dauerhafte Lösung eine DKIM-Signatur, die auf {domain} ausgerichtet ist und die Weiterleitung übersteht.
+  fix_by_provider:
+    microsoft_365: 'Im Portal Microsoft Defender: Email & collaboration, Policies & rules, Threat policies, Email Authentication Settings, Registerkarte ARC, klicken Sie auf Add und geben Sie die Domain aus dem Feld d= der ARC-Seal-Header ein (nicht Ihre eigene Domain). In PowerShell: Set-ArcConfig -Identity Default -ArcTrustedSealers "domaine-du-scelleur.example" (dieser Befehl ersetzt die bestehende Liste).'

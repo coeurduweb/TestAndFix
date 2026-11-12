@@ -1,0 +1,157 @@
+# Famille link : vérification d'un lien isolé (page Lien), sans message autour.
+# Mêmes constats que la famille links, qui parle des liens d'un message reçu, avec des textes
+# écrits pour quelqu'un qui se demande s'il peut ouvrir un lien. Le moteur remplit {url},
+# {domain}, {value}, {list_name} et {delist_url}.
+
+- id: link.shortener
+  family: link
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "chain.hops.any(h => h.host in config.url_shorteners)"
+    notes: "Raccourcisseur public (bit.ly, tinyurl.com, t.ly...). La chaîne suivie donne la vraie destination ; si elle n'a pas pu être lue, l'outil passe la gravité à moyenne."
+  sa_rules: []
+  title: "Le lien passe par un raccourcisseur d'adresses"
+  why: >
+    {url} est une adresse raccourcie : elle ne dit rien de sa destination. Les raccourcisseurs
+    publics servent aussi à masquer des pages d'hameçonnage. La destination réelle, lue par
+    l'outil, est indiquée dans la chaîne de redirections ({domain}).
+  fix:
+    - "Jugez le lien sur sa destination finale, affichée dans la chaîne, et non sur l'adresse courte."
+    - "Si vous diffusez vous-même ce lien, donnez plutôt l'adresse complète de la page sur {domain}."
+  references:
+    - https://www.spamhaus.org/blocklists/domain-blocklist/
+
+- id: link.nonstandard_port
+  family: link
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "url.port not in ['', 80, 443]"
+    notes: "Port explicite autre que 80 ou 443 dans l'adresse de départ ou d'arrivée."
+  sa_rules: []
+  title: "Le lien pointe vers un port inhabituel ({value})"
+  why: >
+    Les sites publics répondent sur les ports 80 (http) et 443 (https). {url} demande le port
+    {value} : c'est le cas d'un serveur de test, d'un équipement exposé ou d'un serveur monté à
+    la hâte, rarement du site d'une entreprise.
+  fix:
+    - "Vérifiez que vous attendiez bien ce serveur avant d'y saisir quoi que ce soit."
+  references:
+    - https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
+
+- id: link.domain_listed
+  family: link
+  severity: critical
+  penalty: 2.5
+  detect:
+    signal: "domain_lists.listed(registrable_domain) for any domain of the chain, or for the domain checked"
+    notes: "Listes de domaines vivantes de research/dnsbl.json (Spamhaus DBL, SURBL, URIBL, NordSpam). L'outil baisse la gravité pour les listes mineures et les listes secondaires d'URIBL, et la monte quand la liste précise hameçonnage ou logiciel malveillant."
+  sa_rules: []
+  title: "Le domaine {domain} est inscrit sur {list_name}"
+  why: >
+    {list_name} recense des domaines utilisés pour le spam, l'hameçonnage ou les logiciels
+    malveillants. Les filtres de messagerie et plusieurs outils de sécurité la consultent :
+    un lien vers {domain} y est traité comme dangereux.
+  fix:
+    - "N'ouvrez pas ce lien : ce rapport décrit déjà la page, inutile d'aller la voir."
+    - "Si le domaine est le vôtre, cherchez la cause (site piraté, envois non sollicités), corrigez-la, puis demandez le retrait sur {delist_url}."
+  references:
+    - https://www.spamhaus.org/blocklists/domain-blocklist/
+    - https://www.surbl.org/lists
+    - https://uribl.com/about.shtml
+
+- id: link.domain_recent
+  family: link
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "rdap.created(registrable_domain) > now - 30 days"
+    notes: "Date de création lue dans le RDAP du registre, ou à défaut l'âge donné par urlscan.io. Sans date connue, la situation n'est pas déclenchée."
+  sa_rules: []
+  title: "Le domaine {domain} a été créé il y a {value}"
+  why: >
+    Les campagnes d'hameçonnage utilisent des domaines de quelques jours ou de quelques
+    semaines, abandonnés dès qu'ils sont repérés. Un domaine récent n'est pas malveillant pour
+    autant, mais il n'a encore aucun historique qui permette de lui faire confiance.
+  fix:
+    - "Si le lien se présente comme celui d'un service que vous connaissez, comparez {domain} au domaine officiel de ce service."
+    - "Dans le doute, tapez vous-même l'adresse officielle dans le navigateur."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9083
+
+- id: link.unreachable
+  family: link
+  severity: info
+  penalty: 0
+  detect:
+    signal: "chain.last.error || chain.last.status >= 400"
+    notes: "Erreur HTTP ou absence de réponse en fin de chaîne. Informatif : une page retirée ne dit rien de dangereux en soi."
+  sa_rules: []
+  title: "La page finale n'a pas pu être consultée ({value})"
+  why: >
+    La destination {url} répond par une erreur ou ne répond pas. Une page d'hameçonnage déjà
+    retirée par son hébergeur donne ce résultat ; le verdict s'appuie alors sur les sources de
+    réputation, sur l'adresse elle-même et sur ce que la page d'erreur contient.
+  fix:
+    - "Relancez la vérification dans quelques minutes : une panne passagère du serveur donne le même résultat."
+    - "Pour contrôler la réponse sans afficher la page, lancez curl -I suivi de l'adresse depuis un poste isolé (machine virtuelle ou serveur de test) : la commande ne lit que les en-têtes de la réponse."
+    - "Si vous attendiez une page précise, vérifiez l'adresse auprès de la personne qui vous l'a donnée, par un autre moyen."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15
+
+- id: link.redirect_chain
+  family: link
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "chain.redirects > 3 || chain.stoppedBy in [loop, max_hops]"
+    notes: "Redirections HTTP, meta refresh et JavaScript comptées ensemble. Au maximum de 15 sauts, l'outil passe la gravité à moyenne."
+  sa_rules: []
+  title: "Le lien passe par {value} redirections"
+  why: >
+    Avant la page finale, {url} renvoie plusieurs fois vers d'autres adresses. Les liens de
+    suivi publicitaire en ajoutent une ou deux ; une longue chaîne entre plusieurs domaines
+    sert aussi à cacher la vraie destination aux outils de filtrage.
+  fix:
+    - "Regardez le domaine de la page finale dans la chaîne : c'est lui qui compte."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4
+
+- id: link.punycode_lookalike
+  family: link
+  severity: high
+  penalty: 2
+  detect:
+    signal: "host.unicode.is_confusable_with(brand) || host.labels.any(xn-- && mixed scripts)"
+    notes: "Domaine internationalisé (punycode, RFC 3492) ou écrit avec des chiffres et des lettres d'autres alphabets qui imitent un nom connu. Détection selon un sous-ensemble des confusables Unicode TR39."
+  sa_rules: []
+  title: "Le domaine du lien est écrit avec des caractères qui imitent un autre nom"
+  why: >
+    {url} contient des lettres d'autres alphabets (cyrillique, grec) ou des chiffres qui
+    ressemblent à des lettres latines. À l'écran, le nom se lit comme celui d'un domaine connu
+    alors qu'il appartient à quelqu'un d'autre.
+  fix:
+    - "N'utilisez pas ce lien : tapez vous-même l'adresse du service dans le navigateur."
+    - "Si vous avez saisi un identifiant sur cette page, changez le mot de passe sur le site officiel."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3492
+    - https://www.unicode.org/reports/tr39/
+
+- id: link.private_target
+  family: link
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "chain.hops.any(h => !isPublicIp(h.ip))"
+    notes: "Une adresse de la chaîne désigne un réseau privé ou local. L'outil refuse de s'y connecter (protection SSRF) et s'arrête là."
+  sa_rules: []
+  title: "Le lien renvoie vers une adresse de réseau privé"
+  why: >
+    Une étape de la chaîne mène vers {domain}, une adresse qui n'existe qu'à l'intérieur d'un
+    réseau local. Un site public n'a aucune raison de le faire : l'outil n'a pas suivi cette
+    étape.
+  fix:
+    - "Si le lien vient de votre propre site, cherchez la redirection mal réglée (adresse de test oubliée en production)."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1918

@@ -1,0 +1,46 @@
+link.shortener:
+  title: Der Link läuft über einen URL-Verkürzer
+  why: "{url} ist eine verkürzte Adresse: Sie sagt nichts über ihr Ziel. Öffentliche Verkürzer dienen auch dazu, Phishing-Seiten zu verbergen. Das tatsächliche Ziel, das das Tool liest, steht in der Weiterleitungskette ({domain})."
+  fix:
+    - Beurteilen Sie den Link anhand seines Endziels, das in der Kette angezeigt wird, nicht anhand der Kurzadresse.
+    - Wenn Sie diesen Link selbst verbreiten, geben Sie stattdessen die vollständige Adresse der Seite auf {domain} an.
+link.nonstandard_port:
+  title: Der Link zeigt auf einen ungewöhnlichen Port ({value})
+  why: "Öffentliche Websites antworten auf den Ports 80 (http) und 443 (https). {url} verlangt den Port {value}: Das ist typisch für einen Testserver, ein exponiertes Gerät oder einen eilig aufgesetzten Server, selten für die Website eines Unternehmens."
+  fix:
+    - Prüfen Sie, ob Sie diesen Server erwartet haben, bevor Sie dort etwas eingeben.
+link.domain_listed:
+  title: Die Domain {domain} steht auf {list_name}
+  why: "{list_name} führt Domains, die für Spam, Phishing oder Schadsoftware genutzt werden. Mail-Filter und mehrere Sicherheitstools prüfen sie: Ein Link auf {domain} gilt dort als gefährlich."
+  fix:
+    - "Öffnen Sie diesen Link nicht: Dieser Bericht beschreibt die Seite bereits, ein Besuch ist unnötig."
+    - Gehört die Domain Ihnen, suchen Sie die Ursache (gehackte Website, unerwünschte Versände), beheben Sie sie und beantragen Sie die Entfernung auf {delist_url}.
+link.domain_recent:
+  title: Die Domain {domain} wurde vor {value} angelegt
+  why: Phishing-Kampagnen nutzen Domains, die nur wenige Tage oder Wochen alt sind und sofort aufgegeben werden, sobald sie entdeckt werden. Eine junge Domain ist deswegen nicht automatisch schädlich, hat aber noch keine Historie, die Vertrauen rechtfertigt.
+  fix:
+    - Wenn der Link wie der eines Dienstes aussieht, den Sie kennen, vergleichen Sie {domain} mit der offiziellen Domain dieses Dienstes.
+    - Geben Sie im Zweifel die offizielle Adresse selbst im Browser ein.
+link.unreachable:
+  title: Die Zielseite konnte nicht abgerufen werden ({value})
+  why: Das Ziel {url} antwortet mit einem Fehler oder gar nicht. Eine Phishing-Seite, die ihr Hoster bereits entfernt hat, liefert dieses Ergebnis; das Urteil stützt sich dann auf die Reputationsquellen, auf die Adresse selbst und auf den Inhalt der Fehlerseite.
+  fix:
+    - "Wiederholen Sie die Prüfung in einigen Minuten: Eine vorübergehende Störung des Servers liefert dasselbe Ergebnis."
+    - "Um die Antwort zu prüfen, ohne die Seite anzuzeigen, führen Sie curl -I gefolgt von der Adresse auf einem isolierten Rechner aus (virtuelle Maschine oder Testserver): Der Befehl liest nur die Header der Antwort."
+    - Haben Sie eine bestimmte Seite erwartet, prüfen Sie die Adresse auf einem anderen Weg bei der Person, die sie Ihnen genannt hat.
+link.redirect_chain:
+  title: Der Link läuft über {value} Weiterleitungen
+  why: Vor der Zielseite verweist {url} mehrfach auf andere Adressen. Werbetracking-Links fügen eine oder zwei hinzu; eine lange Kette über mehrere Domains dient auch dazu, Filtern das eigentliche Ziel zu verbergen.
+  fix:
+    - "Achten Sie in der Kette auf die Domain der Zielseite: Auf sie kommt es an."
+link.punycode_lookalike:
+  title: Die Domain des Links ist mit Zeichen geschrieben, die einen anderen Namen nachahmen
+  why: "{url} enthält Buchstaben anderer Alphabete (kyrillisch, griechisch) oder Ziffern, die lateinischen Buchstaben ähneln. Auf dem Bildschirm liest sich der Name wie der einer bekannten Domain, gehört aber jemand anderem."
+  fix:
+    - "Verwenden Sie diesen Link nicht: Geben Sie die Adresse des Dienstes selbst im Browser ein."
+    - Haben Sie auf dieser Seite eine Kennung eingegeben, ändern Sie das Passwort auf der offiziellen Website.
+link.private_target:
+  title: Der Link verweist auf eine Adresse im privaten Netz
+  why: "Ein Schritt der Kette führt zu {domain}, einer Adresse, die nur innerhalb eines lokalen Netzes existiert. Eine öffentliche Website hat dafür keinen Grund: Das Tool hat diesen Schritt nicht verfolgt."
+  fix:
+    - Stammt der Link von Ihrer eigenen Website, suchen Sie die falsch eingestellte Weiterleitung (vergessene Testadresse im Produktivbetrieb).

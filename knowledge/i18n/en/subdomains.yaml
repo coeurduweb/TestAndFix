@@ -1,0 +1,67 @@
+subdomains.takeover_risk:
+  title: "{subdomain} can be claimed by a stranger at {service}"
+  why: "{subdomain} points to {target}, a {service} resource that no longer exists. Anyone can open an account at {service}, recreate this resource under this name and publish what they want on {subdomain}: a phishing page under your name, theft of the cookies set on {domain}, a certificate obtained without your knowledge."
+  fix:
+    - "If {subdomain} is no longer used: delete its CNAME record from the DNS zone of {domain}. This is the safest fix."
+    - "If it must stay in service: immediately recreate the resource at {service} under the name {target}, in your account, then attach {subdomain} to it."
+    - "Run the check again: {subdomain} must show “no longer resolves” or “active” with no alert."
+    - "For the future: delete the CNAME before deleting the resource at the service, never after."
+subdomains.takeover_possible:
+  title: "{subdomain} points to a {service} resource that no longer exists"
+  why: "{subdomain} points to {target}, and {service} replies that no site is attached to this name. Depending on the service's settings, another customer can claim {subdomain} and publish their content on it. Even without a takeover, your visitors land on an error page from {service}."
+  fix:
+    - "If {subdomain} is no longer used: delete its CNAME record from the DNS zone of {domain}."
+    - "If it must stay in service: attach {subdomain} to your site or application again at {service}."
+    - "On GitHub Pages, verify {domain} in the Pages settings of your account or organization: nobody else will then be able to use it."
+    - "Run the check again to confirm the alert has gone."
+subdomains.cname_dangling:
+  title: "CNAME pointing to a target that no longer exists: {value}"
+  why: "{subdomain} points to {target}, a name that does not exist (NXDOMAIN). The subdomain serves no purpose, and if the target's domain expires or becomes available, whoever buys it also controls your subdomain."
+  fix:
+    - "For each name listed, open the DNS zone of {domain} and delete the CNAME record if it is no longer used."
+    - "If the name must stay in use, replace the target with the service's current address."
+    - "Check that the domain of each target still belongs to you, or that it belongs to the expected service."
+subdomains.cert_expiring:
+  title: "Subdomains whose served certificate expires soon: {value}"
+  why: "The certificate that {subdomain} is presenting right now is about to expire, although it should already have been renewed. Automatic renewal has probably failed: at expiry, browsers will show a security warning and block the site."
+  fix:
+    - "On the server that serves {subdomain}, run the renewal by hand (for example certbot renew) and read the error."
+    - "Common causes: DNS record changed, HTTP challenge blocked by a redirect or a firewall, scheduled task stopped."
+    - "If {subdomain} is placed behind a CDN or a host, check that the certificate is active there."
+    - "Run the check again: the expiry date shown should have moved forward."
+subdomains.cert_expired_active:
+  title: "Subdomains serving an expired certificate: {value}"
+  why: "{subdomain} is currently presenting an expired certificate: browsers show a security warning and most visitors stop there. Applications and APIs refuse the connection."
+  fix:
+    - "On the server that serves {subdomain}, renew the certificate (for example certbot renew) and reload the web server."
+    - "If {subdomain} is no longer used, delete its record in the DNS zone of {domain}."
+    - "Run the check again to confirm the new expiry date."
+subdomains.internal_names:
+  title: "Internal names visible to everyone: {value}"
+  why: "Every certificate is recorded in public logs that anyone can read. Names such as {subdomain} tell an attacker where your test environments and administration tools are, often less protected than the main site."
+  fix:
+    - "Check that each active name on the list requires authentication or can only be reached from your network (allowlist of addresses, VPN)."
+    - "For test environments, prefer a wildcard certificate (*.{domain}): it does not reveal the exact name of each subdomain."
+    - "Delete the names no longer in use from the DNS zone. The logs, however, keep the history forever."
+subdomains.dead_names:
+  title: "Subdomains that no longer resolve: {value}"
+  why: "These names had a certificate but no longer have an address today. Public logs keep them forever: this is normal and harmless as long as no CNAME is left pointing to a deleted service."
+  fix:
+    - "Nothing to do if these names are no longer used."
+    - "If one of them still needs to be in use, recreate its record in the DNS zone of {domain}."
+subdomains.wildcard_dns:
+  title: "The zone of {domain} answers for any name"
+  why: "An invented name under {domain} receives the address {value}. Subdomains that receive this same address are marked “via DNS wildcard”: they may no longer exist as such."
+  fix:
+    - "If the wildcard is not intended, delete the *.{domain} record from the DNS zone."
+    - "If it is intended, look at the names marked “via DNS wildcard”: those that are no longer used require no action."
+subdomains.resolution_capped:
+  title: "Subdomains listed without DNS resolution: {value}"
+  why: "The logs show more than 500 names for {domain}. The 500 most recently seen are resolved; the {value} others are listed without DNS status, and the score does not take them into account."
+  fix:
+    - "Check a more specific subdomain (for example dev.{domain}) to resolve all of its names."
+subdomains.none_found:
+  title: "No certificate published for {domain}"
+  why: "The Certificate Transparency logs contain no certificate for this name. Either {domain} does not serve any site over https, or its certificates cover other names."
+  fix:
+    - "Check the spelling of the domain, then check the main domain if you entered a subdomain."

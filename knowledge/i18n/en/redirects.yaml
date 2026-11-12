@@ -1,0 +1,201 @@
+redirects.loop:
+  title: "The redirect chain loops"
+  why: "{url} redirects to an address that was already visited: the browser gives up with a “too many redirects” error, and crawlers never reach the page. The site is unreachable through this address."
+  fix:
+    - "Find in the chain above the two addresses that redirect to each other."
+    - "Look for the rules that produce them: .htaccess, nginx configuration, redirect extension of the CMS, page rule of the CDN."
+    - "A common cause: the server forces https while the CDN or proxy talks to it over http. In that case, test the X-Forwarded-Proto header instead of %{HTTPS}."
+    - "Keep a single rule that sends directly to the final address, then run the measurement again."
+  fix_by_provider:
+    wordpress: "In Settings > General, set the same address, in https, in “WordPress Address (URL)” and “Site Address (URL)”. Then disable the redirecting plugins one by one (Redirection, Really Simple SSL, caching plugin) and run the measurement after each one. Finally, check the rules in the .htaccess at the root."
+redirects.too_many:
+  title: "The redirect chain does not end"
+  why: "After {value} requests from {url}, the chain still continues. Google's crawlers follow at most 10 hops: beyond that, the final page is not crawled, and each hop slows the visitor down."
+  fix:
+    - "Read the chain above and find where it stops getting closer to the destination."
+    - "Replace the successive redirects with a single 301 redirect to the final address."
+redirects.private_target:
+  title: "The chain leads to a private address"
+  why: "{url} points to {ip}, a private or local address. Nobody on the Internet can reach it: this is a DNS configuration error, or a redirect aimed at an internal server."
+  fix:
+    - "If the domain is public, correct its A or AAAA record so that it points to the server's public IP address."
+    - "If the redirect targets an internal server (staging, intranet), replace its target with the public address."
+redirects.unreachable:
+  title: "An address in the chain does not respond"
+  why: "The request to {url} failed: {value}. The visitor sees a browser error page, and crawlers cannot crawl anything."
+  fix:
+    - "If the name does not exist, create its A (or CNAME) record at the DNS host, or correct the redirect that leads to it."
+    - "If the connection is refused or times out, check that the web server listens on ports 80 and 443 and that the firewall lets them through."
+    - "If the TLS negotiation fails, install a certificate for this name on the server."
+redirects.chain_long:
+  title: "Too many redirects before arriving"
+  why: "{url} goes through {value} redirects before reaching {final}. Each hop adds a full connection and delays display, especially on mobile. Links that point to the old address also pass on their signal less effectively."
+  fix:
+    - "Point each old address directly to {final}, in a single 301 redirect."
+    - "Merge the http-to-https and www rules into a single rule, like the one suggested above."
+    - "Update internal links, the sitemap and canonical tags with the final address."
+redirects.temporary_for_permanent:
+  title: "A temporary redirect is used for a permanent change"
+  why: "{url} responds {status} (temporary redirect) although the change is permanent: {value}. A temporary redirect tells search engines that the old address is still the right one. Google may keep showing the old one, and the link signal transfers less well."
+  fix:
+    - "Replace the code with 301 (or 308 if the method must be kept) in the rule that produces this hop."
+    - "Run the measurement again: the line must show 301 or 308."
+  fix_by_provider:
+    wordpress: "If the rule comes from a redirection plugin (Outils > Redirection, for example), open it and choose code 301. If it is in the .htaccess, replace [R,L] or [R=302,L] with [R=301,L]."
+redirects.redirect_to_error:
+  title: "The redirect leads to an error page"
+  why: "{url} redirects (redirect {value}) to {final}, which responds {status}. The visitor lands on an error, and Google removes the page from its index: the benefit of the redirect is lost."
+  fix:
+    - "Change the redirect target to a page that responds 200: the new equivalent page, or failing that the parent section."
+    - "If the starting address is a short link (bit.ly, tinyurl.com...), change its destination in the shortener's account: no server rule needs to be written."
+    - "If the content no longer exists at all, delete the redirect and let the old address respond 410."
+    - "If the target responds 5xx, it is the destination server that is down: check its error logs."
+redirects.final_error:
+  title: "The address responds with an error"
+  why: "{url} responds {status} without any redirect. If this address still receives visits or links, they end in an error, and Google removes 4xx URLs from its index."
+  fix:
+    - "If the page was moved, add a 301 redirect to its new address."
+    - "If it was deleted on purpose, leave 404 or 410 and remove the links that point to it."
+    - "If the error is 5xx, check the server or application error logs."
+redirects.redirect_without_location:
+  title: "A redirect code with no destination address"
+  why: "{url} responds {status} but gives no destination (no Location header). The browser stays on a blank page, and crawlers stop there."
+  fix:
+    - "Add the Location header with the full destination address in the rule or code that produces this {status}."
+    - "If no redirect is wanted, make the page respond 200."
+redirects.https_to_http:
+  title: "A redirect goes back from https to http"
+  why: "{url} redirects to {target}, in clear text. The visitor loses encryption along the way, the browser shows “not secure”, and a site that publishes HSTS locks itself out."
+  fix:
+    - "Change the target of this redirect to its https:// equivalent."
+    - "Check the site address setting in the CMS: it must start with https://."
+  fix_by_provider:
+    wordpress: "In Settings > General, both addresses “WordPress Address (URL)” and “Site Address (URL)” must start with https://."
+redirects.http_not_redirected:
+  title: "The http version is not redirected to https"
+  why: "{url} is served in clear text instead of redirecting to https://{domain}. Visitors who type the address without https stay on an unencrypted page, which browsers mark as “not secure”."
+  fix:
+    - "Install a certificate for {domain} if this is not done yet (Let's Encrypt is free at most hosts)."
+    - "Add the rule suggested above: a single 301 redirect from http to https."
+    - "Behind a CDN, enable the CDN's “always use HTTPS” option instead."
+  fix_by_provider:
+    wordpress: "In Settings > General, set both site addresses to https://, then add the 301 rule above at the top of the .htaccess, before the # BEGIN WordPress block."
+redirects.hsts_missing:
+  title: "HSTS missing on the https page"
+  why: "{domain} does not publish HSTS: at each visit typed without https, the browser first goes through http, where an intermediary can intercept or hijack the redirect."
+  fix:
+    - "Add the header suggested above to the https configuration of the site."
+    - "Start with a short duration (max-age=300) if you are not sure that all subdomains have a certificate, then raise it to one year."
+    - "Add includeSubDomains only if all the subdomains of {domain} respond over https."
+redirects.hsts_short:
+  title: "HSTS duration too short"
+  why: "The HSTS header of {domain} is only {value}. Once this period passes without a visit, the browser forgets the rule and goes back through http at the next visit."
+  fix:
+    - "Set max-age to 31536000 (one year) once the site is stable on https."
+redirects.hsts_no_subdomains:
+  title: "HSTS does not cover subdomains"
+  why: "HSTS protects {domain} but not its subdomains: a forgotten subdomain remains reachable in clear text. It is optional, but necessary for the browsers' preload list."
+  fix:
+    - "Check that all the subdomains of {domain} respond over https with a valid certificate."
+    - "Then add includeSubDomains to the header, as above."
+redirects.meta_refresh:
+  title: "Redirect by meta refresh instead of an HTTP redirect"
+  why: "{url} first loads a page, then sends the visitor to {target} after {value} second(s) through a meta tag. The visitor downloads a useless page. Google understands this method but recommends a server redirect, and treats a non-zero delay as temporary."
+  fix:
+    - "Replace the tag with a server-side 301 redirect, as suggested above."
+    - "Then remove the intermediate page."
+redirects.refresh_header:
+  title: "Redirect by Refresh header instead of a 3xx code"
+  why: "{url} responds normally, then asks the browser to go to {target} after {value} second(s) using the Refresh header. This is not a standard HTTP redirect: prefer a 301 code."
+  fix:
+    - "Replace the Refresh header with a server-side 301 redirect, as suggested above."
+redirects.js_redirect:
+  title: "JavaScript redirect instead of an HTTP redirect"
+  why: "{url} only sends to {target} through a script. Without JavaScript (some crawlers, link previews, blocking browsers), the redirect does not happen, and Google only sees it if the page renders successfully."
+  fix:
+    - "Replace the script with a server-side 301 redirect, as suggested above."
+    - "If only JavaScript is possible (static hosting without rules), add at least an immediate meta refresh and a visible link to {target}."
+redirects.js_seen:
+  title: "A script on the page may send elsewhere"
+  why: "The HTML of {url} contains an address change to {target}. The page has its own content, so check did not follow it: it probably depends on an action or a condition."
+  fix:
+    - "If this redirect should happen at every visit, do it server-side with a 301."
+redirects.canonical_missing:
+  title: "The final page does not declare its canonical address"
+  why: "{url} does not declare its canonical address. If the same page also responds with parameters or under another address, Google chooses itself which one to display."
+  fix:
+    - "Add the tag suggested above in the <head>, with the absolute address of the page."
+  fix_by_provider:
+    wordpress: "Yoast SEO and Rank Math add the canonical tag by default: check that one of these plugins is active, and that this content type is not excluded from indexing in its settings."
+redirects.canonical_mismatch:
+  title: "The canonical does not match the address where the redirect ends"
+  why: "The redirect ends at {url}, but the page declares {target} as canonical. The two signals contradict each other: Google may choose either one, and the redirect should have targeted the canonical directly."
+  fix:
+    - "If {target} is the right address, make the redirect end directly on it."
+    - "If {url} is the right address, correct the canonical tag as suggested above."
+redirects.canonical_relative:
+  title: "The canonical is written as a relative path"
+  why: "The page declares {value} as canonical, without the scheme or domain. Google recommends an absolute address: otherwise a copy of the site on another domain would inherit the same canonical."
+  fix:
+    - "Write the full address, as suggested above."
+redirects.final_noindex:
+  title: "The final page forbids its indexing"
+  why: "{url} asks search engines not to display it in results. If this is the page where your redirects end, all search traffic to these addresses is lost."
+  fix:
+    - "If the page should be found, remove noindex from the X-Robots-Tag header (server configuration) or from the meta robots tag (CMS SEO setting)."
+  fix_by_provider:
+    wordpress: "In Settings > Reading, uncheck “Discourage search engines from indexing this site”. In Yoast SEO or Rank Math, also check the indexing setting for this content type."
+redirects.cert_invalid:
+  title: "Invalid certificate on {domain}"
+  why: "The certificate presented by {domain} is refused: {value}. Browsers block the page behind a security warning, and no visitor ever follows the redirect."
+  fix:
+    - "Renew or reinstall the certificate of {domain} from the host's control panel (Let's Encrypt: run the issuance again)."
+    - "If the name is not covered, issue a certificate that contains {domain} in its names (with and without www if both respond)."
+    - "If the chain is not recognized, install the intermediate certificate provided by the authority together with the site's certificate."
+redirects.cert_expiring:
+  title: "The certificate of {domain} expires soon"
+  why: "The certificate of {domain} is only valid for {value} more day(s). If it is not renewed in time, browsers will block the site behind a warning."
+  fix:
+    - "Check that automatic renewal is active in the host's control panel or in the certbot task."
+    - "Run a manual renewal now, then run the measurement again."
+redirects.heavy_body:
+  title: "The HTML of the final page is very heavy"
+  why: "The HTML document of {url} weighs {value}. Googlebot only reads the first 2 MB: what follows is not taken into account for indexing, and the visitor waits for the full download."
+  fix:
+    - "Move large inline data out of the HTML (base64 images, large JSON blocks, embedded styles and scripts) into separate files."
+    - "Paginate very long lists."
+redirects.uncompressed:
+  title: "The final page is not compressed"
+  why: "{url} sends {value} of uncompressed text, although the browser accepts compression. gzip or Brotli compression often cuts the volume by three to five times, and the page displays sooner."
+  fix:
+    - "Apache: enable the deflate (or brotli) module for text/html, text/css, application/javascript and application/json."
+    - "nginx: add gzip on; and gzip_types text/css application/javascript application/json; in the http block."
+redirects.slow:
+  title: "The chain is slow"
+  why: "It takes {value} ms to reach {url}, including {ttfb} ms of waiting for the first byte on the final page. The visitor waits before seeing anything."
+  fix:
+    - "Read the per-hop detail above: if DNS or the connection dominates, reduce the number of hops and domains traversed."
+    - "If the wait for the first byte dominates, enable the page cache of the CMS or server (LiteSpeed Cache, WP Rocket, nginx cache)."
+    - "Run the curl command suggested above again before and after each change: it measures the same phases from your computer."
+redirects.variants_diverge:
+  title: "The site's variants do not end at the same address"
+  why: "Depending on how the address is typed, {domain} leads to {value} different pages. Google sees duplicates, shares the link signal between them, and the visitor does not always find the same version."
+  fix:
+    - "Choose a single reference address, here {final}."
+    - "Redirect all the other variants to it in a single 301, with the rule suggested above."
+redirects.variant_extra_hops:
+  title: "Some variants go through several redirects"
+  why: "Before reaching {final}, these variants chain several redirects (for example http, then https, then www): {value}. A single rule is enough, and each hop avoided speeds up the first visit."
+  fix:
+    - "Replace the successive rules with the single rule suggested above, which sends each variant directly to {target}."
+redirects.variant_unreachable:
+  title: "A variant of the site does not respond"
+  why: "{value} does not respond. Visitors who type this form of the address, or who follow an old link, get an error instead of being redirected."
+  fix:
+    - "If the name does not exist in DNS, create it (a CNAME for www pointing to {domain}, for example), then redirect it with a 301."
+    - "If the name exists but does not respond over https, add it to the site's certificate."
+redirects.language_redirect:
+  title: "Language redirect, temporary on purpose"
+  why: "{url} redirects to {target} with {status}, according to the language announced by the browser. This is content negotiation: a permanent redirect would lock this language in for all visitors and for search engines."
+  fix:
+    - "Keep this temporary code. For search engines, declare the language versions with hreflang links rather than with the redirect."

@@ -1,0 +1,334 @@
+# Famille reputation : réputation et identité du domaine et de l'IP d'envoi, outils de suivi.
+# Les seuils nommés config.* sont des réglages internes de l'outil.
+
+- id: reputation.freemail_from_via_third_party
+  family: reputation
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "headers.from.domain in config.freemail_domains && !(spf.aligned_pass || dkim.aligned_pass)"
+    notes: "Adresse From sur une messagerie gratuite, envoyée par un serveur qui n'appartient pas à cette messagerie. La politique DMARC du domaine gratuit est lue en direct. Relevé du 2026-11-10 : p=reject pour yahoo.com, yahoo.fr, aol.com, sfr.fr, laposte.net ; p=quarantine pour googlemail.com, orange.fr, wanadoo.fr, free.fr, gmx.fr, icloud.com ; p=none avec sp=quarantine pour gmail.com, outlook.com, live.com ; p=none pour hotmail.com, hotmail.fr. Google demande de ne pas usurper les en-têtes From de Gmail et annonce une politique DMARC quarantine pour Gmail."
+  sa_rules: []
+  title: "Vous envoyez avec une adresse {domain} depuis un service qui n'appartient pas à {domain}"
+  why: >
+    Le message porte une adresse {domain} mais part de {provider}, qui ne peut ni signer pour {domain}
+    ni figurer dans son SPF. DMARC échoue toujours : avec la politique actuelle de {domain} ({value}),
+    le message est mis en indésirables ou rejeté.
+  fix:
+    - "Achetez un nom de domaine à votre nom (par exemple votre-entreprise.fr) et créez une adresse dessus."
+    - "Déclarez ce domaine dans votre outil d'envoi et configurez SPF, DKIM et DMARC."
+    - "Gardez éventuellement votre adresse gratuite en Reply-To pendant la transition."
+    - "Pour un message ponctuel depuis une adresse gratuite, envoyez-le depuis le webmail ou les serveurs SMTP de cette messagerie, jamais depuis un outil tiers."
+  fix_by_provider:
+    wordpress: "Dans WP Mail SMTP, ne mettez pas une adresse gmail.com ou orange.fr en From Email : utilisez une adresse du domaine du site, ou passez par le mailer Gmail de l'extension si vous tenez à l'adresse Gmail."
+    mailchimp: "Mailchimp remplace automatiquement une adresse de messagerie gratuite à risque par une adresse sur son propre sous-domaine (send.mailchimpapp.com ou mail.mailchimpapp.com), les réponses allant toujours à votre adresse. Pour envoyer à votre nom, authentifiez votre propre domaine dans Website > Domains."
+  references:
+    - https://support.google.com/a/answer/81126
+    - https://www.rfc-editor.org/rfc/rfc7489#section-6.3
+    - https://mailchimp.com/help/limitations-of-free-email-addresses/
+
+- id: reputation.domain_very_new
+  family: reputation
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "rdap.created(org_domain(headers.from.domain)) > now - config.recent_domain_age"
+    notes: "Date de création lue dans le RDAP du registre (RFC 9083). Seuil interne. Sans réponse RDAP, la situation n'est pas déclenchée."
+  sa_rules: []
+  title: "Le domaine d'envoi vient d'être créé"
+  why: >
+    {domain} a été enregistré il y a {value}. Les domaines neufs sont très utilisés par les
+    spammeurs, qui en changent souvent : les filtres leur accordent peu de confiance tant qu'ils
+    n'ont pas d'historique d'envoi.
+  fix:
+    - "Commencez par envoyer à vos contacts les plus engagés, en petits volumes, puis augmentez progressivement."
+    - "Mettez en ligne un site sur {domain} avec l'identité de l'entreprise et des mentions légales."
+    - "Configurez SPF, DKIM et DMARC dès le premier envoi."
+    - "Inscrivez {domain} dans Gmail Postmaster Tools pour suivre sa réputation."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9083
+    - https://support.google.com/mail/answer/9981691
+
+- id: reputation.from_domain_not_resolvable
+  family: reputation
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "dns.rcode(headers.from.domain) == 'NXDOMAIN' || !dns.can_receive_mail(headers.from.domain)"
+    notes: "Domaine du From inexistant, ou sans MX ni A (RFC 5321 §5.1). Microsoft recommande une adresse From ou Reply-To valide, qui reflète le vrai domaine d'envoi et peut recevoir des réponses."
+  sa_rules: []
+  title: "Le domaine de l'expéditeur ne peut pas recevoir de courrier"
+  why: >
+    {domain} n'existe pas dans le DNS ou n'a aucun serveur de réception. Les réponses et les avis de
+    non-remise sont perdus, et beaucoup de serveurs refusent un expéditeur qu'ils ne peuvent pas joindre.
+  fix:
+    - "Vérifiez l'orthographe du domaine dans le champ expéditeur."
+    - "Si le domaine est le bon, ajoutez un enregistrement MX vers votre service de messagerie."
+    - "Si le domaine a expiré, renouvelez-le chez votre registraire avant tout nouvel envoi."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-5.1
+    - https://techcommunity.microsoft.com/blog/microsoft-defender-for-office-365-blog/strengthening-email-ecosystem-outlook%E2%80%99s-new-requirements-for-high%E2%80%90volume-senders/4399730
+
+- id: reputation.no_website
+  family: reputation
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "!http.get('https://' + org_domain(headers.from.domain)).ok && !http.get('https://www.' + org_domain(headers.from.domain)).ok"
+    notes: "Orange demande aux gros expéditeurs un site web derrière le domaine du From, avec l'identité de l'entreprise, les informations de consentement et les mentions légales."
+  sa_rules: []
+  title: "Aucun site web ne répond sur le domaine de l'expéditeur"
+  why: >
+    https://{domain} ne répond pas. Orange demande aux gros expéditeurs un site sur le domaine du From
+    avec l'identité de l'entreprise, et les destinataires qui veulent vérifier qui vous êtes ne
+    trouvent rien.
+  fix:
+    - "Publiez au minimum une page sur {domain} avec le nom de l'entreprise, l'adresse, les mentions légales et la politique de confidentialité."
+    - "Si votre site est sur un autre domaine, faites rediriger https://{domain} vers lui."
+  references:
+    - https://postmaster.orange.fr/
+
+- id: reputation.from_domain_differs_from_links
+  family: reputation
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "message.links.main_domain != null && org_domain(headers.from.domain) != org_domain(message.links.main_domain) && !rdap.same_registrant(headers.from.domain, message.links.main_domain)"
+    notes: "Le domaine d'envoi n'est pas celui du site mis en avant dans les liens. Courant pour un domaine d'envoi dédié ; à rapprocher de links.no_link_to_sender_domain (ne pas cumuler)."
+  sa_rules: []
+  title: "Le domaine d'envoi n'est pas celui du site mis en avant"
+  why: >
+    Le message part de {domain} mais renvoie surtout vers {value}. Les filtres et les lecteurs ne font
+    pas le lien entre les deux, et la réputation de votre site ne profite pas à vos envois.
+  fix:
+    - "Envoyez depuis le domaine de votre site ou depuis un de ses sous-domaines, par exemple news.{value}."
+    - "Si vous gardez un domaine séparé, faites-le rediriger vers votre site et citez-le dans le pied de page."
+  references:
+    - https://postmaster.orange.fr/
+
+- id: reputation.lookalike_domain
+  family: reputation
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "levenshtein(org_domain(headers.from.domain), config.protected_brand_domains) <= config.lookalike_distance || headers.from.domain.unicode.is_confusable_with(config.protected_brand_domains)"
+    notes: "Domaine qui ressemble à celui d'une marque connue (lettre doublée, inversée, caractère confusable). Liste et distance internes."
+  sa_rules: []
+  title: "Le domaine d'envoi ressemble à celui d'une marque connue"
+  why: >
+    {domain} ressemble beaucoup à {value}. Les filtres antihameçonnage surveillent ces domaines
+    voisins des grandes marques et pénalisent fortement leurs envois.
+  fix:
+    - "Si ce domaine est le vôtre de longue date, publiez DMARC en p=reject et un BIMI pour renforcer son identité."
+    - "Si vous l'avez acheté récemment, envoyez plutôt depuis un domaine qui ne prête pas à confusion."
+  references:
+    - https://www.unicode.org/reports/tr39/
+
+- id: reputation.noreply_sender
+  family: reputation
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "headers.from.local ~ /^(no[-_.]?reply|ne[-_.]?pas[-_.]?repondre|donotreply|do[-_.]not[-_.]reply)$/i && headers.reply_to == null"
+    notes: "Microsoft recommande une adresse From ou Reply-To valide qui peut recevoir des réponses."
+  sa_rules: []
+  title: "L'expéditeur est une adresse « ne pas répondre »"
+  why: >
+    Les destinataires ne peuvent pas vous répondre. Microsoft recommande une adresse qui reçoit les
+    réponses, et un lecteur qui ne peut pas répondre utilise plus volontiers le bouton « Spam ».
+  fix:
+    - "Utilisez une adresse qui reçoit vraiment les réponses, par exemple contact@{domain}."
+    - "Si vous gardez noreply, ajoutez un Reply-To vers une boîte consultée."
+  example_good: |
+    From: Votre entreprise <noreply@{domain}>
+    Reply-To: service-client@{domain}
+  references:
+    - https://techcommunity.microsoft.com/blog/microsoft-defender-for-office-365-blog/strengthening-email-ecosystem-outlook%E2%80%99s-new-requirements-for-high%E2%80%90volume-senders/4399730
+
+- id: reputation.ip_new_no_history
+  family: reputation
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "reputation.ip_first_seen(ip) > now - config.ip_warmup_period || reputation.ip_volume_history(ip) == 'none'"
+    notes: "Historique de l'IP issu des sources de réputation consultées par l'outil et de ses propres tests. Une IP sans historique n'est pas fautive, mais elle n'a aucune réputation. Aucun fournisseur ne publie de calendrier de chauffe chiffré dans les pages consultées."
+  sa_rules: []
+  title: "L'IP d'envoi n'a pas encore d'historique"
+  why: >
+    L'IP {ip} est neuve ou n'a presque jamais envoyé. Les grandes messageries jugent une IP sur son
+    historique : un gros volume immédiat depuis une IP inconnue est traité comme du spam.
+  fix:
+    - "Montez le volume progressivement sur plusieurs semaines, en commençant par vos contacts les plus actifs."
+    - "Surveillez les rejets temporaires (codes 4xx) et ralentissez dès qu'ils apparaissent."
+    - "Si votre volume est faible, préférez une IP partagée de votre outil d'envoi, qui a déjà une réputation."
+  fix_by_provider:
+    sendgrid: "Activez IP Warmup sur l'IP dédiée dans Settings > IP Addresses : SendGrid répartit automatiquement le volume."
+    amazon_ses: "Activez le réchauffement automatique (standard auto warm-up) sur le pool d'IP dédiées, ou utilisez les IP dédiées gérées."
+  references:
+    - https://www.m3aawg.org/published-documents
+    - https://docs.aws.amazon.com/ses/latest/dg/dedicated-ip-warming.html
+
+- id: reputation.shared_esp_identity
+  family: reputation
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "provider != null && org_domain(dkim_domain) == provider.domain && org_domain(envelope_domain) == provider.domain"
+    notes: "Signature DKIM et Return-Path sur le domaine de l'outil d'envoi : la réputation reste celle de l'outil, pas la vôtre. La pénalité d'alignement relève de la famille alignment ; ne pas cumuler."
+  sa_rules: []
+  title: "Vos envois portent la signature de {provider}, pas la vôtre"
+  why: >
+    DKIM signe pour {dkim_domain} et les rebonds vont vers {envelope_domain}, deux domaines de
+    {provider}. Votre réputation dépend alors de tous ses clients, et DMARC ne peut pas s'aligner sur
+    {domain}.
+  fix:
+    - "Authentifiez {domain} dans {provider} : DKIM avec d={domain} et domaine de retour sur un sous-domaine de {domain}."
+    - "Publiez les enregistrements DNS que l'outil vous fournit, puis renvoyez un test."
+  fix_by_provider:
+    brevo: "Paramètres > Expéditeurs, domaines et IP dédiées > Domaines > Ajouter un domaine, puis publiez les enregistrements Brevo indiqués."
+    mailchimp: "Website > Domains > Authenticate : publiez les CNAME DKIM fournis par Mailchimp."
+    sendgrid: "Settings > Sender Authentication > Authenticate Your Domain."
+    mailjet: "Dans les réglages du compte Mailjet, section des domaines et adresses d'expéditeur : ajoutez {domain}, puis publiez les enregistrements SPF et DKIM fournis."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7489#section-3.1
+
+- id: reputation.feedback_id_missing
+  family: reputation
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "message.is_bulk && headers.count('Feedback-ID') == 0"
+    notes: "Gmail : Feedback-ID: a:b:c:SenderId alimente la boucle de rétroaction de Postmaster Tools (destinataires @gmail.com seulement). Orange demande cet en-tête aux expéditeurs de plus de 1 000 messages par jour."
+  sa_rules: []
+  title: "Le message n'a pas d'en-tête Feedback-ID"
+  why: >
+    Sans Feedback-ID, Gmail Postmaster Tools ne peut pas vous dire quelle campagne génère des plaintes.
+    Orange demande aussi cet en-tête aux expéditeurs de plus de 1 000 messages par jour.
+  fix:
+    - "Ajoutez un en-tête Feedback-ID: campagne:client:type:IdentifiantExpediteur."
+    - "Gardez le même identifiant expéditeur (dernier champ, de 5 à 15 caractères) pour tout votre flux."
+    - "Ajoutez l'en-tête avant la signature DKIM, et signez avec un domaine vérifié dans Postmaster Tools."
+  example_good: "Feedback-ID: lettre-novembre:clients:newsletter:monentreprise"
+  references:
+    - https://support.google.com/a/answer/6254652
+    - https://postmaster.orange.fr/
+
+- id: reputation.feedback_id_malformed
+  family: reputation
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "headers.count('Feedback-ID') > 1 || headers.feedback_id.sender_id.length !in 5..15 || headers.feedback_id.fields.any(f => f.is_per_message_unique) || !dkim.covers(['feedback-id'])"
+    notes: "Gmail : un seul en-tête Feedback-ID vérifié par message ; SenderId obligatoire, de 5 à 15 caractères ; ne pas utiliser de valeur unique par message comme le Message-ID ; message signé DKIM après ajout de l'en-tête."
+  sa_rules: []
+  title: "L'en-tête Feedback-ID est mal construit"
+  why: >
+    L'en-tête Feedback-ID ne respecte pas le format de Google ({value}). Postmaster Tools ne pourra
+    pas regrouper les plaintes, et la boucle de rétroaction ne vous servira à rien.
+  fix:
+    - "Gardez un seul en-tête Feedback-ID par message."
+    - "Mettez en dernier champ un identifiant expéditeur fixe de 5 à 15 caractères."
+    - "N'utilisez jamais une valeur propre à chaque message (Message-ID, adresse du destinataire)."
+    - "Incluez feedback-id dans les en-têtes signés par DKIM."
+  example_bad: "Feedback-ID: <20261110.4f2a9c@{domain}>"
+  example_good: "Feedback-ID: lettre-novembre:clients:newsletter:monentreprise"
+  references:
+    - https://support.google.com/a/answer/6254652
+
+- id: reputation.postmaster_tools_suggested
+  family: reputation
+  severity: info
+  penalty: 0
+  detect:
+    signal: "message.is_bulk"
+    notes: "Non détectable de l'extérieur : l'outil ne peut pas savoir si le domaine est inscrit. Conseil affiché pour tout envoi en volume. Postmaster Tools fournit le taux de spam et le tableau de bord de conformité."
+  sa_rules: []
+  title: "Suivez {domain} dans Gmail Postmaster Tools"
+  why: >
+    Postmaster Tools est le seul endroit où Gmail donne votre taux de plaintes et votre état de
+    conformité aux exigences des expéditeurs en volume. Sans lui, vous découvrez un problème quand
+    vos messages sont déjà en spam.
+  fix:
+    - "Ouvrez postmaster.google.com avec un compte Google, ajoutez {domain}."
+    - "Publiez l'enregistrement TXT de vérification fourni dans la zone DNS de {domain}."
+    - "Consultez chaque semaine le taux de spam et le tableau Compliance status."
+  references:
+    - https://support.google.com/mail/answer/9981691
+    - https://support.google.com/a/answer/14229414
+
+- id: reputation.snds_suggested
+  family: reputation
+  severity: info
+  penalty: 0
+  detect:
+    signal: "message.is_bulk && smtp.sending_ip_is_dedicated"
+    notes: "Non détectable de l'extérieur. Microsoft SNDS donne des données par IP ; utile seulement si vous contrôlez vos IP d'envoi."
+  sa_rules: []
+  title: "Suivez votre IP dans Microsoft SNDS"
+  why: >
+    Si {ip} vous est dédiée, Microsoft SNDS vous montre comment Outlook.com voit son trafic : volume,
+    taux de plaintes et pièges à spam. C'est l'équivalent de Postmaster Tools pour Microsoft.
+  fix:
+    - "Ouvrez sendersupport.olc.protection.outlook.com/snds/ et demandez l'accès pour la plage d'IP qui contient {ip}."
+    - "Validez la demande par l'adresse de contact proposée (abuse ou postmaster du domaine de l'IP)."
+  references:
+    - https://sendersupport.olc.protection.outlook.com/snds/
+
+- id: reputation.yahoo_cfl_suggested
+  family: reputation
+  severity: info
+  penalty: 0
+  detect:
+    signal: "message.is_bulk && dkim.valid_signatures.any()"
+    notes: "Yahoo : une CFL active est nécessaire pour tous les domaines DKIM ; le domaine d= doit être inscrit ; clé de 1 024 bits ou plus. Non détectable de l'extérieur."
+  sa_rules: []
+  title: "Inscrivez {dkim_domain} à la boucle de rétroaction de Yahoo"
+  why: >
+    Yahoo envoie le détail des plaintes aux domaines DKIM inscrits à sa Complaint Feedback Loop.
+    Sans inscription, vous ne savez pas quels contacts vous signalent et vous continuez à leur écrire.
+  fix:
+    - "Inscrivez le domaine de signature {dkim_domain} sur senders.yahooinc.com, rubrique Complaint Feedback Loop."
+    - "Désinscrivez automatiquement chaque contact qui apparaît dans les rapports reçus."
+  references:
+    - https://senders.yahooinc.com/complaint-feedback-loop/
+    - https://senders.yahooinc.com/faqs/
+
+- id: reputation.signal_spam_fbl_suggested
+  family: reputation
+  severity: info
+  penalty: 0
+  detect:
+    signal: "message.is_bulk && recipients.include_domains(['laposte.net'])"
+    notes: "La Poste renvoie vers le formulaire d'inscription à la boucle de rétroaction par IP de Signal Spam (espace pro). Non détectable de l'extérieur."
+  sa_rules: []
+  title: "Inscrivez votre IP à la boucle de rétroaction Signal Spam"
+  why: >
+    La Poste transmet les plaintes de ses utilisateurs par la boucle de rétroaction de Signal Spam.
+    Sans inscription, vous ne voyez pas les signalements de vos destinataires laposte.net.
+  fix:
+    - "Créez un compte sur l'espace pro de Signal Spam et inscrivez l'IP {ip} ou votre domaine."
+    - "Désinscrivez automatiquement les contacts qui vous signalent."
+  references:
+    - https://www.signal-spam.fr/espace-pro/
+    - https://postmaster.laposte.net/
+
+- id: reputation.bimi_absent
+  family: reputation
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dns.txt('default._bimi.' + headers.from.domain) == null"
+    notes: "BIMI n'est pas une exigence : son absence ne pénalise pas. Google (page d'aide BIMI) : DMARC en p=quarantine ou p=reject avec pct=100, p=none non pris en charge ; certificat VMC ou CMC ; logo SVG au profil SVG Tiny PS."
+  sa_rules: []
+  title: "Pas de logo BIMI pour {domain}"
+  why: >
+    BIMI affiche votre logo à côté de vos messages dans les messageries qui le prennent en charge.
+    Son absence ne pénalise pas la délivrabilité ; c'est un bonus d'identité visuelle.
+  fix:
+    - "Passez d'abord DMARC de {domain} en p=quarantine ou p=reject, avec pct=100 ou sans pct."
+    - "Préparez le logo en SVG au profil SVG Tiny PS (baseProfile='tiny-ps', version='1.2')."
+    - "Pour Gmail, obtenez un certificat VMC ou CMC auprès d'une autorité de certification, puis publiez l'enregistrement default._bimi.{domain} avec l'adresse du logo (l=) et celle du certificat (a=)."
+  example_good: "default._bimi.{domain}. IN TXT \"v=BIMI1; l=https://{domain}/bimi/logo.svg; a=https://{domain}/bimi/certificat.pem\""
+  references:
+    - https://bimigroup.org/
+    - https://knowledge.workspace.google.com/admin/security/set-up-bimi

@@ -1,0 +1,161 @@
+# Famille alignment : correspondance entre le domaine visible {domain} (en-tête From) et les
+# domaines authentifiés par SPF ({envelope_domain}) et DKIM ({dkim_domain}). DMARC passe si
+# au moins un des deux est authentifié ET aligné (RFC 9989 §4.4). En mode relâché (défaut),
+# un sous-domaine du même domaine organisationnel suffit.
+
+- id: alignment.none_aligned
+  family: alignment
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "not (spf.result == pass && aligned(envelope_domain, domain)) && not any(s.result == pass && aligned(s.d, domain) for s in dkim.signatures)"
+    notes: "Aucune authentification à la fois réussie et alignée. Gmail exige pour les envois en nombre que le From soit aligné avec le domaine SPF ou DKIM. Pénalité d'alignement seule ; la conséquence de la politique est comptée dans dmarc.fail_*."
+  sa_rules: []
+  title: "Ni SPF ni DKIM ne sont alignés sur {domain}"
+  why: >
+    Le message est peut-être authentifié, mais au nom d'un autre domaine ({envelope_domain},
+    {dkim_domain}). Pour DMARC et pour Gmail, rien ne prouve que {domain} l'a autorisé.
+  fix:
+    - "Configurez dans {provider} la signature DKIM avec d={domain} : c'est l'alignement le plus solide."
+    - "Si le service le permet, configurez aussi un domaine de retour (Return-Path) personnalisé sur un sous-domaine de {domain}."
+    - "Refaites le test : au moins un des deux doit apparaître comme aligné."
+  fix_by_provider:
+    brevo: "Settings, Senders, Domains, IPs, Domains, Authenticate : les CNAME brevo1/brevo2._domainkey alignent DKIM ; le CNAME « Branded » aligne le Return-Path."
+    mailchimp: "Account & billing, Domains, Start authentication : les deux CNAME DKIM alignent la signature sur {domain}."
+    sendgrid: "Settings, Sender Authentication, Domain Authentication : le CNAME em… aligne le Return-Path, s1 et s2._domainkey alignent DKIM."
+    amazon_ses: "Vérifiez {domain} avec Easy DKIM pour aligner DKIM ; pour aligner SPF, configurez un MAIL FROM personnalisé sur un sous-domaine de {domain}."
+    mailjet: "Authentifiez le domaine (DKIM mailjet._domainkey) ; le Return-Path personnalisé bnc3.{domain} vers bnc3.mailjet.com est réservé aux comptes payants, sur demande au support."
+    postmark: "Publiez la clé DKIM du domaine et le CNAME de Return-Path personnalisé vers pm.mtasv.net ; Postmark précise que DMARC passe par DKIM même si le SPF n'est pas aligné."
+    hubspot: "Connectez le domaine d'envoi dans Settings, Content, Domains & URLs, Email Sending ; sur le réseau partagé de HubSpot, le Return-Path ne peut pas être personnalisé, l'alignement passe donc par DKIM."
+    microsoft_365: "Activez DKIM pour {domain} : Microsoft 365 ne signe pas un domaine personnalisé tant que DKIM n'y est pas configuré."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.4
+    - https://support.google.com/mail/answer/81126
+    - https://help.brevo.com/hc/en-us/articles/35337929909778-Set-up-your-domain-in-Brevo
+    - https://www.twilio.com/docs/sendgrid/ui/account-and-settings/how-to-set-up-domain-authentication
+    - https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dmarc.html
+    - https://documentation.mailjet.com/hc/en-us/articles/360047253194
+    - https://postmarkapp.com/support/article/1093-why-do-emails-sent-through-postmark-fail-spf-alignment
+    - https://knowledge.hubspot.com/marketing-email/understand-email-sending-in-hubspot
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dkim-configure
+
+- id: alignment.spf_not_aligned
+  family: alignment
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "spf.result == pass && not aligned(envelope_domain, domain) && any(s.result == pass && aligned(s.d, domain) for s in dkim.signatures)"
+    notes: "SPF passe pour {envelope_domain} (domaine du fournisseur en général), mais pas pour {domain}. DMARC passe grâce à DKIM. Situation normale chez Mailchimp, Postmark ou SES sans MAIL FROM personnalisé."
+  sa_rules: []
+  title: "Le SPF passe pour {envelope_domain}, pas pour {domain}"
+  why: >
+    Votre DMARC repose uniquement sur DKIM. Ce n'est pas une erreur, mais si la signature
+    casse en chemin (liste de diffusion, antivirus), plus rien n'authentifie {domain}.
+  fix:
+    - "Si {provider} propose un domaine de retour personnalisé, configurez-le sur un sous-domaine de {domain} (par exemple bounce.{domain})."
+    - "Sinon, aucune action n'est nécessaire tant que DKIM reste aligné."
+  fix_by_provider:
+    amazon_ses: "Configurez un MAIL FROM personnalisé : MX 10 feedback-smtp.<région>.amazonses.com et TXT v=spf1 include:amazonses.com ~all sur le sous-domaine choisi."
+    postmark: "Créez le CNAME de Return-Path personnalisé (sous-domaine de {domain}) vers pm.mtasv.net, avec le nom affiché dans DNS Settings."
+    sendgrid: "Avec automated security, le CNAME em… suffit ; vérifiez qu'il est validé dans Sender Authentication."
+    mailchimp: "Mailchimp utilise son propre domaine de retour : l'alignement passe par DKIM, rien à faire de plus."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.4.2
+    - https://docs.aws.amazon.com/ses/latest/dg/mail-from.html
+    - https://postmarkapp.com/support/article/how-do-i-verify-a-domain
+
+- id: alignment.dkim_not_aligned
+  family: alignment
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(s.result == pass for s in dkim.signatures) && not any(s.result == pass && aligned(s.d, domain) for s in dkim.signatures) && spf.result == pass && aligned(envelope_domain, domain)"
+    notes: "DKIM passe pour un autre domaine ({dkim_domain}) ; DMARC ne passe que grâce au SPF aligné, qui casse au premier transfert."
+  sa_rules: []
+  title: "DKIM passe pour {dkim_domain}, pas pour {domain}"
+  why: >
+    DMARC ne tient que par le SPF. Dès qu'un destinataire transfère le message (redirection
+    d'adresse, liste), le SPF casse et DMARC échoue, avec rejet si {domain} est en p=reject.
+  fix:
+    - "Configurez dans {provider} une signature DKIM avec d={domain}."
+    - "Publiez les enregistrements DKIM fournis puis refaites le test."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.4.1
+    - https://www.rfc-editor.org/rfc/rfc7960
+
+- id: alignment.spf_only
+  family: alignment
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "dkim.signatures == [] && spf.result == pass && aligned(envelope_domain, domain)"
+    notes: "DMARC passe uniquement par le SPF, sans aucune signature DKIM. Les transferts cassent le SPF (RFC 7960)."
+  sa_rules: []
+  title: "DMARC passe uniquement grâce au SPF"
+  why: >
+    Le message n'est pas signé : seul le SPF authentifie {domain}. Les messages transférés
+    par vos destinataires échoueront à DMARC, et Gmail demande SPF et DKIM aux envois en
+    nombre.
+  fix:
+    - "Activez DKIM pour {domain} dans le service d'envoi ({provider})."
+    - "Gardez le SPF tel quel : les deux se complètent."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7960
+    - https://support.google.com/mail/answer/81126
+
+- id: alignment.relaxed_only
+  family: alignment
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dmarc.result == pass && not any(exact_match(x, domain) for x in aligned_identifiers) && any(relaxed_match(x, domain) for x in aligned_identifiers)"
+    notes: "Alignement obtenu par un sous-domaine du même domaine organisationnel (par exemple d=mail.{domain} pour From {domain}). Valide en mode relâché, le mode par défaut (RFC 9989 §4.4)."
+  sa_rules: []
+  title: "L'alignement repose sur un sous-domaine de {domain}"
+  why: >
+    C'est valide et courant chez les services d'envoi. Retenez simplement que passer en
+    alignement strict (adkim=s ou aspf=s) ferait échouer ces messages.
+  fix:
+    - "Ne réglez pas adkim=s ni aspf=s dans votre DMARC tant que ce service signe avec un sous-domaine."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.4
+
+- id: alignment.freemail_from
+  family: alignment
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "is_consumer_mailbox_domain(domain) && dmarc.result == fail"
+    notes: "Adresse d'une messagerie grand public (gmail.com, yahoo.fr, outlook.fr, orange.fr, laposte.net, icloud.com…) utilisée comme expéditeur via un serveur tiers (outil d'emailing, site web), qui ne peut pas signer pour ce domaine. Politiques relevées le 2026-11-10 : yahoo.com, yahoo.fr, aol.com, laposte.net et sfr.fr en p=reject ; googlemail.com, orange.fr, free.fr, icloud.com et gmx.fr en p=quarantine ; gmail.com, outlook.com et hotmail.com en p=none, mais Google annonce appliquer une quarantaine aux usurpations de ses en-têtes From. Lire la politique réelle au moment du test."
+  sa_rules: []
+  title: "Le message est envoyé au nom de {domain} par un serveur qui n'en dépend pas"
+  why: >
+    Une adresse {domain} ne peut être authentifiée que par les serveurs de {domain}. Envoyée
+    par {provider}, elle échoue à DMARC, et la politique publiée par {domain}
+    ({dmarc_record}) fait rejeter le message ou l'envoie en spam chez la plupart des
+    destinataires.
+  fix:
+    - "Utilisez une adresse d'expédition sur votre propre domaine (par exemple contact@votre-domaine.fr), authentifié dans {provider}."
+    - "Gardez si besoin l'adresse {domain} en Reply-To pour recevoir les réponses."
+  references:
+    - https://support.google.com/mail/answer/81126
+    - https://www.rfc-editor.org/rfc/rfc9989#section-4.4
+
+- id: alignment.multiple_from
+  family: alignment
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "count(message.headers('From')) > 1 || count(unique(domain_of(a) for a in message.from_addresses)) > 1"
+    notes: "RFC 9989 §5.3.1 : si zéro ou plusieurs domaines sont extraits du From, la validation DMARC n'est pas possible (le destinataire peut continuer, à sa discrétion). Plusieurs en-têtes From violent aussi la RFC 5322 §3.6."
+  sa_rules: []
+  title: "Le message contient plusieurs adresses ou en-têtes From"
+  why: >
+    Avec plusieurs expéditeurs, le destinataire ne sait pas quel domaine vérifier. DMARC ne
+    peut pas s'appliquer et de nombreux serveurs refusent ces messages comme mal formés.
+  fix:
+    - "Configurez votre logiciel pour n'émettre qu'un en-tête From contenant une seule adresse."
+    - "Mettez les autres adresses en Reply-To ou en copie."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-5.3.1
+    - https://www.rfc-editor.org/rfc/rfc5322#section-3.6

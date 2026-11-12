@@ -1,0 +1,148 @@
+tls.inbound_plaintext:
+  title: Die Nachricht wurde ohne TLS-Verschlüsselung übertragen
+  why: Ihr Server hat die Nachricht unverschlüsselt gesendet, obwohl der Empfänger Verschlüsselung anbot. Gmail verlangt von allen Absendern eine TLS-Verbindung, und der Inhalt kann unterwegs mitgelesen werden.
+  fix:
+    - Aktivieren Sie die opportunistische Verschlüsselung (STARTTLS) für die ausgehenden Nachrichten Ihres Servers.
+    - Prüfen Sie, dass eine aktuelle TLS-Bibliothek installiert ist und der Server TLS gegenüber bestimmten Domains nicht deaktiviert.
+    - "Wiederholen Sie den Test: Der Header Received muss with ESMTPS angeben."
+  fix_by_provider:
+    postfix: "In main.cf setzen Sie smtp_tls_security_level = may (und smtp_tls_loglevel = 1 zur Nachverfolgung), danach postfix reload."
+    exim: Im Transport remote_smtp lassen Sie hosts_try_tls = * (Standardwert) stehen und prüfen Sie, dass kein hosts_avoid_tls den Empfänger betrifft.
+    wordpress: "Wählen Sie in Ihrer SMTP-Erweiterung die Verschlüsselung TLS (Port 587) oder SSL (Port 465), niemals „Keine“."
+tls.inbound_old_version:
+  title: "Die Nachricht wurde mit {value} übertragen, einer veralteten TLS-Version"
+  why: "TLS 1.0 und 1.1 sind seit RFC 8996 aufgegeben. Empfangende Server lehnen sie zunehmend ab: Ihr Server riskiert dann, unverschlüsselt zu senden oder nicht mehr zustellen zu können."
+  fix:
+    - Aktualisieren Sie das System und die TLS-Bibliothek (OpenSSL, GnuTLS) des Versandservers.
+    - Erlauben Sie TLS 1.2 und TLS 1.3 in der Konfiguration der Versandsoftware.
+    - Wiederholen Sie den Test und prüfen Sie die im Header Received angezeigte Version.
+  fix_by_provider:
+    postfix: "In main.cf setzen Sie smtp_tls_protocols = >=TLSv1.2 (Postfix 3.6 oder neuer; sonst !SSLv2, !SSLv3, !TLSv1, !TLSv1.1), danach postfix reload."
+tls.inbound_weak_cipher:
+  title: "Die TLS-Verbindung nutzte eine schwache Cipher-Suite ({value})"
+  why: Die Verschlüsselung, die Ihr Server ausgehandelt hat, ist gebrochen oder zu schwach, um die Nachricht zu schützen. Sie weist außerdem auf eine alte Software hin, die Empfänger früher oder später ablehnen werden.
+  fix:
+    - Aktualisieren Sie die TLS-Bibliothek des Versandservers.
+    - Entfernen Sie RC4-, 3DES-, NULL-, Export- und anonyme Cipher-Suiten aus der Konfiguration.
+  fix_by_provider:
+    postfix: "In main.cf setzen Sie smtp_tls_ciphers = medium und smtp_tls_exclude_ciphers = aNULL, eNULL, RC4, 3DES, MD5, danach postfix reload."
+tls.submission_without_tls:
+  title: Das Passwort für den Versand wurde unverschlüsselt übertragen
+  why: "Ihre Software hat sich ohne TLS am Versandserver angemeldet. Wer das Netz mitliest, kann die Zugangsdaten abgreifen und damit in Ihrem Namen Spam versenden, was den Ruf von {domain} zerstören würde."
+  fix:
+    - Wählen Sie in Ihrem Mailprogramm oder Ihrer Anwendung Port 465 mit SSL/TLS oder Port 587 mit verpflichtendem STARTTLS.
+    - Ändern Sie das Passwort des Kontos, da es möglicherweise abgefangen wurde.
+    - Lehnen Sie auf Serverseite die Authentifizierung ohne TLS ab.
+  fix_by_provider:
+    postfix: "Setzen Sie auf dem Einreichungsserver smtpd_tls_auth_only = yes in main.cf."
+    wordpress: "Wählen Sie in Ihrer SMTP-Erweiterung die Verschlüsselung SSL (465) oder TLS (587)."
+tls.mx_no_starttls:
+  title: "Der Empfangsserver von {domain} bietet keine Verschlüsselung an"
+  why: Die an {domain} gesendeten Nachrichten laufen unverschlüsselt. Absender, die TLS verlangen (MTA-STS, interne Richtlinien), können Ihnen nicht zustellen, und die Antworten auf Ihre Versände sind unterwegs lesbar.
+  fix:
+    - Installieren Sie auf dem Empfangsserver ein Zertifikat (Let's Encrypt eignet sich) für den im MX verwendeten Namen.
+    - Aktivieren Sie STARTTLS auf Port 25 des Servers.
+    - "Wiederholen Sie den Test: Die Antwort auf EHLO muss STARTTLS enthalten."
+  fix_by_provider:
+    postfix: "In main.cf tragen Sie smtpd_tls_cert_file und smtpd_tls_key_file ein, setzen smtpd_tls_security_level = may und laden Sie Postfix mit postfix reload neu."
+    exim: Tragen Sie tls_certificate und tls_privatekey ein und lassen Sie in der Hauptkonfiguration tls_advertise_hosts = * stehen.
+tls.mx_starttls_broken:
+  title: "Die angekündigte Verschlüsselung des MX von {domain} schlägt fehl"
+  why: "Der Server von {domain} bietet TLS an, doch die Aushandlung scheitert. Je nach Absender wird die Nachricht verzögert, unverschlüsselt zugestellt oder abgebrochen: Sie verlieren einen Teil der eingehenden Post."
+  fix:
+    - Lesen Sie im Protokoll des Empfangsservers zum Zeitpunkt des Tests den TLS-Fehler.
+    - Prüfen Sie, dass die Zertifikats- und Schlüsseldateien existieren, für den Dienst lesbar sind und zusammenpassen.
+    - Aktivieren Sie TLS 1.2 und TLS 1.3 und starten Sie den Dienst neu.
+tls.mx_old_version_only:
+  title: "Der MX von {domain} akzeptiert nur veraltete TLS-Versionen"
+  why: Aktuelle Absender lehnen TLS 1.0 und 1.1 ab. Über diesen Server liefern sie unverschlüsselt aus oder gar nicht, insbesondere Absender, die MTA-STS anwenden.
+  fix:
+    - Aktualisieren Sie das System und die TLS-Bibliothek des Empfangsservers.
+    - Aktivieren Sie TLS 1.2 und TLS 1.3 in der SMTP-Konfiguration.
+  fix_by_provider:
+    postfix: "In main.cf setzen Sie smtpd_tls_protocols = >=TLSv1.2 (Postfix 3.6 oder neuer), danach postfix reload."
+tls.mx_cert_expired:
+  title: "Das TLS-Zertifikat des MX von {domain} ist abgelaufen"
+  why: "Absender, die das Zertifikat prüfen, etwa weil {domain} eine MTA-STS-Richtlinie veröffentlicht, verweigern die Zustellung. Die anderen liefern ohne Gewähr für die Identität."
+  fix:
+    - Erneuern Sie das Zertifikat des Empfangsservers.
+    - "Automatisieren Sie die Erneuerung (certbot renew oder gleichwertig) und laden Sie den SMTP-Dienst nach jeder Erneuerung neu."
+tls.mx_cert_expiring:
+  title: "Das TLS-Zertifikat des MX von {domain} läuft bald ab"
+  why: In weniger als zwei Wochen können Absender, die das Zertifikat prüfen, nicht mehr an {domain} zustellen.
+  fix:
+    - "Prüfen Sie, dass die automatische Erneuerung funktioniert (zum Beispiel certbot renew --dry-run)."
+    - Kontrollieren Sie, dass der SMTP-Dienst das neue Zertifikat lädt und nicht nur der Webserver.
+tls.mx_cert_self_signed:
+  title: "Der MX von {domain} verwendet ein selbstsigniertes Zertifikat"
+  why: Ein selbstsigniertes Zertifikat verschlüsselt die Verbindung, beweist aber nicht die Identität des Servers. Sie können MTA-STS nicht aktivieren, und Absender, die es verlangen, werden Ihnen nicht zustellen.
+  fix:
+    - Ersetzen Sie das Zertifikat durch eines einer anerkannten Zertifizierungsstelle (Let's Encrypt ist kostenlos) für den Namen des MX.
+    - Verwenden Sie DANE, veröffentlichen Sie den TLSA-Eintrag zum neuen Zertifikat, bevor Sie es installieren.
+tls.mx_cert_name_mismatch:
+  title: "Das Zertifikat des MX von {domain} trägt den falschen Namen"
+  why: Das Zertifikat wurde für einen anderen Namen als den Ihres MX ausgestellt. Absender, die die Identität des Servers prüfen, darunter solche, die MTA-STS anwenden, werden nicht zustellen.
+  fix:
+    - "Stellen Sie ein Zertifikat aus, das genau den Namen des MX abdeckt (zum Beispiel mx1.{domain})."
+    - Oder ändern Sie den MX so, dass er auf den Namen zeigt, den das aktuelle Zertifikat abdeckt.
+tls.mx_cert_chain_incomplete:
+  title: "Der MX von {domain} sendet keine vollständige Zertifikatskette"
+  why: Das Zwischenzertifikat fehlt. Ein Teil der Absender kann Ihr Zertifikat nicht prüfen, was ausreicht, um ihre Zustellung zu blockieren, wenn {domain} MTA-STS veröffentlicht.
+  fix:
+    - "Konfigurieren Sie den Server mit der Datei, die das Zertifikat gefolgt von den Zwischenzertifikaten enthält (fullchain.pem bei Let's Encrypt)."
+    - Starten Sie den SMTP-Dienst neu und wiederholen Sie den Test.
+  fix_by_provider:
+    postfix: "Lassen Sie smtpd_tls_cert_file auf fullchain.pem statt auf cert.pem zeigen, danach postfix reload."
+tls.dane_tlsa_mismatch:
+  title: "Die TLSA-Einträge (DANE) des MX von {domain} passen nicht mehr zum Zertifikat"
+  why: "Absender, die DANE prüfen, verweigern die Zustellung an {domain}, solange das TLSA nicht zum vorgelegten Zertifikat passt: Sie verzögern die Nachricht und senden sie dann mit einem Fehler zurück."
+  fix:
+    - "Berechnen Sie den Fingerabdruck des öffentlichen Schlüssels des aktuellen Zertifikats (Verwendung 3 1 1: DANE-EE, SPKI, SHA-256)."
+    - "Veröffentlichen Sie den neuen TLSA-Eintrag neben dem alten unter _25._tcp.<Name des MX>."
+    - "Verwenden Sie bei den nächsten Erneuerungen denselben Schlüssel erneut (certbot --reuse-key) oder veröffentlichen Sie den TLSA des künftigen Schlüssels, bevor Sie ihn installieren."
+tls.dane_unsigned:
+  title: "Der MX von {domain} veröffentlicht TLSA-Einträge in einer nicht signierten Zone"
+  why: "Ohne DNSSEC ignorieren Absender Ihre TLSA-Einträge: Sie bieten keinen Schutz und vermitteln nur einen falschen Eindruck von Sicherheit."
+  fix:
+    - Aktivieren Sie DNSSEC für die Zone, die den Namen des MX trägt, und hinterlegen Sie danach den DS-Eintrag bei Ihrem Registrar.
+    - Oder entfernen Sie die TLSA-Einträge, solange die Zone nicht signiert ist.
+tls.dane_pkix_usage:
+  title: "Die TLSA-Einträge des MX von {domain} verwenden einen für SMTP nicht empfohlenen Typ"
+  why: Die Verwendungen 0 und 1 beruhen auf Zertifizierungsstellen, bei denen sich die Mailserver nicht einig sind. DANE-Absender können sie als unbrauchbar behandeln.
+  fix:
+    - Ersetzen Sie diese Einträge durch ein TLSA 3 1 1, berechnet über den öffentlichen Schlüssel des Zertifikats.
+    - Behalten Sie den alten und den neuen Eintrag für die Dauer der TTL parallel und entfernen Sie danach den alten.
+tls.web_cert_expired:
+  title: "Das HTTPS-Zertifikat von {domain} ist abgelaufen"
+  why: "Der Browser zeigt auf {url} eine Sicherheitswarnung. Eine gepflegte Website lässt ihr Zertifikat nicht ablaufen: Die Website ist verlassen, oder sie ist nicht die, die sie vorgibt zu sein."
+  fix:
+    - Umgehen Sie die Warnung des Browsers nicht, um auf dieser Website Daten einzugeben.
+    - "Gehört die Website Ihnen, erneuern Sie das Zertifikat (aktueller Aussteller: {value}) und automatisieren Sie die Erneuerung, zum Beispiel mit certbot renew in einer geplanten Aufgabe."
+    - Prüfen Sie danach, dass der Webserver neu geladen wurde und das neue Zertifikat ausliefert.
+tls.web_cert_self_signed:
+  title: "Das HTTPS-Zertifikat von {domain} ist selbstsigniert"
+  why: "Keine anerkannte Stelle garantiert dieses Zertifikat: Jeder kann eines im Namen von {domain} erstellen. Der Browser zeigt eine Sicherheitswarnung, und die Verschlüsselung beweist nichts über die Identität der Website."
+  fix:
+    - Umgehen Sie die Warnung des Browsers nicht, um auf dieser Website Daten einzugeben.
+    - "Gehört die Website Ihnen, ersetzen Sie das Zertifikat durch eines einer anerkannten Stelle für {domain}: Let's Encrypt stellt kostenlos aus, und die meisten Hoster installieren es über ihr Bedienfeld."
+tls.web_cert_name_mismatch:
+  title: "Das vorgelegte Zertifikat gehört nicht zu {domain}"
+  why: "Der Server legt ein Zertifikat vor, das für einen anderen Namen als {domain} ausgestellt wurde. Der Browser zeigt eine Warnung: Entweder ist die Website falsch konfiguriert, oder die Adresse führt nicht zum erwarteten Dienst."
+  fix:
+    - Umgehen Sie die Warnung des Browsers nicht, um auf dieser Website Daten einzugeben.
+    - "Gehört die Website Ihnen, stellen Sie ein Zertifikat aus, das genau {domain} abdeckt (und die Variante mit oder ohne www, falls beide verwendet werden)."
+    - Bei Shared Hosting prüfen Sie, dass die Domain der Website zugeordnet ist und das Zertifikat im Bedienfeld des Hosters für sie beantragt wurde.
+tls.web_cert_untrusted:
+  title: "Das HTTPS-Zertifikat von {domain} wird nicht anerkannt"
+  why: "Die Zertifikatskette von {url} führt nicht zu einer anerkannten Stelle (Aussteller: {value}). Meist sendet der Server das Zwischenzertifikat nicht: Manche Browser und Programme zeigen dann eine Warnung, andere nicht."
+  fix:
+    - Erhalten Sie diesen Link, misstrauen Sie einer Browserwarnung bei dieser Website und geben Sie im Zweifel nichts ein.
+    - "Gehört die Website Ihnen, konfigurieren Sie den Server mit der vollständigen Kette der Stelle (Datei fullchain.pem bei Let's Encrypt) und laden Sie den Webserver neu."
+    - Ist die Stelle gar nicht anerkannt, ersetzen Sie das Zertifikat durch eines einer anerkannten Stelle.
+tls.web_cert_recent_free:
+  title: "Kostenloses Zertifikat vor {value} für eine junge Domain ausgestellt"
+  why: "Ein kostenloses Zertifikat ist an sich normal und sicher. Ein Zertifikat von wenigen Tagen auf einer Domain von wenigen Wochen ist aber das Profil einer für eine Phishing-Kampagne eingerichteten Website: Das Schloss-Symbol des Browsers sagt nichts über die Seriosität der Website aus."
+  fix:
+    - "Verlassen Sie sich nicht auf das Schloss-Symbol: Prüfen Sie, dass der Domainname {domain} der des erwarteten Dienstes ist."
+    - Öffnen Sie im Zweifel den Dienst, indem Sie seine offizielle Adresse selbst eingeben.
+    - Gehört die Website Ihnen und ist sie gerade erst gestartet, verschwindet dieses Signal mit dem Alter der Domain von selbst.

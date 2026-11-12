@@ -1,0 +1,182 @@
+# Famille arc : Authenticated Received Chain (RFC 8617, statut expérimental). ARC permet à
+# un intermédiaire (liste de diffusion, transfert, passerelle antivirus) de témoigner des
+# résultats SPF, DKIM et DMARC qu'il a constatés avant de modifier le message. Gmail et
+# Microsoft s'en servent pour décider de livrer un message que DMARC aurait fait échouer.
+# Les anomalies ARC relèvent surtout de l'intermédiaire, pas de l'expéditeur d'origine.
+
+- id: arc.chain_fail
+  family: arc
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "arc.chain_validation == fail || arc.latest.cv == fail"
+    notes: "RFC 8617 §5.2 : la chaîne est invalide si un ARC-Seal ne vérifie pas, si la dernière ARC-Message-Signature ne vérifie pas ou si une instance annonce déjà cv=fail."
+  sa_rules: []
+  title: "La chaîne ARC du message est cassée"
+  why: >
+    Un intermédiaire a ajouté des en-têtes ARC, mais ils ne se vérifient plus. Le destinataire
+    ne peut donc pas s'appuyer sur ARC pour rattraper un échec DMARC dû au transfert, et le
+    message risque le spam ou le rejet si {domain} applique p=quarantine ou p=reject.
+  fix:
+    - "Repérez dans les en-têtes l'instance ARC (i=1, i=2…) qui échoue et le serveur qui l'a ajoutée (champ d= de l'ARC-Seal)."
+    - "Si ce serveur vous appartient (passerelle, antivirus, liste), vérifiez qu'il scelle le message après ses propres modifications et avec une clé publiée dans le DNS."
+    - "Si c'est un tiers, transmettez-lui les en-têtes complets du message."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8617#section-5.2
+
+- id: arc.seal_invalid
+  family: arc
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(arc_seal.verify() == fail for arc_seal in arc.seals)"
+    notes: "La signature b= d'un en-tête ARC-Seal ne vérifie pas : clé introuvable au sélecteur s= du domaine d=, clé changée ou en-têtes ARC réécrits par un serveur suivant."
+  sa_rules: []
+  title: "Un sceau ARC (ARC-Seal) ne se vérifie pas"
+  why: >
+    Le sceau qui protège la chaîne ARC est invalide. Toute la chaîne est alors rejetée et
+    les résultats d'authentification qu'elle transportait sont perdus.
+  fix:
+    - "Lisez les champs d= et s= de l'ARC-Seal en échec et interrogez s._domainkey.d dans le DNS pour vérifier que la clé existe."
+    - "Si la clé a été changée récemment, republiez l'ancienne jusqu'à ce que les messages en cours soient livrés."
+    - "Vérifiez qu'aucun serveur placé après le scelleur ne réécrit les en-têtes ARC."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8617#section-4.1.3
+    - https://www.rfc-editor.org/rfc/rfc8617#section-5.2
+
+- id: arc.message_signature_invalid
+  family: arc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "arc.latest.ams.verify() == fail"
+    notes: "La dernière ARC-Message-Signature ne vérifie pas : le message a été modifié après le dernier scellement."
+  sa_rules: []
+  title: "Le message a été modifié après le dernier scellement ARC"
+  why: >
+    Un serveur placé après le dernier intermédiaire ARC a modifié le corps ou les en-têtes
+    signés. La chaîne ARC est invalidée, et avec elle le témoignage qui aurait pu sauver un
+    échec DMARC.
+  fix:
+    - "Identifiez le serveur suivant dans les en-têtes Received (pied de page ajouté, sujet modifié, antivirus)."
+    - "Configurez ce serveur pour qu'il ajoute lui-même une instance ARC après sa modification, ou pour qu'il ne modifie plus le message."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8617#section-4.1.2
+
+- id: arc.incomplete_set
+  family: arc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "any(count(arc.headers(instance=i)) != 3 for i in arc.instances)"
+    notes: "Chaque instance ARC comprend exactement trois en-têtes : ARC-Authentication-Results, ARC-Message-Signature et ARC-Seal (RFC 8617 §4.1)."
+  sa_rules: []
+  title: "Une instance ARC est incomplète"
+  why: >
+    Il manque un des trois en-têtes ARC d'une même instance. La chaîne est alors invalide et
+    ne sert plus à rien pour le destinataire.
+  fix:
+    - "Repérez l'instance (i=) incomplète et le serveur qui l'a ajoutée."
+    - "Vérifiez que ce serveur produit les trois en-têtes ensemble, et qu'aucun filtre en aval ne supprime l'un d'eux."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8617#section-4.1
+
+- id: arc.instance_sequence
+  family: arc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "sorted(arc.instances) != range(1, max(arc.instances) + 1) || has_duplicates(arc.instances)"
+    notes: "Les instances doivent être numérotées de 1 à N sans trou ni doublon (RFC 8617 §4.2.1 et §5.2)."
+  sa_rules: []
+  title: "La numérotation des instances ARC est incohérente"
+  why: >
+    Une instance ARC manque ou apparaît deux fois. Le destinataire considère la chaîne comme
+    invalide, ce qui retire au message le bénéfice d'ARC.
+  fix:
+    - "Repérez dans les en-têtes le saut de numéro ou le doublon et le serveur qui l'a produit."
+    - "Corrigez ce serveur pour qu'il numérote sa nouvelle instance à la suite de la plus élevée déjà présente."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8617#section-4.2.1
+    - https://www.rfc-editor.org/rfc/rfc8617#section-5.2
+
+- id: arc.cv_inconsistent
+  family: arc
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "arc.seal(i=1).cv != none || any(arc.seal(i=n).cv == none for n in arc.instances if n > 1)"
+    notes: "RFC 8617 §4.4 et §5.2 : l'instance 1 porte cv=none, les suivantes cv=pass ou cv=fail."
+  sa_rules: []
+  title: "Le champ cv= d'un sceau ARC est incohérent"
+  why: >
+    Le premier sceau doit indiquer cv=none et les suivants cv=pass ou cv=fail. Une valeur
+    incohérente invalide toute la chaîne.
+  fix:
+    - "Identifiez le serveur qui a ajouté l'instance fautive (champ d= de l'ARC-Seal)."
+    - "Mettez à jour son logiciel ARC (par exemple OpenARC ou le module ARC de Rspamd) ou signalez l'anomalie à son éditeur."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8617#section-5.2
+
+- id: arc.too_many_instances
+  family: arc
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "max(arc.instances) > 50"
+    notes: "RFC 8617 §4.2.1 : l'instance est comprise entre 1 et 50. Au-delà, la chaîne est invalide ; un tel nombre trahit en général une boucle de transfert."
+  sa_rules: []
+  title: "Le message porte plus de 50 instances ARC"
+  why: >
+    Une chaîne ARC est limitée à 50 maillons. Un nombre aussi élevé signale presque toujours
+    une boucle de transfert entre deux serveurs, qui finira en rejet.
+  fix:
+    - "Lisez les en-têtes Received pour trouver les deux serveurs qui se renvoient le message."
+    - "Supprimez la règle de transfert ou l'alias qui crée la boucle."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8617#section-4.2.1
+
+- id: arc.missing_on_forward
+  family: arc
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dmarc.result == fail && (headers.has('List-Id') || received.hops_after_origin > 0) && arc.instances == []"
+    notes: "Le message est passé par une liste de diffusion ou un transfert, DMARC échoue à l'arrivée et aucun intermédiaire n'a ajouté d'en-têtes ARC."
+  sa_rules: []
+  title: "Le message a été relayé sans ARC et échoue à DMARC"
+  why: >
+    Un intermédiaire a transmis ou modifié le message sans en témoigner avec ARC. Le
+    destinataire voit seulement un échec DMARC et applique la politique de {domain}, ce qui
+    peut envoyer le message en spam ou le faire rejeter.
+  fix:
+    - "Si l'intermédiaire est votre serveur (transfert automatique, liste, passerelle), activez le scellement ARC sur ce serveur."
+    - "Faites signer DKIM par {domain} chez l'expéditeur d'origine : une signature DKIM survit à un simple transfert, contrairement au SPF."
+    - "Pour une liste de diffusion, activez dans son logiciel l'option qui remplace l'adresse From par celle de la liste quand le domaine d'origine publie une politique DMARC stricte."
+  fix_by_provider:
+    postfix: "Ajoutez un milter ARC (OpenARC, ou Rspamd avec son module arc) sur le serveur qui transfère."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8617#section-1
+    - https://www.rfc-editor.org/rfc/rfc7960
+
+- id: arc.valid_untrusted
+  family: arc
+  severity: info
+  penalty: 0
+  detect:
+    signal: "arc.chain_validation == pass && dmarc.result == fail"
+    notes: "La chaîne ARC est valide et explique l'échec DMARC ; l'usage qu'en fait le destinataire dépend de la confiance qu'il accorde au scelleur."
+  sa_rules: []
+  title: "ARC est valide mais DMARC échoue"
+  why: >
+    L'intermédiaire a correctement témoigné que le message était authentifié avant son
+    passage. Le destinataire peut livrer le message malgré l'échec DMARC s'il fait confiance
+    à ce scelleur, mais rien ne l'y oblige.
+  fix:
+    - "Si vous administrez la messagerie de réception, ajoutez le domaine du scelleur ARC à la liste des scelleurs de confiance."
+    - "Côté expéditeur, la solution durable reste une signature DKIM alignée sur {domain}, qui survit au transfert."
+  fix_by_provider:
+    microsoft_365: "Dans le portail Microsoft Defender, Email & collaboration, Policies & rules, Threat policies, Email Authentication Settings, onglet ARC, cliquez sur Add et saisissez le domaine du champ d= des en-têtes ARC-Seal (pas votre propre domaine). En PowerShell : Set-ArcConfig -Identity Default -ArcTrustedSealers \"domaine-du-scelleur.example\" (cette commande remplace la liste existante)."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8617#section-7.2
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-arc-configure

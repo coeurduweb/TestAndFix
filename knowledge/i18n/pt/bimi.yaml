@@ -1,0 +1,109 @@
+bimi.missing:
+  title: "{domain} poderia exibir seu logo com BIMI"
+  why: "Seu DMARC é aplicado, que é a principal condição do BIMI. Um registro BIMI permite exibir seu logo ao lado das suas mensagens no Yahoo, e no Gmail e no Apple com um certificado de marca."
+  fix:
+    - "Prepare seu logo no formato SVG Tiny PS, quadrado, hospedado em HTTPS."
+    - "Publique o TXT default._bimi.{domain}: v=BIMI1; l=https://{domain}/bimi/logo.svg"
+    - "Para o Gmail, obtenha um certificado VMC (marca registrada) ou CMC junto a uma autoridade listada pelo BIMI Group, e adicione a=https://{domain}/bimi/certificado.pem."
+bimi.dmarc_not_enforced:
+  title: "O logo BIMI de {domain} não pode ser exibido: o DMARC não é aplicado"
+  why: "Você publica um registro BIMI, mas seu DMARC está em p=none ou ausente. Nenhum provedor de e-mail exibirá seu logo enquanto o DMARC não estiver em quarantine ou reject."
+  fix:
+    - "Verifique nos seus relatórios DMARC se todos os seus envios legítimos passam."
+    - "Mude a política para p=quarantine (ou p=reject) em _dmarc.{domain}."
+bimi.dmarc_pct_below_100:
+  title: "O logo BIMI está bloqueado pelo pct={value} no DMARC de {domain}"
+  why: "O Gmail e o BIMI Group exigem que a política DMARC se aplique a 100% das mensagens. Com um pct inferior, o logo não é exibido."
+  fix:
+    - "Substitua pct={value} por pct=100, ou remova pct= (100 é o valor padrão)."
+bimi.dmarc_subdomain_none:
+  title: "O DMARC de {domain} deixa os subdomínios em sp=none, o que o BIMI recusa"
+  why: "Segundo o guia do BIMI Group, a política também deve proteger os subdomínios. Com sp=none, alguns provedores de e-mail se recusam a exibir seu logo."
+  fix:
+    - "Substitua sp=none por sp=quarantine ou sp=reject, ou remova sp= para herdar o valor de p=."
+bimi.syntax_invalid:
+  title: "O registro BIMI de {domain} está malformado"
+  why: "Seu registro BIMI não é reconhecido: ele deve começar com v=BIMI1 e indicar o endereço do logo. Nenhum provedor de e-mail o utilizará."
+  fix:
+    - "Publique em default._bimi.{domain}: v=BIMI1; l=https://… (URL do SVG); a=https://… (URL do certificado PEM, se você tiver um)."
+    - "Separe as tags com ponto e vírgula."
+bimi.declined:
+  title: "{domain} desativou o BIMI de propósito"
+  why: "Seu registro BIMI está vazio, o que significa “sem logo”. É uma escolha válida: remova-o se não tiver uso para ele."
+  fix:
+    - "Nenhuma ação, a menos que você queira exibir um logo: nesse caso, preencha l= e a=."
+bimi.selector_not_found:
+  title: "O seletor BIMI pedido pela mensagem não existe"
+  why: "A mensagem pede para exibir o logo de um seletor específico, mas esse seletor não está publicado no DNS de {domain}: nenhum logo é exibido."
+  fix:
+    - "Publique o registro em <seletor>._bimi.{domain}, ou remova o cabeçalho BIMI-Selector para usar default._bimi.{domain}."
+bimi.logo_unreachable:
+  title: "O logo BIMI de {domain} está inacessível"
+  why: "Os provedores de e-mail baixam o logo do endereço indicado. Se ele não responder, nenhum logo é exibido, mesmo que o restante esteja correto."
+  fix:
+    - "Abra o endereço do logo em um navegador e verifique se ele devolve diretamente o arquivo SVG."
+    - "Exclua este arquivo das proteções anti-robôs (firewall de aplicação, desafio JavaScript) que bloqueariam os provedores de e-mail."
+bimi.logo_not_https:
+  title: "O logo BIMI de {domain} não é servido em HTTPS"
+  why: "O Gmail aceita somente logos servidos em HTTPS. Um endereço http:// basta para bloquear a exibição."
+  fix:
+    - "Hospede o SVG em um endereço https:// e atualize l= em default._bimi.{domain}."
+bimi.svg_not_tiny_ps:
+  title: "O logo BIMI de {domain} não está no formato SVG Tiny PS"
+  why: "Os provedores de e-mail aceitam somente este perfil restrito do SVG, caso contrário o logo é ignorado. Uma exportação padrão de um programa de desenho quase nunca o respeita."
+  fix:
+    - "Exporte o logo como SVG Tiny 1.2 no seu programa de desenho, ou peça para convertê-lo em SVG Tiny PS."
+    - "Verifique se o elemento raiz contém version=\"1.2\" e baseProfile=\"tiny-ps\"."
+    - "Remova os atributos x e y do elemento raiz e qualquer referência externa."
+bimi.svg_forbidden_content:
+  title: "O logo BIMI de {domain} contém elementos proibidos"
+  why: "O arquivo contém um script, uma animação ou um recurso externo, ou atributos x e y na sua raiz. Nesse caso, o Gmail recusa o logo."
+  fix:
+    - "Remova do SVG os elementos script, as animações e qualquer referência a um arquivo ou fonte externa."
+    - "Remova os atributos x e y do elemento svg raiz."
+bimi.logo_size:
+  title: "O logo BIMI de {domain} não respeita as dimensões recomendadas ({value})"
+  why: "O Gmail recomenda um logo quadrado com pelo menos 96 pixels de lado e um arquivo de no máximo 32 KB. Fora desses valores, o logo pode ser cortado ou recusado."
+  fix:
+    - "Centralize o logo em um quadrado (viewBox com a mesma largura e altura)."
+    - "Simplifique os traçados para reduzir o arquivo para menos de 32 KB."
+bimi.no_certificate:
+  title: "O logo BIMI de {domain} não tem certificado (a= ausente)"
+  why: "Sem certificado, seu logo pode aparecer no Yahoo, mas não no Gmail, que exige um certificado VMC ou CMC, nem no Apple Mail."
+  fix:
+    - "Para um logo registrado como marca, peça um VMC (Verified Mark Certificate). Caso contrário, um CMC (Common Mark Certificate) basta para o Gmail."
+    - "Escolha uma autoridade listada pelo BIMI Group (DigiCert, GlobalSign, SSL.com em 2026-11-10)."
+    - "Publique o arquivo PEM em HTTPS e adicione a=https://… ao registro BIMI."
+bimi.certificate_invalid:
+  title: "O certificado BIMI de {domain} é inválido ou inacessível"
+  why: "O Gmail verifica o certificado antes de exibir o logo. Se ele estiver expirado, ilegível ou emitido para outro domínio, o logo não aparece."
+  fix:
+    - "Verifique se o endereço a= devolve o arquivo .pem completo (certificado e cadeia)."
+    - "Renove o certificado se ele tiver expirado, ou peça a emissão para {domain} se ele cobrir outro domínio."
+bimi.certificate_logo_mismatch:
+  title: "O logo BIMI de {domain} é diferente do logo do seu certificado"
+  why: "O logo servido no endereço l= não é o que foi validado no certificado. Os provedores de e-mail que fazem essa verificação passam a recusar sua exibição."
+  fix:
+    - "Publique no endereço l= exatamente o arquivo SVG enviado à autoridade certificadora."
+    - "Se o logo mudou, peça um novo certificado para a nova versão."
+bimi.cmc_no_checkmark:
+  title: "O logo de {domain} será exibido sem o selo de verificação (certificado CMC)"
+  why: "Com um CMC, o Gmail exibe seu logo, mas sem o selo azul, reservado aos certificados VMC ligados a uma marca registrada."
+  fix:
+    - "Nenhuma ação necessária. Se quiser o selo, registre o logo como marca e depois peça um VMC."
+bimi.svg_recommendation:
+  title: "O logo BIMI de {domain} pode ser melhorado"
+  why: "Estes pontos não impedem a exibição do logo, mas são recomendados pelo perfil SVG Tiny PS ou pelo Google: {value}."
+  fix:
+    - "Abra o arquivo SVG ({url}) em um editor de texto."
+    - "Mantenha um único elemento <title>, logo após a tag <svg>, com o nome da sua organização em no máximo 64 caracteres."
+    - "Logo depois, adicione um elemento <desc> que descreva o logo em uma frase."
+    - "Atenção se o registro BIMI referenciar um certificado VMC ou CMC (a=): o certificado contém uma cópia do logo, e qualquer alteração no arquivo, mesmo no título, cria uma divergência com ele. Faça esses ajustes na próxima renovação do certificado."
+    - "Sem certificado, republique o arquivo no mesmo endereço e depois rode a verificação novamente."
+bimi.missing_dmarc_not_enforced:
+  title: "Sem BIMI para {domain}, e o DMARC ainda não permitiria"
+  why: "O BIMI só exibe um logo se o DMARC estiver aplicado (p=quarantine ou p=reject). Estado medido: {value}. Publicar o BIMI agora não mudaria nada na exibição."
+  fix:
+    - "Primeiro mude o DMARC para p=quarantine, depois para p=reject, acompanhando os relatórios agregados (veja a página DMARC)."
+    - "Só então publique o TXT default._bimi.{domain}: v=BIMI1; l=https://{domain}/bimi/logo.svg"
+    - "Para o Gmail e o Apple, adicione um certificado VMC ou CMC: a=https://{domain}/bimi/certificado.pem"

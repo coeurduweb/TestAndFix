@@ -1,0 +1,95 @@
+mx.domain_nxdomain:
+  title: "The sender domain {domain} does not exist"
+  why: "DNS says that {domain} does not exist. Recipients cannot verify the sender or reply to it: most will reject the message, and others will file it as spam."
+  fix:
+    - "Check the spelling of the domain in the sending address configured in your software or sending service."
+    - "If the domain is correct, check with your registrar that it has not expired and that its name servers (NS) are properly declared."
+    - "Once the domain resolves, publish at least an MX, an SPF and a DMARC record."
+mx.missing:
+  title: "The domain {domain} has no MX record"
+  why: "Without an MX record, replies and bounces addressed to {domain} are sent to the domain's web server, which generally does not accept them. Some filters also penalize a sender whose domain does not receive mail."
+  fix:
+    - "If {domain} must receive mail, add the MX records provided by your mail provider."
+    - "If {domain} must never receive mail, publish a Null MX (0 .) and have your messages sent with a Reply-To address and a Return-Path on a domain that does receive mail."
+  fix_by_provider:
+    google_workspace: "In the Google Admin console, follow the MX setup wizard and copy exactly the value suggested for your domain."
+    microsoft_365: "In the Microsoft 365 admin center, Settings, Domains, select {domain} and add the MX record shown in the DNS records tab."
+    cloudflare_dns: "In DNS, Records, add a record of type MX: name @, mail server and priority given by your provider."
+mx.cname_target:
+  title: "An MX of {domain} points to a CNAME alias"
+  why: "The target of an MX record must be a name that directly carries an address. With a CNAME, some servers refuse to deliver or verify your domain, and messages to {domain} can be lost."
+  fix:
+    - "Identify the final target of the CNAME (the name that holds the A record)."
+    - "In the MX record, replace the alias name with this final name, or create an A record for this name instead of the CNAME."
+    - "Keep the same priority and delete the old MX record."
+mx.ip_literal:
+  title: "An MX of {domain} contains an IP address instead of a name"
+  why: "An MX record cannot contain an IP address. The value is read as a name that does not exist: mail to {domain} fails or moves on to the next MX, and checks on the sender domain fail."
+  fix:
+    - "Create a name for the server, for example mx.{domain}, with an A record pointing to the IP address concerned."
+    - "Replace the IP address with this name in the MX record."
+mx.target_nxdomain:
+  title: "The MX records of {domain} point to names that do not exist"
+  why: "The servers announced in the MX records of {domain} have no address. No more messages can be delivered to this domain, and some recipients reject your mail because the sending address looks invalid."
+  fix:
+    - "Compare the published MX records with those your mail provider currently gives: they sometimes change during a migration."
+    - "Correct the wrong names, or create the missing A record for the target server."
+    - "Delete the MX records of a former provider that no longer exist."
+mx.private_address:
+  title: "An MX of {domain} points to a private address"
+  why: "The mail server of {domain} is announced on an internal address that cannot be reached from the Internet. Messages to this domain stay in the queue, then come back as errors."
+  fix:
+    - "Replace the internal address with the server's public address in the A record of the MX."
+    - "If this private address serves an internal DNS, separate the internal view from the public zone."
+mx.unreachable:
+  title: "No MX server of {domain} answers on port 25"
+  why: "The receiving servers of {domain} do not respond. Replies and bounces addressed to this domain pile up, then come back as errors, and callback checks by some recipients fail."
+  fix:
+    - "Check that the SMTP service is running on the server named by the MX record, and that it listens on port 25."
+    - "Check the firewall of the server and that of the host: inbound port 25 must be open."
+    - "If the MX record points to an old server, replace it with the one from your current provider."
+mx.null_mx_on_sending_domain:
+  title: "{domain} declares that it receives no mail (Null MX) but sends mail"
+  why: "The Null MX publicly announces that {domain} does not receive mail. A recipient may then refuse your messages, and nobody can reply to you or send you a bounce."
+  fix:
+    - "If {domain} must send, delete the MX “0 .” and publish the MX records of your mail provider."
+    - "If {domain} really must not receive, use a domain that does receive mail as the envelope address (Return-Path), for example your sending service's domain, and add a valid Reply-To."
+mx.null_mx_mixed:
+  title: "{domain} mixes a Null MX with other MX records"
+  why: "The Null MX says “this domain does not receive mail”, while the other MX records say the opposite. Depending on the recipient's software, your messages or the replies to {domain} will be handled unpredictably."
+  fix:
+    - "Decide whether {domain} receives mail."
+    - "If it does, delete the “0 .” MX record; otherwise, delete all the other MX records."
+mx.envelope_domain_cannot_receive:
+  title: "The return domain {envelope_domain} cannot receive bounces"
+  why: "Non-delivery reports are sent to the return address (Return-Path). If {envelope_domain} has neither an MX record nor an address, you will never see the invalid addresses in your list, and several servers reject the message outright."
+  fix:
+    - "Add to {envelope_domain} the MX records of your sending service, or the record it gives for its custom return domain."
+    - "Failing that, use as Return-Path an address on a domain that receives mail."
+  fix_by_provider:
+    postfix: "The Return-Path uses the envelope address: check sender_canonical_maps and the -f option of sendmail in your application."
+mx.postmaster_rejected:
+  title: "The address postmaster@{domain} is rejected"
+  why: "Mail operators and blocklists contact postmaster@{domain} when there is a problem. If this address does not exist, you will not be told, and several delisting procedures require it to work."
+  fix:
+    - "Create the alias postmaster@{domain} (and abuse@{domain}) in your mail system."
+    - "Point it to a mailbox that is actually read."
+  fix_by_provider:
+    google_workspace: "In the admin console, add postmaster as an alternative address (alias) of a user or group."
+    microsoft_365: "In the Exchange admin center, add postmaster@{domain} as an additional address of a mailbox or group."
+    cpanel: "In Email, Redirecteurs, add postmaster@{domain} forwarding to your main mailbox."
+    postfix: "Add postmaster: your-account in /etc/aliases, then run newaliases, or add a line in virtual_alias_maps."
+mx.some_target_without_address:
+  title: "An MX of {domain} has no IP address"
+  why: "The server {value} is announced as an MX but its name gives no address. Senders skip it after a wasted lookup; if it has the highest priority, mail only relies on the other MX records."
+  fix:
+    - "In the DNS zone of {domain}, find the MX record that points to {value}."
+    - "If this server no longer exists, delete this MX record."
+    - "If it does exist, create the A record (and AAAA if it has an IPv6 address) for {value}, or correct the typo in the MX record."
+mx.host_unreachable:
+  title: "The MX {value} does not answer on port 25"
+  why: "The other MX records of {domain} answer, but {value} ({ip}) does not. Senders who hit it wait, then try the next MX: the mail arrives, but late."
+  fix:
+    - "Run the test again to rule out a temporary outage."
+    - "If the failure is confirmed, check that the SMTP service of {value} works and that inbound port 25 is open in its firewall and at its host."
+    - "If this server is no longer used, remove its MX record from the zone of {domain}."

@@ -1,0 +1,40 @@
+Domain Name: wikipedia.org
+Registry Domain ID: D51687756-LROR
+Registrar WHOIS Server: whois.markmonitor.com
+Registrar Registration Expiration Date: 2027-01-13T00:12:14.000+00:00
+Registry Expiry Date: 2027-01-13T00:00:00.000+00:00
+Creation Date: 2001-01-13T00:12:14.000+00:00
+Updated Date: 2025-12-12T09:26:03.000+00:00
+Registrant Contact URL: https://domains.markmonitor.com/whois/contact/wikipedia.org
+Registrant Name: REDACTED REGISTRANT
+Registrant Organization: REDACTED FOR PRIVACY
+Registrant Street: REDACTED FOR PRIVACY
+Registrant City: REDACTED FOR PRIVACY
+Registrant State/Province: CA
+Registrant Postal Code: REDACTED FOR PRIVACY
+Registrant Country: US
+Registrant Phone: REDACTED FOR PRIVACY
+Registrant Email: REDACTED FOR PRIVACY
+Tech Contact URL: https://domains.markmonitor.com/whois/contact/wikipedia.org
+Registrar Organization: Markmonitor Inc.
+Registrar Street: 3540 E Longwing Ln
+Registrar City: Meridian
+Registrar State/Province: ID
+Registrar Postal Code: 83646
+Registrar Country: US
+Registrar Contact URL: https://www.markmonitor.com/contact-us/
+Registrar: Markmonitor Inc.
+Registrar IANA ID: 292
+Registrar Abuse Contact: https://corp.markmonitor.com/domain/ui/abuse-report
+Registrar Abuse Contact Phone: +1.2086851750
+Registrar Abuse Contact Name: Markmonitor Inc.
+Domain Status: clientUpdateProhibited
+Domain Status: clientTransferProhibited
+Domain Status: clientDeleteProhibited
+Name Server: ns0.wikimedia.org
+Name Server: ns1.wikimedia.org
+Name Server: ns2.wikimedia.org
+Name Server Status: active
+Name Server Last Changed: 2012-03-09T16:35:14.000+00:00 (most recent)
+DNSSEC: unsigned
+URL of the ICANN WHOIS Data Problem Reporting System: http://wdprs.internic.net/

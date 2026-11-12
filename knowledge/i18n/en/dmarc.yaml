@@ -1,0 +1,216 @@
+dmarc.missing:
+  title: "The domain {domain} has no DMARC policy"
+  why: "Without DMARC, anyone can spoof {domain} without being blocked, and you receive no reports on the mail sent in your name. Gmail, Yahoo and Outlook.com require DMARC from bulk senders, and send others to spam or reject them."
+  fix:
+    - "Create an address to receive the reports, for example dmarc@{domain}."
+    - "Publish a TXT record on _dmarc.{domain}: v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+    - "Read the reports for a few weeks, fix the unauthenticated services, then move to p=quarantine, then to p=reject."
+  fix_by_provider:
+    google_workspace: "Add the _dmarc TXT record at your DNS host (not in the Google console). Google advises starting with p=none and waiting 48 hours after setting up SPF or DKIM."
+    microsoft_365: "Add the _dmarc TXT record at your DNS host. For the onmicrosoft.com domain, DMARC is created in the Microsoft 365 admin center."
+    ovh: "DNS zone, Add an entry, type DMARC (dedicated form) or TXT, subdomain _dmarc. OVHcloud advises p=none and analysis of the reports over several weeks."
+    o2switch: "o2switch does not document DMARC: in cPanel, Zone Editor, add a TXT record named _dmarc.{domain}."
+    cpanel: "Email, Email Deliverability, Manage, DMARC section: Install the Suggested Record (cPanel 124 and newer). cPanel says DMARC requires valid SPF and DKIM."
+    plesk: "Websites & Domains, DNS: add or check the _dmarc.{domain} TXT record. Depending on the server configuration, Plesk may already have created one."
+    ionos: "Domain, gear wheel icon, DNS, Add a record, TXT, host name _dmarc. Do not use the values p=rejet or p=quarantaine that appear in some French examples: only none, quarantine and reject are valid."
+    gandi: "Add the _dmarc TXT record. Gandi gives the example p=reject and warns that it can block forwarded messages: start with p=none."
+    infomaniak: "Manager, Global security: the DMARC assistant creates the record (simple or advanced mode)."
+    zoho: "Add the _dmarc TXT record at your DNS host, using the DMARC page of the Zoho Mail help."
+    proton: "Settings, All settings, Domain names, Review, DMARC tab: copy the suggested record. Proton then recommends p=quarantine."
+    brevo: "Brevo requires a DMARC. Value given: v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com. If a DMARC already exists, just add ; rua=mailto:rua@dmarc.brevo.com at the end and keep a single record."
+    mailchimp: "The Account & billing, Domains procedure includes a _dmarc TXT record whose value is shown in your instructions."
+    sendgrid: "SendGrid's domain authentication suggests the _dmarc TXT record v=DMARC1; p=none;."
+    amazon_ses: "AWS advises starting with p=none, then moving to quarantine and reject. For SPF alignment, configure a custom MAIL FROM."
+    postmark: "Postmark recommends DMARC regardless of volume, starting with p=none."
+    sparkpost: "On the Bird platform, DMARC is required before any sending. Minimum value given: v=DMARC1; p=none; rua=mailto:dmarc-agg@dmarc.bird.com;"
+    hubspot: "Settings, Content, Domains & URLs, Email Sending: HubSpot generates the value of the _dmarc TXT record to publish."
+    cloudflare_dns: "Email, DMARC Management, Enable: Cloudflare creates the record or adds its rua address to it (root domain only, feature in beta)."
+dmarc.subdomain_no_policy:
+  title: "Neither {domain} nor its main domain publishes a DMARC"
+  why: "You send from a subdomain, but no DMARC policy covers it. The requirements of Gmail, Yahoo and Outlook.com are not met, and the subdomain can be spoofed."
+  fix:
+    - "Publish a DMARC on the main domain: _dmarc.<main domain> with p=none and rua=, which also covers all its subdomains."
+    - "If the subdomain {domain} must have its own policy, also publish a TXT record on _dmarc.{domain}."
+    - "Add sp= to set the policy of existing subdomains, and np= for the policy of subdomains that do not exist."
+dmarc.multiple_records:
+  title: "The domain {domain} publishes several DMARC records"
+  why: "With two DMARC records, recipients ignore both: {domain} ends up with no policy and no reports, as if it had no DMARC."
+  fix:
+    - "Look up both records on _dmarc.{domain}."
+    - "Merge them into one: a single p= value, and all the reporting addresses combined in rua=, separated by commas."
+    - "Delete the other record."
+  fix_by_provider:
+    brevo: "Brevo asks you to keep a single DMARC: add rua=mailto:rua@dmarc.brevo.com to the rua= list of your existing record, instead of creating a second one."
+dmarc.syntax_invalid:
+  title: "The DMARC record of {domain} is ignored (syntax)"
+  why: "Your record does not start exactly with v=DMARC1. Recipients treat it as if it did not exist: no policy, no reports."
+  fix:
+    - "Start the record with v=DMARC1; respecting the capitalization."
+    - "Separate the tags with semicolons, and use the equals sign (p=none, not p:none)."
+    - "Publish: {suggested_record}."
+dmarc.policy_invalid:
+  title: "The DMARC policy of {domain} has an invalid value"
+  why: "The value of p= (or sp=, np=) is not recognized. Your strict policy is not applied: at best the recipient falls back to p=none, at worst it ignores your DMARC."
+  fix:
+    - "Use only none, quarantine or reject, in English and in lowercase."
+    - "Publish: {suggested_record}."
+dmarc.record_at_apex:
+  title: "The DMARC of {domain} is published in the wrong place"
+  why: "Recipients look for DMARC at _dmarc.{domain}. A record placed at the root of the domain is never read, so {domain} is treated as having no DMARC."
+  fix:
+    - "Create the same TXT record with the name _dmarc (the interface often adds .{domain} itself)."
+    - "Delete the v=DMARC1 record at the root."
+dmarc.policy_none:
+  title: "The DMARC policy of {domain} is in observation mode (p=none)"
+  why: "p=none meets the minimum required by Gmail, Yahoo and Outlook.com, but it does not require any handling of fraudulent messages: a spoofer can still use {domain}."
+  fix:
+    - "Analyze the reports received at the rua= address to identify legitimate services that are not authenticated."
+    - "Fix them (aligned SPF or DKIM), then move to p=quarantine, and finally to p=reject."
+    - "For a gradual rollout, RFC 9989 proposes t=y (the policy is applied one step lower) rather than pct=."
+dmarc.policy_none_stale:
+  title: "{domain} has been at p=none for more than six months"
+  why: "Observation serves to prepare a move to an active policy. After six months, the reports are usually enough to decide, and {domain} remains spoofable as long as you do not move forward."
+  fix:
+    - "Check in the DMARC reports that your sending services pass SPF or aligned DKIM."
+    - "Move to p=quarantine, possibly with t=y for a few weeks."
+    - "If the reports show no legitimate rejection, move to p=reject."
+dmarc.pct_partial:
+  title: "The DMARC policy of {domain} targets only part of the messages (pct={value})"
+  why: "pct= was meant to apply the policy to a percentage of messages, but it was removed from the standard because it was not applied reliably. The result varies by recipient, and Gmail refuses the BIMI logo as long as pct is not at 100."
+  fix:
+    - "Remove pct= (or set pct=100 if you are preparing BIMI for Gmail)."
+    - "For a test phase, use t=y instead: the policy is then applied one level lower."
+dmarc.pct_zero:
+  title: "The DMARC policy of {domain} is neutralized (pct=0)"
+  why: "With pct=0, the quarantine or reject policy is applied to no message. You display a strict policy that does not protect {domain}."
+  fix:
+    - "If you are still testing, replace pct=0 with t=y, the tag provided by RFC 9989."
+    - "If the tests are finished, remove pct=0."
+dmarc.testing_flag:
+  title: "The DMARC policy of {domain} is in test mode (t=y)"
+  why: "Your policy is applied one step lower than what is displayed. This is intended during a transition, but protection remains partial."
+  fix:
+    - "Once the reports are satisfactory, remove t=y to fully apply p={value}."
+dmarc.sp_weaker:
+  title: "The subdomains of {domain} have a weaker DMARC policy (sp=)"
+  why: "Your main domain is protected, but sp= leaves its subdomains with a weaker policy. A spoofer can send from invoices.{domain} without being blocked."
+  fix:
+    - "Check in the reports that no legitimate subdomain fails DMARC."
+    - "Align sp= with p=, or remove sp= so that subdomains inherit p=."
+    - "Add np=reject to block subdomains that do not exist."
+dmarc.np_absent:
+  title: "{domain} does not explicitly block its non-existent subdomains (np=)"
+  why: "Spoofers often invent subdomains that do not exist. The np=reject tag blocks them without touching your real subdomains."
+  fix:
+    - "Add np=reject to your DMARC record."
+dmarc.rua_missing:
+  title: "The DMARC of {domain} requests no reports (rua= absent)"
+  why: "Without rua=, you do not know who sends in your name or which services fail. It is then impossible to move safely to a stricter policy."
+  fix:
+    - "Create a dedicated address, for example dmarc@{domain}, or use the one of a report analysis service."
+    - "Add rua=mailto: followed by this address to your record."
+  fix_by_provider:
+    cloudflare_dns: "Email, DMARC Management, Enable adds a Cloudflare rua address and shows the reports in the dashboard."
+    brevo: "You can add rua=mailto:rua@dmarc.brevo.com, the address given by Brevo."
+dmarc.rua_invalid_uri:
+  title: "A DMARC reporting address of {domain} is badly written"
+  why: "An address without mailto: is not understood: you do not receive the reports, and if p= is also invalid, your DMARC is not applied at all."
+  fix:
+    - "Prefix each address with mailto: and separate them with commas, without spaces."
+    - "Publish: {suggested_record}."
+dmarc.rua_external_unauthorized:
+  title: "The external DMARC reporting address of {domain} did not authorize these reports"
+  why: "Your reports are sent to another domain that has not published its agreement. Recipients therefore refuse to send them: you receive nothing."
+  fix:
+    - "Ask the owner of the rua= address domain to publish the TXT record {domain}._report._dmarc.<its domain> with the value v=DMARC1 (analysis services usually do this for you)."
+    - "Or use an address on {domain} that forwards to the external address."
+dmarc.ruf_present:
+  title: "The DMARC of {domain} requests detailed failure reports (ruf=)"
+  why: "ruf= reports can contain message excerpts and personal addresses. They are rarely sent, and the address that receives them must be protected."
+  fix:
+    - "Keep ruf= only if someone actually processes these reports, and make sure the address is secure."
+    - "Otherwise, remove ruf= and the fo= tag that goes with it."
+dmarc.fo_without_ruf:
+  title: "The fo= tag of the DMARC of {domain} has no effect"
+  why: "fo= sets failure reporting, but no ruf= address is given: the tag does nothing."
+  fix:
+    - "Remove fo=, or add a ruf= address if you really want these reports."
+dmarc.obsolete_tags:
+  title: "The DMARC of {domain} contains removed tags (ri=, rf=)"
+  why: "These tags no longer exist in the current standard. They do no harm, but they lengthen the record for nothing."
+  fix:
+    - "Remove ri= and rf= from the record."
+dmarc.unknown_tags:
+  title: "The DMARC of {domain} contains an unknown tag"
+  why: "A misspelled tag is ignored without any error message: the setting you thought you had made does not exist."
+  fix:
+    - "Correct the spelling of the tag reported by the test."
+    - "Publish: {suggested_record}."
+dmarc.psd_misused:
+  title: "The DMARC of {domain} declares itself a public suffix (psd=y)"
+  why: "psd=y is reserved for domain registries. On your domain, it can make recipients believe that {domain} and its subdomains are separate organizations, which breaks the alignment of your sending subdomains."
+  fix:
+    - "Remove psd=y, or replace it with psd=n if you want to state that {domain} is your organizational domain."
+dmarc.strict_alignment_breaks:
+  title: "The strict alignment of the DMARC of {domain} makes this message fail"
+  why: "Your sending service uses a subdomain of {domain}, which is enough under relaxed alignment. With adkim=s or aspf=s, this subdomain no longer counts, and the message fails DMARC."
+  fix:
+    - "Remove adkim=s and aspf=s (relaxed mode r is the default value)."
+    - "Or have DKIM sign exactly with d={domain}, if you want strict alignment."
+  fix_by_provider:
+    amazon_ses: "AWS states that SPF alignment of a custom MAIL FROM requires not setting aspf=s."
+    google_workspace: "The Google documentation example contains adkim=s; aspf=s: do not copy it as is if a third-party service sends from a subdomain."
+dmarc.fail_reject:
+  title: "This message fails DMARC, and {domain} requests its rejection"
+  why: "No authentication aligned with {domain} passes, and your p=reject policy asks for these messages to be refused. At Gmail, Yahoo or Outlook.com, this message would be rejected."
+  fix:
+    - "Identify the service that sent this message ({provider}, IP {ip})."
+    - "Authenticate {domain} in this service: DKIM with d={domain} first, and aligned SPF if the service allows it."
+    - "If this service must not send for {domain}, the policy is doing its job: do not loosen it."
+dmarc.fail_quarantine:
+  title: "This message fails DMARC, and {domain} requests its quarantine"
+  why: "No authentication aligned with {domain} passes. Your policy asks that these messages be treated as suspicious: they end up in spam at most recipients."
+  fix:
+    - "Identify the service that sent this message ({provider}, IP {ip})."
+    - "Configure DKIM with d={domain} in this service, and aligned SPF if possible."
+    - "Run the test again: DMARC must show pass."
+dmarc.fail_none:
+  title: "This message fails DMARC (p=none policy)"
+  why: "Your policy requires nothing, but the failure is visible: Gmail requires alignment for bulk sends, and Yahoo requires DMARC to pass. This message risks the spam folder, and you will never be able to tighten the policy without fixing this flow."
+  fix:
+    - "Identify the service ({provider}, IP {ip}) and authenticate {domain} in this service (DKIM with d={domain})."
+    - "Check in the DMARC reports that no other service is in the same situation."
+dmarc.temperror:
+  title: "The DMARC of {domain} could not be read (temporary DNS error)"
+  why: "The recipient could not read your policy. Depending on the recipient, the message is delayed or processed without DMARC."
+  fix:
+    - "Run the test again to confirm that the error repeats."
+    - "Check that all the name servers of {domain} respond and that the DNSSEC signature is valid."
+dmarc.duplicate_tag:
+  title: "The tag {value} appears twice in the DMARC of {domain}"
+  why: "A repeated tag makes the record invalid under the syntax DMARC borrows from DKIM. Depending on the recipient, your DMARC is either ignored entirely or only one of the two values is kept: you no longer know which policy applies."
+  fix:
+    - "Open the _dmarc.{domain} TXT record at your DNS host."
+    - "Keep a single occurrence of {value}, with the intended value. For several reporting addresses, put them in a single rua= tag, separated by commas."
+    - "Corrected record suggested: {suggested_record}."
+dmarc.inherited:
+  title: "{domain} applies the DMARC policy of {value}"
+  why: "There is no record on _dmarc.{domain}: recipients apply the one of {value}, with its sp= tag (or p= by default). This is the normal behavior of DMARC for a subdomain; you only need to know which policy results from it."
+  fix:
+    - "Nothing to do if the policy of {value} also suits {domain}."
+    - "For a policy specific to {domain}, for example p=none while you set up a new sending tool, publish a TXT record on _dmarc.{domain} starting with v=DMARC1."
+    - "To set all subdomains at once, adjust sp= in the record of {value} instead."
+dmarc.invalid_tag_value:
+  title: "Invalid value in the DMARC of {domain}: {value}"
+  why: "Recipients ignore a value they do not understand and apply the default value of the tag. The setting you thought you had made (alignment, reporting options) therefore does not exist."
+  fix:
+    - "Open the _dmarc.{domain} TXT record at your DNS host."
+    - "Correct the tag reported: adkim and aspf accept r or s, fo accepts 0, 1, d or s separated by colons."
+    - "Corrected record suggested: {suggested_record}."
+dmarc.strict_alignment:
+  title: "The DMARC of {domain} requires strict alignment ({value})"
+  why: "With strict alignment, a message signed or sent with a subdomain of {domain} fails DMARC. Yet many sending tools use a subdomain for the return address (em…, mg., bounce.): strict alignment removes their SPF alignment."
+  fix:
+    - "Keep strict alignment only if all your mail uses exactly {domain}, in DKIM (d=) as well as in the return address."
+    - "Otherwise, remove adkim=s and aspf=s: relaxed mode (r) is the default value."
+    - "Check in your DMARC reports that no legitimate source fails before you keep strict alignment."

@@ -1,0 +1,160 @@
+sa.uribl_black:
+  title: Ein Link zeigt auf eine Domain der URIBL-Sperrliste
+  why: Eine Domain aus den Links der Nachricht steht auf der URIBL-Sperrliste, die nur Domains enthält, die in Spam vorkamen. Das reicht, um die Bewertung deutlich zu erhöhen, auch wenn Ihre eigene Domain sauber ist.
+  fix:
+    - "Suchen Sie den betreffenden Link ({url}): Oft handelt es sich um eine fremde Domain (Verkürzer, Bild, soziales Netzwerk) und nicht um Ihre."
+    - Entfernen oder ersetzen Sie diesen Link und schicken Sie dann den Test erneut.
+    - Gehört die gelistete Domain Ihnen, suchen Sie die Ursache (gehackte Website, unverlangte Kampagne), bevor Sie die Entfernung über {delist_url} beantragen.
+sa.uribl_grey:
+  title: Ein Link zeigt auf eine Domain der grauen URIBL-Liste
+  why: Die graue URIBL-Liste erfasst Versanddomains, die viele Beschwerden erhalten, ohne eindeutig Spammer zu sein. Klick-Tracking-Domains von Newsletter-Tools stehen dort manchmal.
+  fix:
+    - "Ermitteln Sie die gelistete Domain ({url}). Handelt es sich um die Tracking-Domain Ihres Versandtools, richten Sie eine eigene Tracking-Domain unter Ihrer Domain ein."
+    - Gehört die Domain Ihnen, reduzieren Sie die Beschwerden (sichtbare Abmeldung, Versand nur mit Einwilligung) und beantragen Sie danach die Entfernung über {delist_url}.
+sa.uribl_red:
+  title: Ein Link zeigt auf eine Domain der roten URIBL-Liste
+  why: Die rote URIBL-Liste kennzeichnet Domains, die URIBL beobachtet, ohne dass sie für die Sperrliste ausreichend belegt sind. SpamAssassin wertet sie kaum, sie ist aber eine Warnung.
+  fix:
+    - Prüfen Sie die gemeldete Domain ({url}) und entfernen Sie den Link, wenn die Domain nicht Ihnen gehört.
+sa.uribl_blocked:
+  title: URIBL-Anfrage vom Testserver abgelehnt
+  why: "Verwaltungshinweis: URIBL hat dem Analyseserver nicht geantwortet. Die Links wurden auf dieser Liste nicht geprüft, Ihre Nachricht ist aber nicht die Ursache."
+  fix:
+    - Keine Aktion Ihrerseits erforderlich.
+sa.uribl_dbl_spam:
+  title: Ein Link zeigt auf eine Spamhaus-DBL-Domain (Spam)
+  why: Eine in der Nachricht genannte Domain ist in der Spamhaus DBL als Spam-Domain eingetragen. Das ist eines der schwersten Signale für Links, und viele Gateways blockieren auf dieser Liste.
+  fix:
+    - "Suchen Sie den betreffenden Link ({url}): Oft handelt es sich um eine fremde Domain (Verkürzer, Bild, soziales Netzwerk) und nicht um Ihre."
+    - Entfernen oder ersetzen Sie diesen Link und schicken Sie dann den Test erneut.
+    - Gehört die gelistete Domain Ihnen, suchen Sie die Ursache (gehackte Website, unverlangte Kampagne), bevor Sie die Entfernung über {delist_url} beantragen.
+sa.uribl_dbl_phish:
+  title: Ein Link zeigt auf eine Spamhaus-DBL-Domain (Phishing)
+  why: Ein Link führt zu einer Domain, die Spamhaus als Phishing-Seite eingestuft hat. Gehört sie Ihnen, wurde sie vermutlich gehackt, um eine gefälschte Anmeldeseite zu hosten.
+  fix:
+    - "Suchen Sie den betreffenden Link ({url}): Oft handelt es sich um eine fremde Domain (Verkürzer, Bild, soziales Netzwerk) und nicht um Ihre."
+    - Entfernen oder ersetzen Sie diesen Link und schicken Sie dann den Test erneut.
+    - Gehört die gelistete Domain Ihnen, suchen Sie die Ursache (gehackte Website, unverlangte Kampagne), bevor Sie die Entfernung über {delist_url} beantragen.
+sa.uribl_dbl_malware:
+  title: Ein Link zeigt auf eine Spamhaus-DBL-Domain (Schadsoftware)
+  why: Ein Link führt zu einer Domain, die laut Spamhaus Schadsoftware verbreitet. Bei einer WordPress-Seite ist das oft ein Zeichen für eine in wp-content eingeschleuste Datei.
+  fix:
+    - "Suchen Sie den betreffenden Link ({url}): Oft handelt es sich um eine fremde Domain (Verkürzer, Bild, soziales Netzwerk) und nicht um Ihre."
+    - Entfernen oder ersetzen Sie diesen Link und schicken Sie dann den Test erneut.
+    - Gehört die gelistete Domain Ihnen, suchen Sie die Ursache (gehackte Website, unverlangte Kampagne), bevor Sie die Entfernung über {delist_url} beantragen.
+sa.uribl_dbl_abuse_spam:
+  title: Ein Link zeigt auf eine legitime Domain, die für Spam missbraucht wird
+  why: Spamhaus meldet eine legitime Domain, deren Seiten von Spammern genutzt werden (Hosting-, Formular- oder Teilen-Dienst). Der Link schadet Ihnen durch diese Verbindung.
+  fix:
+    - Ersetzen Sie den Link zu diesem geteilten Dienst durch einen Link auf eine Seite Ihrer eigenen Domain.
+sa.uribl_dbl_abuse_redir:
+  title: Ein Link läuft über einen Weiterleiter, den Spammer missbrauchen
+  why: Der Link läuft über einen Weiterleitungs- oder Verkürzungsdienst, den auch Spammer nutzen. SpamAssassin wertet ihn kaum, andere Filter aber schon.
+  fix:
+    - Schreiben Sie die endgültige Adresse im Klartext, statt eines verkürzten oder weitergeleiteten Links.
+sa.uribl_dbl_abuse_phish:
+  title: Ein Link zeigt auf eine legitime Domain, die für Phishing missbraucht wird
+  why: Eine legitime Domain aus den Links dient auch dazu, Phishing-Seiten zu hosten. Filter bestrafen solche Links stark.
+  fix:
+    - Hosten Sie den betreffenden Inhalt (Formular, Dokument) auf Ihrer eigenen Domain statt bei diesem Dienst.
+sa.uribl_dbl_abuse_malw:
+  title: Ein Link zeigt auf eine legitime Domain, die zur Verbreitung von Schadsoftware missbraucht wird
+  why: Die Domain des Links ist ein legitimer Dienst, dessen Adressen teils Schadsoftware verbreiten (Dateispeicher, Freigabe). Der Link schadet Ihnen stark.
+  fix:
+    - Fügen Sie die Datei an oder hosten Sie sie auf Ihrer Website, statt diesen Freigabedienst zu nutzen.
+sa.uribl_dbl_blocked:
+  title: Spamhaus-DBL-Anfrage vom Testserver abgelehnt
+  why: "Verwaltungshinweis: Die DBL hat dem Analyseserver nicht geantwortet. Ohne Bezug zu Ihren Links."
+  fix:
+    - Keine Aktion Ihrerseits erforderlich.
+sa.uribl_dbl_blocked_opendns:
+  title: "Spamhaus-DBL-Anfrage abgelehnt: öffentlicher Resolver"
+  why: "Verwaltungshinweis: Der Analyseserver nutzt einen öffentlichen DNS-Resolver, den Spamhaus abgelehnt hat. Ohne Bezug zu Ihren Links."
+  fix:
+    - Keine Aktion Ihrerseits erforderlich.
+sa.uribl_dbl_error:
+  title: Fehler bei der Spamhaus-DBL-Anfrage
+  why: "Technischer Hinweis: Ein Link enthält eine IP-Adresse statt eines Domainnamens und wurde an die DBL übergeben, die nur Domains verarbeitet. Das Ergebnis ist nicht verwertbar."
+  fix:
+    - Ersetzen Sie Links auf IP-Adressen durch Links auf einen Domainnamen (siehe auch NUMERIC_HTTP_ADDR).
+sa.uribl_abuse_surbl:
+  title: Ein Link zeigt auf eine Domain der ABUSE-Liste von SURBL
+  why: "Die Domain des Links steht in der Kategorie ABUSE von SURBL: Domains, die in Spam oder missbräuchlichen Sendungen vorkamen."
+  fix:
+    - "Suchen Sie den betreffenden Link ({url}): Oft handelt es sich um eine fremde Domain (Verkürzer, Bild, soziales Netzwerk) und nicht um Ihre."
+    - Entfernen oder ersetzen Sie diesen Link und schicken Sie dann den Test erneut.
+    - Gehört die gelistete Domain Ihnen, suchen Sie die Ursache (gehackte Website, unverlangte Kampagne), bevor Sie die Entfernung über {delist_url} beantragen.
+sa.uribl_cr_surbl:
+  title: Ein Link zeigt laut SURBL auf eine gehackte Website
+  why: SURBL stuft die Domain des Links als kompromittierte legitime Website ein. Ist es Ihre Website, hostet sie vermutlich Seiten, die ein Angreifer hinzugefügt hat.
+  fix:
+    - "Analysieren Sie die verlinkte Website ({url}): Plugins und Themes ohne Update, unbekannte PHP-Dateien, hinzugefügte Administratorkonten."
+    - Beantragen Sie nach der Bereinigung die Entfernung über {delist_url}.
+sa.uribl_ct_surbl:
+  title: Ein Link läuft über eine Tracking-Domain, die SURBL führt
+  why: "Der Link läuft über eine Klick-Tracking-Domain, die SURBL führt, weil sie für Sendungen ohne bestätigte Einwilligung genutzt wird, bis hin zu Spamfallen. Das ist der typische Fall eines Versandtools, dessen gemeinsam genutzte Tracking-Domain auch von schlechten Absendern verwendet wird."
+  fix:
+    - Richten Sie in Ihrem Versandtool eine eigene Tracking-Domain (Subdomain von {domain}) ein.
+    - Oder deaktivieren Sie das Klick-Tracking für diese Nachricht und testen Sie erneut.
+sa.uribl_dm_surbl:
+  title: Die Nachricht nennt eine Domain für Wegwerfadressen (SURBL DM)
+  why: "Eine Domain der Nachricht gehört zu einem Dienst für Wegwerf-E-Mail-Adressen. SpamAssassin wertet sie kaum: Es ist eine Information."
+  fix:
+    - Steht eine Wegwerfadresse in der Nachricht (Kontakt, Signatur), ersetzen Sie sie durch eine Adresse Ihrer Domain.
+sa.uribl_mw_surbl:
+  title: Ein Link zeigt laut SURBL auf eine Domain mit Schadsoftware
+  why: "SURBL verknüpft die Domain des Links mit der Verbreitung von Schadsoftware. Das ist schwerwiegend, wenn die Domain Ihre ist: Ihre Website dient dann vermutlich als Relais für einen Angriff."
+  fix:
+    - "Suchen Sie den betreffenden Link ({url}): Oft handelt es sich um eine fremde Domain (Verkürzer, Bild, soziales Netzwerk) und nicht um Ihre."
+    - Entfernen oder ersetzen Sie diesen Link und schicken Sie dann den Test erneut.
+    - Gehört die gelistete Domain Ihnen, suchen Sie die Ursache (gehackte Website, unverlangte Kampagne), bevor Sie die Entfernung über {delist_url} beantragen.
+sa.uribl_ph_surbl:
+  title: Ein Link zeigt laut SURBL auf eine Phishing-Domain
+  why: SURBL stuft die Domain des Links als Hoster von Phishing-Seiten ein.
+  fix:
+    - "Suchen Sie den betreffenden Link ({url}): Oft handelt es sich um eine fremde Domain (Verkürzer, Bild, soziales Netzwerk) und nicht um Ihre."
+    - Entfernen oder ersetzen Sie diesen Link und schicken Sie dann den Test erneut.
+    - Gehört die gelistete Domain Ihnen, suchen Sie die Ursache (gehackte Website, unverlangte Kampagne), bevor Sie die Entfernung über {delist_url} beantragen.
+sa.uribl_multi_surbl_headers:
+  title: Die Domain des Absenders oder von Reply-To ist bei SURBL gelistet
+  why: "Dabei geht es nicht mehr um einen Link, sondern um die Absender- oder Antwortadresse, deren Domain in SURBL steht. Die Domain {domain} hat also einen eigenen schlechten Ruf."
+  fix:
+    - Prüfen Sie unter {delist_url} die Kategorie und das Datum des Eintrags von {domain}.
+    - Beseitigen Sie die Ursache (gehackte Website, unverlangte Sendungen), bevor Sie eine Entfernung beantragen.
+sa.surbl_blocked:
+  title: SURBL-Anfrage vom Testserver abgelehnt
+  why: "Verwaltungshinweis: SURBL hat dem Analyseserver nicht geantwortet. Ohne Bezug zu Ihren Links."
+  fix:
+    - Keine Aktion Ihrerseits erforderlich.
+sa.uribl_rhs_dob:
+  title: Ein Link zeigt auf eine gerade erst registrierte Domain
+  why: "Eine im Nachrichtentext genannte Domain wurde sehr kürzlich registriert. Spammer wechseln ständig die Domain: Ein Link auf eine neue Domain ist verdächtig, auch wenn es die Website eines gerade startenden Unternehmens ist."
+  fix:
+    - Ist die neue Domain Ihre, warten Sie einige Tage, bevor Sie sie für Massensendungen nutzen.
+    - Lassen Sie die Links bis dahin auf eine ältere Domain zeigen, die Ihnen gehört.
+sa.uribl_sbl:
+  title: Der DNS-Server einer verlinkten Domain steht in der Spamhaus SBL
+  why: Die Domain des Links nutzt DNS-Server, die auf einer IP liegen, die Spamhaus als Spam-Hoster kennt. Der Link wird wegen seines Hostings bestraft.
+  fix:
+    - Ermitteln Sie die betreffende Domain ({url}) und ihren DNS-Hoster.
+    - Gehört sie Ihnen, verlegen Sie ihre DNS-Zone zu einem renommierten Hoster.
+sa.uribl_sbl_a:
+  title: Der Webserver einer verlinkten Domain steht in der Spamhaus SBL
+  why: Die Website, auf die ein Link zeigt, liegt auf einer IP, die Spamhaus führt. Die Strafe ist gering, verrät aber ein Hosting mit schlechtem Ruf.
+  fix:
+    - Gehört die Website Ihnen, fragen Sie Ihren Hoster, warum seine IP gelistet ist, oder wechseln Sie das Hosting.
+sa.uribl_css:
+  title: Der DNS-Server einer verlinkten Domain steht in der Spamhaus CSS
+  why: Die DNS-Server der verlinkten Domain liegen auf einer IP, die automatisch für Spamversand erkannt wurde. Die Strafe ist gering.
+  fix:
+    - Gehört die Domain Ihnen, melden Sie das Ihrem DNS-Hoster.
+sa.uribl_zen_blocked:
+  title: Spamhaus-ZEN-Anfrage zu den Links vom Testserver abgelehnt
+  why: "Verwaltungshinweis: Spamhaus hat die Anfrage des Analyseservers abgelehnt. Ohne Bezug zu Ihren Links."
+  fix:
+    - Keine Aktion Ihrerseits erforderlich.
+sa.uribl_zen_blocked_opendns:
+  title: "Spamhaus-ZEN-Anfrage zu den Links abgelehnt: öffentlicher Resolver"
+  why: "Verwaltungshinweis: Der Analyseserver fragt Spamhaus über einen öffentlichen Resolver ab."
+  fix:
+    - Keine Aktion Ihrerseits erforderlich.

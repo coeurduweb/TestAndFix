@@ -1,0 +1,275 @@
+# Famille helo : nom annoncé par le serveur expéditeur dans la commande HELO/EHLO.
+# La RFC 5321 §4.1.4 interdit au destinataire de refuser un message au seul motif que le
+# HELO ne correspond pas à l'IP ; les filtres antispam en tiennent pourtant compte dans leur
+# score (règles SpamAssassin citées dans sa_rules). Les pénalités restent donc modérées.
+
+- id: helo.not_fqdn
+  family: helo
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "helo.is_ip_literal == false && helo.contains_dot == false"
+    notes: "RFC 5321 §4.1.1.1 et §2.3.5 : l'argument de EHLO est un nom de domaine pleinement qualifié ou un littéral d'adresse entre crochets. Un nom court (« srv01 », « mail ») n'est ni l'un ni l'autre."
+  sa_rules: []
+  title: "Le serveur se présente sous un nom incomplet ({helo})"
+  why: >
+    Votre serveur annonce « {helo} », un nom sans domaine que personne ne peut vérifier sur
+    Internet. Plusieurs filtres antispam ajoutent des points à ce type de message, et certains
+    serveurs stricts le refusent dès la commande EHLO.
+  fix:
+    - "Choisissez un nom complet qui appartient à votre domaine, par exemple mail.{domain}."
+    - "Créez un enregistrement A (et AAAA si vous envoyez en IPv6) pour ce nom, pointant vers {ip}."
+    - "Demandez à l'hébergeur de l'IP {ip} de régler le reverse DNS (PTR) sur ce même nom."
+    - "Déclarez ce nom comme nom d'hôte du serveur d'envoi (voir la procédure de votre logiciel ci-dessous), puis redémarrez le service."
+  fix_by_provider:
+    postfix: "Dans /etc/postfix/main.cf, indiquez myhostname = mail.{domain} (smtp_helo_name reprend $myhostname par défaut), puis lancez postfix reload."
+    exim: "Réglez primary_hostname = mail.{domain} dans la configuration principale, ou l'option helo_data du transport smtp, puis redémarrez Exim."
+    wordpress: "Si votre site envoie par SMTP avec PHPMailer, fixez $phpmailer->Hostname = 'mail.{domain}' dans un hook phpmailer_init (ou le champ équivalent de votre extension SMTP)."
+    cpanel: "Sur un hébergement mutualisé, le HELO est le nom du serveur choisi par l'hébergeur : ouvrez un ticket auprès de lui en citant le nom « {helo} »."
+  example_bad: "EHLO srv01"
+  example_good: "EHLO mail.{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.1.1
+    - https://www.rfc-editor.org/rfc/rfc5321#section-2.3.5
+    - https://www.postfix.org/postconf.5.html#smtp_helo_name
+    - https://www.exim.org/exim-html-current/doc/html/spec_html/ch-the_smtp_transport.html
+
+- id: helo.ip_unbracketed
+  family: helo
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "helo matches /^[0-9.]+$/ || (helo contains ':' && helo.starts_with('[') == false)"
+    notes: "Une adresse IP nue n'est pas un argument EHLO valide : la RFC 5321 §4.1.3 exige les crochets pour un littéral d'adresse ([192.0.2.1], [IPv6:2001:db8::1])."
+  sa_rules: [RCVD_NUMERIC_HELO]
+  title: "Le serveur se présente avec une adresse IP nue ({helo})"
+  why: >
+    Annoncer une IP sans crochets viole la syntaxe SMTP. C'est une signature classique des
+    machines infectées et des scripts d'envoi bricolés : SpamAssassin et d'autres filtres
+    pénalisent ce cas.
+  fix:
+    - "Donnez au serveur un nom complet du type mail.{domain} et créez son enregistrement A vers {ip}."
+    - "Faites correspondre le reverse DNS de {ip} à ce nom."
+    - "Configurez ce nom comme HELO du logiciel d'envoi, puis redémarrez-le."
+  fix_by_provider:
+    postfix: "Dans main.cf, myhostname = mail.{domain} ; vérifiez qu'aucun smtp_helo_name ne contient d'adresse IP, puis postfix reload."
+    exim: "Fixez primary_hostname ou helo_data à mail.{domain} au lieu de $sending_ip_address."
+    wordpress: "Une IP en HELO vient souvent d'un PHPMailer sans nom d'hôte : réglez $phpmailer->Hostname dans phpmailer_init."
+  example_bad: "EHLO 203.0.113.25"
+  example_good: "EHLO mail.{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.3
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.1.1
+
+- id: helo.address_literal
+  family: helo
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "helo matches /^[[].*[]]$/"
+    notes: "Le littéral d'adresse entre crochets est autorisé par la RFC 5321 §4.1.3, mais il ne prouve rien sur l'identité du serveur et ne permet pas d'évaluer le SPF du HELO."
+  sa_rules: []
+  title: "Le serveur se présente avec un littéral d'adresse ({helo})"
+  why: >
+    La syntaxe est correcte, mais un serveur de messagerie légitime annonce normalement son nom.
+    Sans nom, le destinataire ne peut ni vérifier le SPF du HELO ni rapprocher {helo} de votre
+    domaine, ce qui retire un signal de confiance.
+  fix:
+    - "Attribuez au serveur un nom complet, par exemple mail.{domain}, avec un enregistrement A vers {ip}."
+    - "Réglez le reverse DNS de {ip} sur ce nom."
+    - "Remplacez le littéral par ce nom dans la configuration HELO du logiciel d'envoi."
+  fix_by_provider:
+    postfix: "Dans main.cf, myhostname = mail.{domain}, puis postfix reload."
+    exim: "Réglez helo_data = mail.{domain} dans le transport smtp."
+  example_bad: "EHLO [203.0.113.25]"
+  example_good: "EHLO mail.{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.3
+
+- id: helo.localhost
+  family: helo
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "helo matches /^(localhost|localhost[.]localdomain|127[.]0[.]0[.]1|[[]127[.]0[.]0[.]1[]]|::1)$/i"
+    notes: "Un serveur relié à Internet qui se présente comme localhost est mal configuré ou usurpe. SpamAssassin attribue un score élevé à HELO_LOCALHOST (plus de 2,6 points selon le jeu de scores)."
+  sa_rules: [HELO_LOCALHOST]
+  title: "Le serveur se présente comme « {helo} »"
+  why: >
+    Un serveur qui annonce « localhost » depuis Internet ressemble à une machine infectée.
+    Les filtres antispam pénalisent lourdement ce cas et plusieurs serveurs refusent le
+    message dès la commande EHLO.
+  fix:
+    - "Choisissez le nom public du serveur, par exemple mail.{domain}, et créez son enregistrement A vers {ip}."
+    - "Réglez le reverse DNS de {ip} sur ce même nom."
+    - "Inscrivez ce nom dans la configuration du logiciel d'envoi (et dans /etc/hostname si le logiciel le reprend du système), puis redémarrez-le."
+  fix_by_provider:
+    postfix: "Dans main.cf, myhostname = mail.{domain} ; sans ce réglage Postfix reprend le nom du système, souvent localhost. Puis postfix reload."
+    exim: "Fixez primary_hostname = mail.{domain}, sinon Exim reprend le nom du système."
+    wordpress: "Un HELO localhost vient en général de PHPMailer sur un serveur sans nom : réglez $phpmailer->Hostname = 'mail.{domain}' dans phpmailer_init, ou passez par le SMTP authentifié de votre messagerie."
+    plesk: "Dans Outils et paramètres, Paramètres du serveur, remplacez le nom d'hôte complet par mail.{domain}."
+  example_bad: "EHLO localhost.localdomain"
+  example_good: "EHLO mail.{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.1.1
+    - https://www.postfix.org/postconf.5.html#myhostname
+    - https://github.com/apache/spamassassin/blob/trunk/rules/50_scores.cf
+
+- id: helo.default_template
+  family: helo
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "helo matches /(^|[.])(example[.](com|net|org)|localdomain|local|lan|home|internal|invalid|test)$/i || helo in ['ubuntu','debian','raspberrypi','server','mail.example.com']"
+    notes: "Noms par défaut des images système ou domaines réservés (RFC 2606, RFC 6761, .local de la RFC 6762) : ils ne résolvent pas sur Internet."
+  sa_rules: [HELO_LH_LD, HELO_LH_HOME]
+  title: "Le serveur se présente avec un nom par défaut ({helo})"
+  why: >
+    « {helo} » est un nom laissé par défaut lors de l'installation, ou un domaine réservé aux
+    réseaux privés. Il ne résout pas sur Internet et signale aux filtres un serveur non
+    configuré.
+  fix:
+    - "Remplacez ce nom par un nom public de votre domaine, par exemple mail.{domain}."
+    - "Créez l'enregistrement A de ce nom vers {ip} et réglez le reverse DNS de {ip} sur ce nom."
+    - "Redémarrez le logiciel d'envoi et refaites le test."
+  fix_by_provider:
+    postfix: "Dans main.cf, myhostname = mail.{domain} et vérifiez mydomain, puis postfix reload."
+    exim: "Réglez primary_hostname = mail.{domain}."
+  example_bad: "EHLO ubuntu.localdomain"
+  example_good: "EHLO mail.{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2606
+    - https://www.rfc-editor.org/rfc/rfc6761
+    - https://www.rfc-editor.org/rfc/rfc5321#section-2.3.5
+
+- id: helo.not_resolving
+  family: helo
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "helo.is_fqdn && dns.A(helo) == NXDOMAIN && dns.AAAA(helo) == NXDOMAIN"
+    notes: "La RFC 5321 §2.3.5 demande que le nom soit résolvable (enregistrement MX ou adresse). Un nom qui n'existe pas dans le DNS ne prouve aucune identité."
+  sa_rules: []
+  title: "Le nom annoncé ({helo}) n'existe pas dans le DNS"
+  why: >
+    Le destinataire ne trouve aucune adresse pour « {helo} ». Plusieurs filtres, dont des
+    serveurs Postfix réglés avec reject_unknown_helo_hostname, refusent ou pénalisent ce cas.
+  fix:
+    - "Créez un enregistrement A pour {helo} pointant vers {ip} dans la zone DNS du domaine concerné."
+    - "Si {helo} n'appartient pas à un domaine que vous gérez, changez le HELO pour un nom de {domain}, par exemple mail.{domain}."
+    - "Attendez la propagation (durée du TTL) puis refaites le test."
+  fix_by_provider:
+    cloudflare_dns: "Dans DNS, Records, ajoutez un enregistrement A de nom {helo} vers {ip}, avec le proxy désactivé (nuage gris) : un nom de serveur de messagerie ne doit pas passer par le proxy."
+    postfix: "Si le nom est faux, corrigez myhostname dans main.cf puis postfix reload."
+  example_good: "mail.{domain}. 3600 IN A {ip}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-2.3.5
+    - https://www.postfix.org/postconf.5.html#reject_unknown_helo_hostname
+
+- id: helo.ip_mismatch
+  family: helo
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "helo.is_fqdn && dns.A(helo) != NXDOMAIN && ip not in dns.addresses(helo)"
+    notes: "Le nom existe mais pointe ailleurs que l'IP de connexion. Courant derrière un NAT ou après un changement d'IP. RFC 5321 §4.1.4 : le serveur peut vérifier mais ne doit pas refuser pour ce seul motif."
+  sa_rules: [RCVD_HELO_IP_MISMATCH]
+  title: "Le nom annoncé ({helo}) ne pointe pas vers l'IP d'envoi {ip}"
+  why: >
+    Votre serveur annonce « {helo} », mais ce nom désigne une autre adresse que {ip}. Les
+    filtres y voient soit une erreur de configuration après un changement d'IP, soit une
+    usurpation de nom.
+  fix:
+    - "Si {ip} est bien l'IP actuelle du serveur, mettez à jour l'enregistrement A (ou AAAA) de {helo} vers {ip}."
+    - "Si le serveur sort par une autre IP (NAT, relais), utilisez comme HELO le nom qui correspond à cette IP de sortie."
+    - "Vérifiez que le reverse DNS de {ip} donne ce même nom."
+  example_good: "{helo}. IN A {ip} et {ip} IN PTR {helo}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.4
+
+- id: helo.ptr_mismatch
+  family: helo
+  severity: info
+  penalty: 0.1
+  detect:
+    signal: "ptr != null && lower(helo) != lower(ptr)"
+    notes: "Aucune RFC n'exige l'égalité HELO = PTR, mais c'est la configuration de référence ; Microsoft et plusieurs filtres comparent les deux."
+  sa_rules: []
+  title: "Le HELO ({helo}) diffère du reverse DNS ({ptr})"
+  why: >
+    Le serveur annonce un nom et son IP en renvoie un autre. Ce n'est pas une faute, mais un
+    HELO identique au PTR, lui-même résolu vers {ip}, est la configuration la plus lisible pour
+    les filtres.
+  fix:
+    - "Choisissez un nom unique pour le serveur, par exemple {ptr} s'il appartient à votre domaine."
+    - "Utilisez ce nom à la fois comme HELO et comme reverse DNS de {ip}, et vérifiez que son enregistrement A pointe vers {ip}."
+  fix_by_provider:
+    postfix: "Dans main.cf, myhostname = {ptr}, puis postfix reload."
+    exim: "Réglez primary_hostname = {ptr}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.4
+
+- id: helo.impersonation
+  family: helo
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "helo.org_domain in receiver_domains || (helo.org_domain in ['gmail.com','google.com','outlook.com','yahoo.com','hotmail.com'] && spf.helo_result in [fail, softfail, none])"
+    notes: "Le HELO reprend le domaine du destinataire ou d'un grand fournisseur alors que l'IP n'appartient pas à ce fournisseur (SPF du HELO en échec ou absent). C'est une technique d'usurpation connue."
+  sa_rules: []
+  title: "Le serveur se présente sous le nom d'un domaine qui n'est pas le sien ({helo})"
+  why: >
+    Votre serveur annonce un nom appartenant à un autre organisme, alors que {ip} ne lui
+    appartient pas. Les destinataires interprètent ce cas comme une usurpation et le message
+    a de fortes chances d'être refusé.
+  fix:
+    - "Remplacez immédiatement ce HELO par un nom de votre propre domaine, par exemple mail.{domain}."
+    - "Créez son enregistrement A vers {ip} et réglez le reverse DNS de {ip} sur ce nom."
+    - "Si vous ne gérez pas ce serveur, cherchez qui l'a configuré : un logiciel installé sans votre accord peut en être la cause."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.1.1
+    - https://www.rfc-editor.org/rfc/rfc7208#section-2.3
+
+- id: helo.invalid_characters
+  family: helo
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "helo.is_ip_literal == false && helo matches /[^A-Za-z0-9.-]|^-|-[.]|[.]-|[.][.]/"
+    notes: "Un nom d'hôte ne contient que lettres, chiffres et traits d'union, sans trait d'union en début ou fin d'étiquette (RFC 1123 §2.1, RFC 5321 §4.1.2). Le soulignement est interdit dans un nom d'hôte."
+  sa_rules: []
+  title: "Le nom annoncé ({helo}) contient des caractères interdits"
+  why: >
+    Un caractère comme le soulignement, l'espace ou une étiquette vide rend le nom invalide.
+    Certains serveurs refusent alors la commande EHLO, les autres pénalisent le message.
+  fix:
+    - "Renommez le serveur avec uniquement des lettres, des chiffres, des points et des traits d'union, par exemple mail.{domain}."
+    - "Créez l'enregistrement A correspondant vers {ip} et alignez le reverse DNS."
+    - "Mettez à jour le HELO du logiciel d'envoi puis redémarrez-le."
+  example_bad: "EHLO mail_serveur.{domain}"
+  example_good: "EHLO mail-serveur.{domain}"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1123#section-2.1
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.2
+
+- id: helo.dynamic_name
+  family: helo
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "helo matches /[0-9]+[-.][0-9]+[-.][0-9]+[-.][0-9]+|dyn|dhcp|dsl|pool|cable|ppp|client|customer|static[.-]?ip/i"
+    notes: "HELO de type résidentiel ou attribué automatiquement par un fournisseur d'accès (contient l'IP ou un mot comme dynamic, dsl, pool). SpamAssassin a une série de règles HELO_DYNAMIC_*."
+  sa_rules: [HELO_DYNAMIC_IPADDR, HELO_DYNAMIC_IPADDR2, HELO_DYNAMIC_DHCP, HELO_DYNAMIC_SPLIT_IP]
+  title: "Le serveur se présente avec un nom de connexion résidentielle ({helo})"
+  why: >
+    Ce nom ressemble à celui qu'un fournisseur d'accès donne à une box ou à un client grand
+    public. Les filtres pénalisent fortement ces messages, car la plupart des envois depuis ce
+    type de connexion viennent de machines infectées.
+  fix:
+    - "N'envoyez pas directement depuis cette connexion : passez par le serveur SMTP authentifié de votre messagerie (port 587) ou par un service d'envoi."
+    - "Si le serveur est bien un serveur dédié, demandez à l'hébergeur un reverse DNS personnalisé, par exemple mail.{domain}, et utilisez ce nom comme HELO."
+  fix_by_provider:
+    postfix: "Pour relayer par votre messagerie, réglez relayhost = [smtp.votre-fournisseur]:587 avec l'authentification SASL, puis postfix reload."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.1.1
+    - https://github.com/apache/spamassassin/blob/trunk/rules/20_dynrdns.cf

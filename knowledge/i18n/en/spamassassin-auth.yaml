@@ -1,0 +1,248 @@
+sa.spf_pass:
+  title: SPF valid for the envelope address
+  why: "The IP {ip} is indeed listed in the SPF record of {envelope_domain}. This is the expected behavior: SpamAssassin gives almost no bonus for this, but without it, DMARC loses SPF alignment."
+  fix:
+    - Nothing to fix. Keep the SPF record of {envelope_domain} up to date each time a sending tool is added or removed.
+sa.spf_fail:
+  title: SPF hard fail (-all) for the envelope address
+  why: "{envelope_domain} publishes an SPF that ends with -all, and the IP {ip} is not listed in it. SpamAssassin gives little weight to this result, but for Gmail, Outlook or Yahoo it is an authentication failure: without a valid DKIM signature aligned with {domain}, the message goes to spam or is rejected. Typical case: a new tool (CRM, shop, form) sends on behalf of the domain without having been added to the SPF."
+  fix:
+    - "Identify the service that owns the IP {ip} (detected provider: {provider})."
+    - "Add its include: or ip4: mechanism to the SPF record of {envelope_domain}, before the -all."
+    - If this service should not send for you, stop its sends on behalf of {domain}.
+sa.spf_softfail:
+  title: SPF soft fail (~all) for the envelope address
+  why: "The IP {ip} is not authorized by the SPF of {envelope_domain}, which ends with ~all. The message is not rejected for all that, but it loses the benefit of SPF, and DMARC fails if DKIM is not aligned. This is often a sending tool forgotten in the SPF."
+  fix:
+    - "Find which service sends from {ip} ({provider}) and add its include: to the SPF of {envelope_domain}."
+    - If sending goes through a WordPress server or shared hosting, send the emails through authenticated SMTP to your official mail service instead.
+  fix_by_provider:
+    wordpress: Install an SMTP plugin (WP Mail SMTP, FluentSMTP) and send through your mail server instead of PHP's mail() function.
+sa.spf_neutral:
+  title: Neutral SPF (?all) for the envelope address
+  why: "The SPF of {envelope_domain} says neither yes nor no for the IP {ip}, usually because it ends with ?all. A neutral SPF protects nothing: SpamAssassin penalizes it more than a softfail."
+  fix:
+    - List all the services that send on behalf of {envelope_domain} and add them to the SPF.
+    - Replace ?all with ~all, then with -all once the DMARC reports confirm that no legitimate sending fails.
+sa.spf_none:
+  title: No SPF record for the envelope address
+  why: "{envelope_domain} publishes no SPF. SpamAssassin hardly penalizes this, but Gmail and Yahoo require at least SPF or DKIM, and anyone can send on behalf of this domain."
+  fix:
+    - Create a TXT record at the root of {envelope_domain} that begins with v=spf1.
+    - "Add an include: for each sending service (email, newsletter, website) and end with ~all."
+sa.spf_helo_pass:
+  title: SPF valid for the server's HELO name
+  why: The server announces itself as {helo}, and this name authorizes the IP {ip} in its own SPF. This is a sign of a well-configured server.
+  fix:
+    - Nothing to fix.
+sa.spf_helo_fail:
+  title: The server's HELO name fails SPF
+  why: The server announces itself as {helo}, but the SPF of this name excludes the IP {ip}. This happens when a server takes the name of another, or when the SPF of the hostname was not updated after an IP change.
+  fix:
+    - Have the server announce a name that belongs to it and whose reverse DNS ({ptr}) matches.
+    - Publish for this hostname a minimal SPF that authorizes its own IP.
+sa.spf_helo_softfail:
+  title: The server's HELO name is a soft fail for SPF
+  why: The SPF of the name {helo} does not cover the IP {ip} and ends with ~all. The server seems to borrow a name that is not its own, which SpamAssassin penalizes slightly.
+  fix:
+    - Configure the server's HELO name (myhostname under Postfix) with its real hostname.
+    - "Add to this hostname an SPF record: “v=spf1 a -all”."
+  fix_by_provider:
+    postfix: Set myhostname in main.cf to the name that matches the reverse DNS of the IP, then reload Postfix.
+sa.spf_helo_neutral:
+  title: The server's HELO name has a neutral SPF
+  why: The SPF of the name {helo} does not give a verdict on the IP {ip}. Small effect, but it shows a hostname without a clean SPF.
+  fix:
+    - "Publish for {helo} an SPF record “v=spf1 a -all” if this name does point to {ip}."
+sa.spf_helo_none:
+  title: The server's HELO name publishes no SPF
+  why: The name {helo} announced by the server has no SPF. This is very common and has almost no effect on the score, but a hostname SPF costs one DNS line.
+  fix:
+    - "If you manage this server, add the TXT record “v=spf1 a -all” for {helo}."
+    - If it is a provider's server ({provider}), there is nothing for you to do on your side.
+sa.t_spf_permerror:
+  title: SPF in permanent error for the envelope address
+  why: "The SPF of {envelope_domain} cannot be evaluated: faulty syntax, two v=spf1 records, or more than 10 DNS lookups. Recipients treat it as a failure, and DMARC cannot rely on SPF."
+  fix:
+    - Check that there is only one TXT record beginning with v=spf1 on {envelope_domain}.
+    - "Count the include:, a, mx, ptr and exists mechanisms: beyond 10, remove the unused services or replace some include: mechanisms with ip4:."
+    - Fix the typos (missing spaces, malformed ip4, include pointing to a domain that no longer exists).
+sa.t_spf_temperror:
+  title: SPF in temporary error for the envelope address
+  why: Reading the SPF of {envelope_domain} failed because of a DNS incident (timeout, unreachable DNS server). If this repeats, your messages are evaluated without SPF.
+  fix:
+    - "Run the test again: an isolated error requires no action."
+    - "If it comes back, check that all the DNS servers of {envelope_domain} respond and that the domains cited in include: exist."
+sa.t_spf_helo_permerror:
+  title: SPF of the HELO name in permanent error
+  why: The name {helo} publishes an invalid SPF. The server therefore sends with a misconfigured hostname.
+  fix:
+    - "Fix or replace the SPF of {helo} with “v=spf1 a -all”."
+sa.t_spf_helo_temperror:
+  title: SPF of the HELO name in temporary error
+  why: Reading the SPF of {helo} failed because of a DNS incident. No consequence if it is isolated.
+  fix:
+    - Run the test again. If the error persists, check that the DNS zone of the name {helo} responds.
+sa.dkim_signed:
+  title: The message carries a DKIM signature
+  why: "The message is signed. SpamAssassin adds a very small score that is canceled as soon as the signature is valid: only a broken signature leaves this point."
+  fix:
+    - Nothing to fix if DKIM_VALID also appears. Otherwise, see the DKIM_INVALID rule.
+sa.dkim_valid:
+  title: At least one DKIM signature is valid
+  why: "A DKIM signature (domain {dkim_domain}) was verified: the message was not modified in transit, and the signing domain is accountable for it."
+  fix:
+    - Nothing to fix. Just check that the signing domain is indeed {domain} (DKIM_VALID_AU rule).
+sa.dkim_valid_au:
+  title: Valid DKIM signature from the sender's domain
+  why: The valid signature is that of {domain}, the domain visible in the From. This is what lets DMARC pass even if SPF fails.
+  fix:
+    - Nothing to fix.
+sa.dkim_valid_ef:
+  title: Valid DKIM signature from the envelope domain
+  why: The envelope domain {envelope_domain} has also signed the message. A good sign of consistency between the sending tool and the domain.
+  fix:
+    - Nothing to fix.
+sa.dkim_invalid:
+  title: DKIM signature present but invalid
+  why: "The message is signed (selector {selector}, domain {dkim_domain}) but verification fails: public key missing or different in DNS, or message modified after signing (footer added by an antivirus, a mailing list, a relay). The SpamAssassin score is low, but DMARC fails if SPF is not aligned either."
+  fix:
+    - Check that the record {selector}._domainkey.{dkim_domain} exists and contains the current public key of the sending tool.
+    - "If the key is correct, look for what modifies the message after signing: a signature or notice added by the outgoing server, link rewriting, passing through a mailing list."
+    - "Copy the key without line breaks or stray quotes: a key cut off in the DNS interface is the most frequent failure."
+sa.dkim_adsp_all:
+  title: No DKIM signature from the domain, although it must sign everything
+  why: The From domain is known to sign all its messages, but this message has no valid signature from {domain}. For a known domain (bank, marketplace), this is a strong indication of spoofing.
+  fix:
+    - If you really send on behalf of {domain}, sign with the DKIM key of {domain}, not with that of the sending tool.
+    - "If {domain} is not your domain, do not use this address as From: use an address from your own domain."
+sa.dkim_adsp_nxdomain:
+  title: The sender's domain does not exist in DNS
+  why: "The domain {domain} shown in the From does not exist in DNS. Recipients can neither reply nor verify anything, and many reject these messages. Common case: a test address such as noreply@monsite.local left in a form or a CMS."
+  fix:
+    - Replace the sending address with an address from a real domain you own.
+    - In WordPress or the CMS, check the From address of the notifications and forms.
+  fix_by_provider:
+    wordpress: Set the sending address in the SMTP plugin (From Email field) and in each form (Contact Form 7, Mail tab, From field).
+sa.dmarc_pass:
+  title: DMARC passed
+  why: SPF or DKIM passes and matches the {domain} domain in the From. This is the authentication level expected by Gmail and Yahoo for bulk sending.
+  fix:
+    - Nothing to fix. If your policy is still p=none, move to quarantine, then reject when the reports are clean.
+sa.dmarc_none:
+  title: DMARC failed, policy p=none
+  why: Neither SPF nor DKIM is aligned with {domain}. The p=none policy asks not to block anything, but SpamAssassin adds points, and Gmail or Yahoo treat a DMARC failure as an authentication defect, especially for bulk sending.
+  fix:
+    - "Sign with DKIM on behalf of {domain} in the sending tool: this is the most robust alignment."
+    - Or set up a custom Return-Path under {domain} to align SPF.
+    - Read the DMARC reports (rua) to identify the other sources that fail.
+sa.dmarc_quar:
+  title: DMARC failed, policy quarantine
+  why: "The message fails DMARC and {domain} itself asks that it be placed in spam. Recipients follow this instruction: this message will land in spam."
+  fix:
+    - "Enable DKIM signing for {domain} in the sending tool ({provider}) and publish the key it provides."
+    - Check that the signing domain d= is {domain} or a subdomain of {domain}.
+sa.dmarc_reject:
+  title: DMARC failed, policy reject
+  why: "The message fails DMARC and {domain} asks for its rejection. Most major providers simply refuse it: this test received it only because it does not block."
+  fix:
+    - Have this flow signed with DKIM for the domain {domain} before any other sending.
+    - Meanwhile, do not switch DMARC back to p=none before identifying the faulty source in the rua reports.
+sa.dmarc_missing:
+  title: No DMARC policy published
+  why: "{domain} does not publish a DMARC record. SpamAssassin hardly penalizes this, but Gmail and Yahoo require it from bulk senders, and the domain remains open to spoofing."
+  fix:
+    - Create a TXT record on _dmarc.{domain} with at least v=DMARC1; p=none; and a rua address to receive the reports.
+    - After a few weeks of clean reports, move to p=quarantine, then p=reject.
+sa.dmarc_permerror:
+  title: Invalid DMARC record
+  why: "The _dmarc.{domain} record is unreadable (unknown tag, v=DMARC1 missing or misplaced, two records). Recipients ignore it: your policy does not apply."
+  fix:
+    - "Check that there is only one TXT record on _dmarc.{domain} and that it begins exactly with v=DMARC1;"
+    - Separate the tags with semicolons and remove the stray quotes added by the DNS interface.
+sa.dmarc_temperror:
+  title: "DMARC not evaluated: temporary DNS error"
+  why: The DNS query to _dmarc.{domain} did not succeed. The message was evaluated without DMARC.
+  fix:
+    - Run the test again. If the error comes back, check that all the DNS servers of {domain} respond.
+sa.arc_signed:
+  title: The message carries an ARC signature
+  why: An intermediary relay (mailing list, forwarding, security gateway) sealed the authentication result it saw. Neutral information.
+  fix:
+    - Nothing to fix.
+sa.arc_valid:
+  title: Valid ARC chain
+  why: The ARC seals placed by the relays are intact. A recipient can use them to accept a forwarded message whose SPF or DKIM was broken in transit.
+  fix:
+    - Nothing to fix.
+sa.arc_invalid:
+  title: ARC signature present but invalid
+  why: A relay placed ARC headers that no longer verify, often because a downstream device modified the message. Low impact, but the message loses ARC protection in case of forwarding.
+  fix:
+    - If the relay is yours (antispam gateway, mailing list), check that it signs ARC after its own modifications.
+    - "Otherwise, no action: it is the intermediary relay that must fix it."
+sa.arc_trusted:
+  title: ARC chain sealed by a trusted relay
+  why: The message passed through a relay whose ARC signature the test server recognizes. A favorable signal.
+  fix:
+    - Nothing to fix.
+sa.env_and_hdr_spf_match:
+  title: Sender recognized by the default SPF welcome list
+  why: The address is in the default welcome list shipped with SpamAssassin, and the envelope matches the From. A bonus reserved for large known senders.
+  fix:
+    - Nothing to fix.
+sa.user_in_def_dkim_wl:
+  title: Sender in the default DKIM welcome list
+  why: SpamAssassin ships a list of large known senders, recognized by their DKIM signature. The message is part of it and receives a strong bonus.
+  fix:
+    - Nothing to fix.
+sa.user_in_def_spf_wl:
+  title: Sender in the default SPF welcome list
+  why: The sender is in the list of known domains shipped with SpamAssassin, validated by SPF. A strong bonus.
+  fix:
+    - Nothing to fix.
+sa.user_in_def_welcomelist:
+  title: Sender in the default welcome list
+  why: The sender is in the welcome list shipped with SpamAssassin and is authenticated. A big bonus, reserved for very well-known services.
+  fix:
+    - Nothing to fix.
+sa.to_eq_fm_spf_fail:
+  title: Recipient identical to sender and SPF fails
+  why: "The message claims to come from the recipient's own address and SPF fails: this is the pattern of the “your mailbox has been hacked” scam. A legitimate message triggers it when a website form sends to the owner using the owner's address as sender, from a server that is not authorized."
+  fix:
+    - In the website form, put a technical address of the domain in From (for example site@{domain}), sent through authenticated SMTP.
+    - Put the visitor's address in Reply-To, never in From.
+  fix_by_provider:
+    wordpress: "Contact Form 7: Mail tab, From field = your technical address, additional headers = Reply-To: [your-email]."
+sa.to_eq_fm_dom_spf_fail:
+  title: Same domain as recipient and sender, SPF fails
+  why: The message appears to come from the recipient's domain, but from a server that its SPF does not authorize. Often a website or a printer sending "internally" without going through the official mail service.
+  fix:
+    - Route these sends through the SMTP server of the domain's mail service, with authentication.
+    - Or add the IP {ip} of the web server to the SPF if you control it and it is fixed.
+sa.dkimwl_wl_high:
+  title: High-trust signing domain at DKIMwl
+  why: The domain that signed the message ({dkim_domain}) is classified as high trust by the DKIMwl list. A favorable signal.
+  fix:
+    - Nothing to fix.
+sa.dkimwl_wl_med:
+  title: Medium-trust signing domain at DKIMwl
+  why: The signing domain {dkim_domain} is known to DKIMwl with medium trust. A neutral to favorable signal.
+  fix:
+    - Nothing to fix.
+sa.dkimwl_wl_medhi:
+  title: Medium-to-high trust signing domain at DKIMwl
+  why: The signing domain {dkim_domain} is well rated by DKIMwl, which takes one point off the score.
+  fix:
+    - Nothing to fix.
+sa.dkimwl_bl:
+  title: Signing domain blocked at DKIMwl
+  why: "The domain signing the message ({dkim_domain}) is classified as a blocked sender by DKIMwl. If this domain belongs to your sending tool and not to you, its overall reputation is what penalizes you."
+  fix:
+    - Sign with your own domain {domain} rather than with the shared domain of the sending tool.
+    - If the blocked domain is yours, find the cause (compromised account, purchased list), then contact DKIMwl.
+sa.dkimwl_blocked:
+  title: DKIMwl query refused to the test server
+  why: "Administrative notice: DKIMwl refused to answer the server that analyzes the message. This does not concern your sending."
+  fix:
+    - No action on your part. The DKIMwl result is simply missing from this test.

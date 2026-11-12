@@ -1,0 +1,46 @@
+link.shortener:
+  title: "El enlace pasa por un acortador de direcciones"
+  why: "{url} es una dirección acortada: no dice nada de su destino. Los acortadores públicos también sirven para ocultar páginas de phishing. El destino real, que lee la herramienta, aparece en la cadena de redirecciones ({domain})."
+  fix:
+    - "Juzga el enlace por su destino final, que aparece en la cadena, y no por la dirección corta."
+    - "Si difundes tú mismo este enlace, da mejor la dirección completa de la página en {domain}."
+link.nonstandard_port:
+  title: "El enlace apunta a un puerto poco habitual ({value})"
+  why: "Los sitios públicos responden en los puertos 80 (http) y 443 (https). {url} pide el puerto {value}: es lo habitual en un servidor de pruebas, un equipo expuesto o un servidor montado a toda prisa, y rara vez en el sitio de una empresa."
+  fix:
+    - "Comprueba que esperabas este servidor antes de introducir nada en él."
+link.domain_listed:
+  title: "El dominio {domain} figura en {list_name}"
+  why: "{list_name} recoge dominios usados para el spam, el phishing o el software malicioso. Los filtros de correo y varias herramientas de seguridad la consultan: un enlace a {domain} se trata como peligroso."
+  fix:
+    - "No abras este enlace: este informe ya describe la página, no hace falta ir a verla."
+    - "Si el dominio es tuyo, busca la causa (sitio pirateado, envíos no solicitados), corrígela y pide la retirada en {delist_url}."
+link.domain_recent:
+  title: "El dominio {domain} se creó hace {value}"
+  why: "Las campañas de phishing usan dominios de unos días o de unas semanas, que abandonan en cuanto los detectan. Un dominio reciente no es malicioso por ello, pero todavía no tiene un historial que permita confiar en él."
+  fix:
+    - "Si el enlace se presenta como el de un servicio que conoces, compara {domain} con el dominio oficial de ese servicio."
+    - "En caso de duda, escribe tú mismo la dirección oficial en el navegador."
+link.unreachable:
+  title: "No se pudo consultar la página final ({value})"
+  why: "El destino {url} responde con un error o no responde. Una página de phishing que su alojamiento ya retiró produce este resultado; el veredicto se apoya entonces en las fuentes de reputación, en la propia dirección y en lo que contenga la página de error."
+  fix:
+    - "Vuelve a lanzar la comprobación dentro de unos minutos: una caída pasajera del servidor da el mismo resultado."
+    - "Para revisar la respuesta sin mostrar la página, ejecuta curl -I seguido de la dirección desde un equipo aislado (máquina virtual o servidor de pruebas): el comando solo lee los encabezados de la respuesta."
+    - "Si esperabas una página concreta, verifica la dirección con la persona que te la dio, por otro medio."
+link.redirect_chain:
+  title: "El enlace pasa por {value} redirecciones"
+  why: "Antes de la página final, {url} reenvía varias veces a otras direcciones. Los enlaces de seguimiento publicitario añaden una o dos; una cadena larga entre varios dominios sirve también para ocultar el destino real a las herramientas de filtrado."
+  fix:
+    - "Mira el dominio de la página final en la cadena: es ese el que cuenta."
+link.punycode_lookalike:
+  title: "El dominio del enlace está escrito con caracteres que imitan otro nombre"
+  why: "{url} contiene letras de otros alfabetos (cirílico, griego) o cifras que se parecen a letras latinas. En pantalla, el nombre se lee como el de un dominio conocido, aunque pertenezca a otra persona."
+  fix:
+    - "No uses este enlace: escribe tú mismo la dirección del servicio en el navegador."
+    - "Si introdujiste un identificador en esta página, cambia la contraseña en el sitio oficial."
+link.private_target:
+  title: "El enlace apunta a una dirección de red privada"
+  why: "Un paso de la cadena lleva a {domain}, una dirección que solo existe dentro de una red local. Un sitio público no tiene motivo para hacerlo: la herramienta no siguió este paso."
+  fix:
+    - "Si el enlace viene de tu propio sitio, busca la redirección mal configurada (dirección de prueba olvidada en producción)."

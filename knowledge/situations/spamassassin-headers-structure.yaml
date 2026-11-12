@@ -1,0 +1,1218 @@
+# Famille spamassassin, groupe headers-structure. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/headers-structure.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.missing_date
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(MISSING_DATE)
+    notes: 'score SA 4.0.x : 1.36 (sa-update r1939780, jeu réseau + Bayes). Teste : meta !exists:Date.'
+  sa_rules:
+  - MISSING_DATE
+  title: En-tête Date absent
+  why: Le message n'a pas d'en-tête Date, pourtant obligatoire. Les scripts qui construisent les en-têtes
+    à la main l'oublient souvent, et plusieurs fournisseurs refusent les messages qui ne respectent pas
+    la RFC 5322.
+  fix:
+  - Ajoutez un en-tête Date au format RFC 5322, ou laissez la bibliothèque d'envoi le générer (PHPMailer,
+    Symfony Mailer et Nodemailer le font).
+  example_good: 'Date: Tue, 10 Nov 2026 14:05:00 +0100'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.1
+- id: sa.missing_from
+  family: spamassassin
+  severity: high
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(MISSING_FROM)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta !exists:From. Gravité
+      fixée à la main, indépendamment du score SA, qui sous-estime ici l''effet réel de ce défaut chez
+      les destinataires. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - MISSING_FROM
+  title: En-tête From absent
+  why: Le message n'indique aucun expéditeur. L'en-tête From est obligatoire selon la RFC 5322, que Gmail
+    demande de respecter, et DMARC repose entièrement sur lui.
+  fix:
+  - Ajoutez un en-tête From avec une adresse de votre domaine.
+  example_good: 'From: "Atelier Martin" <contact@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.2
+  - https://support.google.com/a/answer/81126
+- id: sa.missing_headers
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(MISSING_HEADERS)
+    notes: 'score SA 4.0.x : 1.021 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_missing_to_header()
+      : ni To ni Apparently-To.'
+  sa_rules:
+  - MISSING_HEADERS
+  title: En-tête To absent
+  why: Le message n'a pas d'en-tête To. C'est le cas quand tous les destinataires sont en copie cachée,
+    pratique associée aux envois en nombre non sollicités.
+  fix:
+  - Ajoutez un en-tête To avec l'adresse du destinataire, ou votre propre adresse si vous envoyez en Cci.
+  - Pour un envoi en nombre, utilisez un outil qui envoie un message par destinataire.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.missing_mid
+  family: spamassassin
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: spamassassin.hit(MISSING_MID)
+    notes: 'score SA 4.0.x : 0.497 (sa-update r1939780, jeu réseau + Bayes). Teste : meta !exists:Message-Id.'
+  sa_rules:
+  - MISSING_MID
+  title: En-tête Message-ID absent
+  why: Le message n'a pas d'identifiant unique. La plupart des serveurs en ajoutent un à l'envoi ; son
+    absence indique un script qui remet le message directement. Gmail peut refuser un message sans Message-ID
+    valide.
+  fix:
+  - Générez un Message-ID unique de la forme <identifiant@{domain}>, ou laissez la bibliothèque d'envoi
+    le faire.
+  - Vérifiez que votre serveur SMTP sortant ajoute un Message-ID quand il manque.
+  fix_by_provider:
+    postfix: Réglez always_add_missing_headers = yes dans main.cf pour que Postfix complète Date, Message-ID
+      et From manquants.
+  example_good: 'Message-ID: <20261110140500.5f3a9c@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.4
+- id: sa.missing_subject
+  family: spamassassin
+  severity: medium
+  penalty: 0.9
+  detect:
+    signal: spamassassin.hit(MISSING_SUBJECT)
+    notes: 'score SA 4.0.x : 1.799 (sa-update r1939780, jeu réseau + Bayes). Teste : meta !exists:Subject.'
+  sa_rules:
+  - MISSING_SUBJECT
+  title: En-tête Subject absent
+  why: 'Le message n''a pas d''objet du tout (l''en-tête est absent, pas seulement vide). Près de 2 points
+    : c''est un défaut fréquent des scripts d''envoi.'
+  fix:
+  - Ajoutez un objet clair et descriptif.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.missing_mimeole
+  family: spamassassin
+  severity: medium
+  penalty: 0.9
+  detect:
+    signal: spamassassin.hit(MISSING_MIMEOLE)
+    notes: 'score SA 4.0.x : 1.899 (sa-update r1939780, jeu réseau + Bayes). Teste : meta exists:X-MSMail-Priority
+      && !exists:X-MimeOLE, hors SquirrelMail, Outlook 12 à 16, CommuniGate, T-Online, corps base64 et
+      DKIM.'
+  sa_rules:
+  - MISSING_MIMEOLE
+  title: En-tête X-MSMail-Priority sans X-MimeOLE
+  why: Le message porte un en-tête de priorité propre à Outlook Express sans l'en-tête qui l'accompagne
+    toujours. Des bibliothèques PHP ajoutent X-MSMail-Priority par imitation, ce que SpamAssassin repère.
+  fix:
+  - 'Supprimez les en-têtes X-MSMail-Priority et X-Priority ajoutés par le script : ils n''apportent rien.'
+  - 'Si vous les gardez, signez le message en DKIM : la règle ne s''applique plus.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.missing_mime_hb_sep
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(MISSING_MIME_HB_SEP)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_msg_parse_flags(''missing_mime_head_body_separator'').'
+  sa_rules:
+  - MISSING_MIME_HB_SEP
+  title: Ligne vide manquante entre en-têtes MIME et contenu
+  why: Une partie MIME n'a pas de ligne vide entre ses en-têtes et son contenu. Le message est mal formé
+    et peut s'afficher mal. Score symbolique.
+  fix:
+  - Utilisez une bibliothèque d'envoi pour construire le MIME plutôt que de le concaténer à la main.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc2045
+- id: sa.no_headers_message
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(NO_HEADERS_MESSAGE)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta MISSING_DATE
+      && MISSING_HEADERS && NO_RECEIVED && NO_RELAYS && MISSING_MID.'
+  sa_rules:
+  - NO_HEADERS_MESSAGE
+  title: Message presque sans en-têtes
+  why: 'Date, To, Message-ID et Received manquent tous : le message a été injecté sans passer par un circuit
+    d''envoi normal.'
+  fix:
+  - Envoyez le test par votre vrai serveur d'envoi, avec une bibliothèque qui génère les en-têtes obligatoires.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_meta_tests.cf
+- id: sa.date_in_future_03_06
+  family: spamassassin
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: spamassassin.hit(DATE_IN_FUTURE_03_06)
+    notes: 'score SA 4.0.x : 3.027 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''3'',
+      ''6'') : la Date du message est postérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_FUTURE_03_06
+  title: La date du message est 3 à 6 heures dans le futur
+  why: 'L''en-tête Date indique une heure postérieure de 3 à 6 heures à l''arrivée sur le serveur. Cause
+    habituelle : fuseau horaire déclaré faux (heure de Paris écrite avec +0000 ou l''inverse). Plus de
+    3 points.'
+  fix:
+  - Vérifiez l'heure et le fuseau du serveur ou du poste qui génère le message (NTP activé, fuseau Europe/Paris).
+  - Dans un script, générez la Date au moment de l'envoi avec le décalage horaire, pas une heure locale
+    suivie de +0000.
+  - Pour un envoi programmé, la Date doit être celle de l'envoi réel, pas celle de création de la campagne.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_future_06_12
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(DATE_IN_FUTURE_06_12)
+    notes: 'score SA 4.0.x : 1.947 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''6'',
+      ''12'') : la Date du message est postérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_FUTURE_06_12
+  title: La date du message est 6 à 12 heures dans le futur
+  why: La Date est en avance de 6 à 12 heures sur la réception. Horloge ou fuseau du serveur faux, ou
+    décalage entre continents mal déclaré.
+  fix:
+  - Vérifiez l'heure et le fuseau du serveur ou du poste qui génère le message (NTP activé, fuseau Europe/Paris).
+  - Dans un script, générez la Date au moment de l'envoi avec le décalage horaire, pas une heure locale
+    suivie de +0000.
+  - Pour un envoi programmé, la Date doit être celle de l'envoi réel, pas celle de création de la campagne.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_future_12_24
+  family: spamassassin
+  severity: high
+  penalty: 1.6
+  detect:
+    signal: spamassassin.hit(DATE_IN_FUTURE_12_24)
+    notes: 'score SA 4.0.x : 3.199 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''12'',
+      ''24'') : la Date du message est postérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_FUTURE_12_24
+  title: La date du message est 12 à 24 heures dans le futur
+  why: La Date est en avance de 12 à 24 heures. Les spammeurs datent dans le futur pour rester en haut
+    de la boîte ; un serveur mal réglé produit le même effet. Plus de 3 points.
+  fix:
+  - Vérifiez l'heure et le fuseau du serveur ou du poste qui génère le message (NTP activé, fuseau Europe/Paris).
+  - Dans un script, générez la Date au moment de l'envoi avec le décalage horaire, pas une heure locale
+    suivie de +0000.
+  - Pour un envoi programmé, la Date doit être celle de l'envoi réel, pas celle de création de la campagne.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_future_24_48
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(DATE_IN_FUTURE_24_48)
+    notes: 'score SA 4.0.x : 2.048 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''24'',
+      ''48'') : la Date du message est postérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_FUTURE_24_48
+  title: La date du message est 1 à 2 jours dans le futur
+  why: La Date est en avance d'un à deux jours sur la réception. Horloge du poste ou du serveur déréglée.
+  fix:
+  - Vérifiez l'heure et le fuseau du serveur ou du poste qui génère le message (NTP activé, fuseau Europe/Paris).
+  - Dans un script, générez la Date au moment de l'envoi avec le décalage horaire, pas une heure locale
+    suivie de +0000.
+  - Pour un envoi programmé, la Date doit être celle de l'envoi réel, pas celle de création de la campagne.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_future_48_96
+  family: spamassassin
+  severity: high
+  penalty: 1.1
+  detect:
+    signal: spamassassin.hit(DATE_IN_FUTURE_48_96)
+    notes: 'score SA 4.0.x : 2.181 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''48'',
+      ''96'') : la Date du message est postérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_FUTURE_48_96
+  title: La date du message est 2 à 4 jours dans le futur
+  why: La Date est en avance de deux à quatre jours. Horloge du système d'envoi très déréglée.
+  fix:
+  - Vérifiez l'heure et le fuseau du serveur ou du poste qui génère le message (NTP activé, fuseau Europe/Paris).
+  - Dans un script, générez la Date au moment de l'envoi avec le décalage horaire, pas une heure locale
+    suivie de +0000.
+  - Pour un envoi programmé, la Date doit être celle de l'envoi réel, pas celle de création de la campagne.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_future_96_q
+  family: spamassassin
+  severity: high
+  penalty: 1.7
+  detect:
+    signal: spamassassin.hit(DATE_IN_FUTURE_96_Q)
+    notes: 'score SA 4.0.x : 3.455 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''96'',
+      ''2920'') : la Date du message est postérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_FUTURE_96_Q
+  title: La date du message est 4 jours à 4 mois dans le futur
+  why: La Date est très en avance sur la réception. Erreur de date dans le script (mois et jour inversés,
+    année mal saisie) ou horloge non synchronisée. Près de 3,5 points.
+  fix:
+  - Vérifiez l'heure et le fuseau du serveur ou du poste qui génère le message (NTP activé, fuseau Europe/Paris).
+  - Dans un script, générez la Date au moment de l'envoi avec le décalage horaire, pas une heure locale
+    suivie de +0000.
+  - Pour un envoi programmé, la Date doit être celle de l'envoi réel, pas celle de création de la campagne.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/khopesh/20_bug_6271.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.t_date_in_future_q_plus
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_DATE_IN_FUTURE_Q_PLUS)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''2920'',
+      ''undef'') : la Date du message est postérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_DATE_IN_FUTURE_Q_PLUS
+  title: La date du message est plus de 4 mois dans le futur
+  why: La Date est plus de quatre mois après la réception. Règle de test sans poids, mais l'erreur de
+    date est flagrante.
+  fix:
+  - Vérifiez l'heure et le fuseau du serveur ou du poste qui génère le message (NTP activé, fuseau Europe/Paris).
+  - Dans un script, générez la Date au moment de l'envoi avec le décalage horaire, pas une heure locale
+    suivie de +0000.
+  - Pour un envoi programmé, la Date doit être celle de l'envoi réel, pas celle de création de la campagne.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/khopesh/20_bug_6271.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_past_03_06
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(DATE_IN_PAST_03_06)
+    notes: 'score SA 4.0.x : 1.592 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''-6'',
+      ''-3'') : la Date du message est antérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_PAST_03_06
+  title: La date du message est 3 à 6 heures dans le passé
+  why: Le message est daté de 3 à 6 heures avant son arrivée. Envoi resté en file d'attente, campagne
+    préparée puis envoyée plus tard avec sa date de création, ou fuseau mal déclaré.
+  fix:
+  - Générez l'en-tête Date au moment de l'envoi réel, surtout pour les envois différés, mis en file d'attente
+    ou renvoyés.
+  - Vérifiez l'horloge et le fuseau du serveur qui crée le message.
+  - Si le message a séjourné dans une file d'attente, cherchez pourquoi il n'est pas parti tout de suite
+    (serveur relais saturé, cron WordPress en retard).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_past_06_12
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(DATE_IN_PAST_06_12)
+    notes: 'score SA 4.0.x : 1.543 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''-12'',
+      ''-6'') : la Date du message est antérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_PAST_06_12
+  title: La date du message est 6 à 12 heures dans le passé
+  why: 'Le message est daté de 6 à 12 heures avant son arrivée. Même causes : file d''attente, date de
+    création réutilisée, fuseau.'
+  fix:
+  - Générez l'en-tête Date au moment de l'envoi réel, surtout pour les envois différés, mis en file d'attente
+    ou renvoyés.
+  - Vérifiez l'horloge et le fuseau du serveur qui crée le message.
+  - Si le message a séjourné dans une file d'attente, cherchez pourquoi il n'est pas parti tout de suite
+    (serveur relais saturé, cron WordPress en retard).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_past_12_24
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(DATE_IN_PAST_12_24)
+    notes: 'score SA 4.0.x : 1.049 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''-24'',
+      ''-12'') : la Date du message est antérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_PAST_12_24
+  title: La date du message est 12 à 24 heures dans le passé
+  why: Le message est daté de la veille par rapport à son arrivée. Souvent un message bloqué dans une
+    file d'attente puis relâché.
+  fix:
+  - Générez l'en-tête Date au moment de l'envoi réel, surtout pour les envois différés, mis en file d'attente
+    ou renvoyés.
+  - Vérifiez l'horloge et le fuseau du serveur qui crée le message.
+  - Si le message a séjourné dans une file d'attente, cherchez pourquoi il n'est pas parti tout de suite
+    (serveur relais saturé, cron WordPress en retard).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_past_24_48
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(DATE_IN_PAST_24_48)
+    notes: 'score SA 4.0.x : 1.34 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''-48'',
+      ''-24'') : la Date du message est antérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_PAST_24_48
+  title: La date du message est 1 à 2 jours dans le passé
+  why: Le message est arrivé un à deux jours après sa date. Les serveurs qui réessaient longtemps après
+    un refus temporaire produisent cet écart.
+  fix:
+  - Générez l'en-tête Date au moment de l'envoi réel, surtout pour les envois différés, mis en file d'attente
+    ou renvoyés.
+  - Vérifiez l'horloge et le fuseau du serveur qui crée le message.
+  - Si le message a séjourné dans une file d'attente, cherchez pourquoi il n'est pas parti tout de suite
+    (serveur relais saturé, cron WordPress en retard).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_past_48_96
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(DATE_IN_PAST_48_96)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''-96'',
+      ''-48'') : la Date du message est antérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - DATE_IN_PAST_48_96
+  title: La date du message est 2 à 4 jours dans le passé
+  why: Le message porte une date de deux à quatre jours avant son arrivée.
+  fix:
+  - Générez l'en-tête Date au moment de l'envoi réel, surtout pour les envois différés, mis en file d'attente
+    ou renvoyés.
+  - Vérifiez l'horloge et le fuseau du serveur qui crée le message.
+  - Si le message a séjourné dans une file d'attente, cherchez pourquoi il n'est pas parti tout de suite
+    (serveur relais saturé, cron WordPress en retard).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.date_in_past_96_xx
+  family: spamassassin
+  severity: high
+  penalty: 1.7
+  detect:
+    signal: spamassassin.hit(DATE_IN_PAST_96_XX)
+    notes: 'score SA 4.0.x : 3.405 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_shifted_date(''undef'',
+      ''-96'') : la Date du message est antérieure à la date du premier Received fiable, dans l''intervalle
+      en heures indiqué.'
+  sa_rules:
+  - DATE_IN_PAST_96_XX
+  title: La date du message est plus de 4 jours dans le passé
+  why: Le message est daté de plus de quatre jours avant son arrivée. Les spams réexpédiés ou les vieux
+    modèles réutilisés tels quels ont ce profil. Près de 3,5 points.
+  fix:
+  - Générez l'en-tête Date au moment de l'envoi réel, surtout pour les envois différés, mis en file d'attente
+    ou renvoyés.
+  - Vérifiez l'horloge et le fuseau du serveur qui crée le message.
+  - Si le message a séjourné dans une file d'attente, cherchez pourquoi il n'est pas parti tout de suite
+    (serveur relais saturé, cron WordPress en retard).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.invalid_date
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(INVALID_DATE)
+    notes: 'score SA 4.0.x : 1.096 (sa-update r1939780, jeu réseau + Bayes). Teste : header Date !~ format
+      RFC 2822 (jour, mois en anglais abrégé, année, heure, fuseau numérique ou nom autorisé).'
+  sa_rules:
+  - INVALID_DATE
+  title: En-tête Date au format invalide
+  why: 'L''en-tête Date n''est pas au format attendu : mois en français, format ISO 2026-11-10, fuseau
+    absent. Les scripts qui formatent la date eux-mêmes se trompent souvent.'
+  fix:
+  - 'Formatez la date en RFC 5322 : jour et mois abrégés en anglais, heure, décalage horaire numérique.'
+  - En PHP, utilisez date(DATE_RFC2822) ou laissez PHPMailer la générer.
+  example_bad: 'Date: mardi 10 novembre 2026 14:05'
+  example_good: 'Date: Tue, 10 Nov 2026 14:05:00 +0100'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.invalid_date_tz_absurd
+  family: spamassassin
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: spamassassin.hit(INVALID_DATE_TZ_ABSURD)
+    notes: 'score SA 4.0.x : 0.491 (sa-update r1939780, jeu réseau + Bayes). Teste : header Date =~ /[-+](?!(?:0\d|1[0-4])(?:[03]0|[14]5))\d{4}$/
+      : décalage hors des valeurs existantes.'
+  sa_rules:
+  - INVALID_DATE_TZ_ABSURD
+  title: Fuseau horaire impossible dans la Date
+  why: Le décalage horaire de la Date n'existe pas (par exemple +0160 ou +2500). Erreur de calcul dans
+    le code qui génère la date.
+  fix:
+  - Générez le décalage avec la fonction de date du langage au lieu de le calculer à la main.
+  example_bad: 'Date: Tue, 10 Nov 2026 14:05:00 +0160'
+  example_good: 'Date: Tue, 10 Nov 2026 14:05:00 +0100'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.3
+- id: sa.msgid_from_mta_header
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(MSGID_FROM_MTA_HEADER)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : l''en-tête
+      Message-Id apparaît avant les Received (ajouté en route), hors Yahoo, Wanadoo et Hotmail.'
+  sa_rules:
+  - MSGID_FROM_MTA_HEADER
+  title: Message-ID ajouté par un serveur relais
+  why: Le message est parti sans Message-ID et c'est un serveur intermédiaire qui l'a ajouté. Score symbolique,
+    mais cela montre un logiciel d'envoi incomplet.
+  fix:
+  - Faites générer le Message-ID par l'application qui crée le message.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.msgid_short
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(MSGID_SHORT)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : header MESSAGEID
+      =~ /^.{1,15}$|<.{0,4}\@/.'
+  sa_rules:
+  - MSGID_SHORT
+  title: Message-ID anormalement court
+  why: Le Message-ID fait moins de 16 caractères ou sa partie gauche moins de 5. Il risque de ne pas être
+    unique. Score symbolique.
+  fix:
+  - Générez un identifiant long et unique (horodatage plus valeur aléatoire) suivi de @{domain}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.msgid_multiple_at
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(MSGID_MULTIPLE_AT)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : header MESSAGEID =~ /<[^>]*\@[^>]*\@/.
+      Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - MSGID_MULTIPLE_AT
+  title: Message-ID avec plusieurs @
+  why: Le Message-ID contient deux @, souvent parce que le code a collé une adresse e-mail complète après
+    le @. Format invalide.
+  fix:
+  - 'Construisez le Message-ID avec le domaine seul après le @ : <identifiant@{domain}>.'
+  example_bad: 'Message-ID: <12345@contact@exemple.fr>'
+  example_good: 'Message-ID: <12345.abc@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kmcgrail/20_demoted_tests.cf
+- id: sa.msgid_hdr_malf
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(MSGID_HDR_MALF)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta exists:MessageID
+      : en-tête écrit sans tiret.'
+  sa_rules:
+  - MSGID_HDR_MALF
+  title: En-tête MessageID mal orthographié
+  why: Le message contient un en-tête « MessageID » sans tiret, qui n'existe pas. Le logiciel d'envoi
+    voulait écrire Message-ID.
+  fix:
+  - Corrigez le nom de l'en-tête en Message-ID dans le code d'envoi.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.invalid_msgid
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(INVALID_MSGID)
+    notes: 'score SA 4.0.x : 0.568 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : Message-ID
+      présent mais ne respectant pas <gauche@droite> sans espace ni caractère 8 bits.'
+  sa_rules:
+  - INVALID_MSGID
+  title: Message-ID non conforme
+  why: 'Le Message-ID ne suit pas la forme <identifiant@domaine> : chevrons absents, espace, accent. Les
+    destinataires peuvent mal gérer les fils de discussion.'
+  fix:
+  - Entourez l'identifiant de chevrons et n'utilisez que des caractères ASCII sans espace.
+  example_bad: 'Message-ID: commande 1234@exemple.fr'
+  example_good: 'Message-ID: <commande-1234.20261110@exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_meta_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc5322#section-3.6.4
+- id: sa.subj_all_caps
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(SUBJ_ALL_CAPS)
+    notes: 'score SA 4.0.x : 0.5 (sa-update r1939780, jeu réseau + Bayes). Teste : subject_is_all_caps()
+      : objet de plus d''un mot et d''au moins 10 lettres, toutes en majuscules (préfixes Re:, Fwd: retirés).'
+  sa_rules:
+  - SUBJ_ALL_CAPS
+  title: Objet entièrement en majuscules
+  why: L'objet est écrit tout en capitales. Pénalité modérée, mais c'est aussi ce que les lecteurs signalent
+    le plus volontiers comme spam.
+  fix:
+  - Écrivez l'objet en minuscules avec une majuscule initiale ; gardez les capitales pour un mot au plus.
+  example_bad: 'Subject: PROMOTION EXCEPTIONNELLE CE WEEK-END'
+  example_good: 'Subject: Promotion exceptionnelle ce week-end'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.subject_needs_encoding
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SUBJECT_NEEDS_ENCODING)
+    notes: 'score SA 4.0.x : 0.049 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : objet non
+      encodé RFC 2047 contenant des caractères interdits bruts.'
+  sa_rules:
+  - SUBJECT_NEEDS_ENCODING
+  title: Objet avec des caractères non encodés
+  why: L'objet contient des accents ou caractères spéciaux envoyés bruts au lieu d'être encodés. Certains
+    logiciels affichent alors des caractères illisibles.
+  fix:
+  - Déclarez l'objet en UTF-8 et laissez la bibliothèque l'encoder (=?UTF-8?Q?...?=).
+  - En PHP avec mail(), encodez l'objet avec mb_encode_mimeheader().
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_other.cf
+  - https://www.rfc-editor.org/rfc/rfc2047
+- id: sa.subj_illegal_chars
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(SUBJ_ILLEGAL_CHARS)
+    notes: 'score SA 4.0.x : 1.518 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_illegal_chars(''Subject'',
+      ''0.00'', ''2'') : au moins 2 caractères 8 bits bruts dans l''objet, hors expéditeur yahoo.com.'
+  sa_rules:
+  - SUBJ_ILLEGAL_CHARS
+  title: Trop de caractères bruts illégaux dans l'objet
+  why: L'objet contient plusieurs caractères 8 bits non encodés. Un objet en français avec des accents
+    envoyé par un script sans encodage déclenche cette règle à 1,5 point.
+  fix:
+  - Encodez l'objet en RFC 2047 (UTF-8, quoted-printable ou base64).
+  fix_by_provider:
+    wordpress: 'Utilisez wp_mail() plutôt que mail() : WordPress encode l''objet correctement.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc2047
+- id: sa.bad_enc_header
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(BAD_ENC_HEADER)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : header ALL:raw =~
+      /=\?[^?\s]+\?[^?\s]\?\s*[^?]+\s(?!\?=)/ : mot encodé RFC 2047 qui contient un espace ou n''est pas
+      refermé.'
+  sa_rules:
+  - BAD_ENC_HEADER
+  title: En-tête mal encodé
+  why: Un en-tête contient un mot encodé (=?UTF-8?Q?...) coupé par un espace ou jamais refermé par ?=.
+    Le texte s'affiche avec des codes. Score symbolique.
+  fix:
+  - Utilisez la fonction d'encodage de la bibliothèque d'envoi au lieu d'assembler la chaîne à la main.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc2047#section-5
+- id: sa.hdrs_lcase
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HDRS_LCASE)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : en-têtes écrits
+      Message-id, Content-type, from, subject, to, cc... hors logiciels connus et messages authentifiés.'
+  sa_rules:
+  - HDRS_LCASE
+  title: En-têtes avec une casse inhabituelle
+  why: 'Des en-têtes sont écrits avec une casse anormale (« from: », « Content-type: »). Les logiciels
+    de spam ont des habitudes d''écriture repérables. Score symbolique.'
+  fix:
+  - 'Utilisez la casse standard : From, To, Subject, Message-ID, Content-Type.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.t_many_hdrs_lcase
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_MANY_HDRS_LCASE)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : plus d''un
+      en-tête de la liste HDRS_LCASE en casse anormale. Règle de test T_. Pas de ligne score : valeur
+      par défaut de SpamAssassin.'
+  sa_rules:
+  - T_MANY_HDRS_LCASE
+  title: Plusieurs en-têtes avec une casse inhabituelle
+  why: Plusieurs en-têtes ont une casse inhabituelle. Règle de test sans poids.
+  fix:
+  - Utilisez la casse standard des noms d'en-têtes.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.unclosed_bracket
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(UNCLOSED_BRACKET)
+    notes: 'score SA 4.0.x : 1.496 (sa-update r1939780, jeu réseau + Bayes). Teste : header ALL =~ /\[\d+\r?\n/s
+      : crochet ouvrant suivi de chiffres en fin de ligne.'
+  sa_rules:
+  - UNCLOSED_BRACKET
+  title: Un en-tête contient un crochet non refermé
+  why: Un en-tête contient « [123 » sans crochet fermant, souvent une variable de modèle mal remplie ou
+    un en-tête tronqué. Près d'1,5 point.
+  fix:
+  - Relisez les en-têtes générés (objet, From, en-têtes X-) et corrigez la variable qui produit ce crochet.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.unresolved_template
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(UNRESOLVED_TEMPLATE)
+    notes: 'score SA 4.0.x : 1.252 (sa-update r1939780, jeu réseau + Bayes). Teste : check_unresolved_template()
+      : un en-tête autre que To, Cc, From, Subject, Message-Id... contient %MAJUSCULES.'
+  sa_rules:
+  - UNRESOLVED_TEMPLATE
+  title: Un en-tête contient une variable de modèle non remplacée
+  why: 'Un en-tête contient un marqueur du type %NOM ou %EMAIL resté tel quel : le logiciel d''envoi n''a
+    pas substitué sa variable. C''est la signature des logiciels de spam mal paramétrés.'
+  fix:
+  - Repérez l'en-tête qui contient le % et corrigez la variable dans le modèle ou le script.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.pling_query
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(PLING_QUERY)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : Subject =~ /\?.*!|!.*\?/.'
+  sa_rules:
+  - PLING_QUERY
+  title: Objet avec point d'exclamation et point d'interrogation
+  why: L'objet contient à la fois « ! » et « ? ». Pénalité faible, mais c'est un tic d'objet racoleur.
+  fix:
+  - Gardez une seule ponctuation forte dans l'objet, ou aucune.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.gappy_subject
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(GAPPY_SUBJECT)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : Subject =~ lettres
+      séparées par . - _ ou espaces sur au moins 4 caractères (G.R.A.T.U.I.T).'
+  sa_rules:
+  - GAPPY_SUBJECT
+  title: Objet écrit avec des lettres espacées
+  why: L'objet contient un mot écrit lettre par lettre avec des séparateurs, technique pour contourner
+    les filtres de mots-clés. Pénalité faible.
+  fix:
+  - Écrivez les mots normalement dans l'objet.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.subj_dollars
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(SUBJ_DOLLARS)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : header Subject =~ /^\$[0-9.,]+\b/.'
+  sa_rules:
+  - SUBJ_DOLLARS
+  title: Objet qui commence par un montant en dollars
+  why: L'objet commence par un montant en dollars. Pénalité faible.
+  fix:
+  - Commencez l'objet par un mot qui décrit le contenu plutôt que par un prix.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.subj_buy
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(SUBJ_BUY)
+    notes: 'score SA 4.0.x : 0.639 (sa-update r1939780, jeu réseau + Bayes). Teste : header Subject =~
+      /^buy/i.'
+  sa_rules:
+  - SUBJ_BUY
+  title: Objet qui commence par « Buy »
+  why: L'objet commence par « Buy » ou « Buying ». La règle ne vise que l'anglais.
+  fix:
+  - Reformulez l'objet pour décrire l'offre plutôt qu'un ordre d'achat.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.xprio
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(XPRIO)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : X-Priority
+      présent, sans DKIM, sans SPF pass ni DNSWL, et hors cas légitimes (chiffré, liste, PHPMailer...).'
+  sa_rules:
+  - XPRIO
+  title: En-tête X-Priority sur un message non authentifié
+  why: Le message porte un en-tête de priorité et n'est pas authentifié. Score symbolique, mais il sert
+    de condition à d'autres règles plus lourdes.
+  fix:
+  - 'Retirez l''en-tête X-Priority : il n''améliore pas la délivrabilité.'
+  - Signez le message en DKIM.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.xprio_short_subj
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(XPRIO_SHORT_SUBJ)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta XPRIO && objet de
+      8 caractères ou moins, sans DKIM, sans lien et hors relais www.'
+  sa_rules:
+  - XPRIO_SHORT_SUBJ
+  title: Priorité haute et objet très court
+  why: Le message demande une priorité et son objet fait moins de 9 caractères (« Urgent », « Facture
+    »). Combinaison fréquente des fraudes.
+  fix:
+  - Retirez X-Priority et écrivez un objet descriptif.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.x_ip
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(X_IP)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : header exists:X-IP.'
+  sa_rules:
+  - X_IP
+  title: En-tête X-IP présent
+  why: Le message contient un en-tête X-IP, ajouté par certains webmails et scripts. Score symbolique.
+  fix:
+  - Rien d'urgent. Si votre script l'ajoute, vous pouvez le retirer.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.spammy_xmailer
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(SPAMMY_XMAILER)
+    notes: 'score SA 4.0.x : 2.491 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : X-Mailer égal
+      à une version précise d''Outlook Express ou d''Outlook (6.00.2800.1441, 5.50.4807.2300, 6.00.2800.4682,
+      Build 10.0.4115, 4.72.2106.4).'
+  sa_rules:
+  - SPAMMY_XMAILER
+  title: Logiciel d'envoi déclaré connu pour le spam
+  why: L'en-tête X-Mailer déclare une ancienne version précise d'Outlook ou d'Outlook Express que les
+    logiciels de spam imitent depuis des années. Près de 2,5 points.
+  fix:
+  - 'Supprimez ou corrigez l''en-tête X-Mailer de votre script : n''imitez pas un logiciel que vous n''utilisez
+    pas.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jm/20_basic.cf
+- id: sa.php_script
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(PHP_SCRIPT)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta exists:X-PHP-Script,
+      hors réseau de confiance, X-Mailer PHP, base64, adresse dans le corps et CTE 7bit.'
+  sa_rules:
+  - PHP_SCRIPT
+  title: Message envoyé par un script PHP
+  why: L'en-tête X-PHP-Script indique un envoi par la fonction mail() de PHP sur un hébergement mutualisé.
+    Les sites piratés envoient du spam par ce chemin.
+  fix:
+  - Envoyez les e-mails du site par SMTP authentifié vers votre messagerie au lieu de mail().
+  fix_by_provider:
+    wordpress: Installez une extension SMTP (WP Mail SMTP, FluentSMTP, Post SMTP) et configurez le serveur
+      de votre messagerie.
+    cpanel: Créez une adresse e-mail dans cPanel et utilisez son serveur SMTP avec authentification dans
+      l'application.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.php_script_mua
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(PHP_SCRIPT_MUA)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta exists:X-PHP-Script
+      && X-Mailer =~ /^PHP$/.'
+  sa_rules:
+  - PHP_SCRIPT_MUA
+  title: Message envoyé par un script PHP sans version
+  why: 'Le message vient de mail() en PHP et déclare « X-Mailer: PHP » sans version. Signature d''un script
+    écrit rapidement.'
+  fix:
+  - Passez par une bibliothèque (PHPMailer, Symfony Mailer) en SMTP authentifié.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.php_nover_mua
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(PHP_NOVER_MUA)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta X-Mailer =~ /^PHP$/,
+      sans DKIM fiable ni autres exceptions.'
+  sa_rules:
+  - PHP_NOVER_MUA
+  title: Logiciel d'envoi déclaré « PHP » sans version
+  why: L'en-tête X-Mailer vaut simplement « PHP ». Les vrais logiciels de messagerie indiquent leur nom
+    et leur version.
+  fix:
+  - Retirez l'en-tête X-Mailer du script ou utilisez une bibliothèque d'envoi.
+  - 'Signez le message en DKIM : la règle ne s''applique plus.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_xmailer.cf
+- id: sa.php_orig_script
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(PHP_ORIG_SCRIPT)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta exists:X-PHP-Originating-Script
+      && (ratio d''espaces anormal, objet d''un seul mot ou commentaires HTML qui coupent les mots), hors
+      texte d''abonnement.'
+  sa_rules:
+  - PHP_ORIG_SCRIPT
+  title: Script PHP d'origine indiqué et autres signes de robot
+  why: L'en-tête X-PHP-Originating-Script nomme le script PHP qui a envoyé le message, et le contenu a
+    des traits de spam automatique. Sur un site, cela peut signaler un formulaire détourné.
+  fix:
+  - Vérifiez dans l'en-tête quel fichier PHP a envoyé le message ; s'il vous est inconnu, le site est
+    probablement compromis.
+  - Faites passer les envois légitimes par SMTP authentifié.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.xm_phpmailer_forged
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(XM_PHPMAILER_FORGED)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta X-Mailer =~ /PHPMailer\s.*version\D+$/
+      : mention « version » sans numéro. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - XM_PHPMAILER_FORGED
+  title: En-tête X-Mailer PHPMailer incomplet
+  why: 'L''en-tête X-Mailer cite PHPMailer avec le mot « version » mais sans numéro. Les vrais en-têtes
+    de PHPMailer indiquent la version : celui-ci est fabriqué ou modifié.'
+  fix:
+  - Laissez PHPMailer écrire son X-Mailer par défaut, ou réglez sa propriété XMailer sur un espace pour
+    ne pas envoyer cet en-tête.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_xmailer.cf
+- id: sa.mailing_list_multi
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(MAILING_LIST_MULTI)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : plus de 2 indices
+      parmi X-Loop, X-Mailing-List, X-Mailman-Version, X-BeenThere, List-Unsubscribe, Precedence list/bulk,
+      List-Id, List-Post, Mailing-List, Return-Path -request/-bounces. Pas de ligne score : valeur par
+      défaut de SpamAssassin.'
+  sa_rules:
+  - MAILING_LIST_MULTI
+  title: En-têtes d'un gestionnaire de liste de diffusion
+  why: Le message porte plusieurs en-têtes de liste de diffusion. SpamAssassin le reconnaît comme un envoi
+    de liste et assouplit d'autres règles. Score positif d'un point malgré tout.
+  fix:
+  - 'Rien à corriger : ces en-têtes sont utiles. Gardez List-Unsubscribe et List-Id.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_ratware.cf
+- id: sa.list_prtl_same_user
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(LIST_PRTL_SAME_USER)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : List-Unsubscribe
+      sans List-Id, et même identifiant avant @ en From et To, sans DKIM.'
+  sa_rules:
+  - LIST_PRTL_SAME_USER
+  title: En-têtes de liste incomplets et expéditeur égal au destinataire
+  why: Le message a un List-Unsubscribe mais pas de List-Id, et l'expéditeur porte le même identifiant
+    que le destinataire. Combinaison de faux envoi de liste.
+  fix:
+  - Ajoutez un en-tête List-Id cohérent si vous envoyez une liste de diffusion.
+  - Utilisez une adresse d'expédition distincte et signez en DKIM.
+  example_good: 'List-Id: Lettre d''information <lettre.exemple.fr>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+  - https://www.rfc-editor.org/rfc/rfc2919
+- id: sa.header_spam
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(HEADER_SPAM)
+    notes: 'score SA 4.0.x : 0.585 (sa-update r1939780, jeu réseau + Bayes). Teste : header ALL =~ en-têtes
+      Alternate-Recipient, Antivirus, Approved, Delivery-Notification, Language, Location, Newsletter-ID,
+      PID, UID, X-Company-*, X-E, X-Encoding, X-SP-Track-ID, X-bounce-to...'
+  sa_rules:
+  - HEADER_SPAM
+  title: En-tête typique des logiciels d'envoi de spam
+  why: Le message contient un en-tête qu'on ne trouve presque que dans des logiciels de spam (Newsletter-ID,
+    UID, X-Company-Address, Antivirus...). Certains outils maison les ajoutent sans raison.
+  fix:
+  - Repérez l'en-tête en cause dans le message brut et retirez-le de votre outil ou script.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_ratware.cf
+- id: sa.ratware_zero_tz
+  family: spamassassin
+  severity: medium
+  penalty: 0.9
+  detect:
+    signal: spamassassin.hit(RATWARE_ZERO_TZ)
+    notes: 'score SA 4.0.x : 1.781 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : Date terminée
+      par +0000, Content-Type text/html et From du type "Prénom Nom" <pnom..@>.'
+  sa_rules:
+  - RATWARE_ZERO_TZ
+  title: Date en +0000 et expéditeur au format de logiciel de spam
+  why: La date est en temps universel, le message est en HTML et l'adresse est dérivée du nom selon un
+    motif repéré dans un logiciel de spam.
+  fix:
+  - Générez la Date avec votre fuseau réel et ajoutez une partie texte au message.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_ratware.cf
+- id: sa.forged_mua_outlook
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(FORGED_MUA_OUTLOOK)
+    notes: 'score SA 4.0.x : 1.927 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : X-Mailer Outlook
+      ou Outlook Express sans Message-ID au format correspondant, ou X-Mailer « Outlook » seul.'
+  sa_rules:
+  - FORGED_MUA_OUTLOOK
+  title: Le message se dit envoyé par Outlook mais n'en a pas les caractéristiques
+  why: L'en-tête X-Mailer annonce Outlook, mais le Message-ID ne correspond pas à ce qu'Outlook génère.
+    Un script qui imite Outlook pour paraître légitime obtient l'effet inverse.
+  fix:
+  - Retirez l'en-tête X-Mailer qui imite Outlook dans votre script ou outil.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_ratware.cf
+- id: sa.forged_outlook_html
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FORGED_OUTLOOK_HTML)
+    notes: 'score SA 4.0.x : 0.021 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : X-Mailer Outlook
+      && MIME_HTML_ONLY.'
+  sa_rules:
+  - FORGED_OUTLOOK_HTML
+  title: Message « Outlook » sans partie texte
+  why: Outlook envoie toujours une version texte avec le HTML. Un message qui se dit d'Outlook mais n'a
+    que du HTML est imité. Score faible.
+  fix:
+  - Ajoutez une partie texte, et retirez le X-Mailer Outlook si vous n'envoyez pas depuis Outlook.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_ratware.cf
+- id: sa.forged_outlook_tags
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FORGED_OUTLOOK_TAGS)
+    notes: 'score SA 4.0.x : 0.052 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : X-Mailer Outlook,
+      HTML présent, mais pas toutes les balises html, head, meta et body.'
+  sa_rules:
+  - FORGED_OUTLOOK_TAGS
+  title: HTML « Outlook » sans la structure qu'Outlook produit
+  why: Outlook produit toujours un HTML complet. Un message « Outlook » sans ces balises a été fabriqué
+    ailleurs. Score faible.
+  fix:
+  - Générez un document HTML complet (html, head, meta charset, body) et n'imitez pas le X-Mailer d'Outlook.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_ratware.cf
+- id: sa.dos_outlook_to_mx
+  family: spamassassin
+  severity: high
+  penalty: 1.4
+  detect:
+    signal: spamassassin.hit(DOS_OUTLOOK_TO_MX)
+    notes: 'score SA 4.0.x : 2.845 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : X-Mailer Outlook
+      (hors Outlook Express), un seul relais externe et pas d''en-têtes de liste.'
+  sa_rules:
+  - DOS_OUTLOOK_TO_MX
+  title: Message « Outlook » remis directement au serveur du destinataire
+  why: 'Le message se dit envoyé par Outlook mais il a été remis directement au serveur de réception,
+    sans passer par un serveur d''envoi. Outlook passe toujours par un serveur : c''est la marque d''un
+    robot. Près de 3 points.'
+  fix:
+  - Envoyez via le serveur SMTP de votre messagerie et retirez l'en-tête X-Mailer imitant Outlook.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/dos/70_other.cf
+- id: sa.mimeole_direct_to_mx
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(MIMEOLE_DIRECT_TO_MX)
+    notes: 'score SA 4.0.x : 2 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : exists:X-MimeOLE
+      et remise directe au MX, sans image jointe ni DKIM.'
+  sa_rules:
+  - MIMEOLE_DIRECT_TO_MX
+  title: En-tête X-MimeOLE et remise directe au serveur
+  why: Le message porte l'en-tête X-MimeOLE des logiciels Microsoft et arrive directement au serveur de
+    réception. Combinaison typique des machines infectées.
+  fix:
+  - Passez par le serveur SMTP de votre messagerie, ou signez les messages en DKIM.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.dos_body_high_no_mid
+  family: spamassassin
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: spamassassin.hit(DOS_BODY_HIGH_NO_MID)
+    notes: 'score SA 4.0.x : 3.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : corps contenant
+      au moins 4 caractères 8 bits && MISSING_MID.'
+  sa_rules:
+  - DOS_BODY_HIGH_NO_MID
+  title: Corps avec caractères 8 bits et aucun Message-ID
+  why: Le message n'a pas de Message-ID et son texte contient des caractères accentués. Pour un message
+    en français envoyé par un script sans Message-ID, cela coûte près de 4 points.
+  fix:
+  - 'Ajoutez un Message-ID (voir MISSING_MID) : cela suffit à supprimer cette règle.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/dos/70_other.cf
+- id: sa.cte_8bit_mismatch
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(CTE_8BIT_MISMATCH)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : Content-Type text/plain,
+      Content-Transfer-Encoding absent ou 7bit, et corps avec octets 8 bits.'
+  sa_rules:
+  - CTE_8BIT_MISMATCH
+  title: Texte déclaré 7 bits mais contenant des accents
+  why: La partie texte se déclare en 7 bits (ASCII pur) alors qu'elle contient des caractères accentués.
+    Le texte peut s'afficher corrompu chez le destinataire.
+  fix:
+  - 'Déclarez Content-Transfer-Encoding: quoted-printable (ou 8bit) et charset=UTF-8 pour la partie texte.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/davej/20_non_ascii.cf
+  - https://www.rfc-editor.org/rfc/rfc2045#section-6
+- id: sa.has_x_outgoing_spam_stat
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(HAS_X_OUTGOING_SPAM_STAT)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta exists:X-OutGoing-Spam-Status,
+      hors listes de diffusion, réponses automatiques, PDF et documents joints.'
+  sa_rules:
+  - HAS_X_OUTGOING_SPAM_STAT
+  title: En-tête X-OutGoing-Spam-Status présent
+  why: Le serveur d'envoi a ajouté l'en-tête X-OutGoing-Spam-Status (cPanel le fait avec son filtre sortant).
+    SpamAssassin juge qu'on ne peut pas se fier à un tel en-tête et ajoute un point.
+  fix:
+  - Si vous gérez le serveur cPanel, désactivez l'ajout de cet en-tête sur les messages sortants, ou envoyez
+    par un relais qui ne l'ajoute pas.
+  fix_by_provider:
+    cpanel: L'en-tête vient du filtrage sortant d'Exim sous cPanel ; seul l'administrateur du serveur
+      (WHM) peut le désactiver.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.rand_mktg_header
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(RAND_MKTG_HEADER)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : en-tête X-ab-EBS,
+      X-ab-Tracking-Id, X-ab-Campaign-Id... (préfixe de 2 ou 4 lettres), hors bounces, Thread-Index, X-Mailing-List.'
+  sa_rules:
+  - RAND_MKTG_HEADER
+  title: En-tête de suivi marketing au nom partiellement aléatoire
+  why: Le message contient un en-tête de suivi de campagne dont le nom change d'un envoi à l'autre, motif
+    repéré dans des logiciels de spam.
+  fix:
+  - Utilisez des noms d'en-têtes de suivi fixes, ou supprimez-les.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.jh_spammy_headers
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(JH_SPAMMY_HEADERS)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : exists Complaint-To,
+      Tracking-Code, logid, X-Letter, X-EBSERVER ou List-Open.'
+  sa_rules:
+  - JH_SPAMMY_HEADERS
+  title: En-tête rare vu surtout dans le spam
+  why: Le message contient un en-tête comme Complaint-To, Tracking-Code ou List-Open, que l'on rencontre
+    presque uniquement dans du spam.
+  fix:
+  - Retirez cet en-tête de votre logiciel d'envoi.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.no_dns_for_from
+  family: spamassassin
+  severity: high
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(NO_DNS_FOR_FROM)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dns_sender()
+      : le domaine du MAIL FROM n''a ni enregistrement MX ni A. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - NO_DNS_FOR_FROM
+  title: Le domaine d'enveloppe n'a ni MX ni adresse IP
+  why: '{envelope_domain}, le domaine qui reçoit les retours, n''existe pas en DNS ou n''a ni MX ni A.
+    Les retours d''erreur sont perdus et beaucoup de serveurs refusent un expéditeur injoignable.'
+  fix:
+  - Utilisez un Return-Path sous un domaine qui reçoit du courrier (enregistrement MX).
+  - Si {envelope_domain} est un sous-domaine technique de l'outil d'envoi, publiez le MX ou l'enregistrement
+    demandé par l'outil.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_net_tests.cf

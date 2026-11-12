@@ -1,0 +1,81 @@
+dnssec.bogus:
+  title: "The DNSSEC signature of {domain} is invalid"
+  why: "Resolvers that check DNSSEC refuse all answers from {domain}. For them, your SPF, your DKIM keys and your DMARC no longer exist: your messages are held or rejected, and mail to {domain} can no longer be delivered."
+  fix:
+    - "Check the zone with the DNSViz analyzer (dnsviz.net) or Verisign's DNSSEC Analyzer to find the record at fault."
+    - "If you changed DNS host recently, delete the old DS record at your registrar, then re-enable DNSSEC at the new host and publish its DS."
+    - "In an emergency, remove the DS record at the registrar: the zone becomes unsigned but resolvable again once the TTL of the DS has passed."
+  fix_by_provider:
+    cloudflare_dns: "In DNS, Settings, DNSSEC section, check the status. If the DS shown differs from the one published at the registrar, replace the latter with the value indicated by Cloudflare."
+dnssec.ds_mismatch:
+  title: "The DS record of {domain} no longer matches its DNSSEC keys"
+  why: "The registry announces a key that the zone of {domain} no longer publishes. Validating resolvers consider all your DNS answers forged: SPF, DKIM, DMARC and MX become invisible."
+  fix:
+    - "Note the keys published by your current DNS host (DNSKEY records, or the DS value provided by its interface)."
+    - "At your registrar, delete the old DS and add the one from your current host."
+    - "Wait for the TTL of the old DS to expire (value visible with dig DS {domain}) before running the test again."
+  fix_by_provider:
+    cloudflare_dns: "In DNS, Settings, DNSSEC, copy the DS record offered and paste it at your registrar in place of the old one."
+dnssec.dnskey_missing:
+  title: "{domain} announces DNSSEC but its zone is no longer signed"
+  why: "A DS record remains at the registry while the zone of {domain} is no longer signed. Validating resolvers then refuse all its answers, and your email stops working for some recipients."
+  fix:
+    - "Choose: either re-enable DNSSEC at your current DNS host, or remove the DS."
+    - "To remove the DS, delete it in your registrar's DNSSEC interface."
+    - "To re-enable it, turn on DNSSEC at the DNS host, then replace the registrar's DS with the new value."
+dnssec.rrsig_expired:
+  title: "The DNSSEC signatures of {domain} have expired"
+  why: "The signatures of your zone are no longer valid. Validating resolvers refuse the answers of {domain}, which makes your SPF, DKIM keys and DMARC invisible."
+  fix:
+    - "Re-sign the zone at your DNS host, or on your server (for example rndc sign {domain} with BIND, or the re-signing command of your software)."
+    - "Set up automatic re-signing (online signing managed by the DNS server) so that this does not happen again."
+    - "If the zone cannot be re-signed quickly, remove the DS at the registrar."
+dnssec.rrsig_expiring:
+  title: "The DNSSEC signatures of {domain} will expire soon"
+  why: "If the zone is not re-signed before the deadline, {domain} will become unreadable for validating resolvers, and your email with it."
+  fix:
+    - "Check that automatic re-signing is active at your DNS host or on your server."
+    - "Run this test again tomorrow: the expiry date should have moved forward."
+dnssec.unsigned:
+  title: "The DNS zone of {domain} is not signed (DNSSEC)"
+  why: "Without DNSSEC, an attacker on the network can forge the DNS answers of {domain}, for example your MX records. This is not a deliverability criterion, but it is a prerequisite for DANE, the strongest protection for mail transport."
+  fix:
+    - "Enable DNSSEC at your DNS host."
+    - "Publish at your registrar the DS record provided by the host (often automatic when the registrar and the host are the same)."
+    - "Check the result with dnsviz.net before relying on it."
+  fix_by_provider:
+    cloudflare_dns: "In DNS, Settings, click Enable DNSSEC, then add the DS record shown at your registrar."
+dnssec.algorithm_not_recommended:
+  title: "The zone {domain} is signed with a discouraged algorithm"
+  why: "The algorithm used to sign your zone is discouraged or forbidden for signing. Some resolvers may stop validating it and then treat your zone as unsigned or invalid."
+  fix:
+    - "Ask your DNS host for an algorithm change (rollover) to ECDSAP256SHA256 (13)."
+    - "During the change, publish the new DS at the registrar before removing the old one, respecting the TTLs."
+dnssec.nsec3_iterations:
+  title: "The zone {domain} uses NSEC3 with extra iterations"
+  why: "NSEC3 iterations add no security and make validation heavier. Beyond a certain threshold, some resolvers consider the zone insecure or in error, which can make the resolution of your email records fail."
+  fix:
+    - "Set the NSEC3 parameters of the zone to 0 iterations and an empty salt."
+    - "If your DNS host manages the signing, ask it to apply the values of RFC 9276."
+dnssec.mx_zone_bogus:
+  title: "The MX server of {domain} is in a broken DNSSEC zone"
+  why: "The name of your receiving server is no longer resolved by validating resolvers. Replies and bounces addressed to {domain} can no longer be delivered by these senders."
+  fix:
+    - "Identify the domain that hosts the MX name and notify its manager (often your email provider)."
+    - "If it is one of your domains, apply the fix for the “invalid DNSSEC signature” entry to this zone."
+dnssec.ds_missing:
+  title: "The zone {domain} is signed but the registry has no DS record"
+  why: "Your DNS host signs the zone, but without a DS at the registry the chain of trust stops there: no resolver validates {domain}. You have the work of DNSSEC without its protection, and DANE cannot work."
+  fix:
+    - "At your DNS host, note the DS record of {domain} (or the KSK key with its algorithm, if the registrar asks for the key)."
+    - "At your registrar, open the DNSSEC section of the domain and add this DS, with digest type 2 (SHA-256)."
+    - "After propagation, check the chain with dnsviz.net: a copying error would make the whole zone invalid for validating resolvers."
+  fix_by_provider:
+    cloudflare_dns: "In DNS, Settings, DNSSEC section, click Enable DNSSEC (or DS record if DNSSEC is already active) and copy the values to your registrar. With Cloudflare Registrar, the DS is published automatically, which can take one to two days."
+dnssec.ds_sha1:
+  title: "The DS of {domain} uses SHA-1 only"
+  why: "The DNSSEC delegation of {domain} relies on a SHA-1 digest, which the standard now forbids publishing. Validators still accept it today, but the delegation no longer follows the recommendations."
+  fix:
+    - "At your DNS host, note the type 2 (SHA-256) DS matching the same key."
+    - "Add it at your registrar, alongside the current DS."
+    - "Once the new DS is published and the TTL of the old one has passed, remove the type 1 DS."

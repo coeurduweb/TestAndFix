@@ -1,0 +1,488 @@
+# Famille infrastructure : configuration des serveurs et du DNS qui ne relève pas d'un seul
+# protocole d'authentification. Plusieurs entrées expliquent la cause d'une anomalie déjà
+# pénalisée ailleurs (SPF, reverse DNS) : leur pénalité propre reste faible pour ne pas
+# compter deux fois le même défaut.
+
+- id: infrastructure.shared_ip
+  family: infrastructure
+  severity: info
+  penalty: 0
+  detect:
+    signal: "provider.is_esp && provider.ip_pool == 'shared'"
+    notes: "L'IP {ip} appartient au parc partagé du service d'envoi. C'est le mode par défaut documenté chez Mailchimp, Amazon SES, Postmark, HubSpot (sans module IP dédiée) et SendGrid (offres Trial et Essentials). Entrée informative."
+  sa_rules: []
+  title: "Le message part d'une IP partagée de {provider}"
+  why: >
+    Votre réputation d'IP est mutualisée avec les autres clients de {provider}. C'est un
+    avantage pour un volume faible ou irrégulier ; c'est un risque si un voisin envoie mal.
+    Votre réputation de domaine, elle, reste la vôtre.
+  fix:
+    - "Pour un volume modeste, gardez l'IP partagée : une IP dédiée sans volume régulier a une réputation plus difficile à établir."
+    - "Si vous envoyez beaucoup et régulièrement, renseignez-vous sur l'offre d'IP dédiée de {provider}."
+    - "Dans tous les cas, authentifiez {domain} (DKIM aligné) pour que votre réputation de domaine ne dépende pas de l'IP."
+  fix_by_provider:
+    postmark: "Postmark réserve les IP dédiées aux comptes envoyant au moins 300 000 messages par mois."
+    sendgrid: "SendGrid attribue une IP dédiée à partir des offres Pro (Email API) et Advanced (Marketing Campaigns)."
+    brevo: "L'offre Enterprise de Brevo inclut une IP dédiée ; d'autres peuvent être ajoutées en option."
+    amazon_ses: "SES propose des IP dédiées standard ou gérées (managed), facturées en plus."
+    mailchimp: "L'IP dédiée est une option payante attribuée à la discrétion de Mailchimp."
+    hubspot: "Sans le module Dedicated IP ou Transactional Email, les envois marketing passent par les IP partagées de HubSpot."
+  references:
+    - https://mailchimp.com/resources/dedicated-ip-versus-shared-ip/
+    - https://docs.aws.amazon.com/ses/latest/dg/dedicated-ip.html
+    - https://postmarkapp.com/dedicated-ips
+    - https://www.twilio.com/docs/sendgrid/ui/account-and-settings/dedicated-ip-addresses
+    - https://help.brevo.com/hc/en-us/articles/115000240344
+    - https://knowledge.hubspot.com/marketing-email/understand-email-sending-in-hubspot
+
+- id: infrastructure.ipv6_not_in_spf
+  family: infrastructure
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "ip.version == 6 && spf.result in [softfail, fail, neutral] && spf.ip4_terms != [] && spf.ip6_terms == [] && server.has_ipv4_authorized(ip)"
+    notes: "Le serveur est autorisé par son adresse IPv4 mais a envoyé en IPv6, que le SPF ne mentionne pas. Cause fréquente d'un échec SPF intermittent. La pénalité du résultat SPF est comptée dans spf.softfail ou spf.fail."
+  sa_rules: []
+  title: "Le serveur a envoyé en IPv6 ({ip}), adresse absente du SPF"
+  why: >
+    Votre SPF autorise l'IPv4 du serveur, mais ce message est parti par son IPv6. Selon le
+    chemin réseau, vos messages passent ou échouent au SPF, ce qui rend le problème difficile
+    à comprendre.
+  fix:
+    - "Ajoutez ip6:{ip} (ou le préfixe /64 du serveur) à votre SPF."
+    - "Vérifiez que cette IPv6 a aussi un reverse DNS et un enregistrement AAAA correspondant."
+    - "À défaut, configurez le serveur pour n'envoyer qu'en IPv4."
+  fix_by_provider:
+    postfix: "Pour forcer l'IPv4 : smtp_address_preference = ipv4 ou inet_protocols = ipv4 dans main.cf, puis postfix reload."
+  example_bad: "v=spf1 ip4:203.0.113.10 ~all"
+  example_good: "v=spf1 ip4:203.0.113.10 ip6:2001:db8:1234::10 ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5.6
+    - https://www.postfix.org/postconf.5.html#smtp_address_preference
+
+- id: infrastructure.web_server_mail
+  family: infrastructure
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "headers.has('X-PHP-Originating-Script') || envelope_local_part in ['www-data', 'apache', 'nobody', 'nginx', 'php'] || envelope_domain == helo_hostname_of_web_server"
+    notes: "Message envoyé par la fonction mail() d'un serveur web : Return-Path du type www-data@nom-du-serveur, en-tête X-PHP-Originating-Script. L'enveloppe n'est alors pas sur {domain} et rien n'est aligné."
+  sa_rules: []
+  title: "Le message a été envoyé par le serveur web, sans passer par votre messagerie"
+  why: >
+    Votre site envoie directement avec la fonction mail() du serveur. L'adresse de retour est
+    celle du serveur ({envelope_domain}), sans SPF aligné ni DKIM de {domain} : ces messages
+    (formulaires, commandes, mots de passe) finissent souvent en spam.
+  fix:
+    - "Faites envoyer le site par le serveur SMTP authentifié de votre messagerie ou par un service d'envoi transactionnel."
+    - "Utilisez comme expéditeur une adresse de {domain} qui existe réellement."
+    - "Refaites le test : SPF et DKIM doivent passer pour {domain}."
+  fix_by_provider:
+    wordpress: "Installez une extension SMTP, renseignez le serveur SMTP de votre messagerie (port 587 en TLS ou 465 en SSL) avec un compte de {domain}, puis envoyez un message de test depuis l'extension."
+    cpanel: "Si vous restez sur l'hébergement, créez une boîte de {domain} dans cPanel et faites envoyer le site par son SMTP authentifié ; cPanel signale que DKIM peut ne pas signer le courrier PHP dans certaines configurations."
+    o2switch: "Créez une adresse de {domain} dans cPanel et utilisez-la en SMTP authentifié dans votre site ; o2switch indique include:spf.jabatus.fr comme seul SPF pour ses services."
+  references:
+    - https://docs.cpanel.net/cpanel/email/email-deliverability-in-cpanel/
+    - https://faq.o2switch.fr/cpanel/emails/delivrabilite-spf-dkim/
+
+- id: infrastructure.dns_inconsistent
+  family: infrastructure
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "len(unique(ns.query(n, name, TXT) for n in dns.NS(domain))) > 1 for name in [domain, '_dmarc.' + domain, selector + '._domainkey.' + dkim_domain]"
+    notes: "Interrogation directe de chaque serveur de noms faisant autorité : ils ne renvoient pas le même SPF, DMARC ou DKIM. Cause : zone non synchronisée (numéro de série non incrémenté, serveur secondaire bloqué), ou ancien hébergeur DNS resté déclaré."
+  sa_rules: []
+  title: "Les serveurs DNS de {domain} ne donnent pas tous la même réponse"
+  why: >
+    Selon le serveur DNS interrogé, les destinataires voient votre nouvelle configuration ou
+    l'ancienne. Vos résultats SPF, DKIM ou DMARC changent d'un message à l'autre sans raison
+    apparente.
+  fix:
+    - "Comparez la liste des serveurs de noms déclarés chez le registraire avec celle de votre hébergeur DNS actuel ; retirez ceux de l'ancien hébergeur."
+    - "Si vous gérez des serveurs secondaires, incrémentez le numéro de série de la zone et vérifiez que le transfert de zone fonctionne."
+    - "Refaites le test : tous les serveurs doivent renvoyer le même enregistrement."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1034#section-4.3.5
+    - https://www.rfc-editor.org/rfc/rfc1912#section-2.1
+
+- id: infrastructure.dns_lame_server
+  family: infrastructure
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "any(ns.query(n, domain, SOA).status in [timeout, refused] || not ns.query(n, domain, SOA).aa for n in dns.NS(domain))"
+    notes: "Un serveur de noms déclaré ne répond pas ou ne fait pas autorité pour la zone (délégation boiteuse). Les résolveurs perdent du temps puis essaient le suivant ; cela produit des erreurs temporaires SPF, DKIM ou DMARC."
+  sa_rules: []
+  title: "Un serveur DNS déclaré pour {domain} ne répond pas correctement"
+  why: >
+    Une partie des requêtes vers {domain} tombe sur un serveur qui ne répond pas. Les
+    destinataires obtiennent alors des erreurs temporaires et retardent ou évaluent mal vos
+    messages.
+  fix:
+    - "Identifiez le serveur fautif signalé par le test."
+    - "Retirez-le de la liste des serveurs de noms chez le registraire, ou faites-le configurer pour servir la zone de {domain}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9499#section-7
+
+- id: infrastructure.cname_at_apex
+  family: infrastructure
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "dns.CNAME(domain) != null"
+    notes: "RFC 1034 §3.6.2 et RFC 2181 §10.1 : un nom qui porte un CNAME ne peut porter aucune autre donnée. À la racine d'un domaine, cela rend MX, SPF et DMARC (hérité) impossibles ou imprévisibles."
+  sa_rules: []
+  title: "La racine de {domain} est un alias CNAME"
+  why: >
+    Un CNAME à la racine interdit d'y publier un MX ou un SPF. Selon le serveur DNS, ces
+    enregistrements sont ignorés ou c'est le CNAME qui l'est : votre messagerie fonctionne de
+    façon aléatoire.
+  fix:
+    - "Remplacez le CNAME de la racine par des enregistrements A et AAAA, ou par la fonction d'aplatissement de votre hébergeur DNS (ALIAS, ANAME, CNAME flattening)."
+    - "Publiez ensuite normalement MX et TXT (SPF) à la racine."
+  fix_by_provider:
+    cloudflare_dns: "Cloudflare résout un CNAME placé à la racine en adresses (CNAME flattening) : vérifiez ensuite que MX et TXT sont bien publiés et servis à la racine."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1034#section-3.6.2
+    - https://www.rfc-editor.org/rfc/rfc2181#section-10.1
+    - https://developers.cloudflare.com/dns/cname-flattening/
+
+- id: infrastructure.mail_host_proxied
+  family: infrastructure
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "any(addr in cloudflare_proxy_ranges for addr in dns.addresses(mx.host)) for mx in dns.MX(domain)"
+    notes: "Le nom du MX pointe vers une adresse du proxy HTTP de Cloudflare : le proxy ne relaie que le web, le port 25 n'aboutit pas. Cloudflare documente que seuls A, AAAA et CNAME peuvent être proxifiés ; un nom de serveur de messagerie doit rester en DNS only."
+  sa_rules: []
+  title: "Le serveur de messagerie de {domain} est caché derrière le proxy Cloudflare"
+  why: >
+    L'adresse de votre MX est celle du proxy web de Cloudflare, qui ne transporte pas le
+    courrier. Les messages vers {domain}, dont les réponses et les rejets, ne peuvent pas être
+    livrés.
+  fix:
+    - "Dans Cloudflare, ouvrez l'enregistrement A ou AAAA du nom cité dans le MX."
+    - "Passez-le en DNS only (nuage gris) et vérifiez qu'il pointe vers la vraie IP du serveur de messagerie."
+  fix_by_provider:
+    cloudflare_dns: "DNS, Records : cliquez sur l'enregistrement, désactivez Proxy status (DNS only), puis enregistrez."
+  references:
+    - https://developers.cloudflare.com/dns/proxy-status/
+
+- id: infrastructure.domain_expiring
+  family: infrastructure
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "rdap(org_domain(domain)).expiration - now < 30 days"
+    notes: "Date d'expiration lue par RDAP. Un domaine expiré cesse de résoudre : plus de MX, de SPF, de DKIM ni de DMARC."
+  sa_rules: []
+  title: "Le domaine {domain} expire dans moins de 30 jours"
+  why: >
+    À l'expiration, le domaine cesse de fonctionner : messagerie, site et authentification
+    tombent en même temps, et le domaine peut être racheté par un tiers.
+  fix:
+    - "Renouvelez le domaine chez votre registraire."
+    - "Activez le renouvellement automatique et vérifiez que le moyen de paiement enregistré est valable."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9083
+
+- id: infrastructure.open_relay
+  family: infrastructure
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "smtp.relay_test(mx.host, from='test@external.example', rcpt='test@other.example').accepted == true"
+    notes: "Test sans envoi réel : le serveur accepte RCPT TO vers un domaine extérieur pour un expéditeur extérieur, sans authentification. RFC 2505 §2 : un serveur de messagerie MUST pouvoir restreindre l'usage non autorisé comme relais ; RFC 5321 §3.6.2 lui laisse le choix d'accepter ou de refuser un relais."
+  sa_rules: []
+  title: "Le serveur {value} de {domain} est un relais ouvert"
+  why: >
+    N'importe qui peut envoyer du spam par votre serveur. Il sera inscrit sur les listes de
+    blocage en quelques heures, et tous vos envois légitimes seront refusés.
+  fix:
+    - "Restreignez immédiatement le relais aux réseaux de confiance et aux utilisateurs authentifiés."
+    - "Vérifiez la file d'attente et supprimez les messages de spam en attente."
+    - "Contrôlez ensuite les listes de blocage et demandez les retraits nécessaires."
+  fix_by_provider:
+    postfix: "Dans main.cf : smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination, et mynetworks limité à 127.0.0.0/8 [::1]/128, puis postfix reload."
+    exim: "Vérifiez que hostlist relay_from_hosts ne contient que localhost et que l'ACL de RCPT refuse les destinataires non locaux sans authentification."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2505#section-2
+    - https://www.rfc-editor.org/rfc/rfc5321#section-3.6.2
+    - https://www.postfix.org/postconf.5.html#smtpd_relay_restrictions
+
+- id: infrastructure.smtp_banner_mismatch
+  family: infrastructure
+  severity: info
+  penalty: 0.1
+  detect:
+    signal: "smtp.banner_hostname(mx.host) != null && lower(smtp.banner_hostname(mx.host)) not in [lower(mx.host), lower(dns.PTR_name(mx.address))]"
+    notes: "Le nom annoncé dans la bannière 220 du MX ne correspond ni au nom du MX ni à son reverse DNS. Sans effet sur la livraison vers ce serveur, mais signe d'une configuration incohérente, souvent répercutée sur le HELO des envois."
+  sa_rules: []
+  title: "Le serveur MX de {domain} s'annonce sous un autre nom ({value})"
+  why: >
+    Le serveur se présente sous un nom différent de son MX et de son reverse DNS. Ce n'est pas
+    bloquant, mais c'est souvent le même nom qu'il utilise en HELO à l'envoi, où il pèse sur
+    vos messages.
+  fix:
+    - "Donnez au serveur un nom unique utilisé partout : bannière, HELO, reverse DNS et enregistrement A."
+  fix_by_provider:
+    postfix: "La bannière reprend $myhostname (smtpd_banner) : réglez myhostname sur le nom du MX."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5321#section-4.3.1
+    - https://www.postfix.org/postconf.5.html#smtpd_banner
+
+# Fiches ajoutées le 2026-11-10 pour les situations du scanner de domaine (serveurs de noms,
+# SOA, CAA, registre RDAP) qui n'avaient qu'un texte de repli. Statuts de domaine : EPP
+# (RFC 5731, RFC 3915) tels que les restitue RDAP. Délais de l'ICANN valables pour les
+# extensions génériques (.com, .net, .org...) ; chaque registre national (.fr...) a ses règles.
+
+- id: infrastructure.ns_single
+  family: infrastructure
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "count(dns.NS(domain, from=parent)) < 2"
+    notes: "La délégation du registre ne cite qu'un serveur de noms (ou aucun). RFC 1034 §4.1 exige que chaque zone soit servie par au moins deux serveurs. {value} est le nombre de serveurs."
+  sa_rules: []
+  title: "{domain} n'a qu'un serveur de noms"
+  why: >
+    Si ce serveur tombe, plus aucun nom de {domain} ne répond : site, MX, SPF, DKIM et DMARC
+    disparaissent ensemble, et le courrier qui vous est adressé finit par revenir en erreur.
+  fix:
+    - "Demandez à votre hébergeur DNS la liste de ses serveurs de noms : la plupart en fournissent au moins deux."
+    - "Chez votre registraire, déclarez au moins deux serveurs de noms pour {domain}."
+    - "Si vous gérez votre propre serveur DNS, ajoutez un serveur secondaire chez un autre prestataire, alimenté par transfert de zone."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1034#section-4.1
+    - https://www.rfc-editor.org/rfc/rfc2182#section-3.1
+
+- id: infrastructure.ns_unresolvable
+  family: infrastructure
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "any(dns.A(ns) == [] && dns.AAAA(ns) == [] for ns in dns.NS(domain, from=parent))"
+    notes: "Un serveur de noms délégué par le registre n'a aucune adresse : nom mal saisi chez le registraire, nom supprimé, ou serveur situé dans la zone sans enregistrement de colle (glue, RFC 1034 §4.2.1). {value} liste les serveurs en cause."
+  sa_rules: []
+  title: "Un serveur de noms de {domain} n'a pas d'adresse"
+  why: >
+    Le serveur {value} est déclaré pour {domain}, mais son nom ne donne aucune adresse IP :
+    les résolveurs ne peuvent pas l'interroger. Ils perdent du temps à l'essayer, et s'il
+    est le seul valide, le domaine entier ne répond plus.
+  fix:
+    - "Chez votre registraire, comparez la liste des serveurs de noms de {domain} à celle que donne votre hébergeur DNS, et corrigez le nom de {value}."
+    - "Si {value} est un nom de votre propre domaine (ns1.{domain}), déclarez son adresse IP chez le registraire (enregistrement de colle, ou glue)."
+    - "Si ce serveur n'existe plus, retirez-le de la délégation."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1034#section-4.2.1
+
+- id: infrastructure.ns_same_network
+  family: infrastructure
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "count(dns.NS(domain, from=parent)) >= 2 && count(unique(prefix24(ip) for ns in dns.NS(domain) for ip in dns.A(ns))) == 1"
+    notes: "Toutes les adresses IPv4 des serveurs de noms tombent dans le même /24. Indicateur simple de la diversité réseau demandée par la RFC 2182 §3.1 ; il ne voit pas un anycast, qui peut être réparti malgré une même plage."
+  sa_rules: []
+  title: "Tous les serveurs de noms de {domain} sont dans le même réseau"
+  why: >
+    Les serveurs partagent le réseau {value} : une panne ou une attaque sur ce réseau les
+    coupe tous à la fois, et {domain} ne répond plus nulle part. La RFC 2182 demande des
+    serveurs secondaires dispersés sur des réseaux différents.
+  fix:
+    - "Si votre hébergeur DNS annonce un service anycast réparti, ce contrôle peut être ignoré."
+    - "Sinon, ajoutez un serveur de noms chez un autre prestataire (service DNS secondaire alimenté par transfert de zone)."
+    - "Déclarez ce serveur chez votre registraire et dans la zone de {domain}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2182#section-3.1
+
+- id: infrastructure.ns_parent_child_mismatch
+  family: infrastructure
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "sorted(dns.NS(domain, from=parent)) != sorted(dns.NS(domain, from=zone))"
+    notes: "La liste NS déclarée chez le registre (parent) diffère de celle publiée dans la zone elle-même, ou les serveurs de la zone ne publient pas tous la même liste. Cas typique : changement d'hébergeur DNS fait d'un seul côté."
+  sa_rules: []
+  title: "Les serveurs de noms déclarés chez le registre et dans la zone de {domain} diffèrent"
+  why: >
+    Le registre et la zone {domain} ne listent pas les mêmes serveurs. Selon le résolveur,
+    les réponses viennent de l'une ou l'autre liste : une modification faite sur un seul
+    hébergeur n'est vue que par une partie des destinataires.
+  fix:
+    - "Relevez les deux listes affichées dans le détail : celle du registre (parent) et celle de la zone."
+    - "Décidez quel hébergeur DNS fait foi, puis alignez la liste chez votre registraire et les enregistrements NS de la zone sur ses serveurs."
+    - "Si vous venez de changer d'hébergeur, retirez les serveurs de l'ancien des deux côtés, et gardez l'ancienne zone à jour jusqu'à l'expiration du TTL des NS."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1912#section-2.8
+
+- id: infrastructure.soa_missing
+  family: infrastructure
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "all(ns.query(zone, SOA).answers == [] for ns in authoritative_servers(zone))"
+    notes: "Aucun serveur faisant autorité n'a renvoyé l'enregistrement SOA de la zone. Une zone doit avoir exactement un SOA à son sommet (RFC 1035 §5.2) : son absence indique une zone non chargée ou un serveur qui ne fait pas autorité."
+  sa_rules: []
+  title: "Aucun SOA lisible pour la zone {domain}"
+  why: >
+    Aucun serveur de noms n'a renvoyé l'enregistrement SOA de {domain}. Les serveurs déclarés
+    ne servent sans doute pas la zone : les réponses DNS du domaine (MX, SPF, DKIM)
+    deviennent incertaines ou absentes.
+  fix:
+    - "Chez votre hébergeur DNS, vérifiez que la zone {domain} existe et qu'elle est active."
+    - "Comparez les serveurs de noms déclarés chez le registraire avec ceux que l'hébergeur vous a attribués."
+    - "Sur votre propre serveur, vérifiez que la zone est chargée sans erreur (journal du serveur DNS) et rechargez-la."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1035#section-5.2
+    - https://www.rfc-editor.org/rfc/rfc1034#section-4.3.5
+
+- id: infrastructure.soa_serial_mismatch
+  family: infrastructure
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "len(unique(ns.query(zone, SOA).serial for ns in authoritative_servers(zone))) > 1"
+    notes: "Les serveurs faisant autorité ne renvoient pas le même numéro de série SOA : un secondaire n'a pas reçu la dernière version (RFC 1996 : le secondaire compare le serial pour décider du transfert). Juste après une modification, l'écart peut durer quelques minutes. {value} liste les serials."
+  sa_rules: []
+  title: "Les serveurs de {domain} n'ont pas la même version de la zone"
+  why: >
+    Les numéros de série SOA diffèrent ({value}) : un serveur n'a pas reçu la dernière
+    modification. Selon le serveur interrogé, les destinataires voient l'ancienne ou la
+    nouvelle version de vos enregistrements.
+  fix:
+    - "Si la zone vient d'être modifiée, relancez le contrôle dans quelques minutes."
+    - "Si l'écart persiste, vérifiez que le serial a bien été augmenté sur le serveur principal à la dernière modification."
+    - "Vérifiez que le transfert de zone vers les secondaires est autorisé et fonctionne (journal du serveur, NOTIFY), ou demandez une synchronisation à votre hébergeur DNS."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1996
+    - https://www.rfc-editor.org/rfc/rfc1034#section-4.3.5
+
+- id: infrastructure.caa_missing
+  family: infrastructure
+  severity: info
+  penalty: 0
+  detect:
+    signal: "caa.relevant_rrset(domain) == []"
+    notes: "RFC 8659 §3 : sans enregistrement CAA sur le nom ni sur ses parents, CAA ne restreint pas l'émission de certificats. Protection facultative, sans effet sur la délivrabilité."
+  sa_rules: []
+  title: "Aucun enregistrement CAA pour {domain}"
+  why: >
+    Sans CAA, n'importe quelle autorité de certification peut émettre un certificat pour
+    {domain}. Ce n'est pas une erreur, mais une protection en moins contre un certificat
+    obtenu frauduleusement pour votre site ou votre serveur de courrier.
+  fix:
+    - "Relevez les autorités qui émettent réellement vos certificats (site web, MX, politique MTA-STS) : l'émetteur figure sur chaque certificat."
+    - "Publiez un enregistrement CAA issue par autorité, à la racine de {domain}."
+    - "Ajoutez éventuellement un iodef pour être prévenu d'une demande refusée."
+  example_good: "{domain}. IN CAA 0 issue \"letsencrypt.org\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8659#section-3
+    - https://www.rfc-editor.org/rfc/rfc8659#section-4.2
+
+- id: infrastructure.caa_unknown_critical
+  family: infrastructure
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(r.flags & 128 && r.tag not in known_caa_tags for r in caa.records)"
+    notes: "RFC 8659 §4.1 et §4.5 : une autorité ne doit pas émettre de certificat si un enregistrement marqué critique (flag 128) porte une balise qu'elle ne connaît pas. {value} liste les balises en cause."
+  sa_rules: []
+  title: "Un enregistrement CAA critique inconnu bloque les certificats de {domain}"
+  why: >
+    La balise {value} est marquée critique (flag 128) et n'est pas une balise reconnue :
+    les autorités de certification doivent alors refuser toute émission. Le renouvellement
+    de vos certificats (site, MX, MTA-STS) échouera.
+  fix:
+    - "Dans la zone DNS de {domain}, repérez l'enregistrement CAA dont la balise est {value}."
+    - "Corrigez la faute de frappe s'il s'agit d'issue, issuewild ou iodef, ou remettez le flag à 0."
+    - "Supprimez l'enregistrement s'il ne sert à rien."
+  example_bad: "{domain}. IN CAA 128 isue \"letsencrypt.org\""
+  example_good: "{domain}. IN CAA 0 issue \"letsencrypt.org\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8659#section-4.1
+    - https://www.rfc-editor.org/rfc/rfc8659#section-4.5
+
+- id: infrastructure.domain_expired
+  family: infrastructure
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "rdap(org_domain(domain)).expiration < now"
+    notes: "Date d'expiration lue par RDAP dépassée. Pour les extensions génériques, la politique ERRP de l'ICANN impose au registraire de couper la résolution DNS au moins pendant les huit derniers jours où le domaine reste renouvelable, et de permettre le renouvellement pendant cette période. {value} est la date d'expiration."
+  sa_rules: []
+  title: "Le domaine {domain} a expiré"
+  why: >
+    La date d'expiration ({value}) est dépassée. Le registraire peut couper le domaine à
+    tout moment : site, messagerie et authentification tombent alors ensemble, puis le
+    domaine finit supprimé et ouvert au rachat par un tiers.
+  fix:
+    - "Renouvelez {domain} chez votre registraire immédiatement : le renouvellement reste en général possible quelque temps après l'expiration."
+    - "Vérifiez que l'adresse e-mail du titulaire et le moyen de paiement enregistrés sont valables, pour recevoir les prochains avis."
+    - "Activez le renouvellement automatique."
+  references:
+    - https://www.icann.org/resources/pages/errp-2013-02-28-en
+    - https://www.rfc-editor.org/rfc/rfc9083
+
+- id: infrastructure.domain_hold
+  family: infrastructure
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "any(s in ['client hold', 'server hold'] for s in rdap(org_domain(domain)).status)"
+    notes: "RFC 5731 §2.3 : avec clientHold (posé par le registraire) ou serverHold (posé par le registre), la délégation DNS ne doit pas être publiée. L'ICANN indique que clientHold accompagne en général un litige, un impayé ou une suppression prochaine. {value} liste les statuts."
+  sa_rules: []
+  title: "Le domaine {domain} est suspendu (hold)"
+  why: >
+    Le statut {value} retire {domain} du DNS : aucun nom du domaine ne répond, ni le site, ni
+    les MX, ni le SPF. Le courrier qui vous est adressé revient en erreur et vos envois
+    échouent à l'authentification.
+  fix:
+    - "Contactez votre registraire : il connaît la raison du statut (impayé, litige, suppression demandée)."
+    - "Cherchez dans votre boîte un message du registraire, souvent une demande de vérification des coordonnées du titulaire, et suivez le lien."
+    - "Pour serverHold, posé par le registre, passez aussi par votre registraire : c'est lui qui fait le lien avec le registre."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5731#section-2.3
+    - https://www.icann.org/resources/pages/epp-status-codes-2014-06-16-en
+
+- id: infrastructure.domain_pending_delete
+  family: infrastructure
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "any(s in ['pending delete', 'redemption period'] for s in rdap(org_domain(domain)).status)"
+    notes: "RFC 3915 : redemptionPeriod, le registraire a demandé la suppression mais le domaine peut encore être restauré ; pendingDelete après la rédemption, le domaine va être purgé. Pour les extensions génériques, l'ICANN indique 30 jours de rédemption puis cinq jours avant la purge. {value} liste les statuts."
+  sa_rules: []
+  title: "Le domaine {domain} est en cours de suppression"
+  why: >
+    Le statut {value} indique que {domain} va être supprimé puis remis en vente. Le domaine
+    ne fonctionne déjà plus, et une fois purgé n'importe qui pourra l'enregistrer, recevoir
+    votre courrier et envoyer en votre nom.
+  fix:
+    - "Contactez votre registraire sans attendre : en redemptionPeriod, une restauration est possible, en général payante."
+    - "En pendingDelete seul, la restauration n'est plus possible : préparez-vous à réenregistrer le domaine dès sa libération, ou à migrer vos adresses."
+    - "Une fois le domaine récupéré, activez le renouvellement automatique."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3915#section-3.1
+    - https://www.icann.org/resources/pages/epp-status-codes-2014-06-16-en
+
+- id: infrastructure.domain_not_registered
+  family: infrastructure
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "rdap(org_domain(domain)).http_status == 404"
+    notes: "Le serveur RDAP du registre répond 404 (réponse négative, RFC 7480 §5.3) : le domaine n'est pas enregistré, ou il a été supprimé. Utilisé aussi pour le domaine d'un lien vérifié."
+  sa_rules: []
+  title: "Le domaine {domain} n'est pas enregistré"
+  why: >
+    Le registre ne connaît pas {domain} : il n'existe pas, ou il a été supprimé. Aucune
+    adresse de ce domaine ne peut recevoir ni être authentifiée, et n'importe qui peut
+    l'enregistrer.
+  fix:
+    - "Vérifiez l'orthographe du domaine saisi."
+    - "Si le domaine vous appartenait, contactez votre registraire et réenregistrez-le au plus vite s'il est libre."
+    - "S'il s'agit d'un lien reçu par message, ne le suivez pas : n'importe qui peut enregistrer ce domaine et y publier la page de son choix."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7480#section-5.3

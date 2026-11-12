@@ -1,0 +1,365 @@
+sa.missing_date:
+  title: Date header missing
+  why: The message has no Date header, although it is mandatory. Scripts that build headers by hand often forget it, and several providers reject messages that do not follow RFC 5322.
+  fix:
+    - Add a Date header in RFC 5322 format, or let the sending library generate it (PHPMailer, Symfony Mailer and Nodemailer do so).
+sa.missing_from:
+  title: From header missing
+  why: The message does not name any sender. The From header is mandatory under RFC 5322, which Gmail requires you to follow, and DMARC relies entirely on it.
+  fix:
+    - Add a From header with an address from your domain.
+sa.missing_headers:
+  title: To header missing
+  why: The message has no To header. This happens when all recipients are blind copied, a practice associated with unsolicited bulk sending.
+  fix:
+    - Add a To header with the recipient's address, or your own address if you send through Bcc.
+    - For bulk sending, use a tool that sends one message per recipient.
+sa.missing_mid:
+  title: Message-ID header missing
+  why: The message has no unique identifier. Most servers add one at sending; its absence indicates a script that hands the message off directly. Gmail may reject a message without a valid Message-ID.
+  fix:
+    - Generate a unique Message-ID of the form <identifier@{domain}>, or let the sending library do it.
+    - Check that your outgoing SMTP server adds a Message-ID when one is missing.
+  fix_by_provider:
+    postfix: "Set always_add_missing_headers = yes in main.cf so that Postfix completes missing Date, Message-ID and From headers."
+sa.missing_subject:
+  title: Subject header missing
+  why: "The message has no subject at all (the header is absent, not just empty). Almost 2 points: a common defect of sending scripts."
+  fix:
+    - Add a clear, descriptive subject.
+sa.missing_mimeole:
+  title: X-MSMail-Priority header without X-MimeOLE
+  why: The message carries a priority header specific to Outlook Express without the header that always accompanies it. PHP libraries add X-MSMail-Priority by imitation, which SpamAssassin detects.
+  fix:
+    - "Remove the X-MSMail-Priority and X-Priority headers added by the script: they add nothing."
+    - "If you keep them, sign the message with DKIM: the rule no longer applies."
+sa.missing_mime_hb_sep:
+  title: Missing blank line between MIME headers and content
+  why: A MIME part has no blank line between its headers and its content. The message is malformed and may display incorrectly. Symbolic score.
+  fix:
+    - Use a sending library to build the MIME structure rather than concatenating it by hand.
+sa.no_headers_message:
+  title: Message with almost no headers
+  why: "Date, To, Message-ID and Received are all missing: the message was injected without going through a normal sending path."
+  fix:
+    - Send the test through your real sending server, with a library that generates the mandatory headers.
+sa.date_in_future_03_06:
+  title: The message date is 3 to 6 hours in the future
+  why: "The Date header is set to a time 3 to 6 hours after the message arrives on the server. Usual cause: a wrong declared time zone (Paris time written with +0000, or the reverse). More than 3 points."
+  fix:
+    - "Check the time and time zone of the server or computer that generates the message (NTP enabled, Europe/Paris time zone)."
+    - In a script, generate the Date at the moment of sending with the time offset, not a local time followed by +0000.
+    - For a scheduled send, the Date must be that of the actual send, not that of the campaign's creation.
+sa.date_in_future_06_12:
+  title: The message date is 6 to 12 hours in the future
+  why: The Date is 6 to 12 hours ahead of receipt. Wrong server clock or time zone, or a misdeclared offset between continents.
+  fix:
+    - "Check the time and time zone of the server or computer that generates the message (NTP enabled, Europe/Paris time zone)."
+    - In a script, generate the Date at the moment of sending with the time offset, not a local time followed by +0000.
+    - For a scheduled send, the Date must be that of the actual send, not that of the campaign's creation.
+sa.date_in_future_12_24:
+  title: The message date is 12 to 24 hours in the future
+  why: "The Date is 12 to 24 hours ahead. Spammers date messages into the future to stay at the top of the inbox; a misconfigured server produces the same effect. More than 3 points."
+  fix:
+    - "Check the time and time zone of the server or computer that generates the message (NTP enabled, Europe/Paris time zone)."
+    - In a script, generate the Date at the moment of sending with the time offset, not a local time followed by +0000.
+    - For a scheduled send, the Date must be that of the actual send, not that of the campaign's creation.
+sa.date_in_future_24_48:
+  title: The message date is 1 to 2 days in the future
+  why: The Date is one to two days ahead of receipt. The clock of the computer or server is out of sync.
+  fix:
+    - "Check the time and time zone of the server or computer that generates the message (NTP enabled, Europe/Paris time zone)."
+    - In a script, generate the Date at the moment of sending with the time offset, not a local time followed by +0000.
+    - For a scheduled send, the Date must be that of the actual send, not that of the campaign's creation.
+sa.date_in_future_48_96:
+  title: The message date is 2 to 4 days in the future
+  why: The Date is two to four days ahead. The clock of the sending system is badly out of sync.
+  fix:
+    - "Check the time and time zone of the server or computer that generates the message (NTP enabled, Europe/Paris time zone)."
+    - In a script, generate the Date at the moment of sending with the time offset, not a local time followed by +0000.
+    - For a scheduled send, the Date must be that of the actual send, not that of the campaign's creation.
+sa.date_in_future_96_q:
+  title: The message date is 4 days to 4 months in the future
+  why: "The Date is far ahead of receipt. A date error in the script (month and day swapped, year mistyped) or an unsynchronized clock. Almost 3.5 points."
+  fix:
+    - "Check the time and time zone of the server or computer that generates the message (NTP enabled, Europe/Paris time zone)."
+    - In a script, generate the Date at the moment of sending with the time offset, not a local time followed by +0000.
+    - For a scheduled send, the Date must be that of the actual send, not that of the campaign's creation.
+sa.t_date_in_future_q_plus:
+  title: The message date is more than 4 months in the future
+  why: The Date is more than four months after receipt. A test rule with no weight, but the date error is glaring.
+  fix:
+    - "Check the time and time zone of the server or computer that generates the message (NTP enabled, Europe/Paris time zone)."
+    - In a script, generate the Date at the moment of sending with the time offset, not a local time followed by +0000.
+    - For a scheduled send, the Date must be that of the actual send, not that of the campaign's creation.
+sa.date_in_past_03_06:
+  title: The message date is 3 to 6 hours in the past
+  why: "The message is dated 3 to 6 hours before its arrival. Causes: a send left in a queue, a campaign prepared and then sent later with its creation date, or a misdeclared time zone."
+  fix:
+    - Generate the Date header at the moment of the actual send, especially for delayed, queued or resent messages.
+    - Check the clock and time zone of the server that creates the message.
+    - If the message stayed in a queue, find out why it did not leave right away (overloaded relay server, late WordPress cron).
+sa.date_in_past_06_12:
+  title: The message date is 6 to 12 hours in the past
+  why: "The message is dated 6 to 12 hours before its arrival. Same causes: a queue, a reused creation date, or the time zone."
+  fix:
+    - Generate the Date header at the moment of the actual send, especially for delayed, queued or resent messages.
+    - Check the clock and time zone of the server that creates the message.
+    - If the message stayed in a queue, find out why it did not leave right away (overloaded relay server, late WordPress cron).
+sa.date_in_past_12_24:
+  title: The message date is 12 to 24 hours in the past
+  why: The message is dated the day before its arrival. Often a message held in a queue and then released.
+  fix:
+    - Generate the Date header at the moment of the actual send, especially for delayed, queued or resent messages.
+    - Check the clock and time zone of the server that creates the message.
+    - If the message stayed in a queue, find out why it did not leave right away (overloaded relay server, late WordPress cron).
+sa.date_in_past_24_48:
+  title: The message date is 1 to 2 days in the past
+  why: The message arrived one to two days after its date. Servers that keep retrying for a long time after a temporary refusal produce this gap.
+  fix:
+    - Generate the Date header at the moment of the actual send, especially for delayed, queued or resent messages.
+    - Check the clock and time zone of the server that creates the message.
+    - If the message stayed in a queue, find out why it did not leave right away (overloaded relay server, late WordPress cron).
+sa.date_in_past_48_96:
+  title: The message date is 2 to 4 days in the past
+  why: The message carries a date two to four days before its arrival.
+  fix:
+    - Generate the Date header at the moment of the actual send, especially for delayed, queued or resent messages.
+    - Check the clock and time zone of the server that creates the message.
+    - If the message stayed in a queue, find out why it did not leave right away (overloaded relay server, late WordPress cron).
+sa.date_in_past_96_xx:
+  title: The message date is more than 4 days in the past
+  why: "The message is dated more than four days before its arrival. Forwarded spam or old templates reused as they are have this profile. Almost 3.5 points."
+  fix:
+    - Generate the Date header at the moment of the actual send, especially for delayed, queued or resent messages.
+    - Check the clock and time zone of the server that creates the message.
+    - If the message stayed in a queue, find out why it did not leave right away (overloaded relay server, late WordPress cron).
+sa.invalid_date:
+  title: Date header in an invalid format
+  why: "The Date header is not in the expected format: French month names, ISO format such as 2026-11-10, or a missing time zone. Scripts that format the date themselves often get it wrong."
+  fix:
+    - "Format the date in RFC 5322: day and month abbreviated in English, time, numeric time offset."
+    - In PHP, use date(DATE_RFC2822) or let PHPMailer generate it.
+sa.invalid_date_tz_absurd:
+  title: Impossible time zone in the Date
+  why: "The time offset of the Date does not exist (for example +0160 or +2500). A calculation error in the code that generates the date."
+  fix:
+    - Generate the offset with the date function of the language instead of calculating it by hand.
+sa.msgid_from_mta_header:
+  title: Message-ID added by a relay server
+  why: The message left without a Message-ID, and an intermediate server added one. Symbolic score, but it shows incomplete sending software.
+  fix:
+    - Have the Message-ID generated by the application that creates the message.
+sa.msgid_short:
+  title: Message-ID abnormally short
+  why: The Message-ID is under 16 characters, or its left part is under 5. It may not be unique. Symbolic score.
+  fix:
+    - "Generate a long, unique identifier (timestamp plus random value) followed by @{domain}."
+sa.msgid_multiple_at:
+  title: Message-ID with several @
+  why: The Message-ID contains two @ signs, often because the code pasted a full email address after the @. Invalid format.
+  fix:
+    - "Build the Message-ID with only the domain after the @: <identifier@{domain}>."
+sa.msgid_hdr_malf:
+  title: Misspelled MessageID header
+  why: The message contains a “MessageID” header without a hyphen, which does not exist. The sending software meant to write Message-ID.
+  fix:
+    - Correct the header name to Message-ID in the sending code.
+sa.invalid_msgid:
+  title: Non-compliant Message-ID
+  why: "The Message-ID does not follow the form <identifier@domain>: angle brackets missing, a space, an accent. Recipients may mishandle conversation threads."
+  fix:
+    - Wrap the identifier in angle brackets, and use only ASCII characters with no spaces.
+sa.subj_all_caps:
+  title: Subject entirely in capitals
+  why: The subject is written entirely in capitals. A moderate penalty, but it is also what readers most readily report as spam.
+  fix:
+    - Write the subject in lowercase with an initial capital; keep capitals for one word at most.
+sa.subject_needs_encoding:
+  title: Subject with unencoded characters
+  why: The subject contains accents or special characters sent raw instead of being encoded. Some software then displays unreadable characters.
+  fix:
+    - "Declare the subject as UTF-8 and let the library encode it (=?UTF-8?Q?...?=)."
+    - In PHP with mail(), encode the subject with mb_encode_mimeheader().
+sa.subj_illegal_chars:
+  title: Too many illegal raw characters in the subject
+  why: The subject contains several unencoded 8-bit characters. A French subject with accents sent by a script without encoding triggers this rule at 1.5 points.
+  fix:
+    - Encode the subject in RFC 2047 (UTF-8, quoted-printable or base64).
+  fix_by_provider:
+    wordpress: "Use wp_mail() rather than mail(): WordPress encodes the subject correctly."
+sa.bad_enc_header:
+  title: Badly encoded header
+  why: A header contains an encoded word (=?UTF-8?Q?...) broken by a space or never closed with ?=. The text displays with codes. Symbolic score.
+  fix:
+    - Use the encoding function of the sending library instead of assembling the string by hand.
+sa.hdrs_lcase:
+  title: Headers with unusual capitalization
+  why: "Some headers are written with abnormal capitalization (“from:”, “Content-type:”). Spam software has recognizable writing habits. Symbolic score."
+  fix:
+    - "Use the standard capitalization: From, To, Subject, Message-ID, Content-Type."
+sa.t_many_hdrs_lcase:
+  title: Several headers with unusual capitalization
+  why: Several headers have unusual capitalization. A test rule with no weight.
+  fix:
+    - Use the standard capitalization of header names.
+sa.unclosed_bracket:
+  title: A header contains an unclosed bracket
+  why: "A header contains “[123” without a closing bracket, often a template variable badly filled or a truncated header. Almost 1.5 points."
+  fix:
+    - Review the generated headers (subject, From, X- headers) and fix the variable that produces this bracket.
+sa.unresolved_template:
+  title: A header contains an unreplaced template variable
+  why: "A header contains a marker such as %NAME or %EMAIL left as is: the sending software did not substitute its variable. This is the signature of badly configured spam software."
+  fix:
+    - Find the header that contains the % and fix the variable in the template or script.
+sa.pling_query:
+  title: Subject with an exclamation mark and a question mark
+  why: "The subject contains both “!” and “?”. A small penalty, but it is a clickbait habit in subject lines."
+  fix:
+    - Keep a single strong punctuation mark in the subject, or none.
+sa.gappy_subject:
+  title: Subject written with spaced-out letters
+  why: The subject contains a word written letter by letter with separators, a technique to get around keyword filters. Small penalty.
+  fix:
+    - Write words normally in the subject.
+sa.subj_dollars:
+  title: Subject that starts with a dollar amount
+  why: The subject starts with a dollar amount. Small penalty.
+  fix:
+    - Start the subject with a word that describes the content rather than a price.
+sa.subj_buy:
+  title: "Subject that starts with “Buy”"
+  why: "The subject starts with “Buy” or “Buying”. The rule only targets English."
+  fix:
+    - Rephrase the subject to describe the offer rather than a purchase order.
+sa.xprio:
+  title: X-Priority header on an unauthenticated message
+  why: The message carries a priority header and is not authenticated. Symbolic score, but it serves as a condition for other, heavier rules.
+  fix:
+    - "Remove the X-Priority header: it does not improve deliverability."
+    - Sign the message with DKIM.
+sa.xprio_short_subj:
+  title: High priority and a very short subject
+  why: "The message requests a priority and its subject is under 9 characters (“Urgent”, “Invoice”). A frequent combination in fraud."
+  fix:
+    - Remove X-Priority and write a descriptive subject.
+sa.x_ip:
+  title: X-IP header present
+  why: The message contains an X-IP header, added by some webmail services and scripts. Symbolic score.
+  fix:
+    - Nothing urgent. If your script adds it, you can remove it.
+sa.spammy_xmailer:
+  title: Sending software declared as known for spam
+  why: "The X-Mailer header declares a specific old version of Outlook or Outlook Express that spam software has imitated for years. Almost 2.5 points."
+  fix:
+    - "Remove or correct the X-Mailer header of your script: do not imitate software you do not use."
+sa.php_script:
+  title: Message sent by a PHP script
+  why: The X-PHP-Script header indicates sending through PHP's mail() function on shared hosting. Hacked sites send spam this way.
+  fix:
+    - Send the site's emails by authenticated SMTP to your mail service instead of mail().
+  fix_by_provider:
+    wordpress: Install an SMTP plugin (WP Mail SMTP, FluentSMTP, Post SMTP) and configure your mail server.
+    cpanel: Create an email address in cPanel and use its SMTP server with authentication in the application.
+sa.php_script_mua:
+  title: Message sent by a PHP script without a version
+  why: "The message comes from PHP's mail() and declares “X-Mailer: PHP” without a version. This is the signature of a quickly written script."
+  fix:
+    - Use a library (PHPMailer, Symfony Mailer) over authenticated SMTP.
+sa.php_nover_mua:
+  title: Sending software declared as “PHP” without a version
+  why: The X-Mailer header simply reads “PHP”. Real mail software gives its name and version.
+  fix:
+    - Remove the X-Mailer header from the script, or use a sending library.
+    - "Sign the message with DKIM: the rule no longer applies."
+sa.php_orig_script:
+  title: Originating PHP script indicated, and other signs of a bot
+  why: The X-PHP-Originating-Script header names the PHP script that sent the message, and the content has traits of automated spam. On a site, this can signal a hijacked form.
+  fix:
+    - Check in the header which PHP file sent the message; if it is unknown to you, the site is probably compromised.
+    - Send legitimate messages through authenticated SMTP.
+sa.xm_phpmailer_forged:
+  title: Incomplete PHPMailer X-Mailer header
+  why: "The X-Mailer header cites PHPMailer with the word “version” but no number. Genuine PHPMailer headers state the version: this one is made up or modified."
+  fix:
+    - Let PHPMailer write its default X-Mailer, or set its XMailer property to a space so that this header is not sent.
+sa.mailing_list_multi:
+  title: Headers of a mailing list manager
+  why: The message carries several mailing list headers. SpamAssassin recognizes it as a list send and relaxes other rules. Still a positive score of one point.
+  fix:
+    - "Nothing to fix: these headers are useful. Keep List-Unsubscribe and List-Id."
+sa.list_prtl_same_user:
+  title: Incomplete list headers and sender equal to recipient
+  why: The message has a List-Unsubscribe but no List-Id, and the sender bears the same identifier as the recipient. A combination typical of fake list sends.
+  fix:
+    - Add a consistent List-Id header if you send a mailing list.
+    - Use a separate sending address and sign with DKIM.
+sa.header_spam:
+  title: Header typical of spam sending software
+  why: "The message contains a header found almost only in spam software (Newsletter-ID, UID, X-Company-Address, Antivirus...). Some homemade tools add them for no reason."
+  fix:
+    - Find the header in question in the raw message and remove it from your tool or script.
+sa.ratware_zero_tz:
+  title: Date in +0000 and sender in the format of spam software
+  why: The date is in universal time, the message is in HTML, and the address is derived from the name following a pattern found in spam software.
+  fix:
+    - Generate the Date with your actual time zone, and add a text part to the message.
+sa.forged_mua_outlook:
+  title: The message claims to be sent by Outlook but lacks its characteristics
+  why: The X-Mailer header announces Outlook, but the Message-ID does not match what Outlook generates. A script that imitates Outlook to appear legitimate achieves the opposite effect.
+  fix:
+    - Remove the Outlook-imitating X-Mailer header from your script or tool.
+sa.forged_outlook_html:
+  title: "“Outlook” message without a text part"
+  why: Outlook always sends a text version with the HTML. A message that claims to come from Outlook but has only HTML is imitated. Low score.
+  fix:
+    - Add a text part, and remove the Outlook X-Mailer if you do not send from Outlook.
+sa.forged_outlook_tags:
+  title: "“Outlook” HTML without the structure Outlook produces"
+  why: "Outlook always produces complete HTML. An “Outlook” message without these tags was made elsewhere. Low score."
+  fix:
+    - Generate a complete HTML document (html, head, meta charset, body), and do not imitate the X-Mailer of Outlook.
+sa.dos_outlook_to_mx:
+  title: "“Outlook” message delivered directly to the recipient's server"
+  why: "The message claims to be sent by Outlook but was delivered directly to the receiving server, without going through a sending server. Outlook always goes through a server: this is the mark of a robot. Almost 3 points."
+  fix:
+    - Send through the SMTP server of your mail service, and remove the Outlook-imitating X-Mailer header.
+sa.mimeole_direct_to_mx:
+  title: X-MimeOLE header and direct delivery to the server
+  why: The message carries the X-MimeOLE header of Microsoft software and arrives directly at the receiving server. A typical combination of infected machines.
+  fix:
+    - Go through the SMTP server of your mail service, or sign the messages with DKIM.
+sa.dos_body_high_no_mid:
+  title: Body with 8-bit characters and no Message-ID
+  why: The message has no Message-ID and its text contains accented characters. For a French-language message sent by a script without a Message-ID, this costs almost 4 points.
+  fix:
+    - "Add a Message-ID (see MISSING_MID): that alone removes this rule."
+sa.cte_8bit_mismatch:
+  title: Text declared as 7-bit but containing accents
+  why: The text part declares itself 7-bit (pure ASCII) although it contains accented characters. The text may display corrupted for the recipient.
+  fix:
+    - "Declare Content-Transfer-Encoding: quoted-printable (or 8bit) and charset=UTF-8 for the text part."
+sa.has_x_outgoing_spam_stat:
+  title: X-OutGoing-Spam-Status header present
+  why: The sending server added the X-OutGoing-Spam-Status header (cPanel does this with its outgoing filter). SpamAssassin considers that such a header cannot be trusted and adds a point.
+  fix:
+    - If you manage the cPanel server, disable the addition of this header on outgoing messages, or send through a relay that does not add it.
+  fix_by_provider:
+    cpanel: "The header comes from Exim's outgoing filtering under cPanel; only the server administrator (WHM) can disable it."
+sa.rand_mktg_header:
+  title: Marketing tracking header with a partly random name
+  why: The message contains a campaign tracking header whose name changes from one send to the next, a pattern found in spam software.
+  fix:
+    - Use fixed tracking header names, or remove them.
+sa.jh_spammy_headers:
+  title: Rare header seen mostly in spam
+  why: "The message contains a header such as Complaint-To, Tracking-Code or List-Open, which is found almost only in spam."
+  fix:
+    - Remove this header from your sending software.
+sa.no_dns_for_from:
+  title: The envelope domain has neither MX nor IP address
+  why: "{envelope_domain}, the domain that receives the bounces, does not exist in DNS or has neither MX nor A record. Bounce messages are lost, and many servers reject a sender they cannot reach."
+  fix:
+    - Use a Return-Path under a domain that receives mail (MX record).
+    - "If {envelope_domain} is a technical subdomain of the sending tool, publish the MX or the record the tool requests."

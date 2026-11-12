@@ -1,0 +1,1036 @@
+# Famille spamassassin, groupe html. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/html.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.html_message
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_MESSAGE)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_test(''html'')
+      : une partie HTML a été analysée.'
+  sa_rules:
+  - HTML_MESSAGE
+  title: Le message contient du HTML
+  why: 'Information : le message comporte une partie HTML. Score nul, c''est la norme pour une newsletter.'
+  fix:
+  - Rien à corriger. Joignez toujours une version texte (multipart/alternative) à côté du HTML.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_mime_no_html_tag
+  family: spamassassin
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: spamassassin.hit(HTML_MIME_NO_HTML_TAG)
+    notes: 'score SA 4.0.x : 0.377 (sa-update r1939780, jeu réseau + Bayes). Teste : meta MIME_HTML_ONLY
+      && !html_tag_exists(''html'').'
+  sa_rules:
+  - HTML_MIME_NO_HTML_TAG
+  title: Message HTML sans balise html
+  why: Le message ne contient que du HTML et ce HTML n'a même pas de balise <html>. C'est un fragment
+    collé tel quel, ce que produisent des scripts et certains éditeurs.
+  fix:
+  - 'Envoyez un document complet : <!DOCTYPE html>, <html>, <head> avec meta charset, <body>.'
+  - Ajoutez une partie texte.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_only_04
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_ONLY_04)
+    notes: 'score SA 4.0.x : 1.172 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_only(''0000'',
+      ''0400'') : le HTML contient une image et sa longueur de texte est dans l''intervalle (en octets).'
+  sa_rules:
+  - HTML_IMAGE_ONLY_04
+  title: Message HTML presque sans texte, avec image (0 à 400 octets de texte)
+  why: 'Le HTML contient une ou des images et moins de 400 octets de texte : le message est en pratique
+    une affiche. Les filtres ne lisent pas les images, ce qui est la technique des spams en image. Cas
+    courant : flyer exporté de Canva collé dans le corps.'
+  fix:
+  - Ajoutez du vrai texte dans le HTML (titre, paragraphes, appel à l'action) au lieu de le mettre dans
+    l'image.
+  - Visez au moins quelques centaines de mots de texte réel ; gardez les images pour l'illustration.
+  - Renseignez un attribut alt descriptif sur chaque image.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_only_08
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_ONLY_08)
+    notes: 'score SA 4.0.x : 1.651 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_only(''0400'',
+      ''0800'') : le HTML contient une image et sa longueur de texte est dans l''intervalle (en octets).'
+  sa_rules:
+  - HTML_IMAGE_ONLY_08
+  title: Message HTML avec image et très peu de texte (400 à 800 octets)
+  why: 'Images et 400 à 800 octets de texte : le contenu principal est dans l''image. Pénalité de plus
+    d''1,5 point.'
+  fix:
+  - Ajoutez du vrai texte dans le HTML (titre, paragraphes, appel à l'action) au lieu de le mettre dans
+    l'image.
+  - Visez au moins quelques centaines de mots de texte réel ; gardez les images pour l'illustration.
+  - Renseignez un attribut alt descriptif sur chaque image.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_only_12
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_ONLY_12)
+    notes: 'score SA 4.0.x : 2.059 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_only(''0800'',
+      ''1200'') : le HTML contient une image et sa longueur de texte est dans l''intervalle (en octets).'
+  sa_rules:
+  - HTML_IMAGE_ONLY_12
+  title: Message HTML avec image et peu de texte (800 à 1 200 octets)
+  why: 'Images et 800 à 1 200 octets de texte. Plus de 2 points : c''est la tranche la plus pénalisée,
+    typique des newsletters faites d''une grande bannière et de deux lignes.'
+  fix:
+  - Ajoutez du vrai texte dans le HTML (titre, paragraphes, appel à l'action) au lieu de le mettre dans
+    l'image.
+  - Visez au moins quelques centaines de mots de texte réel ; gardez les images pour l'illustration.
+  - Renseignez un attribut alt descriptif sur chaque image.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_only_16
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_ONLY_16)
+    notes: 'score SA 4.0.x : 1.092 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_only(''1200'',
+      ''1600'') : le HTML contient une image et sa longueur de texte est dans l''intervalle (en octets).'
+  sa_rules:
+  - HTML_IMAGE_ONLY_16
+  title: Message HTML avec image et peu de texte (1 200 à 1 600 octets)
+  why: Images et 1 200 à 1 600 octets de texte. Le rapport texte sur images reste faible.
+  fix:
+  - Ajoutez du vrai texte dans le HTML (titre, paragraphes, appel à l'action) au lieu de le mettre dans
+    l'image.
+  - Visez au moins quelques centaines de mots de texte réel ; gardez les images pour l'illustration.
+  - Renseignez un attribut alt descriptif sur chaque image.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_only_20
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_ONLY_20)
+    notes: 'score SA 4.0.x : 1.546 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_only(''1600'',
+      ''2000'') : le HTML contient une image et sa longueur de texte est dans l''intervalle (en octets).'
+  sa_rules:
+  - HTML_IMAGE_ONLY_20
+  title: Message HTML avec image et peu de texte (1 600 à 2 000 octets)
+  why: Images et 1 600 à 2 000 octets de texte. Encore pénalisé à 1,5 point.
+  fix:
+  - Ajoutez du vrai texte dans le HTML (titre, paragraphes, appel à l'action) au lieu de le mettre dans
+    l'image.
+  - Visez au moins quelques centaines de mots de texte réel ; gardez les images pour l'illustration.
+  - Renseignez un attribut alt descriptif sur chaque image.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_only_24
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_ONLY_24)
+    notes: 'score SA 4.0.x : 1.618 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_only(''2000'',
+      ''2400'') : le HTML contient une image et sa longueur de texte est dans l''intervalle (en octets).'
+  sa_rules:
+  - HTML_IMAGE_ONLY_24
+  title: Message HTML avec image et peu de texte (2 000 à 2 400 octets)
+  why: Images et 2 000 à 2 400 octets de texte. Un paragraphe de plus suffit souvent à sortir de la tranche.
+  fix:
+  - Ajoutez du vrai texte dans le HTML (titre, paragraphes, appel à l'action) au lieu de le mettre dans
+    l'image.
+  - Visez au moins quelques centaines de mots de texte réel ; gardez les images pour l'illustration.
+  - Renseignez un attribut alt descriptif sur chaque image.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_only_28
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_ONLY_28)
+    notes: 'score SA 4.0.x : 1.404 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_only(''2400'',
+      ''2800'') : le HTML contient une image et sa longueur de texte est dans l''intervalle (en octets).'
+  sa_rules:
+  - HTML_IMAGE_ONLY_28
+  title: Message HTML avec image et peu de texte (2 400 à 2 800 octets)
+  why: Images et 2 400 à 2 800 octets de texte. Dernière tranche pénalisée de façon notable.
+  fix:
+  - Ajoutez du vrai texte dans le HTML (titre, paragraphes, appel à l'action) au lieu de le mettre dans
+    l'image.
+  - Visez au moins quelques centaines de mots de texte réel ; gardez les images pour l'illustration.
+  - Renseignez un attribut alt descriptif sur chaque image.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_only_32
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_ONLY_32)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_only(''2800'',
+      ''3200'') : le HTML contient une image et sa longueur de texte est dans l''intervalle (en octets).'
+  sa_rules:
+  - HTML_IMAGE_ONLY_32
+  title: Message HTML avec image et un peu de texte (2 800 à 3 200 octets)
+  why: 'Images et 2 800 à 3 200 octets de texte. Score symbolique : le message est presque sorti des seuils.'
+  fix:
+  - Ajoutez du vrai texte dans le HTML (titre, paragraphes, appel à l'action) au lieu de le mettre dans
+    l'image.
+  - Visez au moins quelques centaines de mots de texte réel ; gardez les images pour l'illustration.
+  - Renseignez un attribut alt descriptif sur chaque image.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_ratio_02
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_RATIO_02)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_ratio(''0.000'',
+      ''0.002'') : nombre de caractères non blancs du texte divisé par la surface des images (en pixels,
+      d''après width et height) dans l''intervalle.'
+  sa_rules:
+  - HTML_IMAGE_RATIO_02
+  title: Très peu de texte par rapport à la surface des images
+  why: Le texte est minuscule comparé à la surface des images déclarées. Score symbolique, mais l'indicateur
+    annonce les règles HTML_IMAGE_ONLY.
+  fix:
+  - Ajoutez du texte HTML ou réduisez les dimensions déclarées des images (width, height).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_ratio_04
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_RATIO_04)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_ratio(''0.002'',
+      ''0.004'') : nombre de caractères non blancs du texte divisé par la surface des images (en pixels,
+      d''après width et height) dans l''intervalle.'
+  sa_rules:
+  - HTML_IMAGE_RATIO_04
+  title: Peu de texte par rapport à la surface des images
+  why: Le rapport texte sur surface d'images est faible. Score symbolique.
+  fix:
+  - Ajoutez du texte HTML ou réduisez les dimensions déclarées des images (width, height).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_ratio_06
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_RATIO_06)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_ratio(''0.004'',
+      ''0.006'') : nombre de caractères non blancs du texte divisé par la surface des images (en pixels,
+      d''après width et height) dans l''intervalle.'
+  sa_rules:
+  - HTML_IMAGE_RATIO_06
+  title: Rapport texte sur images assez faible
+  why: Le rapport texte sur surface d'images est encore faible. Score symbolique.
+  fix:
+  - Ajoutez du texte HTML ou réduisez les dimensions déclarées des images (width, height).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_image_ratio_08
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_IMAGE_RATIO_08)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_image_ratio(''0.006'',
+      ''0.008'') : nombre de caractères non blancs du texte divisé par la surface des images (en pixels,
+      d''après width et height) dans l''intervalle.'
+  sa_rules:
+  - HTML_IMAGE_RATIO_08
+  title: Rapport texte sur images un peu faible
+  why: Le rapport texte sur surface d'images est juste sous le seuil. Score symbolique.
+  fix:
+  - Ajoutez du texte HTML ou réduisez les dimensions déclarées des images (width, height).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_short_link_img_1
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_SHORT_LINK_IMG_1)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : longueur HTML
+      dans l''intervalle 0 à 1 024 octets && une balise <a> contient une <img>.'
+  sa_rules:
+  - HTML_SHORT_LINK_IMG_1
+  title: HTML très court avec une image cliquable
+  why: Le HTML fait moins de 1 Ko et contient une image cliquable. C'est le format « cliquez sur l'affiche
+    » des spams. Score symbolique ici, mais combiné à un lien raccourci il pèse 2 points (SHORTENER_SHORT_IMG).
+  fix:
+  - Ajoutez du texte autour de l'image cliquable, et un lien texte équivalent.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_short_link_img_2
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_SHORT_LINK_IMG_2)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : longueur HTML
+      dans l''intervalle 1 024 à 1 536 octets && une balise <a> contient une <img>.'
+  sa_rules:
+  - HTML_SHORT_LINK_IMG_2
+  title: HTML court avec une image cliquable
+  why: Le HTML fait 1 à 1,5 Ko et contient une image cliquable. Score symbolique.
+  fix:
+  - Ajoutez du texte autour de l'image cliquable, et un lien texte équivalent.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_short_link_img_3
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(HTML_SHORT_LINK_IMG_3)
+    notes: 'score SA 4.0.x : 0.148 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : longueur HTML
+      dans l''intervalle 1 536 à 2 048 octets && une balise <a> contient une <img>.'
+  sa_rules:
+  - HTML_SHORT_LINK_IMG_3
+  title: HTML assez court avec une image cliquable
+  why: Le HTML fait 1,5 à 2 Ko avec une image cliquable. Pénalité faible.
+  fix:
+  - Ajoutez du texte autour de l'image cliquable, et un lien texte équivalent.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_font_low_contrast
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_FONT_LOW_CONTRAST)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_test(''font_low_contrast'')
+      : la distance entre la couleur du texte et celle du fond calculée par le parseur HTML est inférieure
+      à 12.'
+  sa_rules:
+  - HTML_FONT_LOW_CONTRAST
+  title: Texte de couleur trop proche du fond
+  why: Une partie du texte a presque la même couleur que son fond, donc est invisible ou illisible. Les
+    spammeurs cachent ainsi du texte pour tromper les filtres. Dans une newsletter, cela vient souvent
+    d'un texte blanc sur une image de fond que SpamAssassin ne voit pas, ou d'un preheader caché en couleur
+    du fond.
+  fix:
+  - Déclarez une couleur de fond (bgcolor ou background-color) sur la cellule qui porte le texte clair,
+    en plus de l'image de fond.
+  - Masquez le preheader avec display:none et mso-hide:all plutôt qu'en couleur identique au fond.
+  example_bad: <td style="background:url(fond.jpg)"><font color="#ffffff">Texte</font></td>
+  example_good: <td bgcolor="#1a3c6e" style="background:#1a3c6e url(fond.jpg)"><font color="#ffffff">Texte</font></td>
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_font_size_huge
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_FONT_SIZE_HUGE)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_range(''max_size'',
+      ''24'', ''inf'') : taille de police maximale estimée par le parseur à 24 ou plus.'
+  sa_rules:
+  - HTML_FONT_SIZE_HUGE
+  title: Police HTML très grande (24 et plus)
+  why: 'Le message utilise une taille de police très grande. Score symbolique : c''est une information
+    sur un style très appuyé.'
+  fix:
+  - Rien d'obligatoire. Gardez les très grandes tailles pour un titre court.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_font_size_large
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_FONT_SIZE_LARGE)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_range(''max_size'',
+      ''18'', ''24'').'
+  sa_rules:
+  - HTML_FONT_SIZE_LARGE
+  title: Police HTML grande (18 à 24)
+  why: Le message utilise une taille de police grande. Information sans effet.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_font_face_bad
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_FONT_FACE_BAD)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_test(''font_face_bad'')
+      : l''attribut face d''une balise <font> ne ressemble pas à une liste de noms de police.'
+  sa_rules:
+  - HTML_FONT_FACE_BAD
+  title: Nom de police HTML invalide
+  why: Une balise <font face="..."> contient une valeur qui n'est pas un nom de police (chiffres, caractères
+    spéciaux). Score symbolique.
+  fix:
+  - 'Utilisez des noms de police simples séparés par des virgules : Arial, Helvetica, sans-serif.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.t_kam_html_font_invalid
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_KAM_HTML_FONT_INVALID)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : meta html_test(''font_invalid_color'')
+      : un attribut color, text ou bgcolor n''a pas pu être lu comme une couleur. Règle de test T_. Pas
+      de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_KAM_HTML_FONT_INVALID
+  title: Couleur HTML invalide
+  why: 'Un attribut de couleur (color, bgcolor) contient une valeur illisible : # manquant, code à 5 chiffres,
+    nom inconnu. Règle de test sans poids, mais elle entre dans des règles combinées (CONTENT_AFTER_HTML).'
+  fix:
+  - 'Écrivez les couleurs en hexadécimal complet avec le dièse : #1a3c6e.'
+  example_bad: <td bgcolor="1a3c6e">
+  example_good: <td bgcolor="#1a3c6e">
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kmcgrail/20_html_tests.cf
+- id: sa.html_obfuscate_05_10
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(HTML_OBFUSCATE_05_10)
+    notes: 'score SA 4.0.x : 0.26 (sa-update r1939780, jeu réseau + Bayes). Teste : html_range(''obfuscation_ratio'',
+      ''.05'', ''.1'') : part des balises qui coupent un mot (texte collé avant et après la balise) dans
+      l''intervalle.'
+  sa_rules:
+  - HTML_OBFUSCATE_05_10
+  title: 5 à 10 % des balises HTML coupent des mots
+  why: Des balises s'insèrent au milieu de mots (Pro<b>mo</b>tion). Les spammeurs le font pour masquer
+    des mots-clés ; un éditeur qui applique un style à une partie de mot produit le même effet.
+  fix:
+  - Repérez les mots coupés par des balises (<span>, <b>, <font>) au milieu d'un mot et nettoyez le HTML.
+  - Si le HTML vient d'un copier-coller depuis Word ou Google Docs, collez le texte sans mise en forme
+    puis remettez les styles.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_obfuscate_10_20
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_OBFUSCATE_10_20)
+    notes: 'score SA 4.0.x : 0.093 (sa-update r1939780, jeu réseau + Bayes). Teste : html_range(''obfuscation_ratio'',
+      ''.1'', ''.2'') : part des balises qui coupent un mot (texte collé avant et après la balise) dans
+      l''intervalle.'
+  sa_rules:
+  - HTML_OBFUSCATE_10_20
+  title: 10 à 20 % des balises HTML coupent des mots
+  why: Une part notable des balises coupe des mots. Pénalité faible.
+  fix:
+  - Repérez les mots coupés par des balises (<span>, <b>, <font>) au milieu d'un mot et nettoyez le HTML.
+  - Si le HTML vient d'un copier-coller depuis Word ou Google Docs, collez le texte sans mise en forme
+    puis remettez les styles.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_obfuscate_20_30
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(HTML_OBFUSCATE_20_30)
+    notes: 'score SA 4.0.x : 1.999 (sa-update r1939780, jeu réseau + Bayes). Teste : html_range(''obfuscation_ratio'',
+      ''.2'', ''.3'') : part des balises qui coupent un mot (texte collé avant et après la balise) dans
+      l''intervalle.'
+  sa_rules:
+  - HTML_OBFUSCATE_20_30
+  title: 20 à 30 % des balises HTML coupent des mots
+  why: Une balise sur quatre environ coupe un mot. Pénalité de 2 points.
+  fix:
+  - Repérez les mots coupés par des balises (<span>, <b>, <font>) au milieu d'un mot et nettoyez le HTML.
+  - Si le HTML vient d'un copier-coller depuis Word ou Google Docs, collez le texte sans mise en forme
+    puis remettez les styles.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_obfuscate_90_100
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(HTML_OBFUSCATE_90_100)
+    notes: 'score SA 4.0.x : 2 (sa-update r1939780, jeu réseau + Bayes). Teste : html_range(''obfuscation_ratio'',
+      ''.9'', ''1.0'') : part des balises qui coupent un mot (texte collé avant et après la balise) dans
+      l''intervalle.'
+  sa_rules:
+  - HTML_OBFUSCATE_90_100
+  title: Presque toutes les balises HTML coupent des mots
+  why: 'La quasi-totalité des balises est placée au milieu de mots : technique d''obfuscation délibérée
+    ou HTML généré de façon très défectueuse. 2 points.'
+  fix:
+  - Repérez les mots coupés par des balises (<span>, <b>, <font>) au milieu d'un mot et nettoyez le HTML.
+  - Si le HTML vient d'un copier-coller depuis Word ou Google Docs, collez le texte sans mise en forme
+    puis remettez les styles.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_tag_balance_body
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(HTML_TAG_BALANCE_BODY)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : html_tag_balance(''body'',
+      ''!= 0'').'
+  sa_rules:
+  - HTML_TAG_BALANCE_BODY
+  title: Balises body ouvrantes et fermantes déséquilibrées
+  why: Il manque un </body> ou il y a un <body> en trop, souvent parce qu'un modèle a été inséré dans
+    un autre. Pénalité faible.
+  fix:
+  - Gardez une seule paire <body>...</body> ; retirez celles des blocs collés.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_tag_balance_head
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(HTML_TAG_BALANCE_HEAD)
+    notes: 'score SA 4.0.x : 0.817 (sa-update r1939780, jeu réseau + Bayes). Teste : html_tag_balance(''head'',
+      ''!= 0'').'
+  sa_rules:
+  - HTML_TAG_BALANCE_HEAD
+  title: Balises head ouvrantes et fermantes déséquilibrées
+  why: Le HTML contient un <head> sans </head>, ou l'inverse. Cas courant d'un modèle découpé en morceaux
+    par un CMS. Près d'un point.
+  fix:
+  - Fermez la balise head avant <body> et vérifiez le HTML final généré, pas le modèle.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_tag_balance_center
+  family: spamassassin
+  severity: high
+  penalty: 1.7
+  detect:
+    signal: spamassassin.hit(HTML_TAG_BALANCE_CENTER)
+    notes: 'score SA 4.0.x : 3.499 (sa-update r1939780, jeu réseau + Bayes). Teste : meta html_tag_balance(''center'',
+      ''!= 0''), hors serveur d''envoi au rDNS mail ou smtp.'
+  sa_rules:
+  - HTML_TAG_BALANCE_CENTER
+  title: Balises center déséquilibrées
+  why: Le HTML contient des balises <center> qui ne se referment pas correctement. SpamAssassin y voit
+    un HTML de spam mal généré et ajoute 3,5 points. Le cas se présente avec de vieux modèles de newsletter.
+  fix:
+  - Remplacez les balises <center> par align="center" sur les tableaux ou text-align:center en style.
+  - À défaut, vérifiez que chaque <center> a son </center>.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.html_extra_close
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_EXTRA_CLOSE)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_range(''closed_extra_ratio'',
+      ''0.09'', ''inf'') : plus de 9 % de balises fermantes sans ouverture.'
+  sa_rules:
+  - HTML_EXTRA_CLOSE
+  title: Trop de balises fermantes dans le HTML
+  why: Le HTML ferme des balises qui n'ont jamais été ouvertes. Score symbolique, mais le rendu peut être
+    imprévisible dans Outlook.
+  fix:
+  - Passez le HTML dans un validateur et retirez les balises fermantes orphelines.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_text_invisible_font
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_TEXT_INVISIBLE_FONT)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : plus de 2
+      éléments de texte invisible (couleur du fond ou taille nulle), hors listes de diffusion, liens .gov,
+      DKIMwl haut et Thunderbird.'
+  sa_rules:
+  - HTML_TEXT_INVISIBLE_FONT
+  title: Texte rendu invisible par la couleur ou la taille de police
+  why: Plusieurs blocs de texte sont invisibles à cause de leur couleur ou de leur taille. Score symbolique,
+    mais c'est un signal d'empoisonnement des filtres.
+  fix:
+  - Supprimez le texte caché inutile. Pour un preheader, utilisez un seul bloc masqué par display:none.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.html_text_invisible_style
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(HTML_TEXT_INVISIBLE_STYLE)
+    notes: 'score SA 4.0.x : 2.617 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : plus de 5
+      éléments avec style display:none ou visibility:hidden ET (pas de rDNS, en-têtes en casse anormale,
+      adresse de désinscription, mention d''annonce, From en .info, center déséquilibré ou Message-ID
+      suspect).'
+  sa_rules:
+  - HTML_TEXT_INVISIBLE_STYLE
+  title: Beaucoup de texte caché par CSS et d'autres signes de spam
+  why: Le message contient plus de cinq éléments masqués par display:none ou visibility:hidden, combinés
+    à un autre défaut. Les éditeurs de newsletter masquent des blocs mobiles ou desktop de cette façon,
+    ce qui peut suffire à franchir le seuil si l'envoi a aussi un problème d'infrastructure.
+  fix:
+  - 'Réduisez le nombre de blocs masqués : un seul preheader et des variantes mobiles limitées.'
+  - Corrigez l'autre défaut qui accompagne la règle (souvent l'absence de reverse DNS).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.html_nonelement_30_40
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_NONELEMENT_30_40)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_range(''non_element_ratio'',
+      ''0.30'', ''0.40'') : part des balises inconnues du parseur.'
+  sa_rules:
+  - HTML_NONELEMENT_30_40
+  title: 30 à 40 % des balises HTML ne sont pas standard
+  why: Une grande partie des balises n'est pas du HTML standard. Les balises Office (<o:p>, <v:...>) collées
+    depuis Word ou générées pour Outlook en sont souvent la cause. Score symbolique.
+  fix:
+  - Nettoyez le HTML collé depuis Word et limitez les balises spécifiques à Outlook aux blocs conditionnels.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_comment_saved_url
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(HTML_COMMENT_SAVED_URL)
+    notes: 'score SA 4.0.x : 1.391 (sa-update r1939780, jeu réseau + Bayes). Teste : html_text_match(''comment'',
+      ''<!-- saved from url=(NNNN)'') : commentaire ajouté par Internet Explorer à l''enregistrement d''une
+      page.'
+  sa_rules:
+  - HTML_COMMENT_SAVED_URL
+  title: Le HTML est une page web enregistrée
+  why: Le HTML contient le commentaire « saved from url » qu'Internet Explorer ajoute quand on enregistre
+    une page web. Envoyer une page web telle quelle est une pratique de spammeur.
+  fix:
+  - Supprimez le commentaire <!-- saved from url=... --> en tête du fichier.
+  - Construisez le message avec un éditeur d'e-mail plutôt qu'à partir d'une page web enregistrée.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_title_subj_diff
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(HTML_TITLE_SUBJ_DIFF)
+    notes: 'score SA 4.0.x : 2.036 (sa-update r1939780, jeu réseau + Bayes). Teste : meta html_title_subject_ratio(''3.5'')
+      : la longueur du <title> dépasse 3,5 fois celle de l''objet, sans pièce jointe.'
+  sa_rules:
+  - HTML_TITLE_SUBJ_DIFF
+  title: Le titre HTML est beaucoup plus long que l'objet
+  why: La balise <title> du HTML fait plus de 3,5 fois la longueur de l'objet. Cela arrive quand le modèle
+    garde un titre générique long (« Newsletter de l'entreprise, édition de novembre et actualités »).
+    Plus de 2 points.
+  fix:
+  - Mettez dans <title> le même texte que l'objet, ou un titre court.
+  - Dans l'outil d'envoi, vérifiez si le titre du modèle se remplit avec l'objet de la campagne.
+  example_bad: 'Subject: Nouveautés  /  <title>Lettre d''information mensuelle de l''atelier, toutes nos
+    actualités</title>'
+  example_good: 'Subject: Nouveautés de novembre  /  <title>Nouveautés de novembre</title>'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_short_center
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(HTML_SHORT_CENTER)
+    notes: 'score SA 4.0.x : 0.743 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : longueur HTML
+      inférieure à 384 octets && balise <center> présente.'
+  sa_rules:
+  - HTML_SHORT_CENTER
+  title: HTML très court centré par une balise center
+  why: Un HTML de moins de 384 octets centré par <center>. Format des spams minimalistes. Pénalité modérée.
+  fix:
+  - Ajoutez du contenu réel et remplacez <center> par du style.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_off_page
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(HTML_OFF_PAGE)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta rawbody /;(?:top|left):-\d{3,9}px;/i,
+      sans DKIM ni Return-Path cohérent avec le relais.'
+  sa_rules:
+  - HTML_OFF_PAGE
+  title: Élément HTML placé hors de la page
+  why: Un élément est positionné à -100 px ou plus en haut ou à gauche, donc hors de l'écran. Technique
+    de texte caché, aussi utilisée par certains modèles pour le preheader.
+  fix:
+  - Masquez le preheader avec display:none plutôt qu'avec un positionnement négatif.
+  - 'Signez le message en DKIM : la règle ne s''applique plus.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.html_entity_ascii
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(HTML_ENTITY_ASCII)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : 10 entités numériques
+      d''affilée pour des caractères ASCII (&#65; &#66;...), sans DKIM ni relais smtp.'
+  sa_rules:
+  - HTML_ENTITY_ASCII
+  title: Texte ASCII écrit en entités HTML
+  why: Des lettres ordinaires sont écrites sous forme d'entités (&#80;&#114;&#111;...) au lieu de texte.
+    Procédé de masquage de mots ; certains générateurs encodent aussi toutes les adresses e-mail ainsi.
+  fix:
+  - Écrivez le texte en clair, en UTF-8. N'encodez en entités que les caractères qui l'exigent (&amp;,
+    &lt;).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.html_embeds
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_EMBEDS)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : html_test(''embeds'')
+      : balise embed, object ou applet.'
+  sa_rules:
+  - HTML_EMBEDS
+  title: HTML avec objet embarqué
+  why: Le HTML contient une balise <embed>, <object> ou <applet>. Aucun logiciel de messagerie courant
+    ne l'affiche. Score symbolique.
+  fix:
+  - Remplacez la vidéo ou l'animation embarquée par une image cliquable vers la page qui l'héberge.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_attach
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HTML_ATTACH)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : partie MIME
+      text/html avec nom de fichier .htm ou .html.'
+  sa_rules:
+  - HTML_ATTACH
+  title: Pièce jointe HTML
+  why: Le message joint un fichier HTML. Les hameçonnages s'en servent pour afficher une fausse page de
+    connexion hors des filtres de liens. Score symbolique, mais beaucoup de passerelles bloquent ces pièces
+    jointes.
+  fix:
+  - Mettez le contenu dans le corps du message ou dans un PDF, ou proposez un lien vers votre site.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.html_charset_faraway
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(HTML_CHARSET_FARAWAY)
+    notes: 'score SA 4.0.x : 0.5 (sa-update r1939780, jeu réseau + Bayes). Teste : meta html_charset_faraway()
+      && caractères 8 bits : le charset déclaré dans le HTML n''appartient pas aux ok_locales du serveur
+      (par défaut, ok_locales vaut all et la règle ne se déclenche pas).'
+  sa_rules:
+  - HTML_CHARSET_FARAWAY
+  title: Jeu de caractères HTML d'une langue non attendue
+  why: Le HTML déclare un jeu de caractères asiatique ou cyrillique alors que le serveur de test n'accepte
+    que certaines langues. Elle ne se déclenche que si le serveur a restreint ok_locales.
+  fix:
+  - Déclarez <meta charset="utf-8"> et encodez tout le message en UTF-8.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.html_shrt_cmnt_obfu_many
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(HTML_SHRT_CMNT_OBFU_MANY)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : plus de 5 occurrences
+      de \w<!-- mot -->\w dans le HTML.'
+  sa_rules:
+  - HTML_SHRT_CMNT_OBFU_MANY
+  title: Nombreux commentaires HTML courts au milieu des mots
+  why: Des commentaires HTML courts sont insérés au milieu de mots, technique de masquage de mots-clés.
+  fix:
+  - Supprimez les commentaires HTML du corps du message, ou au moins ceux collés à du texte.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.obfuscating_comment
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(OBFUSCATING_COMMENT)
+    notes: 'score SA 4.0.x : 0.723 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : rawbody /\w(?:<![^>]*>)+\w/
+      avec HTML, ou motif voisin avec HTML seul.'
+  sa_rules:
+  - OBFUSCATING_COMMENT
+  title: Commentaires HTML qui coupent des mots
+  why: Un commentaire HTML est placé entre deux lettres (Gra<!-- -->tuit). Certains éditeurs laissent
+    des commentaires de mise en forme au milieu du texte.
+  fix:
+  - Retirez les commentaires HTML collés au texte ; gardez seulement les commentaires conditionnels d'Outlook
+    entre des blocs.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_html_tests.cf
+- id: sa.many_span_in_text
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(MANY_SPAN_IN_TEXT)
+    notes: 'score SA 4.0.x : 2.399 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : plus de 4
+      <span> ouvrants collés à des lettres et plus de 4 fermants, hors liste de diffusion.'
+  sa_rules:
+  - MANY_SPAN_IN_TEXT
+  title: Nombreuses balises span insérées dans les mots
+  why: Des balises <span> ouvrent et ferment au milieu des mots. Les éditeurs visuels produisent cela
+    quand on change la couleur ou la graisse de quelques lettres. Près de 2,5 points.
+  fix:
+  - 'Nettoyez le texte : appliquez les styles à des mots entiers, pas à des morceaux de mots.'
+  - Collez le texte sans mise en forme dans l'éditeur puis remettez les styles.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.content_after_html
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(CONTENT_AFTER_HTML)
+    notes: 'score SA 4.0.x : 0.745 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : du texte suit
+      </html> ET (CTE 8bit, rDNS à TLD numérique, center déséquilibré, beaucoup de texte caché, To égal
+      From, couleur invalide, objet encodé...).'
+  sa_rules:
+  - CONTENT_AFTER_HTML
+  title: Contenu après la balise html fermante, avec d'autres signes
+  why: Du texte se trouve après </html>. Les spammeurs y placent du texte aléatoire pour tromper les filtres
+    ; un outil qui ajoute un pied de page ou un pixel après le document fait la même chose.
+  fix:
+  - Placez tout le contenu (pied de page, pixel de suivi, mentions) avant </body></html>.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.content_after_html_weak
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(CONTENT_AFTER_HTML_WEAK)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : du texte suit
+      </html>, hors CONTENT_AFTER_HTML et hors cas légitimes (bounce, Message-ID hexadécimal, Sender,
+      liste de diffusion).'
+  sa_rules:
+  - CONTENT_AFTER_HTML_WEAK
+  title: Contenu après la balise html fermante
+  why: Du texte suit la balise </html>, souvent une signature ou une mention légale ajoutée par le serveur
+    sortant ou un antivirus. 1 point.
+  fix:
+  - Si c'est votre serveur qui ajoute un pied de page, configurez-le pour l'insérer avant </body>, ou
+    désactivez-le.
+  - Sinon, déplacez dans le modèle tout contenu situé après </html>.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.mixed_href_case
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(MIXED_HREF_CASE)
+    notes: 'score SA 4.0.x : 1.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : des <a href=
+      en minuscules et d''autres en majuscules (A HREF) coexistent, hors listes.'
+  sa_rules:
+  - MIXED_HREF_CASE
+  title: Attribut href écrit avec une casse mélangée
+  why: Les liens sont écrits tantôt <a href=, tantôt <A HREF= ou <a HREF=. Ce mélange vient de HTML assemblé
+    à partir de sources différentes, ou de logiciels de spam. Près de 2 points.
+  fix:
+  - Écrivez toutes les balises et attributs en minuscules ; un formateur HTML le fait automatiquement.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.mixed_img_case
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(MIXED_IMG_CASE)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta rawbody /<(?!IMG|img)[Ii][Mm][Gg]\s/
+      : <Img ou <iMG.'
+  sa_rules:
+  - MIXED_IMG_CASE
+  title: Balise img écrite avec une casse mélangée
+  why: Une balise image est écrite avec une casse mixte (<Img). Signe de HTML fabriqué à la main ou retouché
+    par un logiciel de spam.
+  fix:
+  - Écrivez <img en minuscules.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.ac_div_bonanza
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(AC_DIV_BONANZA)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : rawbody /(?:<div>(?:\s*<\/div>)?\s*){10}/i.'
+  sa_rules:
+  - AC_DIV_BONANZA
+  title: Dix div vides ou plus à la suite
+  why: 'Le HTML contient au moins dix balises <div> d''affilée, souvent vides. Score symbolique : c''est
+    un reste de mise en page d''un éditeur.'
+  fix:
+  - Supprimez les div vides ; utilisez des marges ou un espacement de tableau.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kmcgrail/20_ac_rules_test.cf
+- id: sa.ac_br_bonanza
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(AC_BR_BONANZA)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : rawbody /(?:<br>\s*){30}/i.'
+  sa_rules:
+  - AC_BR_BONANZA
+  title: Trente retours à la ligne ou plus à la suite
+  why: Le HTML contient au moins trente <br> consécutifs. Technique pour pousser du texte hors de la vue,
+    ou mise en page faite à coups de retours à la ligne. Score symbolique.
+  fix:
+  - Remplacez les suites de <br> par un espacement en CSS (padding, margin).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kmcgrail/20_ac_rules_test.cf
+- id: sa.long_invisible_text
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(LONG_INVISIBLE_TEXT)
+    notes: 'score SA 4.0.x : 0.643 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : div display:none
+      ou visibility:hidden suivie de 1 400 caractères sans espace, ou texte caché avec ligne de plus de
+      998 caractères (avec exceptions).'
+  sa_rules:
+  - LONG_INVISIBLE_TEXT
+  title: Long bloc de texte caché
+  why: Le message contient un long bloc de texte invisible. Les spammeurs y mettent du texte pour « empoisonner
+    » les filtres bayésiens.
+  fix:
+  - Supprimez les blocs de texte masqués inutiles ; un preheader doit faire une phrase.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.word_invis
+  family: spamassassin
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: spamassassin.hit(WORD_INVIS)
+    notes: 'score SA 4.0.x : 2.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : balise avec
+      font-size 0 ou 1 (px, pt...) ou color:transparent contenant un mot, hors sondages et lignes QP longues.'
+  sa_rules:
+  - WORD_INVIS
+  title: Un mot rendu invisible
+  why: Un mot est caché par une taille de police nulle ou une couleur transparente. C'est une technique
+    de masquage, mais des modèles de newsletter l'utilisent aussi pour l'espacement du preheader. 3 points.
+  fix:
+  - Retirez les éléments en font-size:0 ou color:transparent qui contiennent du texte.
+  - Pour le preheader, utilisez display:none ; pour l'espacement, des caractères &zwnj;&nbsp; dans un
+    bloc masqué.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.t_remote_image
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_REMOTE_IMAGE)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : HTML_IMAGE_ONLY
+      ou image cliquable, sans texte d''abonnement, liste, expéditeur robot ni image jointe. Règle de
+      test T_. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_REMOTE_IMAGE
+  title: Le message charge une image distante
+  why: 'Le message affiche une image hébergée sur un serveur externe sans texte d''abonnement. Règle de
+    test sans poids : simple indication.'
+  fix:
+  - Rien d'obligatoire. Ajoutez un texte qui explique pourquoi le destinataire reçoit le message.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/khopesh/20_khop_experimental.cf
+- id: sa.dc_image_spam_html
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(DC_IMAGE_SPAM_HTML)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : aucun lien,
+      HTML_IMAGE_ONLY ou rapport image/texte très faible, et une grande image GIF ou PNG (180 000 à 475
+      000 pixels).'
+  sa_rules:
+  - DC_IMAGE_SPAM_HTML
+  title: Possible spam en image (HTML)
+  why: Le message contient une grande image, presque pas de texte et aucun lien. Profil des spams en image
+    qui affichent leur texte dans un GIF.
+  fix:
+  - Mettez le texte en HTML et ajoutez au moins un lien vers votre site.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_imageinfo.cf
+- id: sa.dc_image_spam_text
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(DC_IMAGE_SPAM_TEXT)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : aucun lien,
+      rapport image/texte inférieur à 0,008 et une grande image GIF ou PNG.'
+  sa_rules:
+  - DC_IMAGE_SPAM_TEXT
+  title: Possible spam en image avec peu de texte
+  why: Une grande image, presque pas de texte et pas de lien. Même profil que DC_IMAGE_SPAM_HTML.
+  fix:
+  - Ajoutez du texte réel et un lien vers votre site.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_imageinfo.cf
+- id: sa.long_img_uri
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(LONG_IMG_URI)
+    notes: 'score SA 4.0.x : 0.296 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri m;/[0-9a-z]{45,}/\w+\.(?:png|gif|jpe?g|webp)$;i,
+      hors réseau de confiance, Errors-To et PayPal.'
+  sa_rules:
+  - LONG_IMG_URI
+  title: Adresse d'image avec un très long identifiant
+  why: Une image est chargée depuis une adresse qui contient un segment de 45 caractères ou plus, comme
+    les pixels espions. Les outils d'envoi produisent des adresses de ce type. Pénalité faible.
+  fix:
+  - Hébergez les images du message à des adresses lisibles sous votre domaine.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_img_wp_redir
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URI_IMG_WP_REDIR)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta uri m;://i[02]\.wp\.com/.*\.(?:jpe?g|gif|png|webp)$;i.'
+  sa_rules:
+  - URI_IMG_WP_REDIR
+  title: Image servie par le proxy d'images de WordPress.com
+  why: 'Une image passe par i0.wp.com ou i2.wp.com, le service d''accélération d''images de Jetpack. Les
+    spammeurs utilisent ce proxy pour cacher l''origine de leurs images : SpamAssassin ajoute un point.
+    Cela arrive quand une newsletter reprend les images d''un article WordPress avec Jetpack actif.'
+  fix:
+  - Utilisez l'adresse directe de l'image sur votre site (https://{domain}/wp-content/uploads/...).
+  fix_by_provider:
+    wordpress: Désactivez l'accélérateur d'images (Site Accelerator) de Jetpack, ou copiez l'adresse d'origine
+      de l'image depuis la médiathèque.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf

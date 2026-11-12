@@ -1,0 +1,30 @@
+# One command: docker compose up -d --build
+name: testandfix
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      TESTANDFIX_HOST: 0.0.0.0
+      TESTANDFIX_DATA_DIR: /data
+      # daily copy of the database: must stay inside the testandfix-data volume
+      TESTANDFIX_BACKUP_DIR: /data/backups
+      TESTANDFIX_SMTP_PORT: 25
+      SPAMD_HOST: spamd
+      SPAMD_PORT: 783
+    ports:
+      - "${TESTANDFIX_HTTP_BIND:-127.0.0.1:3000}:3000"
+      - "${TESTANDFIX_SMTP_BIND:-0.0.0.0:25}:25"
+    volumes:
+      - testandfix-data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - spamd
+  spamd:
+    build: ./docker/spamassassin
+    restart: unless-stopped
+volumes:
+  testandfix-data:

@@ -1,0 +1,56 @@
+alignment.none_aligned:
+  title: "SPF も DKIM も {domain} と整合していません"
+  why: "メッセージは認証されているかもしれませんが、別のドメイン（{envelope_domain}、{dkim_domain}）の名義で送信されています。DMARC と Gmail から見ると、{domain} が送信を許可したことを示すものはありません。"
+  fix:
+    - "{provider} で d={domain} の DKIM 署名を設定してください。これが最も確実な整合方法です。"
+    - "サービスが対応していれば、{domain} のサブドメイン上にカスタム Return-Path も設定してください。"
+    - "テストをやり直してください。二つのうち少なくとも一方が「整合」と表示される必要があります。"
+  fix_by_provider:
+    brevo: "Settings, Senders, Domains, IPs, Domains, Authenticate の順に進みます。brevo1 と brevo2._domainkey の CNAME が DKIM を整合させ、「Branded」の CNAME が Return-Path を整合させます。"
+    mailchimp: "Account & billing, Domains, Start authentication の順に進みます。二つの DKIM の CNAME が署名を {domain} と整合させます。"
+    sendgrid: "Settings, Sender Authentication, Domain Authentication の順に進みます。em… の CNAME が Return-Path を、s1 と s2._domainkey が DKIM を整合させます。"
+    amazon_ses: "Easy DKIM で {domain} を検証すると DKIM が整合します。SPF を整合させるには、{domain} のサブドメイン上にカスタム MAIL FROM を設定してください。"
+    mailjet: "ドメインを認証してください（DKIM mailjet._domainkey）。bnc3.{domain} から bnc3.mailjet.com へのカスタム Return-Path は有料アカウントに限られ、サポートへの依頼が必要です。"
+    postmark: "ドメインの DKIM 鍵と、pm.mtasv.net を指すカスタム Return-Path の CNAME を公開してください。Postmark によると、SPF が整合していなくても DMARC は DKIM によって通過します。"
+    hubspot: "Settings, Content, Domains & URLs, Email Sending で送信ドメインを接続してください。HubSpot の共有ネットワークでは Return-Path をカスタマイズできないため、整合は DKIM で行われます。"
+    microsoft_365: "{domain} の DKIM を有効にしてください。Microsoft 365 は DKIM を設定するまで独自ドメインの署名を行いません。"
+alignment.spf_not_aligned:
+  title: "SPF は {envelope_domain} で通っていますが、{domain} では通っていません"
+  why: "お使いの DMARC は DKIM だけに依存しています。これは誤りではありませんが、経路の途中で署名が壊れると（メーリングリスト、ウイルス対策ソフトなど）、{domain} を認証するものがなくなります。"
+  fix:
+    - "{provider} がカスタム Return-Path を提供している場合は、{domain} のサブドメイン（例: bounce.{domain}）に設定してください。"
+    - "それ以外の場合は、DKIM が整合している限り対応は不要です。"
+  fix_by_provider:
+    amazon_ses: "カスタム MAIL FROM を設定してください。選択したサブドメインに MX 10 feedback-smtp.<region>.amazonses.com と TXT v=spf1 include:amazonses.com ~all を登録します。"
+    postmark: "{domain} のサブドメインとして、カスタム Return-Path の CNAME を作成し、pm.mtasv.net に向けてください。名前は DNS Settings に表示されたものを使います。"
+    sendgrid: "Automated security を使っている場合は em… の CNAME で十分です。Sender Authentication で検証済みになっているか確認してください。"
+    mailchimp: "Mailchimp は独自の Return-Path ドメインを使うため、整合は DKIM で行われます。これ以上の対応は不要です。"
+alignment.dkim_not_aligned:
+  title: "DKIM は {dkim_domain} で通っていますが、{domain} では通っていません"
+  why: "DMARC は SPF だけで成り立っています。受信者がメッセージを転送すると（アドレスの転送、リストなど）SPF が壊れて DMARC が失敗し、{domain} が p=reject の場合は拒否されます。"
+  fix:
+    - "{provider} で d={domain} を使った DKIM 署名を設定してください。"
+    - "提供された DKIM のレコードを公開し、テストをやり直してください。"
+alignment.spf_only:
+  title: "DMARC は SPF のおかげでのみ通っています"
+  why: "メッセージには署名がありません。{domain} を認証しているのは SPF だけです。受信者が転送したメッセージは DMARC に失敗します。また Gmail は大量送信に SPF と DKIM の両方を求めています。"
+  fix:
+    - "送信サービス（{provider}）で {domain} の DKIM を有効にしてください。"
+    - "SPF はそのままにしてください。両者は互いに補い合います。"
+alignment.relaxed_only:
+  title: "整合は {domain} のサブドメインに基づいています"
+  why: "これは有効であり、送信サービスでは一般的です。ただ、厳格な整合（adkim=s または aspf=s）に変更すると、これらのメッセージが失敗する点は覚えておいてください。"
+  fix:
+    - "このサービスがサブドメインで署名している間は、DMARC に adkim=s や aspf=s を設定しないでください。"
+alignment.freemail_from:
+  title: "{domain} の名義で、それに属さないサーバーからメッセージが送信されています"
+  why: "{domain} のアドレスは、{domain} のサーバーからしか認証できません。{provider} から送信されると DMARC に失敗し、{domain} が公開しているポリシー（{dmarc_record}）により、ほとんどの受信者でメッセージが拒否されるか迷惑メールに振り分けられます。"
+  fix:
+    - "ご自身のドメイン上の送信元アドレス（例: contact@your-domain.example）を使い、{provider} で認証してください。"
+    - "必要に応じて、返信を受け取るために {domain} のアドレスを Reply-To に残してもかまいません。"
+alignment.multiple_from:
+  title: "メッセージに複数の From アドレスまたは From ヘッダーが含まれています"
+  why: "送信者が複数あると、受信者はどのドメインを検証すべきか分かりません。DMARC を適用できず、多くのサーバーが不正な形式のメッセージとして拒否します。"
+  fix:
+    - "1 つのアドレスだけを含む From ヘッダーのみを出力するよう、ソフトウェアを設定してください。"
+    - "ほかのアドレスは Reply-To または CC に入れてください。"

@@ -1,0 +1,67 @@
+subdomains.takeover_risk:
+  title: "{subdomain} pode ser tomado por um desconhecido em {service}"
+  why: "{subdomain} aponta para {target}, um recurso de {service} que não existe mais. Qualquer pessoa pode abrir uma conta em {service}, recriar esse recurso com este nome e publicar o que quiser em {subdomain}: página de phishing com o seu nome, roubo de cookies gravados em {domain}, certificado obtido sem o seu conhecimento."
+  fix:
+    - "Se {subdomain} não for mais usado: remova o registro CNAME dele da zona DNS de {domain}. É a correção mais segura."
+    - "Se ele precisar continuar no ar: recrie imediatamente o recurso em {service} com o nome {target}, na sua conta, e depois associe {subdomain} a ele."
+    - "Refaça a medição: {subdomain} deve passar para “não resolve mais” ou “ativo”, sem alerta."
+    - "Para o futuro: remova o CNAME antes de remover o recurso no serviço, nunca depois."
+subdomains.takeover_possible:
+  title: "{subdomain} aponta para um recurso {service} que não existe mais"
+  why: "{subdomain} aponta para {target}, e {service} responde que nenhum site está associado a esse nome. Dependendo das configurações do serviço, outro cliente pode reivindicar {subdomain} e publicar ali o conteúdo dele. Mesmo sem tomada, seus visitantes caem em uma página de erro de {service}."
+  fix:
+    - "Se {subdomain} não for mais usado: remova o registro CNAME dele da zona DNS de {domain}."
+    - "Se ele precisar continuar no ar: associe novamente {subdomain} ao seu site ou à sua aplicação em {service}."
+    - "No GitHub Pages, verifique {domain} nas configurações do Pages da sua conta ou da sua organização: assim ninguém mais poderá usá-lo."
+    - "Refaça a medição para confirmar que o alerta desapareceu."
+subdomains.cname_dangling:
+  title: "CNAME apontando para um destino que não existe mais: {value}"
+  why: "{subdomain} aponta para {target}, um nome que não existe (NXDOMAIN). O subdomínio não serve para nada, e se o domínio do destino expirar ou ficar livre, quem o comprar também controla o seu subdomínio."
+  fix:
+    - "Para cada nome listado, abra a zona DNS de {domain} e remova o registro CNAME se ele não for mais usado."
+    - "Se o nome precisar continuar no ar, substitua o destino pelo endereço atual do serviço."
+    - "Verifique se o domínio de cada destino ainda pertence a você ou pertence ao serviço esperado."
+subdomains.cert_expiring:
+  title: "Subdomínios cujo certificado servido expira em breve: {value}"
+  why: "O certificado que {subdomain} apresenta neste momento está prestes a expirar, quando já deveria ter sido renovado. A renovação automática provavelmente está com problema: no vencimento, os navegadores exibirão um alerta de segurança e bloquearão o site."
+  fix:
+    - "No servidor que serve {subdomain}, execute a renovação manualmente (por exemplo certbot renew) e leia o erro."
+    - "Causas frequentes: registro DNS alterado, desafio HTTP bloqueado por um redirecionamento ou por um firewall, tarefa agendada interrompida."
+    - "Se {subdomain} passar por um CDN ou um provedor de hospedagem, verifique se o certificado está ativo lá."
+    - "Refaça a medição: a data de expiração exibida deve ter recuado."
+subdomains.cert_expired_active:
+  title: "Subdomínios que servem um certificado expirado: {value}"
+  why: "{subdomain} apresenta neste momento um certificado expirado: os navegadores exibem um alerta de segurança, e a maioria dos visitantes desiste ali. Aplicações e APIs recusam a conexão."
+  fix:
+    - "No servidor que serve {subdomain}, renove o certificado (por exemplo certbot renew) e recarregue o servidor web."
+    - "Se {subdomain} não for mais usado, remova o registro dele na zona DNS de {domain}."
+    - "Refaça a medição para confirmar a nova data de expiração."
+subdomains.internal_names:
+  title: "Nomes internos visíveis para todos: {value}"
+  why: "Cada certificado é registrado em logs públicos que qualquer pessoa pode ler. Nomes como {subdomain} indicam a um atacante onde estão seus ambientes de teste e suas ferramentas de administração, muitas vezes menos protegidos que o site principal."
+  fix:
+    - "Verifique se cada nome ativo da lista exige autenticação ou só pode ser acessado pela sua rede (lista de endereços autorizados, VPN)."
+    - "Para ambientes de teste, prefira um certificado curinga (*.{domain}): ele não revela o nome exato de cada subdomínio."
+    - "Remova da zona DNS os nomes que não servem mais. Os logs, por sua vez, guardam o histórico para sempre."
+subdomains.dead_names:
+  title: "Subdomínios que não resolvem mais: {value}"
+  why: "Esses nomes tiveram um certificado, mas hoje não têm mais endereço. Os logs públicos os guardam para sempre: é normal e sem perigo enquanto nenhum CNAME apontar para um serviço excluído."
+  fix:
+    - "Nada a fazer se esses nomes não forem mais usados."
+    - "Se algum deles ainda precisar servir, recrie o registro na zona DNS de {domain}."
+subdomains.wildcard_dns:
+  title: "A zona de {domain} responde a qualquer nome"
+  why: "Um nome inventado em {domain} recebe o endereço {value}. Os subdomínios que recebem esse mesmo endereço são marcados como “via curinga DNS”: podem não existir mais como tal."
+  fix:
+    - "Se o curinga não for desejado, remova o registro *.{domain} da zona DNS."
+    - "Se ele for desejado, veja os nomes marcados como “via curinga DNS”: os que não servem mais não exigem nenhuma ação."
+subdomains.resolution_capped:
+  title: "Subdomínios listados sem resolução DNS: {value}"
+  why: "Os logs trazem mais de 500 nomes para {domain}. Os 500 vistos mais recentemente são resolvidos; os {value} outros são listados sem estado DNS, e a nota não os considera."
+  fix:
+    - "Meça um subdomínio mais específico (por exemplo dev.{domain}) para resolver todos os nomes dele."
+subdomains.none_found:
+  title: "Nenhum certificado publicado para {domain}"
+  why: "Os logs Certificate Transparency não contêm nenhum certificado com esse nome. Ou {domain} não serve nenhum site em https, ou seus certificados cobrem outros nomes."
+  fix:
+    - "Verifique a grafia do domínio e, se você tiver informado um subdomínio, meça o domínio principal."

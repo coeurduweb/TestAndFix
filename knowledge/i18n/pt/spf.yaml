@@ -1,0 +1,325 @@
+spf.missing:
+  title: "O domínio {envelope_domain} não tem registro SPF"
+  why: "Sem SPF, nada indica aos destinatários quais servidores têm permissão para enviar em nome de {envelope_domain}. O Gmail, o Yahoo e o Outlook.com exigem essa autenticação: suas mensagens correm o risco de cair no spam ou de serem rejeitadas."
+  fix:
+    - "Liste todos os serviços que enviam com um endereço de {envelope_domain}: e-mail, site, software de faturamento, ferramenta de e-mail marketing."
+    - "Crie um único registro TXT na raiz de {envelope_domain} começando com v=spf1, com um include: ou um ip4: por serviço, e terminado com ~all."
+    - "Verifique o resultado com este teste: o SPF deve indicar pass para o IP {ip}."
+  fix_by_provider:
+    google_workspace: "Adicione o TXT v=spf1 include:_spf.google.com ~all (documentação do Google Workspace, Configurar SPF)."
+    microsoft_365: "Adicione no seu provedor de DNS o TXT v=spf1 include:spf.protection.outlook.com -all; o Microsoft 365 não permite criá-lo na interface dele para um domínio personalizado."
+    ovh: "Na área do cliente OVHcloud, Zona DNS, Adicionar uma entrada, tipo SPF: v=spf1 include:mx.ovh.com ~all (include:mx.ovh.ca para contas do Canadá e da Ásia-Pacífico). Válido para MX Plan, Email Pro e Exchange hospedado."
+    o2switch: "No cPanel, Autenticação, Gerenciar, Personalizar: a o2switch indica que o único include a usar para os seus serviços é include:spf.jabatus.fr. Desconfie dos SPF gerados por ferramentas de IA."
+    cpanel: "Em Email, Email Deliverability, clique em Manage e depois instale o registro SPF proposto (da forma v=spf1 +a +mx +ip4:… ~all). Se o DNS não for gerenciado por este servidor, copie-o para o seu provedor de DNS."
+    plesk: "Em Sites e domínios, DNS, adicione ou complete o TXT v=spf1 (modelo do servidor: Ferramentas e configurações, Configurações de DNS)."
+    ionos: "Para um domínio com os servidores DNS da IONOS, ative o registro “IONOS SPF (TXT)”; com um DNS externo, publique v=spf1 include:_spf-eu.ionos.com ~all."
+    gandi: "Publique v=spf1 include:_mailcust.gandi.net ~all, e acrescente include:_spf.gpaas.net se o seu site hospedado na Gandi também enviar."
+    infomaniak: "A Infomaniak instala automaticamente v=spf1 include:spf.infomaniak.ch -all quando a zona DNS está com ela; caso contrário, publique esse valor."
+    zoho: "Publique o valor exibido no console de administração do Zoho Mail (documentação: v=spf1 include:zoho.com ~all)."
+    proton: "Em Configurações, Nomes de domínio, Revisar, aba SPF, copie o registro proposto (ele contém include:_spf.protonmail.ch)."
+    brevo: "A Brevo não exige SPF para autenticar um domínio; se você incluir o include dela no seu SPF, o valor oficial é include:spf.brevo.com."
+    mailchimp: "Nada a acrescentar: o Mailchimp envia com o próprio domínio de retorno, já coberto pelo SPF dele. Autentique o domínio em DKIM (Account & billing, Domains)."
+    mailjet: "Publique v=spf1 include:spf.mailjet.com ~all (ou acrescente esse include ao seu SPF existente)."
+    sendgrid: "Com a opção automated security (padrão), o include sendgrid.net fica no subdomínio em… que o SendGrid faz você delegar por CNAME: publique os CNAME de Settings, Sender Authentication. Sem essa opção, publique neste subdomínio v=spf1 include:sendgrid.net ~all."
+    mailgun: "Publique no domínio de envio declarado no Mailgun (muitas vezes um subdomínio como mg.{domain}): v=spf1 include:mailgun.org ~all."
+    amazon_ses: "Por padrão, o SES usa um domínio de retorno amazonses.com, já coberto. Para um domínio de retorno personalizado (MAIL FROM), publique neste subdomínio um MX 10 feedback-smtp.<região>.amazonses.com e o TXT v=spf1 include:amazonses.com ~all."
+    postmark: "O Postmark não exige mais SPF: crie em vez disso o CNAME de Return-Path personalizado apontando para pm.mtasv.net, indicado em Sender Signatures, DNS Settings."
+    hubspot: "Acrescente ao TXT da raiz o include próprio da sua conta (da forma include:123456.spf03.hubspotemail.net), a copiar de Settings, Content, Domains & URLs, Email Sending."
+    cloudflare_dns: "Em DNS, Records, Add record, tipo TXT, nome @, conteúdo v=spf1 … ~all. Os TXT nunca passam pelo proxy."
+spf.multiple_records:
+  title: "O domínio {envelope_domain} publica vários registros SPF"
+  why: "Dois registros v=spf1 anulam o SPF: o destinatário devolve um erro permanente e {envelope_domain} perde toda a autenticação SPF, inclusive para os serviços corretamente declarados."
+  fix:
+    - "Anote os mecanismos de cada registro SPF existente."
+    - "Funda-os em um só: um v=spf1 no início, todos os include: e ip4: em sequência, um único all no final."
+    - "Remova os outros registros v=spf1 e refaça o teste."
+  fix_by_provider:
+    o2switch: "No cPanel, Zone Editor, remova a duplicata e depois complete o registro restante em Autenticação, Gerenciar, Personalizar (seção INCLUDE)."
+    brevo: "A Brevo dá este exemplo de fusão: v=spf1 include:_spf.google.com include:spf.brevo.com mx ~all."
+    cloudflare_dns: "Em DNS, Records, filtre por TXT, edite um dos registros para incorporar o outro e depois remova o segundo."
+spf.type99_only:
+  title: "O SPF de {envelope_domain} está publicado em um tipo de registro abandonado"
+  why: "Seu SPF existe, mas no tipo de registro “SPF” (99) que nenhum destinatário lê mais. Para eles, {envelope_domain} não tem SPF."
+  fix:
+    - "Recrie exatamente o mesmo conteúdo em um registro do tipo TXT na raiz de {envelope_domain}."
+    - "Depois, remova o registro do tipo SPF (99)."
+spf.type99_leftover:
+  title: "Um registro antigo do tipo SPF (99) permanece em {envelope_domain}"
+  why: "Só o seu TXT é lido. O registro antigo do tipo 99 não serve para nada e pode ser alterado por engano no lugar do correto."
+  fix:
+    - "Remova o registro do tipo SPF (99) e mantenha apenas o TXT."
+spf.syntax_error:
+  title: "O SPF de {envelope_domain} contém um erro de sintaxe"
+  why: "Um único erro de sintaxe torna todo o registro inválido: os destinatários o tratam como erro permanente, como se {envelope_domain} não tivesse SPF."
+  fix:
+    - "Localize o termo com erro indicado pelo teste em “{spf_record}”."
+    - "Separe cada termo com um espaço simples, sem espaço depois dos dois-pontos, usando ip4: para IPv4 e ip6: para IPv6."
+    - "Substitua o registro pela versão corrigida: {suggested_record}."
+spf.unknown_mechanism:
+  title: "O SPF de {envelope_domain} usa um mecanismo desconhecido"
+  why: "O SPF contém uma palavra que o padrão não conhece, muitas vezes um erro de digitação. O registro inteiro fica inválido e as suas mensagens perdem a autenticação SPF."
+  fix:
+    - "Localize o termo desconhecido em “{spf_record}”."
+    - "Corrija-o com um dos mecanismos válidos: include:, ip4:, ip6:, a, mx, exists:, all."
+    - "Publique a versão corrigida: {suggested_record}."
+spf.version_invalid:
+  title: "O SPF de {envelope_domain} não começa com v=spf1"
+  why: "Seu registro parece um SPF, mas o início não é reconhecido. Os destinatários o ignoram e consideram que {envelope_domain} não tem SPF."
+  fix:
+    - "Faça o registro começar exatamente com v=spf1 seguido de um espaço, sem espaço nem aspas antes."
+    - "Se a sua interface de DNS acrescentar as aspas sozinha, não as digite no valor."
+    - "Publique: {suggested_record}."
+spf.sender_id_record:
+  title: "{envelope_domain} publica um registro Sender ID antigo (spf2.0)"
+  why: "O Sender ID está abandonado e não é mais usado pelos grandes provedores. O registro não serve para nada e torna a resposta DNS do seu domínio mais pesada."
+  fix:
+    - "Remova o TXT que começa com spf2.0/ e mantenha apenas o v=spf1."
+spf.plus_all:
+  title: "O SPF de {envelope_domain} autoriza o mundo inteiro (+all)"
+  why: "Com +all, qualquer pessoa pode enviar em nome de {envelope_domain} e obter um SPF válido. Os destinatários sabem disso: esse SPF não protege você e pode até ser considerado um sinal de spam."
+  fix:
+    - "Liste os serviços que realmente enviam por {envelope_domain}."
+    - "Substitua +all por ~all (ou por -all, quando tiver certeza da lista), e acrescente os include: ou ip4: que faltam."
+    - "Publique: {suggested_record}."
+spf.neutral_all:
+  title: "O SPF de {envelope_domain} termina com ?all (neutro)"
+  why: "Com ?all, seu SPF não diz nada sobre os servidores não listados. Um falsificador obtém o mesmo resultado que um servidor desconhecido, e o seu SPF não ajuda o DMARC a bloqueá-lo."
+  fix:
+    - "Verifique se todos os seus serviços de envio estão no registro."
+    - "Substitua ?all por ~all e, depois, por -all quando os relatórios DMARC não mostrarem mais nenhum envio legítimo não coberto."
+  fix_by_provider:
+    gandi: "Substitua ?all por ~all em v=spf1 include:_mailcust.gandi.net ?all."
+    infomaniak: "A Infomaniak oferece uma variante com ?all; prefira o valor padrão v=spf1 include:spf.infomaniak.ch -all."
+spf.no_all:
+  title: "O SPF de {envelope_domain} não termina com um mecanismo all"
+  why: "Sem all final, seu SPF não diz o que fazer com servidores não autorizados: eles obtêm um resultado neutro, como se você não tivesse declarado nada sobre eles."
+  fix:
+    - "Acrescente ~all ao final do registro."
+    - "Passe para -all quando tiver certeza de que todos os seus serviços de envio estão listados."
+spf.terms_after_all:
+  title: "Mecanismos do SPF de {envelope_domain} estão colocados depois de all"
+  why: "Tudo que vem depois de all é ignorado. O serviço declarado após all não fica autorizado, e as suas mensagens falham no SPF."
+  fix:
+    - "Mova os termos que estão depois de all para logo antes dele."
+    - "Publique: {suggested_record}."
+spf.redirect_with_all:
+  title: "O SPF de {envelope_domain} combina redirect= e all"
+  why: "Quando all está presente, o redirecionamento nunca é seguido: os servidores que você achava autorizar por redirect= não são autorizados."
+  fix:
+    - "Escolha: ou redirect= sozinho (o domínio de destino decide tudo), ou include: seguidos de all."
+    - "Para manter a política do domínio de destino acrescentando os seus próprios servidores, substitua redirect=destino por include:destino antes de all."
+spf.redirect_target_invalid:
+  title: "O redirecionamento SPF de {envelope_domain} aponta para um domínio sem SPF"
+  why: "Seu SPF delega inteiramente a outro domínio que não publica SPF. O resultado é um erro permanente para todas as suas mensagens."
+  fix:
+    - "Verifique a grafia do domínio indicado após redirect=."
+    - "Publique um SPF nesse domínio de destino, ou substitua o redirecionamento pelos seus próprios include: seguidos de ~all."
+spf.lookup_limit:
+  title: "O SPF de {envelope_domain} faz {lookup_count} consultas DNS (máximo 10)"
+  why: "Além de 10 consultas, o destinatário interrompe a avaliação e devolve um erro permanente: {envelope_domain} perde o benefício do SPF em todos os seus envios, inclusive os dos serviços bem declarados."
+  fix:
+    - "Remova os include: dos serviços que {domain} não usa mais (provedor antigo, ferramenta de e-mail marketing antiga)."
+    - "Remova a e mx se eles não corresponderem a servidores que enviam, ou substitua-os pelos endereços ip4: correspondentes."
+    - "Mova os envios de marketing para um subdomínio (por exemplo news.{domain}) com SPF próprio."
+    - "Confira o novo total com este teste: ele deve ficar em 10 ou menos."
+  fix_by_provider:
+    o2switch: "Remova +a e +mx se o único include:spf.jabatus.fr já cobrir os seus envios feitos pela o2switch."
+    cpanel: "O SPF padrão do cPanel contém +a e +mx (2 consultas): remova-os se não servirem para nada, o ip4: do servidor basta."
+    sendgrid: "Com automated security, o include do SendGrid fica no subdomínio em… e não conta no SPF do seu domínio raiz: remova include:sendgrid.net da raiz se você o tiver acrescentado lá."
+    mailchimp: "O Mailchimp não precisa de include no seu SPF: remova-o se ele estiver lá."
+    brevo: "A Brevo não exige include SPF para autenticar um domínio com IP compartilhado: remova include:spf.brevo.com se você não tiver um IP dedicado."
+spf.lookup_limit_near:
+  title: "O SPF de {envelope_domain} está em {lookup_count} consultas, perto do limite"
+  why: "Basta que um dos seus provedores acrescente um include no próprio SPF para que o seu passe de 10 consultas e se torne inválido de um dia para o outro."
+  fix:
+    - "Remova agora os include: desnecessários e substitua a e mx por ip4: sempre que possível."
+    - "Acompanhe esse total após cada inclusão de um novo serviço de envio."
+spf.void_lookup_limit:
+  title: "O SPF de {envelope_domain} contém mais de duas referências vazias"
+  why: "Vários nomes citados no seu SPF não existem mais. Além de dois, a maioria dos destinatários devolve um erro permanente e o seu SPF deixa de valer."
+  fix:
+    - "Localize os termos que não retornam nada (o teste os lista): provedor antigo, erro de digitação, subdomínio removido."
+    - "Remova-os ou corrija a grafia."
+    - "Publique: {suggested_record}."
+spf.mx_too_many_addresses:
+  title: "O mecanismo mx do SPF de {envelope_domain} retorna endereços demais"
+  why: "Seus MX retornam mais de 10 endereços: o mecanismo mx gera um erro permanente e todo o seu SPF se torna inválido."
+  fix:
+    - "Remova mx do SPF se os seus servidores de recebimento não enviam e-mails (é o caso da maioria dos provedores, que têm o próprio include:)."
+    - "Caso contrário, substitua mx pelos endereços ip4: e ip6: dos servidores que realmente enviam."
+spf.ptr_mechanism:
+  title: "O SPF de {envelope_domain} usa o mecanismo ptr, que deve ser evitado"
+  why: "ptr é lento e pouco confiável: alguns destinatários não o avaliam, e os servidores que ele deveria autorizar falham então no SPF. Ele também consome consultas DNS."
+  fix:
+    - "Identifique os servidores que o ptr deveria cobrir."
+    - "Substitua ptr pelos endereços ip4: e ip6: deles, ou pelo include: do provedor."
+spf.include_no_spf:
+  title: "O SPF de {envelope_domain} inclui um domínio que não tem SPF"
+  why: "Um include: aponta para um domínio sem SPF. A norma faz então todo o seu SPF falhar com erro permanente, e não apenas esse serviço."
+  fix:
+    - "Localize o include indicado pelo teste e verifique a grafia na documentação do provedor."
+    - "Se o serviço não for mais usado, remova o include."
+    - "Publique: {suggested_record}."
+spf.include_permerror:
+  title: "Um domínio incluído no SPF de {envelope_domain} tem um SPF inválido"
+  why: "Seu próprio registro está correto, mas um include: remete a um SPF com erro. Esse erro vale para todas as suas mensagens."
+  fix:
+    - "Identifique o include defeituoso indicado pelo teste."
+    - "Se ele for seu (por exemplo _spf.{domain}), corrija-o; caso contrário, informe o erro ao provedor."
+    - "Enquanto isso, substitua esse include pelos endereços ip4: do serviço, se o provedor os publicar."
+spf.include_loop:
+  title: "O SPF de {envelope_domain} inclui a si mesmo (loop)"
+  why: "Seu SPF remete, direta ou indiretamente, a si mesmo. O destinatário gira em círculos, desiste e devolve um erro permanente."
+  fix:
+    - "Remova o include: ou o redirect= que aponta para {envelope_domain} ou para um subdomínio que volta a ele."
+    - "Publique: {suggested_record}."
+spf.duplicate_terms:
+  title: "O SPF de {envelope_domain} contém termos duplicados"
+  why: "O mesmo serviço aparece duas vezes. Não é um erro, mas cada duplicata consome uma das 10 consultas permitidas."
+  fix:
+    - "Remova o termo repetido e mantenha uma única ocorrência por serviço."
+    - "No caso da Brevo, mantenha include:spf.brevo.com, o valor documentado, e remova o include:spf.sendinblue.com antigo."
+spf.softfail:
+  title: "O IP {ip} não é autorizado pelo SPF de {envelope_domain} (softfail)"
+  why: "O servidor que enviou esta mensagem ({ip}, {provider}) não está declarado no seu SPF. Os filtros acrescentam pontos de spam e, sem DKIM alinhado, o DMARC falha."
+  fix:
+    - "Identifique o serviço que enviou esta mensagem: {provider}, IP {ip}, reverse DNS {ptr}."
+    - "Acrescente ao seu SPF o include: oficial desse serviço, ou o seu ip4: se for o seu próprio servidor."
+    - "Publique: {suggested_record}."
+  fix_by_provider:
+    google_workspace: "Acrescente include:_spf.google.com."
+    microsoft_365: "Acrescente include:spf.protection.outlook.com."
+    ovh: "Acrescente include:mx.ovh.com (include:mx.ovh.ca para o Canadá e a Ásia-Pacífico); para o Private Exchange, acrescente os ip4: dos servidores."
+    o2switch: "Acrescente include:spf.jabatus.fr pelo cPanel, Autenticação, Gerenciar, Personalizar."
+    cpanel: "Acrescente o ip4: do servidor ou clique em Repair em Email Deliverability."
+    ionos: "Acrescente include:_spf-eu.ionos.com."
+    gandi: "Acrescente include:_mailcust.gandi.net, e include:_spf.gpaas.net para um site hospedado na Gandi."
+    infomaniak: "Acrescente include:spf.infomaniak.ch."
+    proton: "Acrescente include:_spf.protonmail.ch."
+    brevo: "Acrescente include:spf.brevo.com ou, melhor ainda, configure o domínio de retorno personalizado (CNAME “Branded”) proposto em Senders, Domains, IPs, Domains."
+    mailjet: "Acrescente include:spf.mailjet.com."
+    sendgrid: "Publique os CNAME em…, s1._domainkey e s2._domainkey de Settings, Sender Authentication; o SPF fica então no subdomínio em…."
+    mailgun: "Acrescente include:mailgun.org ao SPF do domínio de envio declarado no Mailgun."
+    amazon_ses: "Configure um MAIL FROM personalizado com o TXT v=spf1 include:amazonses.com ~all nesse subdomínio."
+    hubspot: "Acrescente o include próprio da sua conta, exibido em Settings, Content, Domains & URLs, Email Sending."
+    wordpress: "Se a mensagem vier da função mail() do servidor web, faça o site enviar pelo SMTP autenticado do seu serviço de e-mail, com uma extensão SMTP."
+spf.fail:
+  title: "O IP {ip} é recusado pelo SPF de {envelope_domain} (fail)"
+  why: "Seu SPF diz explicitamente que {ip} não tem permissão para enviar por {envelope_domain}. Parte dos destinatários rejeita a mensagem, e os outros a classificam como spam se o DKIM não resgatar o DMARC."
+  fix:
+    - "Verifique se o envio é legítimo: {provider}, IP {ip}, reverse DNS {ptr}. Se você não reconhecer esse servidor, trata-se de uma falsificação e o SPF está cumprindo o seu papel."
+    - "Se ele for legítimo, acrescente o include: oficial do serviço ou o seu ip4: antes de -all."
+    - "Publique: {suggested_record}, depois refaça o teste."
+  fix_by_provider:
+    google_workspace: "Acrescente include:_spf.google.com antes de -all."
+    microsoft_365: "Acrescente include:spf.protection.outlook.com antes de -all."
+    ovh: "Acrescente include:mx.ovh.com antes de -all."
+    o2switch: "Acrescente include:spf.jabatus.fr antes de -all."
+    brevo: "Acrescente include:spf.brevo.com antes de -all."
+    mailjet: "Acrescente include:spf.mailjet.com antes de -all."
+    mailgun: "Acrescente include:mailgun.org antes de -all no domínio de envio."
+    amazon_ses: "Acrescente include:amazonses.com ao SPF do MAIL FROM personalizado."
+spf.temperror:
+  title: "O SPF de {envelope_domain} não pôde ser lido (erro temporário de DNS)"
+  why: "Os servidores DNS de {envelope_domain}, ou de um domínio incluído, não responderam a tempo. Os destinatários então atrasam as suas mensagens ou as avaliam sem SPF."
+  fix:
+    - "Refaça o teste em alguns minutos para confirmar se o erro se repete."
+    - "Se ele persistir, verifique se todos os servidores de nomes (NS) de {envelope_domain} respondem e fornecem o mesmo SPF."
+    - "Verifique também a assinatura DNSSEC da zona: uma assinatura quebrada produz o mesmo sintoma."
+spf.helo_fail:
+  title: "O SPF do nome de servidor {helo} não autoriza o IP {ip}"
+  why: "Seu servidor se apresenta com o nome {helo}, mas o SPF desse nome não o autoriza. O efeito é fraco sobre as suas mensagens normais, mais forte sobre os seus avisos de não entrega."
+  fix:
+    - "Publique no nome {helo} um SPF que autorize o IP dele: v=spf1 a -all (o nome aponta para {ip})."
+    - "Ou use como HELO um nome cujo SPF já cubra {ip}."
+spf.helo_none:
+  title: "O nome de servidor {helo} não tem SPF"
+  why: "Um SPF no nome do servidor permite validar as suas mensagens técnicas, em especial os avisos de não entrega. A ausência pesa pouco, mas é um ajuste rápido."
+  fix:
+    - "Publique em {helo} o registro TXT v=spf1 a -all."
+spf.string_too_long:
+  title: "O SPF de {envelope_domain} ultrapassa 255 caracteres sem ser dividido"
+  why: "Uma string TXT não pode passar de 255 caracteres. A sua interface de DNS recusou ou truncou o registro: o final, muitas vezes ~all ou um include, desapareceu e o SPF está errado."
+  fix:
+    - "Encurte primeiro o registro removendo os serviços desnecessários."
+    - "Se ainda ficar longo demais, digite-o em várias strings entre aspas, separadas por um espaço, cortando no meio de um termo se necessário: elas serão unidas sem espaço."
+    - "Verifique o resultado com dig TXT {envelope_domain}: o texto completo deve aparecer."
+spf.dns_response_too_large:
+  title: "A resposta DNS TXT de {envelope_domain} ultrapassa 512 bytes ({value} bytes)"
+  why: "Todos os TXT do seu domínio são enviados juntos quando um destinatário procura o SPF. Acima de 512 bytes, alguns servidores não recebem a resposta e tratam {envelope_domain} como se não tivesse SPF."
+  fix:
+    - "Remova os TXT de verificação que não servem mais (google-site-verification antigos, ferramentas abandonadas)."
+    - "Encurte o SPF removendo os serviços desnecessários."
+    - "Se possível, coloque os envios de uma ferramenta em um subdomínio que tenha o próprio SPF."
+spf.exp_modifier:
+  title: "O SPF de {envelope_domain} usa o modificador exp="
+  why: "exp= só é útil para administradores que leem as rejeições. Não muda nada na entregabilidade e acrescenta uma consulta DNS em caso de falha."
+  fix:
+    - "Mantenha-o apenas se você usar o texto de explicação; caso contrário, remova-o para simplificar o registro."
+    - "Se for mantido, verifique se o domínio citado publica um único TXT em ASCII."
+spf.macros:
+  title: "O SPF de {envelope_domain} usa macros"
+  why: "As macros são legítimas, mas tornam o seu SPF dependente de um serviço terceiro que responde na hora. Se ele cair ou desaparecer, o seu SPF falha sem que nada tenha mudado do seu lado."
+  fix:
+    - "Verifique se o serviço que fornece essas macros ainda está sob contrato e disponível."
+    - "Remova qualquer macro “p”, desaconselhada pela norma."
+    - "Se o número de serviços permitir, volte aos include: e ip4: clássicos."
+spf.range_too_broad:
+  title: "O SPF de {envelope_domain} autoriza uma faixa de endereços muito ampla"
+  why: "Seu SPF autoriza uma faixa imensa, que necessariamente contém servidores que não são seus. Um falsificador hospedado nessa faixa passaria no SPF."
+  fix:
+    - "Substitua a faixa pelos endereços apenas dos seus servidores (em /32 para um IP IPv4)."
+    - "Para um serviço de envio, use o include: oficial dele em vez da faixa completa."
+spf.non_sending_domain_open:
+  title: "{domain} não recebe e-mails, mas não proíbe envios em seu nome"
+  why: "Um domínio sem e-mail é um alvo fácil para falsificadores. Um SPF “v=spf1 -all” e um DMARC p=reject bastam para torná-lo inutilizável para eles."
+  fix:
+    - "Se {domain} nunca enviar e-mails, publique o TXT v=spf1 -all."
+    - "Acrescente um DMARC v=DMARC1; p=reject em _dmarc.{domain}."
+    - "Não faça isso se algum serviço (site, faturamento) enviar com um endereço de {domain}."
+spf.domain_nxdomain:
+  title: "O domínio {envelope_domain} não existe no DNS"
+  why: "O DNS responde que {envelope_domain} não existe: nenhum SPF pode ser lido ali, e esse domínio não pode receber avisos de não entrega. Muitos servidores recusam um remetente cujo domínio não existe (parâmetro reject_unknown_sender_domain do Postfix, por exemplo)."
+  fix:
+    - "Verifique a grafia do domínio digitado ou do endereço de envio configurado na sua ferramenta."
+    - "Se o domínio tiver sido comprado há pouco, verifique no registrador se ele está ativo e delegado aos servidores de nomes do seu provedor de DNS."
+    - "Se for um subdomínio de envio (bounce., mail.), crie-o na zona DNS do domínio principal com pelo menos o registro SPF dele."
+spf.unknown_modifier:
+  title: "Modificador desconhecido no SPF de {envelope_domain}: {value}"
+  why: "Os destinatários ignoram os modificadores que não conhecem: {value} portanto não tem efeito. Se for um erro de digitação de redirect=, a delegação pretendida não acontece."
+  fix:
+    - "Se {value} for um erro de digitação (redirct=, redirection=), corrija-o para redirect=."
+    - "Caso contrário, remova-o: muitas vezes é um resto de configuração antiga ou um valor copiado de outro registro."
+spf.permerror:
+  title: "O SPF de {envelope_domain} está com erro permanente"
+  why: "A avaliação para em um erro ({value}). Os destinatários tratam a mensagem como sem SPF válido, alguns a recusam, e o DMARC não pode contar com o SPF: só um DKIM alinhado ainda pode autenticar {envelope_domain}."
+  fix:
+    - "Execute o verificador de SPF em {envelope_domain}: ele indica o termo em questão e propõe um registro corrigido."
+    - "Se o motivo mencionar consultas DNS demais, remova os include: dos serviços que você não usa mais ou substitua a e mx por ip4:."
+    - "Se ele mencionar vários registros, funda-os em um único TXT começando com v=spf1."
+    - "Se ele mencionar um include: sem SPF, corrija o nome do include ou remova-o."
+    - "Refaça a avaliação: o resultado deve ser pass para {ip}."
+spf.eval_neutral:
+  title: "O IP {ip} não é autorizado nem recusado pelo SPF de {envelope_domain}"
+  why: "O SPF de {envelope_domain} não se pronuncia sobre {ip} ({value}). O resultado neutral não conta como SPF bem-sucedido para o DMARC: se {ip} realmente enviar por você, as mensagens dele perdem essa autenticação."
+  fix:
+    - "Se {ip} enviar legitimamente por {envelope_domain}, acrescente ip4:{ip} (ou o include: oficial do provedor dele) antes do all."
+    - "Se o registro não tiver all, termine-o com ~all e, depois, com -all quando todos os seus serviços estiverem listados."
+    - "Se algum mecanismo começar com ?, remova esse ? ou substitua ?all por ~all."
+spf.neutral:
+  title: "O SPF de {envelope_domain} não se pronuncia sobre {ip}"
+  why: "Seu SPF não diz nem sim nem não para o servidor que enviou esta mensagem. Um resultado neutral não conta como SPF bem-sucedido para o DMARC: a mensagem passa a depender apenas do DKIM, e um falsificador obteria o mesmo resultado."
+  fix:
+    - "Verifique se o envio é legítimo: {provider}, IP {ip}, reverse DNS {ptr}."
+    - "Se for, acrescente o include: oficial do serviço ou ip4:{ip} antes do all, sem qualificador ?."
+    - "Se o registro não tiver all final, acrescente ~all."
+    - "Publique: {suggested_record}, depois refaça o teste."
+  fix_by_provider:
+    google_workspace: "Acrescente include:_spf.google.com antes do all."
+    microsoft_365: "Acrescente include:spf.protection.outlook.com antes do all."
+    ovh: "Acrescente include:mx.ovh.com antes do all."
+    o2switch: "Acrescente include:spf.jabatus.fr antes do all."
+    brevo: "Acrescente include:spf.brevo.com antes do all."
+    mailjet: "Acrescente include:spf.mailjet.com antes do all."
+    mailgun: "Acrescente include:mailgun.org antes do all no domínio de envio."
+    amazon_ses: "Acrescente include:amazonses.com ao SPF do MAIL FROM personalizado."

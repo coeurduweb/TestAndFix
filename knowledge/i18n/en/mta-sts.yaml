@@ -1,0 +1,106 @@
+mta-sts.missing:
+  title: "{domain} does not publish an MTA-STS policy"
+  why: Without MTA-STS, an attacker on the network can force senders to deliver mail intended for {domain} in plain text. This is not a deliverability criterion for your outgoing mail, but a protection for your incoming mail.
+  fix:
+    - Create the subdomain mta-sts.{domain}, served over HTTPS with a valid certificate.
+    - Publish at https://mta-sts.{domain}/.well-known/mta-sts.txt a text file in testing mode listing your MX servers.
+    - Add the TXT record _mta-sts.{domain} with v=STSv1 and an id= identifier.
+    - Also publish a TLS-RPT record to receive reports, then switch to enforce mode after a few weeks without errors.
+mta-sts.policy_unreachable:
+  title: The MTA-STS policy file of {domain} cannot be found
+  why: The DNS record announces an MTA-STS policy, but the file is not served. Senders cannot apply it, and if an old policy is cached on their side, they keep applying an outdated version.
+  fix:
+    - Create the A or CNAME record of mta-sts.{domain} pointing to a web server.
+    - Place the file at exactly /.well-known/mta-sts.txt, with no redirect.
+    - Check that the address https://mta-sts.{domain}/.well-known/mta-sts.txt returns 200 in a browser.
+  fix_by_provider:
+    cloudflare_dns: You can serve the file with a Cloudflare Worker or a static page on mta-sts.{domain}; the proxy can stay active for this web subdomain.
+mta-sts.policy_redirect:
+  title: The MTA-STS policy of {domain} is served through a redirect
+  why: Senders do not follow redirects to read an MTA-STS policy. For them, your policy does not exist, even if a browser displays it.
+  fix:
+    - Disable, for the mta-sts.{domain} subdomain alone, the redirect to www or to another site.
+    - Serve the file directly over HTTPS at https://mta-sts.{domain}/.well-known/mta-sts.txt.
+mta-sts.policy_cert_invalid:
+  title: The HTTPS certificate of mta-sts.{domain} is invalid
+  why: Senders refuse to read an MTA-STS policy served with an expired or self-signed certificate, or one issued for another name. Your policy is therefore ignored.
+  fix:
+    - Issue a certificate covering exactly mta-sts.{domain} (Let's Encrypt works).
+    - Install it on the server that serves this subdomain, and automate its renewal.
+mta-sts.policy_malformed:
+  title: The MTA-STS policy file of {domain} is malformed
+  why: An unreadable policy is ignored by senders. If a correct version was cached on their side, they will keep it until it expires, which can block an MX change.
+  fix:
+    - "Write one line per key, in the form key: value, without quotes."
+    - "Specify version: STSv1, then mode, one mx: line per MX server, and max_age in seconds."
+    - Then change the id= value of the _mta-sts.{domain} record to signal the new version.
+mta-sts.wrong_content_type:
+  title: The MTA-STS policy of {domain} is not served as text/plain
+  why: Some senders check the file type and reject a policy served as HTML or as an unknown type.
+  fix:
+    - "Configure the web server to serve mta-sts.txt with the header Content-Type: text/plain."
+  fix_by_provider:
+    cpanel: "Add to the .htaccess of the subdomain: AddType text/plain .txt"
+mta-sts.testing_mode:
+  title: The MTA-STS policy of {domain} is in test mode
+  why: "Testing mode protects nothing: it is used to collect reports before applying the policy. If the reports no longer show any failure, it is time to switch to enforce."
+  fix:
+    - Read the TLS-RPT reports received since setup and check that no MX fails.
+    - "Replace mode: testing with mode: enforce in the policy file."
+    - Change the id= value of the _mta-sts.{domain} record.
+mta-sts.mode_none:
+  title: The MTA-STS policy of {domain} is disabled (mode none)
+  why: Mode none cancels a previous policy. This is normal during a withdrawal; otherwise {domain} gets no MTA-STS protection.
+  fix:
+    - If the withdrawal is complete and max_age has elapsed, delete the _mta-sts.{domain} record and the file.
+    - Otherwise, switch back to testing mode, then to enforce, and change the id= value.
+mta-sts.mx_not_covered:
+  title: An MX of {domain} is not authorized by its MTA-STS policy
+  why: In enforce mode, senders that apply MTA-STS refuse to deliver to an MX absent from the policy. Part of the mail intended for {domain} may remain stuck, then bounce with an error.
+  fix:
+    - "Add an mx: line for each current MX server (a wildcard such as *.{domain} covers only one level of subdomain)."
+    - Change the id= value of the _mta-sts.{domain} record immediately so that senders reread the file.
+    - If you change provider, first switch back to testing mode for the entire duration of max_age.
+mta-sts.enforce_tls_broken:
+  title: The MTA-STS policy of {domain} blocks an MX with an invalid certificate
+  why: "Your policy requires valid TLS, but one of your MX servers does not provide it. Senders that apply MTA-STS refuse to deliver to it: you lose incoming mail."
+  fix:
+    - Fix the certificate of the MX concerned (see the TLS anomaly reported for this server).
+    - In the meantime, switch the policy back to testing mode and change the id= value.
+mta-sts.id_unchanged:
+  title: The MTA-STS policy of {domain} changed without changing its identifier
+  why: Senders keep the old policy cached as long as the id= value does not change, until max_age ends. Your change will not be seen for a long time, which can block a new MX.
+  fix:
+    - Change the id= value of the _mta-sts.{domain} record, for example with the date and time of the change.
+    - Do this every time the file changes, without exception.
+mta-sts.txt_malformed:
+  title: The _mta-sts record of {domain} is invalid
+  why: An identifier containing hyphens or dots, or two competing records, makes the policy non-existent in the eyes of senders.
+  fix:
+    - Keep a single TXT record beginning with v=STSv1 on _mta-sts.{domain}.
+    - Use an id= of 32 characters at most, made only of letters and digits.
+mta-sts.max_age_short:
+  title: The max_age of the MTA-STS policy of {domain} is very short
+  why: With a short duration, an attacker who blocks access to your policy for a few hours is enough to make senders fall back to optional TLS.
+  fix:
+    - Once the policy is stable in enforce mode, raise max_age to at least 604800 (one week), or even 1209600 or more.
+    - Do not exceed 31557600, the maximum value.
+    - Change the id= value after the modification.
+mta-sts.max_age_too_long:
+  title: The max_age of the MTA-STS policy of {domain} exceeds the maximum
+  why: "The value exceeds the limit set by the standard: some senders reject the entire policy."
+  fix:
+    - Lower max_age to 31557600 at most (any value between 604800 and 31557600 is fine).
+    - Change the id= value after the modification.
+mta-sts.tlsrpt_missing:
+  title: "{domain} publishes MTA-STS without a TLS-RPT reporting address"
+  why: You apply an encryption policy without receiving failure reports. If an MX or a certificate causes a problem, some senders will stop delivering to you without your knowing it.
+  fix:
+    - Create a dedicated address for reports, for example tlsrpt@{domain}.
+    - "Publish the TXT record _smtp._tls.{domain} with v=TLSRPTv1 and rua=mailto:<this address>."
+mta-sts.tlsrpt_malformed:
+  title: The TLS-RPT record of {domain} is invalid
+  why: "Senders ignore a malformed TLS-RPT record: you receive no reports on encryption failures."
+  fix:
+    - Start the record with v=TLSRPTv1.
+    - "Specify rua= followed by an address prefixed with mailto: (or an https: URL)."

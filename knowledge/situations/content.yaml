@@ -1,0 +1,409 @@
+# Famille content : texte du message, parties MIME, encodage du corps.
+# Les seuils nommés config.* sont des réglages internes de l'outil, à calibrer sur un corpus :
+# aucune norme ni aucun fournisseur ne les publie.
+
+- id: content.no_text_part
+  family: content
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "body.has_html && !body.has_text_plain"
+    notes: "Message en HTML seul, sans multipart/alternative. RFC 2046 §5.1.4 : multipart/alternative présente le même contenu sous plusieurs formes, de la plus simple à la plus riche."
+  sa_rules: []
+  title: "Le message n'a pas de version texte"
+  why: >
+    Le message ne contient que du HTML. Les filtres antispam comptent l'absence de version texte
+    comme un indice, et les lecteurs qui affichent le texte brut ne voient rien de lisible.
+  fix:
+    - "Envoyez le message en multipart/alternative : une partie text/plain d'abord, la partie text/html ensuite."
+    - "Activez dans votre outil la génération automatique de la version texte, puis relisez-la."
+  fix_by_provider:
+    mailchimp: "Dans la campagne, ouvrez Plain-text email et laissez la génération automatique activée, ou rédigez la version texte."
+    sendgrid: "Dans l'appel API v3 /mail/send, fournissez deux entrées dans content : une de type text/plain, puis une de type text/html."
+    wordpress: "Avec PHPMailer, renseignez $phpmailer->AltBody dans un filtre phpmailer_init, ou utilisez une extension SMTP qui génère la version texte."
+  example_good: |
+    Content-Type: multipart/alternative; boundary="b1"
+
+    --b1
+    Content-Type: text/plain; charset=UTF-8
+
+    Bonjour, votre commande est expédiée.
+    --b1
+    Content-Type: text/html; charset=UTF-8
+
+    <p>Bonjour, votre commande est expédiée.</p>
+    --b1--
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2046#section-5.1.4
+
+- id: content.text_part_empty
+  family: content
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "body.has_text_plain && body.text_plain.stripped.length < config.min_text_chars && body.html.visible_text.length >= config.min_text_chars"
+    notes: "La partie texte existe mais est vide ou presque, alors que le HTML contient du texte."
+  sa_rules: []
+  title: "La version texte du message est vide"
+  why: >
+    Une partie texte vide à côté d'un HTML rempli est une ruse connue pour tromper les filtres qui
+    lisent le texte. Elle est pénalisée, et les lecteurs en mode texte ne voient rien.
+  fix:
+    - "Remplissez la version texte avec le même contenu que la version HTML."
+    - "Si votre outil la génère, vérifiez qu'il ne reçoit pas une variable vide."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2046#section-5.1.4
+
+- id: content.text_html_mismatch
+  family: content
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "similarity(body.text_plain.normalized, body.html.visible_text.normalized) < config.min_text_html_similarity"
+    notes: "Similarité calculée sur les mots, liens retirés. Seuil interne."
+  sa_rules: []
+  title: "Les versions texte et HTML ne disent pas la même chose"
+  why: >
+    Les deux versions ne se ressemblent qu'à {value}. Un message dont le texte et le HTML divergent
+    est un procédé de dissimulation connu des filtres, et c'est souvent un ancien modèle oublié.
+  fix:
+    - "Regénérez la version texte à partir du HTML actuel."
+    - "Si vous la rédigez à la main, mettez-la à jour à chaque modification du HTML."
+  fix_by_provider:
+    mailchimp: "Dans Plain-text email, cliquez sur Regenerate from HTML après chaque modification du contenu."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2046#section-5.1.4
+
+- id: content.text_too_short
+  family: content
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "body.visible_text.words < config.min_body_words && !attachments.any"
+    notes: "Corps de quelques mots seulement. Seuil interne."
+  sa_rules: []
+  title: "Le message contient très peu de texte"
+  why: >
+    Le corps ne compte que {value} mots. Avec si peu de texte, les filtres manquent d'éléments pour
+    juger le message et se fient surtout aux liens et à la réputation, souvent à votre détriment.
+  fix:
+    - "Ajoutez quelques phrases qui expliquent pourquoi le destinataire reçoit ce message et ce que vous lui proposez."
+    - "Ajoutez une signature avec le nom de l'entreprise et un moyen de contact."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: content.url_only_body
+  family: content
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "body.visible_text.without_urls.trim().length < config.min_text_chars && body.links.count >= 1"
+    notes: "Corps réduit à un ou plusieurs liens, sans phrase."
+  sa_rules: []
+  title: "Le message se résume à un lien"
+  why: >
+    Un message qui ne contient qu'une adresse web est le format type de l'hameçonnage et du spam par
+    lien. Il est presque toujours filtré.
+  fix:
+    - "Rédigez au moins quelques phrases : qui vous êtes, pourquoi vous écrivez, ce que contient le lien."
+    - "Placez le lien sur un texte explicite plutôt que de coller l'adresse seule."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: content.trigger_words
+  family: content
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "body.visible_text.matches(config.trigger_phrases).count >= config.trigger_min_hits"
+    notes: "Liste interne d'expressions promotionnelles agressives (« gagnez », « 100 % gratuit », « offre limitée », « cliquez ici »). Les filtres modernes pèsent peu ces mots seuls ; la pénalité reste faible."
+  sa_rules: []
+  title: "Le texte accumule des formules promotionnelles agressives"
+  why: >
+    Le message contient {value} expressions typiques du spam. Prises isolément elles pèsent peu, mais
+    leur accumulation renforce les autres signaux négatifs.
+  fix:
+    - "Remplacez les formules génériques par une description précise de l'offre : produit, prix, date de fin."
+    - "Remplacez « cliquez ici » par un texte de lien qui dit où mène le lien."
+  references:
+    - https://senders.yahooinc.com/best-practices/
+
+- id: content.excessive_caps
+  family: content
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "body.visible_text.upper_letters_ratio >= config.body_caps_ratio"
+    notes: "Proportion de lettres majuscules dans le corps. Seuil interne."
+  sa_rules: []
+  title: "Le texte contient beaucoup de majuscules"
+  why: >
+    Une part importante du texte est en capitales. Cela donne un ton agressif et fait partie des
+    critères des filtres de contenu.
+  fix:
+    - "Réécrivez les passages en capitales en casse normale."
+    - "Pour mettre en valeur, utilisez le gras ou un titre HTML plutôt que les majuscules."
+  references:
+    - https://senders.yahooinc.com/best-practices/
+
+- id: content.excessive_punctuation
+  family: content
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "(headers.subject + body.visible_text).matches(/[!?€$]{3,}/).count >= 1"
+    notes: "Suites de points d'exclamation, d'interrogation ou de symboles monétaires."
+  sa_rules: []
+  title: "Le message contient des suites de points d'exclamation ou de symboles"
+  why: >
+    Les suites comme « !!! » ou « €€€ » sont une marque de spam bien connue des filtres et des
+    lecteurs.
+  fix:
+    - "Gardez un seul point d'exclamation au plus par phrase."
+    - "Écrivez les montants en chiffres suivis de leur devise, sans répéter le symbole."
+  example_bad: "Dernier jour !!! Économisez €€€"
+  example_good: "Dernier jour : 20 % de réduction jusqu'à minuit."
+  references:
+    - https://senders.yahooinc.com/best-practices/
+
+- id: content.invisible_characters
+  family: content
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "(headers.subject + body.visible_text).count_chars([U+200B,U+200C,U+200D,U+2060,U+FEFF,U+00AD,U+034F]) > config.max_invisible_chars"
+    notes: "Espaces de largeur nulle, joints, traits d'union conditionnels insérés entre les lettres pour casser les mots surveillés par les filtres. Unicode TR36 décrit ces risques."
+  sa_rules: []
+  title: "Le texte contient des caractères invisibles"
+  why: >
+    Le message contient {value} caractères invisibles. Insérés dans les mots, ils servent à
+    contourner les filtres : ceux-ci les détectent et sanctionnent le message comme une tentative
+    de dissimulation.
+  fix:
+    - "Collez votre texte dans un éditeur qui affiche les caractères invisibles et supprimez-les."
+    - "Ne copiez pas directement depuis un traitement de texte ou une page web : collez en texte brut, puis remettez la mise en forme."
+  references:
+    - https://www.unicode.org/reports/tr36/
+
+- id: content.homoglyphs
+  family: content
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "body.visible_text.words.any(w => w.is_mixed_script(config.confusable_scripts))"
+    notes: "Mots qui mélangent alphabets latin, cyrillique ou grec (par exemple un « а » cyrillique dans un mot français). Détection selon Unicode TR39 (mixed-script confusables)."
+  sa_rules: []
+  title: "Des mots mélangent plusieurs alphabets"
+  why: >
+    Le mot {value} contient des lettres d'un autre alphabet qui ressemblent à des lettres latines.
+    Cette technique sert à usurper des marques et à tromper les filtres : elle est fortement pénalisée.
+  fix:
+    - "Retapez les mots signalés au clavier au lieu de les copier."
+    - "Si votre texte est traduit automatiquement, relisez les mots qui contiennent des caractères grecs ou cyrilliques."
+  references:
+    - https://www.unicode.org/reports/tr39/
+    - https://www.unicode.org/reports/tr36/
+
+- id: content.image_only
+  family: content
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "body.html.images.count >= 1 && body.html.visible_text.words < config.min_body_words"
+    notes: "Message fait d'une ou plusieurs images avec peu ou pas de texte. Voir aussi images.image_heavy (texte présent mais minoritaire) ; ne pas cumuler."
+  sa_rules: []
+  title: "Le message est fait d'images presque sans texte"
+  why: >
+    En dehors des images, le message est presque sans texte : {value}. Les filtres ne peuvent pas
+    lire le texte des images et se méfient de ce format très utilisé par le spam. Si les images sont
+    bloquées, le destinataire voit un message presque vide.
+  fix:
+    - "Écrivez le titre, l'offre et le bouton d'action en texte HTML, et gardez les images pour l'illustration."
+    - "Remplacez les boutons en image par des boutons en HTML et CSS."
+    - "Ajoutez un attribut alt descriptif à chaque image restante."
+  fix_by_provider:
+    mailchimp: "Remplacez le bloc Image par un bloc Text pour le titre et l'offre, et utilisez le bloc Button pour l'appel à l'action."
+    brevo: "Dans l'éditeur glisser-déposer, utilisez les blocs Titre, Texte et Bouton à la place d'une image unique."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: content.html_clipped_gmail
+  family: content
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "body.html.bytes > 102 * 1024"
+    notes: "Google ne publie pas ce seuil. Mailchimp documente que Gmail coupe les messages dont le code dépasse 102 Ko (le code compte, pas les images hébergées). Seuil empirique, à garder comme alerte."
+  sa_rules: []
+  title: "Le HTML est assez lourd pour être tronqué par Gmail"
+  why: >
+    Le HTML pèse {value}. Mailchimp indique que Gmail coupe les messages au-delà d'environ 102 Ko et
+    affiche « Message tronqué ». Le lien de désinscription et le pixel de mesure d'ouverture,
+    placés en bas, disparaissent alors.
+  fix:
+    - "Supprimez les styles CSS en double et les commentaires du HTML."
+    - "Raccourcissez le message ou découpez-le en plusieurs envois."
+    - "Remplacez les images encodées en base64 dans le HTML par des images hébergées."
+    - "Placez le lien de désinscription assez haut dans le pied de page pour qu'il reste visible en cas de coupure."
+  fix_by_provider:
+    mailchimp: "Évitez de coller du HTML exporté d'un autre outil dans un bloc Code : il contient souvent des styles en double."
+  references:
+    - https://mailchimp.com/help/gmail-is-clipping-my-email/
+
+- id: content.mojibake
+  family: content
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "(headers.subject + body.visible_text).matches(/Ã[©¨ ª«®¯´¹»¼§]|â€[™œ\\x9d“”˜¦]|Â[ ©°«»]/).count >= 1"
+    notes: "Texte UTF-8 décodé comme ISO-8859-1 ou Windows-1252 (é devient Ã©, apostrophe typographique devient â€™)."
+  sa_rules: []
+  title: "Les accents s'affichent sous forme de caractères parasites"
+  why: >
+    Le texte contient des séquences comme {value} : de l'UTF-8 a été converti une fois de trop. Le
+    message paraît bâclé aux lecteurs, et les filtres lisent des mots déformés.
+  fix:
+    - "Vérifiez que vos modèles sont enregistrés en UTF-8 et déclarés en charset=UTF-8."
+    - "Cherchez l'étape qui convertit le texte une seconde fois : export de base de données, utf8_encode() en PHP, ou copier-coller depuis un fichier mal enregistré."
+    - "En MySQL, utilisez le jeu de caractères utf8mb4 pour la connexion et les tables."
+  example_bad: "Votre rÃ©servation est confirmÃ©e"
+  example_good: "Votre réservation est confirmée"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2046#section-4.1.2
+
+- id: content.replacement_characters
+  family: content
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "(headers.subject + body.visible_text).count_chars([U+FFFD]) >= 1"
+    notes: "Le caractère de remplacement � apparaît quand des octets invalides ont été perdus lors d'une conversion."
+  sa_rules: []
+  title: "Le texte contient des caractères de remplacement (�)"
+  why: >
+    Des lettres ont été perdues lors d'une conversion d'encodage et remplacées par un losange avec un
+    point d'interrogation. Le texte est définitivement abîmé à cet endroit.
+  fix:
+    - "Repérez les mots touchés et retapez-les dans le modèle source."
+    - "Corrigez la chaîne de traitement : le texte doit être lu et écrit en UTF-8 à chaque étape."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2046#section-4.1.2
+
+- id: content.mixed_languages
+  family: content
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "language_detect(body.visible_text).secondary_share > config.max_secondary_language_share"
+    notes: "Deux langues en proportions importantes dans le même corps, hors mentions légales. Seuil interne."
+  sa_rules: []
+  title: "Le message mélange plusieurs langues"
+  why: >
+    Le message est écrit pour une part importante en {value}. Un mélange de langues trahit souvent un
+    modèle mal traduit ou un gabarit par défaut oublié, et désoriente le destinataire.
+  fix:
+    - "Traduisez les blocs restés dans la langue du modèle d'origine, souvent le pied de page et les boutons."
+    - "Si vous écrivez à plusieurs publics, envoyez une version par langue."
+  fix_by_provider:
+    mailchimp: "Les textes du pied de page et de la page de désinscription se traduisent dans Audience > Settings > Audience name and defaults, champ langue."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3282
+
+- id: content.unreplaced_merge_tags
+  family: content
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "(headers.subject + body.visible_text).matches(/\\*\\|[A-Z_:]+\\|\\*|\\{\\{\\s*[\\w.]+\\s*\\}\\}|\\[\\[?[A-Z_]+\\]\\]?|%%[\\w]+%%|\\$\\{[\\w.]+\\}/).count >= 1"
+    notes: "Balises de personnalisation non remplacées (*|FNAME|*, {{ prenom }}, [PRENOM], %%nom%%, ${client.nom})."
+  sa_rules: []
+  title: "Des balises de personnalisation ne sont pas remplacées"
+  why: >
+    Le destinataire voit la balise {value} au lieu de son contenu. Le message paraît automatique et
+    bâclé, ce qui fait monter les signalements comme spam.
+  fix:
+    - "Vérifiez l'orthographe exacte de la balise dans la documentation de votre outil d'envoi."
+    - "Remplissez le champ correspondant pour tous les contacts, ou définissez une valeur par défaut."
+    - "Envoyez un test à un contact réel de la liste plutôt qu'à une adresse de test vide."
+  fix_by_provider:
+    mailchimp: "Vérifiez la balise dans Audience > Settings > Audience fields and *|MERGE|* tags, et renseignez une valeur par défaut pour le champ."
+  references:
+    - https://mailchimp.com/help/all-the-merge-tags-cheat-sheet/
+
+- id: content.placeholder_text
+  family: content
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "body.visible_text ~ /lorem ipsum|dolor sit amet|votre texte ici|your text here|insert text/i"
+    notes: "Texte de remplissage laissé dans le modèle."
+  sa_rules: []
+  title: "Le message contient du texte de remplissage"
+  why: >
+    On trouve « {value} » dans le message : un bloc du modèle n'a pas été rédigé. Le message paraît
+    non relu, et ce texte est connu des filtres.
+  fix:
+    - "Remplacez ou supprimez le bloc de texte de remplissage."
+    - "Relisez l'aperçu complet, version mobile comprise, avant chaque envoi."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: content.sender_identity_missing
+  family: content
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "message.is_bulk && !body.visible_text.has_postal_address && !body.visible_text.has_company_id"
+    notes: "Envoi marketing sans identité de l'annonceur. La CNIL rappelle que chaque message de prospection doit permettre de connaître l'identité de l'organisation qui l'émet (article L34-5 du CPCE)."
+  sa_rules: []
+  title: "Le message ne dit pas clairement qui l'envoie"
+  why: >
+    Aucune raison sociale ni adresse n'apparaît dans ce message commercial. En France, un message de
+    prospection doit permettre d'identifier l'annonceur, et un expéditeur anonyme est plus souvent
+    signalé comme spam.
+  fix:
+    - "Ajoutez en pied de page le nom de l'entreprise, son adresse postale et un lien vers votre site sur {domain}."
+    - "Rappelez en une phrase pourquoi le destinataire reçoit ce message (inscription, achat, compte client)."
+  fix_by_provider:
+    mailchimp: "L'adresse vient de la balise *|LIST:ADDRESS|* du pied de page : renseignez-la dans Audience > Settings > Audience name and defaults."
+    brevo: "Renseignez l'adresse de l'entreprise dans les paramètres du compte : le bloc Pied de page de l'éditeur la reprend."
+  references:
+    - https://www.cnil.fr/fr/la-prospection-commerciale-par-courrier-electronique
+    - https://support.google.com/mail/answer/81126
+
+- id: content.text_part_base64
+  family: content
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "part.type == 'text/plain' && part.cte == 'base64' && part.decoded.is_mostly_ascii"
+    notes: "Encodage base64 d'un texte presque entièrement ASCII : rien ne le justifie, et il masque le texte aux lecteurs simples. RFC 2045 §6.8 décrit base64 pour les données binaires ou majoritairement non textuelles."
+  sa_rules: []
+  title: "La partie texte est encodée en base64 sans nécessité"
+  why: >
+    Le texte est presque entièrement en ASCII mais encodé en base64. Cette précaution inutile est
+    courante dans le spam pour cacher le contenu aux filtres simples, et certains filtres la notent.
+  fix:
+    - "Encodez les parties texte en quoted-printable : les accents restent lisibles et le texte reste visible."
+    - "En PHPMailer, fixez $mail->Encoding = 'quoted-printable'."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2045#section-6.7
+    - https://www.rfc-editor.org/rfc/rfc2045#section-6.8
+
+- id: content.empty_message
+  family: content
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "headers.subject.trim() == '' && body.visible_text.trim() == '' && !attachments.any"
+    notes: "Microsoft Defender, option ASF Empty messages : un message sans objet, sans corps et sans pièce jointe est classé en spam à haute confiance."
+  sa_rules: []
+  title: "Le message est entièrement vide"
+  why: >
+    Ni objet, ni texte, ni pièce jointe : les filtres Microsoft classent ce type de message en spam à
+    haute confiance quand l'option est active, et il n'a aucune chance d'être lu ailleurs.
+  fix:
+    - "Vérifiez que votre application transmet bien le contenu du modèle au moment de l'envoi."
+    - "Testez l'envoi avec un message rempli avant de relancer une campagne."
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about

@@ -1,0 +1,118 @@
+html.invalid_structure:
+  title: Das HTML enthält Strukturfehler
+  why: "Die Analyse ergibt {value} Strukturfehler. Google verlangt standardkonformes HTML: Fehlerhafter Code wird je nach Client unterschiedlich angezeigt und ähnelt den hastig zusammengebauten Vorlagen, wie sie im Spam vorkommen."
+  fix:
+    - Prüfen Sie das HTML mit einem Validator (validator.w3.org, Reiter Validate by Direct Input) und korrigieren Sie nicht geschlossene Tags.
+    - Wenn Sie HTML einfügen, das aus einem Textverarbeitungsprogramm exportiert wurde, beginnen Sie mit einer sauberen E-Mail-Vorlage neu.
+html.no_doctype:
+  title: Das HTML hat keine Doctype-Deklaration
+  why: "Ohne Doctype zeigen Webmails und Anwendungen die Nachricht im Kompatibilitätsmodus an: Ränder, Größen und Ausrichtungen unterscheiden sich von Client zu Client."
+  fix:
+    - Fügen Sie <!DOCTYPE html> in der ersten Zeile des HTML-Teils ein.
+    - Umschließen Sie den Inhalt mit html, head (mit meta charset) und body.
+html.script_tag:
+  title: Das HTML enthält JavaScript
+  why: Kein E-Mail-Client führt Skripte aus, aber ihr Vorhandensein ist ein starker Hinweis auf eine schädliche Nachricht. Microsoft schlägt vor, solche Nachrichten mit hoher Sicherheit als Spam einzustufen.
+  fix:
+    - Entfernen Sie alle script-Tags aus der Nachricht.
+    - Ersetzen Sie Interaktionen (Zähler, Formular, Karussell) durch einen Link auf eine Seite von {domain}.
+html.event_handlers:
+  title: "Das HTML enthält JavaScript-Attribute (onclick, onload...)"
+  why: "Das Attribut {value} ist JavaScript. Es funktioniert in keinem E-Mail-Client, und Filter behandeln es wie ein Skript."
+  fix:
+    - Entfernen Sie alle Attribute, die mit on beginnen (onclick, onload, onmouseover).
+    - Verwenden Sie für einen Effekt beim Überfahren mit der Maus die CSS-Pseudoklasse :hover im style-Block.
+html.iframe:
+  title: Das HTML enthält ein iframe
+  why: Iframes werden in den meisten Clients nicht angezeigt und dienen dazu, verborgene externe Inhalte zu laden. Microsoft schlägt vor, solche Nachrichten mit hoher Sicherheit als Spam einzustufen.
+  fix:
+    - Entfernen Sie das iframe.
+    - Verwenden Sie für ein Video oder eine Karte ein anklickbares Bild, das auf die Seite von {domain} verweist, in die es eingebettet ist.
+html.form:
+  title: Das HTML enthält ein Formular
+  why: Ein Formular in einer E-Mail dient meist dazu, Zugangsdaten zu stehlen. Microsoft schlägt vor, solche Nachrichten mit hoher Sicherheit als Spam einzustufen, und viele Clients deaktivieren das Formular.
+  fix:
+    - Entfernen Sie das Formular aus der Nachricht.
+    - Setzen Sie eine Schaltfläche, die auf ein Formular verweist, das über HTTPS auf {domain} gehostet wird.
+html.object_embed:
+  title: Das HTML enthält object- oder embed-Tags
+  why: Diese Tags dienen dazu, Module oder Dokumente in die Seite zu laden. Sie funktionieren in E-Mail-Clients nicht, und Microsoft schlägt vor, solche Nachrichten als Spam einzustufen.
+  fix:
+    - Entfernen Sie die Tags object, embed und applet.
+    - Ersetzen Sie den eingebetteten Inhalt durch ein Bild und einen Link auf {domain}.
+html.meta_refresh:
+  title: Das HTML enthält eine automatische Weiterleitung (meta refresh)
+  why: "Ein meta-refresh-Tag versucht, den Leser ohne Klick auf eine andere Seite zu schicken. Das ist eine Phishing-Technik: Filter bestrafen sie, und Clients ignorieren sie."
+  fix:
+    - "Entfernen Sie das Tag meta http-equiv='refresh'."
+    - Stammt das HTML von einer Webseite, beginnen Sie mit einer Vorlage neu, die für E-Mails gestaltet ist.
+html.base_href:
+  title: Das HTML enthält ein base-Tag
+  why: "Das base-Tag ändert das Ziel aller relativen Links. Clients handhaben es nicht alle gleich: Ihre Links können woanders hinzeigen, und Filter misstrauen ihm."
+  fix:
+    - Entfernen Sie das base-Tag.
+    - "Schreiben Sie alle Links und Bilder mit vollständiger Adresse, zum Beispiel https://{domain}/page."
+html.external_stylesheet:
+  title: Die Gestaltung hängt von einem externen Stylesheet ab
+  why: "Die Nachricht lädt ihr Stylesheet von {url}. Die meisten Clients laden es nicht: Der Empfänger sieht eine Nachricht ohne Gestaltung."
+  fix:
+    - Kopieren Sie die nötigen CSS-Regeln in einen style-Block im head der Nachricht.
+    - Übernehmen Sie die wesentlichen Regeln (Farben, Größen, Breiten) zusätzlich als style-Attribut auf den Elementen.
+    - Entfernen Sie das Tag link rel='stylesheet' und alle @import-Anweisungen.
+html.external_fonts:
+  title: Die Nachricht lädt externe Schriftarten
+  why: Externe Schriften werden nicht von allen Clients angezeigt und erzeugen eine Anfrage an einen Drittserver. Ohne Ersatzschrift kann der Text in einer unerwarteten Schrift erscheinen.
+  fix:
+    - "Geben Sie immer eine Liste von Ersatzschriften an: font-family: 'Ihre Schrift', Arial, Helvetica, sans-serif."
+    - Prüfen Sie die Darstellung der Nachricht allein mit der Ersatzschrift.
+html.base64_inline_heavy:
+  title: Das HTML enthält Bilder in base64-Kodierung
+  why: Eingebettete base64-Bilder machen das HTML um {value} schwerer. Mehrere Clients zeigen sie nicht an, und die Nachricht wird so groß, dass Gmail sie kürzt.
+  fix:
+    - Hosten Sie die Bilder auf {domain} oder in Ihrem Versandtool und ersetzen Sie jedes src='data:...' durch die https-Adresse des Bildes.
+    - Behalten Sie nur sehr kleine Symbole inline, wenn Ihnen das wichtig ist, oder hosten Sie auch diese.
+html.hidden_text_color:
+  title: Text ist durch seine Farbe verborgen (weißer Text auf weißem Hintergrund)
+  why: "Ein Teil des Textes hat dieselbe Farbe wie der Hintergrund. Google verlangt, dass Inhalte nicht mit HTML und CSS verborgen werden: Das ist eine bekannte und bestrafte Spam-Technik."
+  fix:
+    - Entfernen Sie den unsichtbaren Text.
+    - Handelt es sich um einen Vorschautext (Preheader), verwenden Sie das dafür vorgesehene Feld Ihres Versandtools.
+    - Ist das für einen Hintergrund als Bild gewollt, fügen Sie auf demselben Element eine Ersatz-Hintergrundfarbe hinzu.
+html.hidden_text_size:
+  title: Text ist durch Größe oder display:none verborgen
+  why: "Die Nachricht enthält {value} unsichtbare Wörter. Google verlangt, dass Inhalte nicht mit HTML und CSS verborgen werden: Filter sehen darin Textfüllung, um die Analyse zu täuschen."
+  fix:
+    - Entfernen Sie unsichtbare Textblöcke.
+    - Behalten Sie nur einen kurzen Vorschautext und stellen Sie ihn im dafür vorgesehenen Feld Ihres Tools ein.
+  fix_by_provider:
+    mailchimp: Tragen Sie den Vorschautext im Feld Preview text der Kampagne ein, statt in einem verborgenen Block.
+    brevo: Tragen Sie den Vorschautext im vorgesehenen Feld im Schritt Betreff der Kampagne ein.
+html.obfuscated_entities:
+  title: Wörter sind in HTML-Codes geschrieben, um sie zu verbergen
+  why: Gewöhnliche Buchstaben werden als numerische HTML-Codes geschrieben. Diese Technik dient dazu, Wörter vor Filtern zu verbergen, die sie erkennen und bestrafen.
+  fix:
+    - Schreiben Sie den Text im Modell mit normalen Zeichen.
+    - Erzeugt Ihr Editor diese Codes, deaktivieren Sie die Zeichenkodierung oder wechseln Sie den Editor.
+html.fixed_width_wide:
+  title: Die Nachricht hat eine feste Breite, die zu groß ist
+  why: Ein Block misst {value} Pixel in der Breite. Auf dem Smartphone muss man seitlich scrollen oder die Nachricht erscheint winzig, was die Löschungen ohne Lektüre erhöht.
+  fix:
+    - Geben Sie dem Hauptcontainer eine für das Lesen passende maximale Breite, zum Beispiel width='600' mit style='max-width:600px;width:100%'.
+    - "Fügen Sie eine @media-Regel (max-width: 600px) hinzu, die die Spalten auf eine Breite von 100 % setzt."
+html.style_head_only:
+  title: Die gesamte Gestaltung steckt im style-Block des head
+  why: Kein Element hat ein Inline-Style. Clients, die den style-Block entfernen, zeigen die Nachricht ohne Farben und Layout an.
+  fix:
+    - Übernehmen Sie die wesentlichen Stile mit einem CSS-Inlining-Werkzeug als style-Attribut auf jedes Element.
+    - Behalten Sie den style-Block für die @media-Regeln und die :hover-Zustände.
+html.conditional_comments:
+  title: Das HTML enthält bedingte Kommentare für Outlook
+  why: Diese Kommentare korrigieren die Darstellung in Outlook für Windows. Sie sind normal. Zum Problem werden sie nur, wenn sie einen anderen Inhalt verbergen, als man ihn anderswo sieht.
+  fix:
+    - Prüfen Sie, dass der Text innerhalb der Blöcke [if mso] und [if !mso] in beiden Fassungen dasselbe aussagt.
+    - Testen Sie die Darstellung in Outlook für Windows vor einem wichtigen Versand.
+html.lang_missing:
+  title: Die Sprache der Nachricht ist nicht angegeben
+  why: Ohne lang-Attribut kann ein Screenreader Ihren deutschen Text mit einer englischen Aussprache vorlesen. Das ändert die Filterung nicht, erschwert aber einem Teil Ihrer Leser das Lesen.
+  fix:
+    - Fügen Sie lang='de' auf dem html-Tag hinzu und dir='ltr'.

@@ -1,0 +1,113 @@
+/* Import of a message, "Signal" (2026-11-11): the form is its own drop zone, a plain surface that
+   lights its edge in the action blue while a file is dragged over it. Tokens only. */
+.ma-drop {
+  position: relative;
+  display: grid;
+  gap: var(--s2);
+  width: min(48rem, 100%);
+  margin-top: var(--s3);
+  padding: var(--s5);
+  text-align: left;
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  box-shadow: var(--shadow-2);
+  transition: box-shadow var(--t-fast) var(--ease-out);
+}
+.ma-drop--over {
+  box-shadow: inset 0 0 0 2px var(--lab), 0 24px 48px -24px oklch(0 0 0 / 0.6);
+}
+.ma-source {
+  min-height: 15rem;
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+.ma-actions {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+  margin-top: var(--s2);
+}
+.ma-actions .btn {
+  min-height: 2.75rem;
+}
+.ma-or {
+  font-size: var(--fs-sm);
+}
+.ma-drop__hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--paper) 88%, transparent);
+  color: var(--lab-strong);
+  font-weight: 650;
+  pointer-events: none;
+}
+.ma-progress {
+  display: grid;
+  gap: var(--s3);
+  margin-bottom: var(--s6);
+}
+.ma-progress .mail-note {
+  margin-top: 0;
+}
+.ma-hero {
+  padding-bottom: var(--s5);
+}
+.ma-recent .chip {
+  gap: var(--s2);
+  font-family: var(--font-ui);
+  text-decoration: none;
+  color: var(--ink-2);
+  max-width: 100%;
+}
+.ma-recent__subj {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 22ch;
+}
+.ma-recent__score {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.ma-recent__score[data-band='ok'] {
+  color: var(--in);
+}
+.ma-recent__score[data-band='mid'] {
+  color: var(--warn-ink);
+}
+.ma-recent__score[data-band='low'] {
+  color: var(--out);
+}
+.ma-progress {
+  width: min(60rem, 100%);
+  margin-inline: auto;
+}
+.ma-drop[aria-busy="true"] .ma-source {
+  min-height: 0;
+  height: 7rem;
+}
+@media (max-width: 40rem) {
+  .ma-drop {
+    padding: var(--s3);
+  }
+  /* no drag and drop on a phone: the file picker is the way */
+  .ma-or {
+    display: none;
+  }
+}
+@media (pointer: coarse) {
+  .ma-or {
+    display: none;
+  }
+}

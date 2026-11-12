@@ -1,0 +1,104 @@
+helo.not_fqdn:
+  title: Der Server stellt sich mit einem unvollständigen Namen vor ({helo})
+  why: "Ihr Server gibt „{helo}“ an, einen Namen ohne Domain, den niemand im Internet prüfen kann. Mehrere Spamfilter vergeben dafür Punkte, und manche strikten Server lehnen ihn bereits beim EHLO-Befehl ab."
+  fix:
+    - Wählen Sie einen vollständigen Namen, der zu Ihrer Domain gehört, zum Beispiel mail.{domain}.
+    - Legen Sie für diesen Namen einen A-Eintrag an (und AAAA, falls Sie über IPv6 senden), der auf {ip} zeigt.
+    - Bitten Sie den Hoster der IP {ip}, den Reverse-DNS (PTR) auf denselben Namen einzustellen.
+    - Hinterlegen Sie diesen Namen als Hostnamen des Versandservers (siehe die Anleitung Ihrer Software unten) und starten Sie danach den Dienst neu.
+  fix_by_provider:
+    postfix: "In /etc/postfix/main.cf setzen Sie myhostname = mail.{domain} (smtp_helo_name übernimmt standardmäßig $myhostname), danach postfix reload."
+    exim: Setzen Sie primary_hostname = mail.{domain} in der Hauptkonfiguration oder die Option helo_data des Transports smtp und starten Sie Exim neu.
+    wordpress: "Sendet Ihre Website per SMTP mit PHPMailer, setzen Sie $phpmailer->Hostname = 'mail.{domain}' in einem Hook phpmailer_init (oder im entsprechenden Feld Ihrer SMTP-Erweiterung)."
+    cpanel: "Bei Shared Hosting ist der HELO-Name der Servername, den der Hoster gewählt hat: Eröffnen Sie bei ihm ein Ticket und nennen Sie den Namen „{helo}“."
+helo.ip_unbracketed:
+  title: Der Server stellt sich mit einer nackten IP-Adresse vor ({helo})
+  why: "Eine IP-Adresse ohne eckige Klammern verletzt die SMTP-Syntax. Das ist ein typisches Merkmal infizierter Rechner und selbst gebastelter Versandskripte: SpamAssassin und andere Filter bestrafen diesen Fall."
+  fix:
+    - Geben Sie dem Server einen vollständigen Namen wie mail.{domain} und legen Sie seinen A-Eintrag auf {ip} an.
+    - Stimmen Sie den Reverse-DNS von {ip} auf diesen Namen ab.
+    - Konfigurieren Sie diesen Namen als HELO Ihrer Versandsoftware und starten Sie sie neu.
+  fix_by_provider:
+    postfix: "In main.cf: myhostname = mail.{domain}. Prüfen Sie, dass kein smtp_helo_name eine IP-Adresse enthält, danach postfix reload."
+    exim: Setzen Sie primary_hostname oder helo_data auf mail.{domain} statt auf $sending_ip_address.
+    wordpress: "Eine IP im HELO stammt oft von einem PHPMailer ohne Hostnamen: Setzen Sie $phpmailer->Hostname in phpmailer_init."
+helo.address_literal:
+  title: Der Server stellt sich mit einem Adressliteral vor ({helo})
+  why: Die Syntax ist korrekt, doch ein legitimer Mailserver gibt normalerweise seinen Namen an. Ohne Namen kann der Empfänger den SPF des HELO nicht prüfen und {helo} nicht Ihrer Domain zuordnen, wodurch ein Vertrauenssignal wegfällt.
+  fix:
+    - Geben Sie dem Server einen vollständigen Namen, zum Beispiel mail.{domain}, mit einem A-Eintrag auf {ip}.
+    - Setzen Sie den Reverse-DNS von {ip} auf diesen Namen.
+    - Ersetzen Sie das Literal in der HELO-Konfiguration der Versandsoftware durch diesen Namen.
+  fix_by_provider:
+    postfix: "In main.cf: myhostname = mail.{domain}, danach postfix reload."
+    exim: Setzen Sie helo_data = mail.{domain} im Transport smtp.
+helo.localhost:
+  title: Der Server stellt sich als „{helo}“ vor
+  why: Ein Server, der sich aus dem Internet als „localhost“ meldet, wirkt wie ein infizierter Rechner. Spamfilter bestrafen diesen Fall stark, und mehrere Server lehnen die Nachricht bereits beim EHLO-Befehl ab.
+  fix:
+    - Wählen Sie den öffentlichen Namen des Servers, zum Beispiel mail.{domain}, und legen Sie seinen A-Eintrag auf {ip} an.
+    - Stellen Sie den Reverse-DNS von {ip} auf denselben Namen ein.
+    - Tragen Sie diesen Namen in die Konfiguration der Versandsoftware ein (und in /etc/hostname, falls die Software ihn vom System übernimmt) und starten Sie sie neu.
+  fix_by_provider:
+    postfix: "In main.cf: myhostname = mail.{domain}. Ohne diese Einstellung übernimmt Postfix den Systemnamen, meist localhost. Danach postfix reload."
+    exim: Setzen Sie primary_hostname = mail.{domain}, sonst übernimmt Exim den Systemnamen.
+    wordpress: "Ein HELO localhost stammt meist von PHPMailer auf einem Server ohne Namen: Setzen Sie $phpmailer->Hostname = 'mail.{domain}' in phpmailer_init oder nutzen Sie den authentifizierten SMTP-Zugang Ihres Mailanbieters."
+    plesk: "Unter Tools und Einstellungen, Servereinstellungen ersetzen Sie den vollständigen Hostnamen durch mail.{domain}."
+helo.default_template:
+  title: Der Server stellt sich mit einem Standardnamen vor ({helo})
+  why: "„{helo}“ ist ein bei der Installation hinterlassener Name oder eine Domain, die privaten Netzen vorbehalten ist. Er lässt sich im Internet nicht auflösen und signalisiert den Filtern einen nicht konfigurierten Server."
+  fix:
+    - Ersetzen Sie diesen Namen durch einen öffentlichen Namen Ihrer Domain, zum Beispiel mail.{domain}.
+    - Legen Sie den A-Eintrag dieses Namens auf {ip} an und setzen Sie den Reverse-DNS von {ip} auf diesen Namen.
+    - Starten Sie die Versandsoftware neu und wiederholen Sie den Test.
+  fix_by_provider:
+    postfix: "In main.cf: myhostname = mail.{domain}, prüfen Sie außerdem mydomain, danach postfix reload."
+    exim: Setzen Sie primary_hostname = mail.{domain}.
+helo.not_resolving:
+  title: Der angegebene Name ({helo}) existiert nicht im DNS
+  why: "Der Empfänger findet keine Adresse für „{helo}“. Mehrere Filter, darunter Postfix-Server mit reject_unknown_helo_hostname, lehnen diesen Fall ab oder bestrafen ihn."
+  fix:
+    - Legen Sie in der DNS-Zone der betreffenden Domain einen A-Eintrag für {helo} an, der auf {ip} zeigt.
+    - Wenn {helo} nicht zu einer Domain gehört, die Sie verwalten, ändern Sie das HELO in einen Namen von {domain}, zum Beispiel mail.{domain}.
+    - Warten Sie die Verbreitung ab (Dauer der TTL) und wiederholen Sie dann den Test.
+  fix_by_provider:
+    cloudflare_dns: "Fügen Sie unter DNS, Records einen A-Eintrag mit dem Namen {helo} auf {ip} hinzu, mit deaktiviertem Proxy (graue Wolke): Ein Name für einen Mailserver darf nicht über den Proxy laufen."
+    postfix: Ist der Name falsch, korrigieren Sie myhostname in main.cf und führen Sie danach postfix reload aus.
+helo.ip_mismatch:
+  title: Der angegebene Name ({helo}) zeigt nicht auf die Versand-IP {ip}
+  why: "Ihr Server gibt „{helo}“ an, doch dieser Name verweist auf eine andere Adresse als {ip}. Die Filter sehen darin entweder einen Konfigurationsfehler nach einem IP-Wechsel oder eine Namensfälschung."
+  fix:
+    - Wenn {ip} die aktuelle IP des Servers ist, aktualisieren Sie den A-Eintrag (oder AAAA) von {helo} auf {ip}.
+    - Sendet der Server über eine andere IP (NAT, Relay), verwenden Sie als HELO den Namen, der zu dieser Ausgangs-IP gehört.
+    - Prüfen Sie, dass der Reverse-DNS von {ip} denselben Namen liefert.
+helo.ptr_mismatch:
+  title: Das HELO ({helo}) weicht vom Reverse-DNS ({ptr}) ab
+  why: Der Server gibt einen Namen an, und seine IP liefert einen anderen zurück. Das ist kein Fehler, aber ein HELO, das mit dem PTR übereinstimmt und selbst auf {ip} zeigt, ist für Filter die am besten lesbare Konfiguration.
+  fix:
+    - Wählen Sie einen eindeutigen Namen für den Server, zum Beispiel {ptr}, sofern er zu Ihrer Domain gehört.
+    - Verwenden Sie diesen Namen sowohl als HELO als auch als Reverse-DNS von {ip} und prüfen Sie, dass sein A-Eintrag auf {ip} zeigt.
+  fix_by_provider:
+    postfix: "In main.cf: myhostname = {ptr}, danach postfix reload."
+    exim: Setzen Sie primary_hostname = {ptr}.
+helo.impersonation:
+  title: Der Server stellt sich unter dem Namen einer fremden Domain vor ({helo})
+  why: Ihr Server gibt einen Namen an, der einer anderen Organisation gehört, während {ip} ihr nicht gehört. Empfänger werten das als Identitätsfälschung, und die Nachricht wird mit hoher Wahrscheinlichkeit abgewiesen.
+  fix:
+    - Ersetzen Sie dieses HELO sofort durch einen Namen Ihrer eigenen Domain, zum Beispiel mail.{domain}.
+    - Legen Sie den A-Eintrag dieses Namens auf {ip} an und setzen Sie den Reverse-DNS von {ip} auf diesen Namen.
+    - "Wenn Sie diesen Server nicht selbst betreiben, suchen Sie, wer ihn konfiguriert hat: Eine ohne Ihr Einverständnis installierte Software kann die Ursache sein."
+helo.invalid_characters:
+  title: Der angegebene Name ({helo}) enthält unzulässige Zeichen
+  why: Ein Zeichen wie Unterstrich, Leerzeichen oder ein leeres Label macht den Namen ungültig. Manche Server lehnen dann den EHLO-Befehl ab, andere bestrafen die Nachricht.
+  fix:
+    - Benennen Sie den Server nur mit Buchstaben, Ziffern, Punkten und Bindestrichen, zum Beispiel mail.{domain}.
+    - Legen Sie den passenden A-Eintrag auf {ip} an und gleichen Sie den Reverse-DNS ab.
+    - Aktualisieren Sie das HELO der Versandsoftware und starten Sie sie neu.
+helo.dynamic_name:
+  title: Der Server stellt sich mit einem Namen für Heimanschlüsse vor ({helo})
+  why: Der Name ähnelt dem, den ein Internetanbieter einem Router oder einem Endkundenanschluss zuweist. Filter bestrafen solche Nachrichten stark, weil die meisten Versände aus solchen Anschlüssen von infizierten Rechnern stammen.
+  fix:
+    - "Versenden Sie nicht direkt über diesen Anschluss: Nutzen Sie den authentifizierten SMTP-Server Ihres Mailanbieters (Port 587) oder einen Versanddienst."
+    - Handelt es sich um einen dedizierten Server, bitten Sie den Hoster um einen eigenen Reverse-DNS, zum Beispiel mail.{domain}, und verwenden Sie diesen Namen als HELO.
+  fix_by_provider:
+    postfix: "Um über Ihren Mailanbieter zu relayen, setzen Sie relayhost = [smtp.ihr-anbieter]:587 mit SASL-Authentifizierung und führen danach postfix reload aus."

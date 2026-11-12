@@ -1,0 +1,254 @@
+dkim.missing:
+  title: Die Nachricht ist nicht mit DKIM signiert
+  why: "Ohne DKIM gibt es keinen Beleg dafür, dass die Nachricht von {domain} stammt und nicht verändert wurde. Außerdem ist DKIM die einzige Authentifizierung, die eine Weiterleitung übersteht: Ohne DKIM schlägt DMARC fehl, sobald SPF fehlschlägt."
+  fix:
+    - Aktivieren Sie die DKIM-Signatur in dem Dienst, der diese Nachricht versendet ({provider}).
+    - Veröffentlichen Sie den bereitgestellten Eintrag im DNS von {domain} (TXT oder CNAME für Selektor._domainkey.{domain}).
+    - Kehren Sie in die Oberfläche des Dienstes zurück, starten Sie die Prüfung und wiederholen Sie dann diesen Test.
+  fix_by_provider:
+    google_workspace: "Google-Admin-Konsole, Menü > Apps > Google Workspace > Gmail > Authenticate email (englische Bezeichnungen aus der Dokumentation): Erzeugen Sie einen Schlüssel mit 2048 Bit (Standardpräfix des Selektors google), veröffentlichen Sie den TXT-Eintrag google._domainkey.{domain} bei Ihrem DNS-Hoster und klicken Sie dann auf Start authentication."
+    microsoft_365: "Microsoft-Defender-Portal, Email & collaboration, Policies & rules, Threat policies, Email authentication settings, Reiter DKIM: Wählen Sie {domain} aus und aktivieren Sie den Schalter. Das Fehlerfenster zeigt die beiden zu veröffentlichenden CNAME-Einträge selector1._domainkey und selector2._domainkey an. Die genauen Werte erhalten Sie auch über Get-DkimSigningConfig -Identity {domain} | Format-List Selector1CNAME,Selector2CNAME."
+    ovh: "MX Plan: Reiter Allgemeine Informationen zur Domain, rotes DKIM-Badge, Aktivieren. Email Pro und Exchange: Reiter Verknüpfte Domains, DKIM-Badge, Aktivieren. Liegt die DNS-Zone nicht im selben OVHcloud-Konto, veröffentlichen Sie zuerst die beiden angezeigten CNAME-Einträge (in der Form ovhmo…-selector1._domainkey)."
+    o2switch: DKIM ist bei o2switch standardmäßig aktiviert. Prüfen Sie in cPanel unter Email, Email Deliverability (oder Authentifizierung), Verwalten. Liegt Ihr DNS woanders, übernehmen Sie den angezeigten TXT-Eintrag default._domainkey.{domain}.
+    cpanel: "Email, Email Deliverability, Manage, Abschnitt DKIM: Klicken Sie bei Bedarf auf Generate Local DKIM Key, dann installieren Sie den TXT-Eintrag default._domainkey.{domain} oder übernehmen Sie ihn (Schlüssel standardmäßig mit 2048 Bit)."
+    plesk: "Websites & Domains, {domain}, Reiter Mail, Mail Settings: Aktivieren Sie das Kontrollkästchen „Use DKIM spam protection system to sign outgoing email messages“. Bei externem DNS übernehmen Sie die Einträge default._domainkey.{domain} und _domainkey.{domain}."
+    ionos: Mit den DNS-Servern von IONOS ist DKIM standardmäßig aktiv. Bei externem DNS veröffentlichen Sie die von IONOS angegebenen CNAME-Einträge, darunter s1-ionos._domainkey zu s1.dkim.ionos.com und s2-ionos._domainkey zu s2.dkim.ionos.com.
+    gandi: Domain, {domain}, Reiter Email, Settings & Security, Edit, aktivieren Sie „DKIM Signature“ (DNS LiveDNS). Bei externem DNS veröffentlichen Sie die drei CNAME-Einträge gm1._domainkey, gm2._domainkey und gm3._domainkey zu gm1.gandimail.net., gm2.gandimail.net. und gm3.gandimail.net.
+    infomaniak: DKIM ist standardmäßig aktiviert, wenn die DNS-Zone bei Infomaniak liegt. Andernfalls zeigt Manager, Service Mail, Globale Sicherheit, DKIM den zu veröffentlichenden Eintrag an.
+    zoho: "mailadmin.zoho.com, Domains, {domain}, Email Configuration, DKIM, Add: Wählen Sie einen Selektor (zum Beispiel zoho), veröffentlichen Sie den TXT-Eintrag Selektor._domainkey.{domain}, klicken Sie auf Verify und aktivieren Sie dann den Schlüssel."
+    proton: "Settings, All settings, Domain names, Review, Reiter DKIM: Veröffentlichen Sie die drei CNAME-Einträge protonmail._domainkey, protonmail2._domainkey und protonmail3._domainkey mit den angezeigten Zielen."
+    brevo: "Settings, Senders, Domains, IPs, Domains, Authenticate: Veröffentlichen Sie die CNAME-Einträge brevo1._domainkey und brevo2._domainkey (Schlüssel mit 2048 Bit) oder den vorgeschlagenen TXT-Eintrag (1024 Bit), je nach Ihrem Konto."
+    mailchimp: "Profilsymbol, Account & billing, Reiter Domains, Start authentication: Veröffentlichen Sie die beiden angezeigten CNAME-Einträge."
+    mailjet: "Account, Domains & Sender addresses, SPF/DKIM Authentication: Veröffentlichen Sie den TXT-Eintrag mailjet._domainkey.{domain}. Wählen Sie einen Schlüssel mit 2048 Bit (standardmäßig vorgeschlagen)."
+    sendgrid: "Settings, Sender Authentication, Domain Authentication, Get Started: Veröffentlichen Sie die angegebenen CNAME-Einträge s1._domainkey und s2._domainkey (und em…)."
+    mailgun: "Sending, Domains: Veröffentlichen Sie den TXT-Eintrag des Schlüssels (angegebener Selektor, zum Beispiel mx._domainkey) mit 2048 Bit oder die CNAME-Einträge pdk1._domainkey und pdk2._domainkey, wenn Sie Automatic Sender Security aktivieren."
+    amazon_ses: "SES-Konsole, Configuration, Identities, Create identity (Domain), Easy DKIM auf RSA_2048_BIT: Veröffentlichen Sie die drei CNAME-Einträge Token._domainkey.{domain}, indem Sie das angezeigte Ziel übernehmen (es hängt von der Region ab)."
+    postmark: "Sender Signatures, Ihre Domain, DNS Settings: Veröffentlichen Sie den TXT-Eintrag, dessen Name auf pm._domainkey.{domain} endet."
+    sparkpost: "Bird-Plattform: Email, Domains, veröffentlichen Sie den angezeigten TXT-Eintrag Selektor._domainkey.{domain}. Klassische SparkPost-API: TXT des angegebenen Selektors (zum Beispiel scph0820)."
+    hubspot: "Settings, Content, Domains & URLs, Reiter Email Sending, Connect sending domain: Veröffentlichen Sie die beiden erzeugten CNAME-Einträge."
+    cloudflare_dns: Legen Sie die DKIM-CNAME-Einträge im Modus DNS only (graue Wolke) an. Brevo und HubSpot verlangen außerdem, für diese Einträge das Abflachen von CNAMEs (CNAME-Flattening) zu deaktivieren.
+dkim.signature_invalid:
+  title: Die DKIM-Signatur von {dkim_domain} lässt sich nicht verifizieren
+  why: Die Signatur ist vorhanden, passt aber nicht mehr zur Nachricht oder zum veröffentlichten Schlüssel. Für den Empfänger ist das so, als wäre die Nachricht nicht signiert, und ein DKIM-Fehler wiegt schwerer als eine fehlende Signatur.
+  fix:
+    - "Vergleichen Sie den veröffentlichten Schlüssel unter {selector}._domainkey.{dkim_domain} mit dem Schlüssel, den der Versanddienst angibt: Nach einer Schlüsselrotation bleibt der alte Schlüssel manchmal online."
+    - Prüfen Sie, ob ein Programm die Nachricht nach der Signatur verändert (ausgehender Virenscanner, Zusatz eines Rechtshinweises, Umschreiben des Betreffs), und setzen Sie die Signatur hinter dieses Programm.
+    - Senden Sie einen neuen Test direkt aus dem Dienst, ohne Zwischenstation, um die Ursache einzugrenzen.
+dkim.body_hash_mismatch:
+  title: Der Nachrichtentext wurde nach der DKIM-Signatur verändert
+  why: Der empfangene Inhalt ist nicht mehr der, den {dkim_domain} signiert hat. Die Signatur wird deshalb abgelehnt, und wenn auch SPF nicht besteht, schlägt DMARC fehl.
+  fix:
+    - Suchen Sie in den Received-Kopfzeilen den Server, der nach der Signatur eingeschaltet ist (Mailingliste, Virenscan-Gateway, Werkzeug, das einen Rechtshinweis anfügt).
+    - Lassen Sie die Nachricht nach diesem Server signieren oder deaktivieren Sie die Änderung des Inhalts.
+    - Verwenden Sie die Kanonisierung c=relaxed/relaxed, die toleranter gegenüber Änderungen an Leerzeichen und Zeilenenden ist.
+    - Stammt die Änderung von einer Mailingliste, die Sie nicht betreiben, fällt dieser Fall auf Seiten der Liste unter ARC.
+  fix_by_provider:
+    microsoft_365: "Eine Transportregel, die einen Haftungsausschluss anfügt, verändert den Inhalt: Prüfen Sie, dass sie vor der DKIM-Signatur von Microsoft 365 greift, oder entfernen Sie sie für diesen Fluss."
+    postfix: Wenn ein Content-Milter (Virenscanner, Disclaimer) nach OpenDKIM läuft, kehren Sie die Reihenfolge in smtpd_milters um, damit OpenDKIM als Letztes signiert.
+dkim.key_not_found:
+  title: Der DKIM-Schlüssel {selector}._domainkey.{dkim_domain} wurde nicht gefunden
+  why: Die Nachricht ist signiert, aber der Empfänger findet den öffentlichen Schlüssel für die Prüfung nicht. Die Signatur schlägt fehl und die Nachricht verliert die DKIM-Authentifizierung.
+  fix:
+    - Öffnen Sie die Oberfläche des Versanddienstes und notieren Sie den genauen Namen und Wert des DKIM-Eintrags.
+    - Legen Sie den Eintrag in Ihrer DNS-Zone unter dem Namen {selector}._domainkey an. Ergänzt die Oberfläche die Domain automatisch, tragen Sie sie nicht ein zweites Mal ein.
+    - Prüfen Sie mit dig TXT {selector}._domainkey.{dkim_domain} und starten Sie dann die Prüfung im Dienst erneut.
+dkim.key_cname_dangling:
+  title: Der DKIM-CNAME {selector}._domainkey.{dkim_domain} zeigt ins Leere
+  why: Ihr DNS verweist auf den Schlüssel des Anbieters, aber dieser veröffentlicht ihn nicht. Die Signatur kann nicht geprüft werden und schlägt fehl.
+  fix:
+    - Vergleichen Sie das Ziel des CNAME mit dem Wert, der in der Oberfläche des Anbieters ({provider}) angezeigt wird, und korrigieren Sie es Zeichen für Zeichen.
+    - Prüfen Sie, dass die Domain in diesem Dienst noch aktiv und authentifiziert ist.
+  fix_by_provider:
+    amazon_ses: "Das Ziel der Easy-DKIM-CNAME-Einträge hängt von der Region ab: Übernehmen Sie es aus der SES-Konsole, rekonstruieren Sie es nicht von Hand."
+    microsoft_365: "Die Ziele gibt es in zwei Formaten: das alte selector1-…._domainkey.<tenant>.onmicrosoft.com und das neue selector1-…._domainkey.<tenant>.<Buchstabe>-v1.dkim.mail.microsoft für Domains, die seit Mai 2025 hinzugefügt wurden. Übernehmen Sie die Werte, die Get-DkimSigningConfig liefert."
+    cloudflare_dns: Öffnen Sie unter DNS, Records den CNAME zum Bearbeiten und stellen Sie den Proxy auf DNS only um.
+dkim.key_revoked:
+  title: Der DKIM-Schlüssel {selector}._domainkey.{dkim_domain} ist widerrufen
+  why: "Der unter diesem Selektor veröffentlichte Schlüssel ist absichtlich leer: Er wurde zurückgezogen. Nachrichten, die noch damit signiert sind, schlagen bei DKIM fehl."
+  fix:
+    - Konfigurieren Sie den Server oder den Versanddienst so, dass er mit dem aktiven Selektor signiert.
+    - Wenn der Widerruf ein Fehler war, veröffentlichen Sie den passenden öffentlichen Schlüssel erneut unter {selector}._domainkey.{dkim_domain}.
+dkim.key_syntax_error:
+  title: Der Eintrag des DKIM-Schlüssels {selector}._domainkey.{dkim_domain} ist unlesbar
+  why: "Der öffentliche Schlüssel ist im DNS fehlerhaft eingetragen, sodass niemand Ihre Signaturen prüfen kann: Alle schlagen fehl."
+  fix:
+    - Kopieren Sie den Wert aus der Oberfläche des Dienstes, ohne Zeilenumbruch und ohne BEGIN/END-Kopfzeilen.
+    - Wenn Ihre DNS-Oberfläche die Länge begrenzt, tragen Sie den Wert als mehrere Zeichenketten von höchstens 255 Zeichen in Anführungszeichen ein, ohne zusätzliche Leerzeichen.
+    - Prüfen Sie mit dig TXT {selector}._domainkey.{dkim_domain}, dass der Schlüssel hinter p= in einem einzigen Stück erscheint.
+  fix_by_provider:
+    cpanel: In Email Deliverability, Manage verwenden Sie die Schaltfläche Copy oder die Anzeige Split, um den bereits zerlegten Schlüssel zu erhalten.
+    mailjet: Wenn Ihr DNS-Hoster lange Werte ablehnt, bietet Mailjet an, einen Schlüssel mit 1024 Bit zu erzeugen. Besser ist es, den Schlüssel mit 2048 Bit in mehrere Zeichenketten zu zerlegen.
+dkim.multiple_key_records:
+  title: Der DKIM-Selektor {selector} von {dkim_domain} enthält mehrere Schlüssel
+  why: "Zwei Schlüssel sind an derselben Stelle veröffentlicht: Je nach Empfänger gelingt oder scheitert die Prüfung, sodass Ihre Ergebnisse nicht vorhersehbar sind."
+  fix:
+    - Lassen Sie unter {selector}._domainkey.{dkim_domain} nur den Schlüssel stehen, den der Dienst gerade verwendet.
+    - Verwenden Sie für eine Rotation einen neuen Selektornamen statt zweier Schlüssel unter demselben Namen.
+dkim.key_dns_temperror:
+  title: Der DKIM-Schlüssel von {dkim_domain} konnte nicht gelesen werden (vorübergehender DNS-Fehler)
+  why: Der Empfänger hat den Schlüssel nicht rechtzeitig erhalten. Dann verzögert er die Nachricht oder bewertet sie als nicht signiert.
+  fix:
+    - Wiederholen Sie den Test, um zu prüfen, ob der Fehler erneut auftritt.
+    - Prüfen Sie, dass alle Nameserver von {dkim_domain} antworten und dass die DNSSEC-Signatur der Zone gültig ist.
+dkim.key_below_1024:
+  title: Der DKIM-Schlüssel {selector}._domainkey.{dkim_domain} ist mit {value} Bit zu kurz und wird abgelehnt
+  why: Ein Schlüssel mit weniger als 1024 Bit ist angreifbar, und der Standard verbietet es, ihn zu akzeptieren. Ihre Signaturen werden als ungültig behandelt.
+  fix:
+    - Erzeugen Sie im Versanddienst einen neuen Schlüssel mit 2048 Bit unter einem neuen Selektor.
+    - Veröffentlichen Sie ihn, warten Sie, bis er sich verbreitet hat, und stellen Sie die Signatur dann auf diesen Selektor um.
+    - Löschen Sie danach den alten Schlüssel.
+dkim.key_1024:
+  title: Der DKIM-Schlüssel {selector}._domainkey.{dkim_domain} hat nur {value} Bit
+  why: "Ein Schlüssel mit 1024 Bit wird noch akzeptiert, ist aber nicht empfehlenswert: Der Standard empfiehlt 2048 Bit, und ein schwacher Schlüssel macht {domain} anfällig für gefälschte Signaturen."
+  fix:
+    - Erzeugen Sie einen Schlüssel mit 2048 Bit unter einem neuen Selektor, veröffentlichen Sie ihn und stellen Sie die Signatur dann darauf um.
+    - Bewahren Sie den alten Schlüssel einige Tage für Nachrichten auf dem Weg auf und entfernen Sie ihn danach.
+  fix_by_provider:
+    google_workspace: Erzeugen Sie unter Authenticate email einen neuen Eintrag mit 2048 Bit, mit einem neuen Selektorpräfix, falls der alte noch verwendet wird.
+    microsoft_365: "In PowerShell Exchange Online: Rotate-DkimSigningConfig -Identity {domain} -KeySize 2048 (die Standardgröße von New-DkimSigningConfig ist 1024)."
+    sendgrid: Authentifizierungen, die nach Mai 2021 erstellt wurden, sind bereits mit 2048 Bit. Bei älteren erstellen Sie eine neue Domain-Authentifizierung mit einem eigenen Selektor, der nicht s1 ist.
+    brevo: "Die CNAME-Methode (brevo1/brevo2._domainkey) verwendet 2048 Bit, die TXT-Methode 1024 Bit: Wechseln Sie zu den CNAME-Einträgen, wenn Ihr Konto sie anbietet."
+    mailjet: Erzeugen Sie den Schlüssel unter SPF/DKIM Authentication mit 2048 Bit neu.
+    amazon_ses: Ändern Sie in der Identität unter Authentication die Option Easy DKIM und wählen Sie RSA_2048_BIT.
+    postmark: "Postmark dokumentiert Schlüssel mit 1024 Bit und keine Option für 2048 Bit: Die Wahl hängt vom Anbieter ab."
+    cpanel: Erzeugen Sie einen neuen Schlüssel mit Generate Local DKIM Key (in cPanel standardmäßig 2048 Bit).
+dkim.rsa_sha1:
+  title: Die DKIM-Signatur verwendet den verbotenen Algorithmus rsa-sha1
+  why: SHA-1 gilt nicht mehr als sicher, und der Standard verbietet, diese Signaturen zu prüfen. Ihre Signatur wird von aktualisierten Empfängern ignoriert.
+  fix:
+    - Stellen Sie die Signatursoftware auf rsa-sha256 (a=rsa-sha256) ein.
+    - Aktualisieren Sie sie, wenn sie diesen Algorithmus nicht anbietet.
+  fix_by_provider:
+    postfix: Stellen Sie bei OpenDKIM SignatureAlgorithm rsa-sha256 in opendkim.conf ein und starten Sie danach den Dienst neu.
+dkim.from_not_signed:
+  title: Die DKIM-Signatur deckt den Header From nicht ab
+  why: "Eine Signatur, die den angezeigten Absender nicht schützt, wird nach dem Standard abgelehnt: Ihre Nachricht gilt als nicht signiert."
+  fix:
+    - Nehmen Sie From in die Liste der signierten Header auf (Parameter h= oder das entsprechende Äquivalent der Software).
+    - Signieren Sie mindestens From, To, Subject, Date, Message-ID, MIME-Version und Content-Type.
+  fix_by_provider:
+    postfix: Entfernen Sie bei OpenDKIM From aus OmitHeaders, falls es dort steht. Standardmäßig signiert OpenDKIM From.
+dkim.from_not_oversigned:
+  title: Der Header From ist nicht übersigniert
+  why: Ohne Übersignierung kann ein Dritter eine zweite From-Zeile in die Nachricht einfügen, ohne Ihre Signatur zu brechen. Heute wird das nicht bestraft, aber es ist ein einfacher Schutz.
+  fix:
+    - Konfigurieren Sie die Signatursoftware so, dass From zweimal in h= steht (from:from).
+  fix_by_provider:
+    postfix: Fügen Sie bei OpenDKIM From zu OversignHeaders in opendkim.conf hinzu.
+dkim.length_tag:
+  title: Die DKIM-Signatur begrenzt den signierten Teil des Körpers (l=)
+  why: Mit l= kann ein Dritter Text oder einen Link am Ende Ihrer Nachricht anfügen, ohne die Signatur zu brechen. Manche Empfänger ignorieren deshalb solche Signaturen.
+  fix:
+    - Deaktivieren Sie in der Signatursoftware die Option zur Länge des Körpers, damit der gesamte Körper signiert wird.
+  fix_by_provider:
+    postfix: Lassen Sie bei OpenDKIM BodyLengthDB leer und legen Sie keine Länge für den Körper fest.
+dkim.key_testing_flag:
+  title: Der DKIM-Schlüssel {selector}._domainkey.{dkim_domain} ist im Testmodus (t=y)
+  why: Das Kennzeichen t=y bittet Empfänger, Ihre Nachrichten so zu behandeln, als wären sie nicht signiert. Ihr DKIM funktioniert, bringt Ihnen aber nichts.
+  fix:
+    - Entfernen Sie t=y aus dem Eintrag {selector}._domainkey.{dkim_domain}, sobald die Tests erfolgreich waren.
+    - Lassen Sie die übrigen Tags (v=DKIM1, k=rsa, p=) unverändert.
+dkim.signature_expired:
+  title: Die DKIM-Signatur ist vor der Zustellung abgelaufen (x=)
+  why: Die Signatur trug bei Ankunft bereits ein abgelaufenes Ablaufdatum. Sie wird abgelehnt, und die Nachricht verliert die DKIM-Authentifizierung.
+  fix:
+    - Verlängern Sie die Gültigkeitsdauer der Signaturen (mindestens mehrere Tage) oder entfernen Sie x=.
+    - "Prüfen Sie die Uhrzeit des Signaturservers: Eine nachgehende oder vorgehende Uhr verfälscht x= und t=."
+  fix_by_provider:
+    postfix: Erhöhen Sie bei OpenDKIM SignatureTTL oder setzen Sie es auf 0, damit kein x= hinzugefügt wird.
+dkim.timestamp_future:
+  title: Die DKIM-Signatur ist in der Zukunft datiert
+  why: Die Uhr des signierenden Servers geht vor. Manche Empfänger ignorieren diese Signaturen, und derselbe Uhrfehler verfälscht die Datumsangaben Ihrer Nachrichten.
+  fix:
+    - Synchronisieren Sie die Uhr des Servers mit NTP (chrony oder systemd-timesyncd).
+    - Wiederholen Sie den Test und prüfen Sie den Wert t= der Signatur.
+dkim.selector_invalid:
+  title: Der DKIM-Selektor „{selector}“ enthält ungültige Zeichen
+  why: Der Name des Selektors ist kein gültiger DNS-Name, oft wegen eines versehentlich kopierten Leerzeichens. Der Schlüssel lässt sich nicht finden, und die Signatur schlägt fehl.
+  fix:
+    - Korrigieren Sie den Selektor in der Konfiguration der Signatursoftware (nur Buchstaben, Ziffern und Bindestriche).
+    - Veröffentlichen Sie den Schlüssel unter diesem korrigierten Namen, gefolgt von ._domainkey.{dkim_domain}.
+dkim.auid_mismatch:
+  title: Das Feld i= der DKIM-Signatur gehört nicht zur Domain {dkim_domain}
+  why: "Die Signatur gibt eine Identität i= außerhalb der signierenden Domain an. Der Standard verlangt, sie abzulehnen: Ihre Nachrichten verlieren die DKIM-Authentifizierung."
+  fix:
+    - Entfernen Sie i= aus der Signaturkonfiguration oder setzen Sie es auf eine Adresse von {dkim_domain}.
+dkim.key_algorithm_mismatch:
+  title: Der veröffentlichte DKIM-Schlüssel passt nicht zum Algorithmus der Signatur
+  why: "Der veröffentlichte Schlüssel hat einen anderen Typ (zum Beispiel ed25519 statt rsa) oder erlaubt kein SHA-256. Der Empfänger kann die Signatur nicht prüfen."
+  fix:
+    - Vergleichen Sie a= in der Signatur mit k= und h= in {selector}._domainkey.{dkim_domain}.
+    - Veröffentlichen Sie unter diesem Selektor den Schlüssel des richtigen Typs oder entfernen Sie h=sha1 aus dem Eintrag.
+dkim.ed25519_only:
+  title: Die Nachricht ist nur mit ed25519 signiert
+  why: Empfänger, die ed25519 noch nicht unterstützen, ignorieren diese Signatur. Für sie ist die Nachricht nicht signiert, und DMARC stützt sich allein auf SPF.
+  fix:
+    - Fügen Sie eine zweite Signatur rsa-sha256 (Schlüssel mit 2048 Bit) mit einem anderen Selektor hinzu.
+    - Behalten Sie die Signatur ed25519 als Ergänzung.
+dkim.esp_domain_only:
+  title: Die Nachricht wird von {dkim_domain} ({provider}) signiert, nicht von {domain}
+  why: "Die Signatur beweist, dass {provider} die Nachricht gesendet hat, nicht dass {domain} dies autorisiert hat. Für DMARC fehlt eine ausgerichtete Signatur: Schon bei der kleinsten Weiterleitung schlägt die Nachricht fehl."
+  fix:
+    - Authentifizieren Sie {domain} bei {provider}, damit mit d={domain} signiert wird.
+    - Veröffentlichen Sie die bereitgestellten DKIM-Einträge und starten Sie die Prüfung in der Oberfläche erneut.
+  fix_by_provider:
+    brevo: "Settings, Senders, Domains, IPs, Domains, Authenticate, veröffentlichen Sie danach brevo1._domainkey und brevo2._domainkey."
+    mailchimp: Account & billing, Domains, Start authentication, veröffentlichen Sie danach die beiden CNAME-Einträge.
+    sendgrid: Settings, Sender Authentication, Domain Authentication.
+    mailjet: Account, Domains & Sender addresses, SPF/DKIM Authentication.
+    amazon_ses: "Prüfen Sie die Domain als Identität mit Easy DKIM: SES signiert dann mit d={domain}."
+    hubspot: Settings, Content, Domains & URLs, Email Sending, Connect sending domain.
+dkim.canonicalization_simple:
+  title: Die DKIM-Signatur verwendet eine strikte Kanonisierung (c=simple)
+  why: Bei c=simple reicht schon eine Neukodierung der Leerzeichen durch einen Zwischenserver, um die Signatur zu brechen. Das ist hier vermutlich passiert.
+  fix:
+    - Stellen Sie die Kanonisierung in der Signatursoftware auf relaxed/relaxed ein.
+  fix_by_provider:
+    postfix: "Stellen Sie bei OpenDKIM Canonicalization relaxed/relaxed in opendkim.conf ein."
+dkim.headers_not_signed:
+  title: Die DKIM-Signatur von {dkim_domain} deckt {value} nicht ab
+  why: "Die Signatur bleibt gültig, wenn jemand diese Header ändert: Eine von {dkim_domain} signierte Nachricht kann mit einem anderen Betreff, einem anderen Datum oder einem anderen Empfänger weitergeschickt werden, ohne dass DKIM bricht."
+  fix:
+    - Suchen Sie im signierenden Dienst ({provider}) die Liste der signierten Header und fügen Sie Subject, Date, To, Cc und Message-ID hinzu.
+    - "Auf Ihrem eigenen Server ergänzen Sie die Liste der signierten Header des Signierers (OpenDKIM: SignHeaders; Rspamd: sign_headers)."
+    - "Wiederholen Sie den Test: Das Tag h= der Signatur muss diese Header enthalten."
+dkim.key_service_type:
+  title: Der DKIM-Schlüssel {selector} von {dkim_domain} ist für E-Mail nicht verwendbar
+  why: "Das Tag s={value} reserviert den Schlüssel für andere Dienste. Die Empfänger müssen ihn dann ignorieren: Alle Signaturen mit dem Selektor {selector} schlagen fehl, als gäbe es den Schlüssel nicht."
+  fix:
+    - Öffnen Sie den TXT-Eintrag {selector}._domainkey.{dkim_domain} bei Ihrem DNS-Hoster.
+    - Entfernen Sie das Tag s= (der Standardwert deckt alle Dienste ab) oder schreiben Sie s=email.
+    - Lassen Sie den Rest des Schlüssels (p=) unverändert und starten Sie danach die Prüfung erneut.
+dkim.selector_not_discovered:
+  title: Unter {value} gängigen Selektoren wurde kein DKIM-Schlüssel gefunden
+  why: "Das DNS erlaubt keine Auflistung der Schlüssel einer Domain: Man muss den Selektor kennen. Keiner der {value} üblichen Selektoren antwortet für {domain}, Ihre Dienste können aber einen eigenen, nicht erratbaren Selektor des Kontos verwenden."
+  fix:
+    - "Öffnen Sie die Quelle einer von {domain} gesendeten Nachricht und suchen Sie den Header DKIM-Signature: Das Tag s= nennt den Selektor, d= die Domain."
+    - Geben Sie diesen Selektor im Prüfwerkzeug ein, um den Schlüssel zu kontrollieren.
+    - Wenn keine Nachricht signiert ist, aktivieren Sie DKIM in jedem Werkzeug, das für {domain} versendet, und veröffentlichen Sie den Schlüssel, den es bereitstellt.
+dkim.wildcard:
+  title: Das DNS von {domain} antwortet auf jeden DKIM-Selektor
+  why: Ein Wildcard-Eintrag (*) antwortet auch für einen erfundenen Selektor. Die hier aufgeführten Schlüssel können deshalb Kopien und keine echten Schlüssel sein, und eine Signatur mit einem vergessenen Selektor wird nicht als schlüssellos erkannt.
+  fix:
+    - Suchen Sie in der DNS-Zone von {domain} nach einem Eintrag namens *._domainkey oder nach einem *, der diesen Namen abdeckt.
+    - Entfernen Sie ihn und veröffentlichen Sie jeden Selektor unter seinem eigenen Namen (Selektor._domainkey.{domain}).
+    - Wenn der Wildcard-Eintrag gewollt ist (Zone wird von einem Dienst verwaltet), geben Sie Ihre tatsächlichen Selektoren für eine verlässliche Prüfung ein.
+dkim.selector_cname_dangling:
+  title: Der DKIM-CNAME {selector}._domainkey.{dkim_domain} zeigt ins Leere
+  why: "{selector}._domainkey.{dkim_domain} verweist auf {value}, das nicht existiert: Eine mit diesem Selektor signierte Nachricht schlägt bei DKIM fehl, und kein anderer Selektor dieses Dienstes funktioniert."
+  fix:
+    - Öffnen Sie in {provider} die Authentifizierung der Domain {dkim_domain} und übernehmen Sie genau den Wert, der für {selector}._domainkey.{dkim_domain} erwartet wird.
+    - Korrigieren Sie den CNAME bei {dns_host} oder entfernen Sie ihn, wenn {dkim_domain} diesen Dienst nicht mehr nutzt.
+  fix_by_provider:
+    microsoft_365: "Auf der DKIM-Seite des Microsoft-Defender-Portals (https://security.microsoft.com/authentication?viewid=DKIM) öffnen Sie {dkim_domain} und vergleichen die angezeigten CNAME-Werte mit {value}. Der Exchange-Online-Befehl Get-DkimSigningConfig -Identity {dkim_domain} | Format-List Selector1CNAME,Selector2CNAME liefert dieselben Werte."
+    cloudflare_dns: Lassen Sie diesen CNAME in Cloudflare unter DNS, Records im Modus DNS only (graue Wolke). Cloudflare empfiehlt, Einträge für E-Mail und DKIM nicht über den Proxy zu leiten.
+dkim.standby_selector_dangling:
+  title: Der Reserveschlüssel {selector}._domainkey.{dkim_domain} zeigt ins Leere
+  why: "{twin} funktioniert, aber {selector}, der andere Selektor von {provider}, verweist auf {value}, das nicht existiert. Solange {provider} mit {twin} signiert, schlägt nichts fehl. Wenn der Dienst zu {selector} wechselt (Schlüsselrotation), können seine Nachrichten nicht mehr geprüft werden."
+  fix:
+    - Vergleichen Sie den erwarteten Wert für {selector} bei {provider} mit dem veröffentlichten Ziel ({value}).
+    - Weicht er ab, korrigieren Sie den CNAME {selector}._domainkey.{dkim_domain} bei {dns_host}.
+    - "Ist das Ziel identisch, ist der Schlüssel auf Seiten des Anbieters nicht veröffentlicht: Starten Sie keine Rotation der DKIM-Schlüssel, solange {selector}._domainkey.{dkim_domain} nicht antwortet."
+  fix_by_provider:
+    microsoft_365: "Auf der DKIM-Seite des Microsoft-Defender-Portals (https://security.microsoft.com/authentication?viewid=DKIM) öffnen Sie {dkim_domain}: Die Schaltfläche Rotate DKIM keys würde mit {selector} signieren. Verwenden Sie sie nicht, bevor das Ziel antwortet. Der Befehl Get-DkimSigningConfig -Identity {dkim_domain} | Format-List Selector1CNAME,Selector2CNAME liefert die erwarteten Werte."
+    cloudflare_dns: Lassen Sie diesen CNAME in Cloudflare unter DNS, Records im Modus DNS only (graue Wolke). Cloudflare empfiehlt, Einträge für E-Mail und DKIM nicht über den Proxy zu leiten.

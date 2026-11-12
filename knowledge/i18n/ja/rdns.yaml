@@ -1,0 +1,68 @@
+rdns.missing:
+  title: "送信 IP {ip} に reverse DNS がありません"
+  why: "reverse DNS のないメールサーバーは、感染したマシンのように見えます。Gmail と Yahoo はすべての送信者にこれを求めています。ないと、メッセージは迷惑メールに入るか拒否されます。"
+  fix:
+    - "ご自身のドメイン配下でサーバー名を決めてください（例: mail.{domain}）。そのドメインの DNS ゾーンに、{ip} を指す A（または AAAA）レコードを作成してください。"
+    - "IP {ip} の所有者（ホスティング会社またはインターネットサービスプロバイダー）に、PTR をこの名前に設定してもらってください。PTR を設定できるのは所有者だけです。"
+    - "同じ名前をサーバーの HELO として使い、テストをやり直してください。"
+  fix_by_provider:
+    ovh: "VPS または専用サーバーの場合：顧客ページ > Network > パブリック IP アドレス > {ip} の横の ⁝ ボタン > reverse DNS の設定。名前の A レコードがすでに {ip} を指している必要があります（即時に確認されます）。小文字で入力してください。"
+    cpanel: "Email Deliverability ツールは PTR を表示しますが、変更はできません。サーバーのホスティング会社に依頼してください。"
+    o2switch: "共有ホスティングでは、サーバーの IP の PTR は o2switch が管理します。テストで欠落が示された場合は、チケットを開いてください。"
+    postfix: "PTR を設定したら、main.cf の myhostname を同じ名前に設定してください。"
+rdns.fcrdns_mismatch:
+  title: "{ip} の reverse DNS（{ptr}）が {ip} に戻りません"
+  why: "名前 {ptr} は送信 IP を指していません。誰でも PTR を書けるため、往復の照合だけがサーバーの身元を証明します。これがないと、フィルターはサーバーを身元不明として扱います。"
+  fix:
+    - "{ptr} の A（または AAAA）レコードに {ip} を追加するか、古いアドレスを指している場合は修正してください。"
+    - "{ptr} がご自身の管理下にない場合は、A レコードを管理している {domain} の名前を PTR に設定してもらってください。"
+rdns.ptr_target_nxdomain:
+  title: "{ip} の reverse DNS が存在しない名前（{ptr}）を指しています"
+  why: "reverse DNS が示す名前はもう存在しません。受信者にとっては、確認できる reverse DNS がない場合と同じです。"
+  fix:
+    - "{ptr} の A レコードを {ip} に向けて作り直すか、{domain} 内の既存の名前を PTR に設定してもらってください。"
+    - "dig -x {ip} で確認し、その後 dig A <得られた名前> で確認してください。"
+rdns.generic_dynamic:
+  title: "{ip} の reverse DNS（{ptr}）は一般消費者向け回線のものです"
+  why: "{ptr} は家庭用インターネットボックスや個人契約の回線のように見えます。大手プロバイダーは、このような回線から直接送られたメールを拒否するか、迷惑メールに分類します。"
+  fix:
+    - "この回線から直接送信しないでください。認証付きのメール SMTP サーバー（ポート 587 または 465）を経由してください。"
+    - "{ip} がサーバー用の固定 IP である場合は、プロバイダーに mail.{domain} のような独自の reverse DNS を依頼してください。"
+  fix_by_provider:
+    postfix: "relayhost = [smtp.your-provider.example]:587 を設定し、SASL 認証と必須の TLS を有効にしてから、postfix reload を実行してください。"
+    wordpress: "サーバーの mail() 関数ではなく、メールサービスのサーバー経由で送信する SMTP プラグインを使ってください。"
+rdns.generic_hosting:
+  title: "{ip} の reverse DNS は、ホスティング会社の既定の名前（{ptr}）です"
+  why: "reverse DNS は機能していますが、サービスについては何も示していません。{domain} 独自の名前にすると、サーバーの身元がはっきりし、レンタルされた即席のマシンと区別されます。"
+  fix:
+    - "mail.{domain} から {ip} への A レコードを作成してください。"
+    - "ホスティング会社の管理画面で、{ip} の PTR を mail.{domain} に設定してもらってください。"
+    - "この名前を HELO として使ってください。"
+  fix_by_provider:
+    ovh: "顧客ページ > Network > パブリック IP アドレス > ⁝ > reverse DNS の設定 の順に進み、mail.{domain} を入力してください。"
+rdns.ipv6_missing:
+  title: "送信 IPv6 アドレス {ip} に reverse DNS がありません"
+  why: "このサーバーはこのメッセージを IPv6 で送信しましたが、そのアドレスには reverse DNS がありません。IPv4 が正しく設定されていても、メッセージは実際に使われたアドレスで判定されます。"
+  fix:
+    - "ホスティング会社に {ip} の PTR を依頼してください。IPv4 と同じ名前（例: mail.{domain}）にし、対応する AAAA レコードも追加してください。"
+    - "SPF にも {ip} を追加してください（ip6:）。"
+    - "対応が難しい場合は、このサーバーで IPv6 送信を無効にしてください。"
+  fix_by_provider:
+    postfix: "当面 IPv4 のみで送信するには、smtp_address_preference = ipv4（または inet_protocols = ipv4）を設定し、postfix reload を実行してください。"
+rdns.multiple_ptr:
+  title: "IP {ip} に複数の reverse DNS があります"
+  why: "受信者が取得する PTR によって、検証が成功したり失敗したりします。そのため、結果がメッセージごとにばらつきます。"
+  fix:
+    - "{ip} の PTR は 1 つだけにし、サーバーの HELO に一致するものを残してください。"
+    - "その名前が {ip} を指していることを確認してください。"
+rdns.temperror:
+  title: "{ip} の reverse DNS を読み取れませんでした"
+  why: "{ip} の逆引きゾーンを担当する DNS サーバーが応答していません。PTR を確認する受信者は、サーバーに reverse DNS がないものとして扱うか、メッセージの配送を遅らせます。"
+  fix:
+    - "テストをやり直して確認してください。"
+    - "エラーが続く場合は、IP の所有者に伝えてください。逆引きゾーンの委任が壊れています。"
+rdns.unrelated_domain:
+  title: "{ip} の reverse DNS（{ptr}）はご自身の名前ではありませんが、問題ありません"
+  why: "送信サービスや共有サーバーを使う場合、reverse DNS はそのサービスの名前になります。これは想定どおりです。重要なのは、reverse DNS が存在し、{ip} に戻ることです。そして、それは満たされています。"
+  fix:
+    - "対応は不要です。"

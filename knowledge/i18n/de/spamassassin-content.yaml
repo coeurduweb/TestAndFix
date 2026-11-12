@@ -1,0 +1,224 @@
+sa.uppercase_50_75:
+  title: "Nachrichtentext zu 50 bis 75 % in Großbuchstaben"
+  why: "Mehr als die Hälfte der Buchstaben im Text sind Großbuchstaben. Heute ein symbolischer Wert, aber die Nachricht wirkt wie geschrien, und Leser melden sie eher."
+  fix:
+    - "Schreiben Sie den Text in normaler Schreibweise um. Behalten Sie Großbuchstaben nur für Akronyme."
+sa.uppercase_75_100:
+  title: "Nachrichtentext fast vollständig in Großbuchstaben"
+  why: "Mehr als drei Viertel der Buchstaben sind Großbuchstaben. Symbolischer Wert."
+  fix:
+    - "Schreiben Sie den Text in normaler Schreibweise um."
+sa.lots_of_money:
+  title: "Die Nachricht nennt hohe Geldbeträge"
+  why: "Der Text nennt hohe Summen (10.000 €, „millions“). Symbolischer Wert, aber diese Regel fließt in mehrere kombinierte Betrugsregeln ein."
+  fix:
+    - "Nichts zwingend. Vermeiden Sie es, hohe Beträge in den Betreff und in den ersten Absatz zu stellen."
+sa.money_back:
+  title: "Hinweis „money back guarantee“"
+  why: "Der Text enthält den englischen Ausdruck „money back guarantee“. 1 Punkt."
+  fix:
+    - "Formulieren Sie um (zum Beispiel „Erstattung innerhalb von 30 Tagen“) oder entfernen Sie den englischen Ausdruck aus der Fußzeile."
+sa.risk_free:
+  title: "Versprechen „ohne Risiko“"
+  why: "Der Text verspricht die Abwesenheit jeglichen Risikos („risk free“, „100% safe“), ohne ein Zeichen für eine Versandliste. Knapp 3 Punkte: Die Formel ist typisch für Betrug."
+  fix:
+    - "Entfernen Sie die Formel oder fügen Sie einen echten Abmeldelink und den Header List-Unsubscribe hinzu: Die Regel gilt dann nicht mehr."
+sa.guaranteed_100_percent:
+  title: "Hinweis „100% guaranteed“"
+  why: "Der Text enthält „100% guaranteed“. Knapp 3 Punkte allein für diesen Ausdruck."
+  fix:
+    - "Entfernen Sie den Ausdruck oder formulieren Sie die Garantie genau (Dauer, Bedingungen)."
+sa.bang_guar:
+  title: "„Guaranteed!“ mit Ausrufezeichen"
+  why: "Der Text enthält „guarantee!“ oder „guaranteed!“. 1 Punkt."
+  fix:
+    - "Entfernen Sie das Ausrufezeichen oder den Ausdruck."
+sa.free_quote_instant:
+  title: "Angebot eines kostenlosen und sofortigen Kostenvoranschlags"
+  why: "Der Text bietet ein „free instant quote“ oder „free no-obligation quote“ an. Formulierung aus englischsprachigen Akquise-Spams. Mehr als ein Punkt."
+  fix:
+    - "Formulieren Sie den Aufruf zum Handeln um, ohne „free“ oder „instant“ direkt vor „quote“."
+sa.low_price:
+  title: "Hinweis „lowest price“"
+  why: "Der Text enthält „Low Price“ oder „Lowest Price“. Geringe Abwertung."
+  fix:
+    - "Nichts zwingend. Vermeiden Sie die Formel im Betreff."
+sa.act_now_caps:
+  title: "„Act Now“ in Großbuchstaben"
+  why: "Der Text enthält „Act Now“ in Großbuchstaben. Geringe Abwertung."
+  fix:
+    - "Ersetzen Sie das durch einen präzisen Aufruf zum Handeln („Reservieren Sie Ihren Platz“)."
+sa.this_ad:
+  title: "Der Text spricht von „this ad“ oder „this promotion“"
+  why: "Der Text enthält „this ad“, „this advertisement“ oder „this promotion“. Oft steht das in einem englischen Rechtshinweis in der Fußzeile. Knapp 3 Punkte."
+  fix:
+    - "Entfernen oder übersetzen Sie den englischen Hinweis in der Fußzeile."
+sa.admits_spam:
+  title: "Der Text stellt sich als Werbung dar"
+  why: "Die Nachricht enthält „This is an advertisement“. Manche Gesetze schreiben diesen Hinweis vor, die Filter werten ihn aber als Geständnis. 2 Punkte."
+  fix:
+    - "Wenn der Hinweis für Ihr Publikum nicht verlangt wird, entfernen Sie ihn."
+    - "Andernfalls verwenden Sie ein Versandtool, das seine eigenen Kampagnen-Header hinzufügt. Die Regel greift dann nicht bei X-Campaignid."
+sa.ad_prefs:
+  title: "Link oder Hinweis „advertising preferences“"
+  why: "Der Text enthält „marketing preferences“ oder „ad settings“. Geringe Abwertung, oft wegen des englischen Links zur Verwaltung der Präferenzen."
+  fix:
+    - "Übersetzen Sie die Beschriftung des Präferenzlinks („Meine Einstellungen verwalten“)."
+sa.excuse_remove:
+  title: "Formel „to be removed from our mailings“"
+  why: "Der Text enthält „to be removed from ... mailings“ oder „... offers“. Formel aus alten englischen Spams, mit mehr als 3 Punkten abgewertet."
+  fix:
+    - "Ersetzen Sie den Satz durch einen direkten Abmeldelink: „Abmelden“."
+sa.excuse_4:
+  title: "Formel „To Be Removed, Please“"
+  why: "Der Text enthält „To be removed, please...“. Mehr als ein Punkt."
+  fix:
+    - "Ersetzen Sie das durch einen Abmeldelink mit einem Klick."
+sa.end_future_emails:
+  title: "Typische Spam-Abmeldeformel"
+  why: "Der Abmeldetext verwendet eine englische Formel, die Spammer häufig benutzen, und die Nachricht ist nicht per DKIM signiert. Geringe Abwertung."
+  fix:
+    - "Signieren Sie die Nachricht mit DKIM: Die Regel gilt nicht für signierte Nachrichten."
+sa.remove_before_link:
+  title: "„No thanks“ oder „unsubscribe here“ direkt vor einem http-Link"
+  why: "Eine Ablehnungsformel steht vor einem unverschlüsselten http://-Link. Geringe Abwertung."
+  fix:
+    - "Verwenden Sie einen https://-Link und eine anklickbare Beschriftung statt einer angezeigten Adresse."
+sa.obfu_unsub_ul:
+  title: "Abmeldetext mit Unterstrichen statt Leerzeichen"
+  why: "Der Text enthält Ausdrücke wie „click_here“ oder „to_unsubscribe“, mit Unterstrichen geschrieben, um Filter zu umgehen. Ein sichtbar gebliebener Datei- oder Variablenname kann die Regel ebenfalls auslösen."
+  fix:
+    - "Schreiben Sie den Text normal, mit Leerzeichen."
+    - "Prüfen Sie, dass kein Vorlagen-Tag (to_unsubscribe, click_here) unersetzt erscheint."
+sa.marketing_partners:
+  title: "Hinweis auf Marketingpartner"
+  why: "Der Text nennt einen „marketing partner“ oder eine „partner site“, eine Formel aus vermieteten Listen. Symbolischer Wert."
+  fix:
+    - "Nichts zwingend. Senden Sie nur an Kontakte, die sich bei Ihnen angemeldet haben."
+sa.cant_see_ad:
+  title: "Formel „can't see the images below“"
+  why: "Die Nachricht enthält die englische Formel „If you can't see this newsletter...“ und hat keinen Header List-Unsubscribe. 1 Punkt."
+  fix:
+    - "Fügen Sie den Header List-Unsubscribe hinzu (die Regel gilt dann nicht mehr) oder übersetzen Sie den Satz des Links „Online-Version“."
+sa.not_spam:
+  title: "Die Nachricht behauptet, kein Spam zu sein"
+  why: "Der Text behauptet „This email is not spam“ (auf Englisch, Spanisch oder Deutsch). Legitime Nachrichten müssen das nicht sagen. 1 Punkt."
+  fix:
+    - "Entfernen Sie den Satz. Erklären Sie stattdessen, warum der Empfänger die Nachricht erhält (Anmeldung, Kunde)."
+sa.urg_biz:
+  title: "Der Text spricht von einer dringenden Angelegenheit"
+  why: "Der Text enthält „urgent reply“, „urgent business“ oder „urgent request“. Formeln aus englischen Betrugsnachrichten. Mittlere Abwertung."
+  fix:
+    - "Entfernen Sie die Dringlichkeitsformel und nennen Sie bei Bedarf ein genaues Datum."
+sa.dear_something:
+  title: "Generische Anrede „Dear Sir“, „Dear Madam“ ..."
+  why: "Die Nachricht beginnt mit „Dear Sir“, „Dear Madam“, „Dear Candidate“ ... Persönliche Nachrichten verwenden den Namen. Knapp 2 Punkte."
+  fix:
+    - "Personalisieren Sie die Anrede mit dem Vor- oder Nachnamen des Empfängers oder streichen Sie sie."
+sa.dear_friend:
+  title: "Anrede „Dear Friend“"
+  why: "Die Nachricht beginnt mit „Dear Friend“. Eine Formel, die für Betrugsmaschen typisch ist: mehr als 2,5 Punkte."
+  fix:
+    - "Personalisieren Sie die Anrede oder streichen Sie sie."
+sa.one_time:
+  title: "Hinweis „one time offer“"
+  why: "Der Text enthält „one-time offer“ oder „one time charge“. Mittlere Abwertung."
+  fix:
+    - "Formulieren Sie das Angebot ohne den englischen Ausdruck."
+sa.prices_are_affordable:
+  title: "Hinweis „affordable prices“"
+  why: "Der Text enthält „affordable prices“. Mittlere Abwertung."
+  fix:
+    - "Nennen Sie den Preis oder den konkreten Vorteil statt der Formel."
+sa.new_products:
+  title: "Ankündigung neuer Produkte im Spam-Stil"
+  why: "Der Text stellt Neuheiten mit einer englischen Formel aus der Massenakquise vor („We are pleased to introduce our...“). 1 Punkt."
+  fix:
+    - "Stellen Sie das Produkt direkt vor, mit Name und Nutzen, ohne Einleitungsformel."
+sa.ready_to_ship:
+  title: "Formeln „ready to ship from our warehouse“"
+  why: "Der Text preist einen Bestand an, der versandbereit aus einem Lager kommt. Formel aus Spams industrieller Lieferanten. Mehr als ein Punkt."
+  fix:
+    - "Formulieren Sie mit genauen Angaben (Lieferzeit, Referenz, Bedingungen) statt mit der fertigen Formel."
+sa.investment_advice:
+  title: "Hinweis „investment advice“"
+  why: "Der Text enthält „investment advice“, oft in einem rechtlichen Hinweis. Geringe Abwertung."
+  fix:
+    - "Nichts zwingend, wenn der Hinweis vorgeschrieben ist."
+sa.fin_free:
+  title: "Versprechen finanzieller Freiheit"
+  why: "Der Text verspricht „financial freedom“ oder „financially independent“. Geringe Abwertung."
+  fix:
+    - "Formulieren Sie ohne Gewinnversprechen."
+sa.compensation:
+  title: "Hinweis auf finanzielle Vergütung"
+  why: "Der Text spricht von „compensation“, ohne jedes Zeichen einer Liste oder Authentifizierung. Symbolischer Wert."
+  fix:
+    - "Nichts zwingend. Authentifizieren Sie die Nachricht (SPF, DKIM)."
+sa.fill_this_form:
+  title: "Aufforderung, ein Formular mit persönlichen Angaben auszufüllen"
+  why: "Die Nachricht fordert auf, mit Name, Adresse, Telefonnummer, Beruf ... zu antworten. Schema englischer Betrugsnachrichten. Symbolischer Wert, aber in Kombination mit anderen Regeln schwerer."
+  fix:
+    - "Verweisen Sie auf ein Formular auf Ihrer Website, statt die Angaben per Antwort auf die E-Mail abzufragen."
+sa.fsl_bulk_sig:
+  title: "Versand in großer Zahl erkannt, ohne Abmeldelink"
+  why: "Ein kollaboratives Netzwerk hat diese Nachricht in großer Zahl gesehen, und sie enthält keine Möglichkeit zur Abmeldung. Symbolischer Wert, aber es ist ein echter Mangel: Gmail und Yahoo verlangen bei Versand in großer Zahl die Abmeldung mit einem Klick."
+  fix:
+    - "Fügen Sie einen sichtbaren Abmeldelink sowie die Header List-Unsubscribe und List-Unsubscribe-Post hinzu."
+sa.english_uce_subject:
+  title: "Betreff beginnt mit „ADV“"
+  why: "Der Betreff beginnt mit „ADV“ oder „ADVERT“, einer Werbekennzeichnung, die manche US-Gesetze vorschreiben und die Filter suchen. Knapp 3 Punkte."
+  fix:
+    - "Entfernen Sie das Präfix ADV aus dem Betreff, sofern es für Ihr Publikum nicht gesetzlich vorgeschrieben ist."
+sa.subj_as_seen:
+  title: "Betreff mit „As Seen“"
+  why: "Der Betreff enthält „As Seen“ („as seen on TV“). Knapp 1,5 Punkte."
+  fix:
+    - "Formulieren Sie den Betreff um."
+sa.unicode_obfu_zw:
+  title: "Unsichtbare Zeichen zwischen Wörtern eingefügt"
+  why: "Zwischen Wörtern sind unsichtbare Zeichen (Leerzeichen mit Breite null) eingefügt. Das ist eine Verschleierungstechnik, und auch Preheader-Vorlagen fügen solche Zeichen ein. Symbolischer Wert."
+  fix:
+    - "Entfernen Sie die Zeichen mit Breite null aus dem sichtbaren Text und signieren Sie die Nachricht mit DKIM."
+sa.unicode_obfu_zw_many:
+  title: "Viele unsichtbare Zeichen zwischen Wörtern eingefügt"
+  why: "Der Text ist voll von Zeichen mit Breite null. Preheader, die &zwnj; oder &#8203; aneinanderreihen, um den Anfang der Nachricht zu verbergen, erzeugen viele davon. 3 Punkte."
+  fix:
+    - "Begrenzen Sie das Auffüllen des Preheaders: einige &nbsp; genügen, oder gar keines."
+    - "Entfernen Sie die Zeichen mit Breite null, die am sichtbaren Text kleben."
+sa.unicode_obfu_asc:
+  title: "Kyrillische Buchstaben zwischen lateinischen Wörtern"
+  why: "Kyrillische Buchstaben, die lateinischen ähneln, sind in den Text gemischt. Das ist eine Technik, um Wortfilter zu umgehen. Ein Kopieren aus einem falsch kodierten Dokument kann sie einschleppen. 2,5 Punkte."
+  fix:
+    - "Tippen Sie die betroffenen Wörter neu ein oder lassen Sie den Text durch ein Werkzeug prüfen, das nicht-lateinische Zeichen meldet."
+sa.percent_random:
+  title: "Makro %RND oder %RANDOM nicht ersetzt"
+  why: "Die Nachricht enthält ein Makro %RND oder %RANDOM, das unverändert geblieben ist: Eine Massenversand-Software hat ihre Zufallsvariable nicht eingesetzt. Knapp 2 Punkte."
+  fix:
+    - "Suchen Sie das Makro im Betreff, in den Headern oder im HTML und entfernen Sie es aus der Vorlage."
+sa.longwords:
+  title: "Lange Folge langer Wörter"
+  why: "Der Text enthält lange Folgen langer Wörter in Kleinbuchstaben, wie die Zufallstexte, die Spammer einfügen, um Filter zu täuschen. 1 Punkt."
+  fix:
+    - "Prüfen Sie, dass kein Füll- oder Schlüsselworttext in einer Reihe in der Nachricht steht (alt-Attribut, versteckter Text, Liste von Schlüsselwörtern)."
+sa.unwanted_language_body:
+  title: "Nachricht in einer nicht akzeptierten Sprache verfasst"
+  why: "Der Testserver akzeptiert nur bestimmte Sprachen, und die Nachricht ist in einer anderen verfasst. Das passiert nur, wenn ok_languages eingeschränkt wurde. 2,8 Punkte."
+  fix:
+    - "Keine Korrektur an der Nachricht, wenn die Sprache gewollt ist. Melden Sie, dass der Testserver Sprachen filtert."
+sa.nice_reply_a:
+  title: "Die Nachricht wirkt wie eine echte Antwort"
+  why: "Die Nachricht hat die Header einer echten Antwort in einem Gesprächsverlauf. Großer Bonus (knapp 3 Punkte)."
+  fix:
+    - "Nichts zu korrigieren. Simulieren Sie in einer Kampagne keine falschen „Re:“: Das löst diese Regel nicht aus und verärgert die Leser."
+sa.gtube:
+  title: "GTUBE-Testnachricht für Spam-Filter"
+  why: "Die Nachricht enthält die Zeichenfolge GTUBE, die absichtlich so gebaut ist, dass alle Filter sie als Spam erkennen. 1.000 Punkte."
+  fix:
+    - "Entfernen Sie die Zeichenfolge GTUBE: Sie dient nur dazu zu prüfen, ob ein Filter funktioniert."
+spamassassin.over_threshold:
+  title: "SpamAssassin stuft diese Nachricht als Spam ein ({value} Punkte, Schwelle {rule_score})"
+  why: "Oberhalb dieser Schwelle sortiert ein Server, der mit SpamAssassin und der Standardeinstellung filtert, die Nachricht in den Spam-Ordner aus oder lehnt sie ab. Die Punkte stammen von den Regeln, die unter „Spam-Risiko“ aufgeführt sind."
+  fix:
+    - "Korrigieren Sie zuerst die SpamAssassin-Regeln, die am meisten Punkte kosten."
+    - "Senden Sie danach eine Testnachricht: Sie muss unter {rule_score} Punkten bleiben."

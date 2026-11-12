@@ -1,0 +1,317 @@
+sa.freemail_from:
+  title: El remitente usa un correo gratuito
+  why: "La dirección de envío está en un correo de consumo. La puntuación es casi nula, pero esta regla sirve de condición a otras más pesadas, y una empresa que escribe desde Gmail u Orange inspira menos confianza que una dirección de su propio dominio."
+  fix:
+    - Para envíos profesionales, usa una dirección de tu propio dominio.
+    - "No envíes nunca un boletín con una dirección de Gmail, Outlook.com o Yahoo en From: enviado desde otro servicio, el mensaje no puede pasar DMARC para ese dominio, y Yahoo publica una política de rechazo."
+sa.freemail_replyto:
+  title: Reply-To en un correo gratuito distinto del remitente
+  why: "Las respuestas van a una dirección gratuita que no es la del remitente. Es el esquema de las estafas (se escribe desde una dirección y las respuestas llegan a otra), pero también el de un formulario que pone la dirección Gmail del visitante en Reply-To."
+  fix:
+    - "Si es un formulario de contacto, es lo esperado: comprueba solo que el From es una dirección de tu dominio autenticada por SPF y DKIM."
+    - Para una campaña, pon en Reply-To una dirección de tu dominio.
+sa.freemail_forged_replyto:
+  title: Reply-To en un correo gratuito aunque el remitente no lo sea
+  why: "El mensaje viene de una dirección de empresa pero pide responder a una dirección de Gmail, Outlook o similar. Es muy típico de las estafas del director general (CEO fraud) y de las facturas falsas, de ahí una penalización de más de 2 puntos."
+  fix:
+    - Pon en Reply-To una dirección de tu dominio, o elimina la cabecera Reply-To.
+    - "Para un formulario de web que pone la dirección del visitante en Reply-To, acepta esta penalización o copia mejor la dirección del visitante en el cuerpo del mensaje."
+  fix_by_provider:
+    wordpress: "En Contact Form 7 o WPForms, la cabecera Reply-To: [your-email] activa esta regla cuando el visitante tiene una dirección gratuita. Es sin riesgo para una notificación interna."
+sa.freemail_reply:
+  title: El cuerpo del mensaje cita una dirección gratuita distinta del remitente
+  why: "El mensaje invita a escribir a otra dirección gratuita distinta de la que envía. Las estafas lo usan para que se responda a un buzón que todavía no ha sido denunciado."
+  fix:
+    - Indica en el mensaje una dirección de contacto igual al remitente, o una dirección de tu dominio.
+sa.freemail_envfrom_end_digit:
+  title: Dirección de sobre gratuita que termina en cifra
+  why: "La dirección de sobre (envelope) es un buzón gratuito del tipo juan.garcia75@gmail.com. Las cuentas creadas en masa por spammers suelen tener este formato. Penalización baja."
+  fix:
+    - Envía desde una dirección de tu dominio para evitar esta regla y las parecidas.
+sa.freemail_replyto_end_digit:
+  title: Reply-To gratuito que termina en cifra
+  why: "La dirección de respuesta es un buzón gratuito cuyo identificador termina en cifra. Señal débil que se suma a las demás reglas freemail."
+  fix:
+    - Usa en Reply-To una dirección de tu dominio.
+sa.freemail_forged_fromdomain:
+  title: Remitente gratuito enviado desde otro dominio de sobre
+  why: "El From es una dirección gratuita (Gmail, Orange...) pero el sobre pertenece a otro dominio. Es lo que produce una herramienta de envío o un sitio configurado con una dirección Gmail como remitente. El mensaje no puede alinearse entonces con el dominio del proveedor gratuito y falla en DMARC en todas partes donde ese dominio publica un registro DMARC."
+  fix:
+    - Usa como remitente una dirección de tu propio dominio, autenticada en la herramienta de envío.
+    - "Si no tienes dominio, envía desde el webmail del proveedor gratuito, no desde un servicio de terceros."
+sa.header_from_different_domains:
+  title: El dominio del From difiere del dominio del sobre
+  why: "El From muestra {domain} pero el Return-Path pertenece a {envelope_domain}. Es el ajuste por defecto de muchas herramientas de envío (Brevo, Mailchimp, Mailjet) que gestionan los rebotes en su propio dominio. Penalización baja, pero SPF no queda alineado para DMARC."
+  fix:
+    - Configura en la herramienta de envío un dominio de retorno personalizado (Return-Path) bajo {domain}, por ejemplo bounce.{domain}.
+    - Si no, asegúrate de que DKIM firma con {domain} para que DMARC pase igualmente.
+  fix_by_provider:
+    brevo: "Autentica {domain} en la sección Dominios de Brevo: la firma DKIM se hace entonces con tu dominio, y DMARC pasa por DKIM aunque el Return-Path no esté bajo {domain}."
+    mailchimp: "Autentica {domain} en la sección Domains de Mailchimp: la firma DKIM se hace entonces con tu dominio, y DMARC pasa por DKIM aunque el Return-Path no esté bajo {domain}."
+    amazon_ses: Configura un MAIL FROM personalizado (subdominio de {domain}) en la identidad de SES.
+sa.replyto_without_to_cc:
+  title: Reply-To sin destinatario To ni Cc
+  why: "El mensaje tiene una dirección de respuesta pero ningún destinatario visible: todos los destinatarios van en copia oculta. Es lo que hace un envío colectivo desde un correo con la lista en Cco, un esquema frecuente en el spam."
+  fix:
+    - "Añade una cabecera To: la dirección del destinatario para un envío individual, o tu propia dirección si mantienes la lista en Cco."
+    - Para más de unas decenas de destinatarios, usa una herramienta de envío que dirija cada mensaje de forma individual.
+sa.to_no_brkts_dynip:
+  title: Destinatario sin ángulos e IP de envío de consumo
+  why: "El To contiene una dirección desnuda (sin «Nombre <...>») y el mensaje sale de una IP con reverse DNS de conexión residencial. La combinación es característica de las máquinas infectadas que envían spam, de ahí una penalización de 3 puntos."
+  fix:
+    - "Escribe el destinatario con un nombre y entre ángulos: \"Nombre Apellido\" <correo@ejemplo.com>. Las herramientas de envío lo hacen si el campo de nombre está rellenado."
+    - "Añade la cabecera List-Unsubscribe y un enlace de baja: varias variantes de esta regla dejan entonces de aplicarse."
+sa.to_no_brkts_from_mssp:
+  title: Destinatario sin ángulos y remitente mal formateado
+  why: "La dirección del destinatario va desnuda y el From se escribe sin espacio entre el nombre y el ángulo (Nombre<dirección>). Estos dos defectos de formato juntos delatan un script de envío artesanal."
+  fix:
+    - "Escribe el destinatario con un nombre y entre ángulos: \"Nombre Apellido\" <correo@ejemplo.com>. Las herramientas de envío lo hacen si el campo de nombre está rellenado."
+    - "Añade la cabecera List-Unsubscribe y un enlace de baja: varias variantes de esta regla dejan entonces de aplicarse."
+sa.to_no_brkts_html_img:
+  title: Destinatario sin ángulos y HTML con una sola imagen
+  why: "Dirección de destinatario desnuda y mensaje HTML reducido a una imagen. Puntuación simbólica, pero es el perfil de los spams con imagen."
+  fix:
+    - "Escribe el destinatario con un nombre y entre ángulos: \"Nombre Apellido\" <correo@ejemplo.com>. Las herramientas de envío lo hacen si el campo de nombre está rellenado."
+    - "Añade la cabecera List-Unsubscribe y un enlace de baja: varias variantes de esta regla dejan entonces de aplicarse."
+sa.to_no_brkts_html_only:
+  title: Destinatario sin ángulos y mensaje solo HTML
+  why: "Dirección de destinatario desnuda y mensaje sin versión de texto. Es lo que produce la función mail() de PHP o un script propio que envía HTML en bruto. Penalización cercana a 2 puntos."
+  fix:
+    - "Escribe el destinatario con un nombre y entre ángulos: \"Nombre Apellido\" <correo@ejemplo.com>. Las herramientas de envío lo hacen si el campo de nombre está rellenado."
+    - "Añade la cabecera List-Unsubscribe y un enlace de baja: varias variantes de esta regla dejan entonces de aplicarse."
+sa.to_no_brkts_msft:
+  title: Destinatario sin ángulos y cabeceras de Outlook
+  why: "El mensaje dice venir de Outlook, pero la dirección del destinatario va desnuda, algo que Outlook no hace normalmente. Se apuntan los programas de envío que imitan a Outlook."
+  fix:
+    - "Escribe el destinatario con un nombre y entre ángulos: \"Nombre Apellido\" <correo@ejemplo.com>. Las herramientas de envío lo hacen si el campo de nombre está rellenado."
+    - "Añade la cabecera List-Unsubscribe y un enlace de baja: varias variantes de esta regla dejan entonces de aplicarse."
+sa.to_no_brkts_nordns_html:
+  title: Destinatario sin ángulos, IP sin reverse DNS, solo HTML
+  why: "Dirección de destinatario desnuda, mensaje solo HTML e IP sin reverse DNS: tres defectos que describen un servidor improvisado."
+  fix:
+    - "Escribe el destinatario con un nombre y entre ángulos: \"Nombre Apellido\" <correo@ejemplo.com>. Las herramientas de envío lo hacen si el campo de nombre está rellenado."
+    - "Añade la cabecera List-Unsubscribe y un enlace de baja: varias variantes de esta regla dejan entonces de aplicarse."
+sa.to_no_brkts_pcnt:
+  title: Destinatario sin ángulos y porcentajes en el texto
+  why: "Dirección de destinatario desnuda y porcentajes destacados («-50 %»): perfil de una promoción enviada sin herramienta de envío ni enlace de baja."
+  fix:
+    - "Escribe el destinatario con un nombre y entre ángulos: \"Nombre Apellido\" <correo@ejemplo.com>. Las herramientas de envío lo hacen si el campo de nombre está rellenado."
+    - "Añade la cabecera List-Unsubscribe y un enlace de baja: varias variantes de esta regla dejan entonces de aplicarse."
+sa.to_malformed:
+  title: La cabecera To está mal formada
+  why: "El campo To no contiene una dirección válida. Suele ser una etiqueta de fusión que quedó vacía o sin sustituir, o un nombre sin dirección."
+  fix:
+    - Comprueba la variable de fusión que se usa para el destinatario en la herramienta de envío o en el script.
+    - Usa el formato "Nombre" <correo@dominio.com> o una sola dirección.
+sa.to_in_subj:
+  title: La dirección del destinatario aparece en el asunto
+  why: "El asunto contiene la dirección de correo completa del destinatario, procedimiento habitual de los spams y de los falsos avisos de buzón («contacto@ejemplo.com: tu buzón está lleno»). Penalización baja."
+  fix:
+    - Personaliza el asunto con el nombre de pila en lugar de con la dirección de correo.
+sa.to_eq_fm_html_only:
+  title: Remitente igual al destinatario y mensaje solo HTML
+  why: "El mensaje parece venir del propio destinatario y solo contiene HTML. Es la forma de las falsas alertas de cuenta. Un formulario que envía al propietario del sitio con su propia dirección como remitente también la activa."
+  fix:
+    - Usa en From una dirección técnica del dominio distinta de la dirección de recepción.
+    - Añade una versión de texto al mensaje y fírmalo con DKIM.
+sa.to_eq_fm_dom_html_only:
+  title: Mismo dominio para remitente y destinatario, mensaje solo HTML
+  why: "El mensaje dice venir del interior de la empresa destinataria, sin autenticación y sin versión de texto. Los phishings de «servicio informático» usan este esquema. Caso legítimo: las notificaciones de un sitio enviadas desde el servidor web."
+  fix:
+    - Haz que el dominio firme estos mensajes con DKIM, o envíalos por el SMTP autenticado del correo.
+    - Añade una parte de texto (multipart/alternative).
+sa.to_eq_fm_direct_mx:
+  title: Remitente igual al destinatario, entregado directamente al servidor
+  why: El mensaje se envía de uno mismo a uno mismo y se entrega directamente al servidor de recepción, sin pasar por un servidor de envío. Puntuación simbólica, pero la regla siguiente, con solo HTML, pesa mucho.
+  fix:
+    - Envía a través del servidor SMTP de tu correo en lugar de directamente al MX.
+sa.to_eq_fm_html_direct:
+  title: Remitente igual al destinatario, solo HTML y entrega directa
+  why: "El mensaje parece venir del destinatario, solo contiene HTML y se entregó directamente al servidor de recepción. Es el esquema exacto de los falsos avisos de «contraseña caducada»: más de 3,5 puntos por sí solo."
+  fix:
+    - "Nunca pongas la dirección del destinatario como From: usa una dirección de envío dedicada."
+    - Haz que el envío pase por tu servidor SMTP autenticado y añade una versión de texto.
+sa.localpart_in_subject:
+  title: El identificador del destinatario aparece en el asunto
+  why: "El asunto repite la parte anterior a la @ de la dirección del destinatario («jgarcia, tu oferta»). Los spammers personalizan así cuando solo tienen la dirección. Una herramienta que inserta la etiqueta de la dirección en lugar del nombre produce el mismo efecto."
+  fix:
+    - Personaliza el asunto con el nombre real del contacto, o no lo personalices.
+    - Comprueba que la variable de fusión no recurra a la dirección cuando el nombre está vacío.
+sa.from_in_to_and_subj:
+  title: La dirección de envío aparece también en el To y en el asunto
+  why: "La misma dirección es remitente, destinatario y aparece en el asunto. Es la firma de los falsos mensajes «tu buzón {domain} va a ser desactivado»."
+  fix:
+    - Quita la dirección del asunto y usa una dirección de envío distinta de la del destinatario.
+sa.from_blank_name:
+  title: El nombre del remitente está vacío
+  why: "El From tiene la forma \"\" <dirección>: un campo de nombre vacío entre comillas. Es el resultado de una variable de nombre sin rellenar en un script o en un CMS."
+  fix:
+    - Rellena el nombre del remitente (nombre de la empresa o de la persona) en la herramienta de envío.
+    - Si no hay ningún nombre disponible, escribe solo la dirección, sin comillas vacías.
+  fix_by_provider:
+    wordpress: "Rellena el campo From Name de la extensión SMTP; sin él, algunas extensiones escriben un nombre vacío."
+sa.from_no_user:
+  title: La dirección de envío no tiene identificador antes de la @
+  why: "La dirección de envío es del tipo @ejemplo.com o <>. Los destinatarios no pueden responder y los filtros la ven como una dirección fabricada."
+  fix:
+    - "Corrige la variable de remitente del script: el identificador antes de la @ está vacío."
+sa.from_excess_base64:
+  title: El nombre del remitente está codificado en base64 sin necesidad
+  why: "El nombre del remitente está codificado en base64 aunque no contiene acentos. Algunas herramientas lo hacen por defecto, y los spammers también para ocultar el nombre a los filtros. Puntuación simbólica."
+  fix:
+    - Deja que la biblioteca de envío codifique solo cuando sea necesario, y en quoted-printable en lugar de en base64.
+sa.from_illegal_chars:
+  title: El From contiene caracteres sin codificar
+  why: "El nombre del remitente contiene caracteres acentuados o especiales enviados en bruto, sin la codificación prevista para las cabeceras. Algunos programas los muestran mal."
+  fix:
+    - "Codifica el nombre del remitente según la RFC 2047 (las bibliotecas lo hacen si declaras el juego de caracteres UTF-8)."
+sa.from_local_digits:
+  title: La dirección de envío contiene una larga secuencia de cifras
+  why: "El identificador de la dirección de envío contiene al menos 11 cifras seguidas, formato de las direcciones generadas automáticamente. Puntuación simbólica."
+  fix:
+    - "Usa una dirección de envío legible (contacto@, newsletter@)."
+sa.from_local_hex:
+  title: La dirección de envío contiene una larga secuencia hexadecimal
+  why: "El identificador de la dirección de envío parece un código aleatorio (al menos 11 caracteres 0-9 y a-f). Típico de las direcciones generadas por una herramienta. Puntuación simbólica."
+  fix:
+    - Muestra en From una dirección legible; deja los identificadores técnicos en el Return-Path.
+sa.from_local_novowel:
+  title: La dirección de envío contiene una secuencia de consonantes
+  why: "El identificador antes de la @ contiene siete consonantes seguidas, señal de una dirección aleatoria. Puede afectar a siglas o nombres regionales."
+  fix:
+    - "Si es posible, usa una dirección de envío más legible (contacto@, info@)."
+sa.from_domain_novowel:
+  title: El dominio del remitente contiene una secuencia de consonantes
+  why: "El dominio {domain} contiene siete consonantes consecutivas, patrón de los dominios generados al azar. Una sigla o un nombre compuesto puede activarla sin motivo."
+  fix:
+    - Nada urgente si el dominio es antiguo y está autenticado. Para un dominio de envío nuevo, prefiere un nombre pronunciable.
+sa.from_starts_with_nums:
+  title: La dirección de envío empieza por varias cifras
+  why: "El identificador empieza por al menos tres cifras seguidas de letras (123info@...). Formato frecuente en las direcciones desechables."
+  fix:
+    - Usa una dirección de envío que empiece por una palabra.
+sa.from_misspaced:
+  title: Falta un espacio entre el nombre y la dirección en el From
+  why: "El From se escribe \"Nombre\"<dirección> sin espacio. La norma lo tolera, pero pocos programas legítimos lo escriben así: es la marca de los scripts de envío caseros."
+  fix:
+    - Añade un espacio entre el nombre entre comillas y el ángulo de apertura.
+sa.from_wsp_lead:
+  title: Espacio después del ángulo de apertura en el From
+  why: "La dirección de envío aparece escrita como < contacto@ejemplo.com> con un espacio tras el ángulo. Este defecto viene de una concatenación mal hecha en un script, y SpamAssassin lo penaliza con más de 3 puntos."
+  fix:
+    - Corrige la construcción de la cabecera From para que no haya ningún espacio dentro de los ángulos.
+sa.from_wsp_trail:
+  title: Espacio antes del ángulo de cierre en el From
+  why: "La dirección aparece escrita como <contacto@ejemplo.com > con un espacio antes del ángulo de cierre, a menudo un espacio que quedó al final de un campo de entrada. Más de 2 puntos."
+  fix:
+    - Elimina los espacios al final del valor (trim) antes de construir el From.
+sa.from_unbal1:
+  title: Falta el ángulo de cierre en el From
+  why: El From abre un ángulo que nunca se cierra. La cabecera no es válida y algunos programas no muestran el remitente.
+  fix:
+    - "Corrige la cadena del remitente en el script o en la configuración de la herramienta: \"Nombre\" <dirección>."
+sa.from_addr_ws:
+  title: La dirección de envío contiene un espacio
+  why: "La dirección de correo extraída del From contiene un espacio, lo que la hace no válida. A menudo es un copiar y pegar o una variable mal concatenada. Casi 3 puntos."
+  fix:
+    - Quita el espacio de la dirección de envío en la configuración o en el código.
+sa.from_long_dom:
+  title: Dominio de envío anormalmente largo
+  why: "El primer nivel del dominio de envío tiene al menos 30 caracteres sin punto. Los dominios desechables generados automáticamente suelen tener este perfil."
+  fix:
+    - Envía desde un dominio corto e identificable; reserva los dominios largos para la web si lo necesitas.
+sa.fromspace:
+  title: Espacio después de la comilla de apertura del nombre del remitente
+  why: "El nombre del remitente empieza por una comilla seguida de un espacio (\" Taller Martín\"). Formato peculiar detectado en programas de spam."
+  fix:
+    - Elimina el espacio inicial del nombre del remitente en la configuración de la herramienta.
+sa.apostrophe_from:
+  title: La dirección de envío contiene un apóstrofo
+  why: "La propia dirección de correo (no el nombre) contiene un apóstrofo. Está permitido pero es raro, y suele ser señal de un nombre mal colocado en la dirección."
+  fix:
+    - "Comprueba que el apóstrofo no pertenezca al nombre mostrado («O'Brien Tienda») que se habría pegado en la dirección."
+sa.name_email_diff:
+  title: El nombre del remitente es otra dirección de correo
+  why: "El nombre mostrado es una dirección de correo distinta de la dirección de envío, por ejemplo \"servicio@banco.com\" <x@otro.com>. Es un procedimiento clásico de suplantación."
+  fix:
+    - Pon un nombre en claro (empresa o persona) como nombre del remitente, no una dirección.
+sa.from_suspicious_ntld:
+  title: El dominio del remitente usa una extensión muy abusada
+  why: "La extensión del dominio {domain} forma parte de las nuevas extensiones usadas masivamente por spammers (dominios baratos). La penalización alcanza también a empresas legítimas que las han elegido."
+  fix:
+    - Para los envíos, prefiere un dominio en .es, .com o una extensión sectorial establecida.
+    - Si mantienes este dominio, cuida SPF, DKIM y DMARC para compensar.
+sa.from_suspicious_ntld_fp:
+  title: Extensión de dominio abusada, sin señal de conversación
+  why: "La extensión de {domain} figura en la lista de extensiones abusadas y el mensaje no es una respuesta ni un envío de lista. Casi 2 puntos."
+  fix:
+    - "Envía las campañas desde un dominio con una extensión más extendida, o mediante una lista de distribución que añada las cabeceras List-*."
+sa.pds_from_2_emails:
+  title: El From contiene dos direcciones distintas
+  why: "La cabecera From muestra una dirección en el nombre y usa otra para el envío. Los suplantadores lo aprovechan para mostrar una dirección de confianza. Casi 3,5 puntos."
+  fix:
+    - "Sustituye el nombre mostrado por un nombre en claro; solo una dirección debe aparecer en el From."
+sa.pds_from_name_to_domain:
+  title: El nombre del remitente reproduce el dominio del destinatario
+  why: "El nombre mostrado del remitente es el dominio del destinatario («ejemplo.com»). Procedimiento de los falsos mensajes de administración del buzón. Puntuación simbólica, pero revelador."
+  fix:
+    - Usa como nombre del remitente tu propia marca.
+sa.t_fromname_equals_to:
+  title: El nombre del remitente es la dirección del destinatario
+  why: El nombre mostrado del remitente es la propia dirección del destinatario. Los falsos avisos de correo hacen esto para parecer internos.
+  fix:
+    - Usa tu nombre o tu marca como nombre del remitente.
+sa.t_fromname_spoofed_email:
+  title: El nombre del remitente imita otra dirección
+  why: El nombre mostrado contiene una dirección que no coincide con la dirección real de envío. Regla de prueba sin peso, pero el patrón es el de la suplantación.
+  fix:
+    - No pongas una dirección de correo en el nombre del remitente.
+sa.t_pds_to_eq_from_name:
+  title: El nombre del remitente reproduce la dirección del destinatario
+  why: El nombre mostrado del remitente es la dirección del destinatario. Regla de prueba sin peso.
+  fix:
+    - Muestra tu propio nombre o marca como remitente.
+sa.hk_random_from:
+  title: El identificador de la dirección de envío parece aleatorio
+  why: El identificador antes de la @ parece una cadena sacada al azar. Las direcciones de spam generadas en masa tienen este perfil.
+  fix:
+    - "Usa direcciones legibles (contacto@, newsletter@, bounce@): los identificadores que empiezan por bounce-, mail- o que contienen + o = son ignorados por la regla."
+sa.hk_random_envfrom:
+  title: El identificador de la dirección de sobre parece aleatorio
+  why: "La dirección de sobre (Return-Path) tiene un identificador de apariencia aleatoria. Las herramientas de envío usan identificadores codificados, pero con + o = (VERP) que la regla ignora."
+  fix:
+    - "Usa direcciones legibles (contacto@, newsletter@, bounce@): los identificadores que empiezan por bounce-, mail- o que contienen + o = son ignorados por la regla."
+sa.hk_random_replyto:
+  title: El identificador de la dirección de respuesta parece aleatorio
+  why: "La dirección de respuesta parece una cadena aleatoria, lo que evoca un buzón desechable creado para recibir respuestas."
+  fix:
+    - "Usa direcciones legibles (contacto@, newsletter@, bounce@): los identificadores que empiezan por bounce-, mail- o que contienen + o = son ignorados por la regla."
+sa.sorted_recips:
+  title: La lista de destinatarios está ordenada alfabéticamente
+  why: "El mensaje va dirigido a una larga lista de destinatarios visibles, ordenados alfabéticamente: comportamiento de un programa que recorre un fichero de direcciones. Los destinatarios ven también todas las direcciones, lo que plantea un problema de confidencialidad."
+  fix:
+    - "No envíes el mismo mensaje a decenas de destinatarios visibles: un envío por destinatario, con una herramienta adecuada."
+sa.suspicious_recips:
+  title: Los destinatarios tienen direcciones muy parecidas
+  why: "Muchos destinatarios tienen direcciones casi idénticas (contacto1@, contacto2@...), señal de una lista generada o comprada. Más de 2,5 puntos."
+  fix:
+    - Envía un mensaje por destinatario y quita de tu lista las direcciones generadas o adivinadas.
+sa.spoofed_freemail:
+  title: Dirección de correo gratuita sin prueba de origen
+  why: "El From es una dirección Gmail, Outlook o similar, pero el mensaje no fue autenticado por SPF ni DKIM ni enviado por los servidores del proveedor. Alguien usa, por tanto, la dirección gratuita desde otro servidor."
+  fix:
+    - Envía los mensajes desde una dirección gratuita a través del propio proveedor (webmail o SMTP del proveedor).
+    - Para un sitio o una herramienta, usa una dirección de tu dominio.
+sa.forged_gmail_rcvd:
+  title: Remitente gmail.com sin pasar por los servidores de Google
+  why: "La dirección de envío es @gmail.com pero el mensaje no pasó por Google. No puede alinearse, por tanto, con gmail.com y falla en DMARC en los destinatarios que lo verifican."
+  fix:
+    - "No uses una dirección @gmail.com como remitente en un sitio o en una herramienta de envío: usa una dirección de tu dominio."
+    - Si quieres seguir con Gmail, configura la herramienta para que envíe a través de smtp.gmail.com con tu cuenta.
+  fix_by_provider:
+    wordpress: "En la extensión SMTP, elige el modo Gmail (OAuth) o sustituye la dirección From por una dirección de tu dominio."
+sa.forged_yahoo_rcvd:
+  title: Remitente yahoo.com sin pasar por los servidores de Yahoo
+  why: "La dirección de envío es @yahoo.com pero el mensaje no pasó por Yahoo. Yahoo publica un DMARC estricto: muchos destinatarios rechazan estos mensajes."
+  fix:
+    - Sustituye la dirección de Yahoo por una dirección de tu dominio para los envíos desde un sitio o una herramienta.

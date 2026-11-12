@@ -1,0 +1,1038 @@
+# Famille spamassassin, groupe reputation. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/reputation.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.rcvd_in_dnswl_hi
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_DNSWL_HI)
+    notes: 'score SA 4.0.x : -5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''dnswl-firsttrusted'',
+      ''^127\.0\.\d+\.3$'') : premier relais de confiance listé sur list.dnswl.org avec le niveau hi.'
+  sa_rules:
+  - RCVD_IN_DNSWL_HI
+  title: IP d'envoi en liste blanche DNSWL, confiance haute
+  why: L'IP {ip} est inscrite chez DNSWL au niveau de confiance le plus élevé. C'est l'un des plus gros
+    bonus de SpamAssassin, réservé aux serveurs qui n'émettent quasiment jamais de spam.
+  fix:
+  - Rien à corriger. Gardez cette IP pour vos envois les plus importants.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dnswl.cf
+  - https://www.dnswl.org/
+- id: sa.rcvd_in_dnswl_med
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_DNSWL_MED)
+    notes: 'score SA 4.0.x : -2.3 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''dnswl-firsttrusted'',
+      ''^127\.0\.\d+\.2$'') : niveau med sur list.dnswl.org.'
+  sa_rules:
+  - RCVD_IN_DNSWL_MED
+  title: IP d'envoi en liste blanche DNSWL, confiance moyenne
+  why: L'IP {ip} est connue de DNSWL comme serveur légitime qui laisse passer du spam rarement. Bonus
+    net sur le score.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dnswl.cf
+  - https://www.dnswl.org/
+- id: sa.rcvd_in_dnswl_low
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_DNSWL_LOW)
+    notes: 'score SA 4.0.x : -0.7 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''dnswl-firsttrusted'',
+      ''^127\.0\.\d+\.1$'') : niveau low sur list.dnswl.org.'
+  sa_rules:
+  - RCVD_IN_DNSWL_LOW
+  title: IP d'envoi en liste blanche DNSWL, confiance basse
+  why: L'IP {ip} est identifiée par DNSWL comme un serveur légitime, mais partagé ou ayant déjà émis du
+    spam (gros hébergeurs, routeurs partagés). Petit bonus.
+  fix:
+  - Rien à corriger. Pour un meilleur niveau, il faut une IP dédiée à vos seuls envois.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dnswl.cf
+  - https://www.dnswl.org/
+- id: sa.rcvd_in_dnswl_none
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_DNSWL_NONE)
+    notes: 'score SA 4.0.x : -0.0001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''dnswl-firsttrusted'',
+      ''^127\.0\.\d+\.0$'') : niveau none sur list.dnswl.org.'
+  sa_rules:
+  - RCVD_IN_DNSWL_NONE
+  title: IP d'envoi connue de DNSWL, sans niveau de confiance
+  why: DNSWL connaît l'IP {ip} et son propriétaire, mais ne lui accorde aucune confiance particulière,
+    souvent parce qu'elle est partagée par de nombreux clients. Effet nul sur le score.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dnswl.cf
+  - https://www.dnswl.org/
+- id: sa.rcvd_in_dnswl_blocked
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_DNSWL_BLOCKED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''dnswl-firsttrusted'',
+      ''^127\.0\.\d+\.255$'') : DNSWL signale un usage bloqué.'
+  sa_rules:
+  - RCVD_IN_DNSWL_BLOCKED
+  title: Requête DNSWL refusée au serveur de test
+  why: 'Avis d''administration : DNSWL a refusé la requête du serveur qui analyse le message (trop de
+    requêtes ou résolveur public). Votre envoi n''est pas en cause.'
+  fix:
+  - Aucune action de votre part. Le bonus DNSWL éventuel n'a simplement pas pu être calculé.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dnswl.cf
+  - https://www.dnswl.org/
+- id: sa.rcvd_in_mspike_h2
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_H2)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''mspikeg-firsttrusted'',
+      ''127.0.0.17'') : réputation positive Mailspike du premier relais de confiance.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_H2
+  title: Réputation Mailspike moyenne (+2) pour l'IP d'envoi
+  why: 'Mailspike classe l''IP {ip} au niveau +2, une réputation moyenne mais positive. SpamAssassin n''en
+    tire aucun point : c''est surtout une indication.'
+  fix:
+  - Rien à corriger. Gardez des volumes réguliers et des listes propres pour conserver ce niveau.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_h3
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_H3)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''mspikeg-firsttrusted'',
+      ''127.0.0.18'') : réputation positive Mailspike du premier relais de confiance.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_H3
+  title: Bonne réputation Mailspike (+3) pour l'IP d'envoi
+  why: Mailspike classe l'IP {ip} au niveau +3. Signal favorable, sans effet sur le score SpamAssassin
+    par défaut.
+  fix:
+  - Rien à corriger. Gardez des volumes réguliers et des listes propres pour conserver ce niveau.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_h4
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_H4)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''mspikeg-firsttrusted'',
+      ''127.0.0.19'') : réputation positive Mailspike du premier relais de confiance.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_H4
+  title: Très bonne réputation Mailspike (+4) pour l'IP d'envoi
+  why: Mailspike classe l'IP {ip} au niveau +4. Signal très favorable.
+  fix:
+  - Rien à corriger. Gardez des volumes réguliers et des listes propres pour conserver ce niveau.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_h5
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_H5)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''mspikeg-firsttrusted'',
+      ''127.0.0.20'') : réputation positive Mailspike du premier relais de confiance.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_H5
+  title: Excellente réputation Mailspike (+5) pour l'IP d'envoi
+  why: Mailspike classe l'IP {ip} au plus haut niveau de réputation.
+  fix:
+  - Rien à corriger. Gardez des volumes réguliers et des listes propres pour conserver ce niveau.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_wl
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_WL)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta RCVD_IN_MSPIKE_H5
+      || H4 || H3.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_WL
+  title: IP d'envoi dans la liste des bons expéditeurs Mailspike
+  why: L'IP {ip} a une réputation Mailspike de +3 ou plus. Indication favorable.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_l2
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_L2)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''mspikeb-lastexternal'',
+      ''127.0.0.13'') : réputation négative Mailspike du dernier relais externe.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_L2
+  title: Réputation Mailspike suspecte (-2) pour l'IP d'envoi
+  why: 'Mailspike juge l''IP {ip} suspecte. SpamAssassin ne la pénalise presque pas, mais d''autres filtres
+    utilisent cette liste. Cause habituelle : envoi soudain en volume depuis une IP sans historique.'
+  fix:
+  - Montez les volumes progressivement sur une IP neuve plutôt que d'envoyer toute la base d'un coup.
+  - Retirez de vos listes les adresses qui rebondissent ou n'ouvrent plus depuis longtemps.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_l3
+  family: spamassassin
+  severity: low
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_L3)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''mspikeb-lastexternal'',
+      ''127.0.0.12'') : réputation négative Mailspike du dernier relais externe. Gravité fixée à la main,
+      indépendamment du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_L3
+  title: Mauvaise réputation Mailspike (-3) pour l'IP d'envoi
+  why: 'Mailspike attribue une réputation faible à l''IP {ip} : elle a été vue dans du spam ou dans des
+    pièges à spam. Les filtres qui suivent cette liste vont vous pénaliser.'
+  fix:
+  - Arrêtez les envois vers des adresses non sollicitées ou anciennes et nettoyez la liste.
+  - Si l'IP est celle d'un prestataire partagé, demandez-lui une autre IP ou un pool mieux tenu.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_l4
+  family: spamassassin
+  severity: low
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_L4)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''mspikeb-lastexternal'',
+      ''127.0.0.11'') : réputation négative Mailspike du dernier relais externe. Gravité fixée à la main,
+      indépendamment du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_L4
+  title: Très mauvaise réputation Mailspike (-4) pour l'IP d'envoi
+  why: L'IP {ip} a une réputation Mailspike très dégradée. Les messages qui en partent ont de fortes chances
+    d'être filtrés au-delà de SpamAssassin.
+  fix:
+  - 'Cherchez la cause : compte ou formulaire piraté qui envoie du spam, liste achetée, campagne vers
+    des adresses invalides.'
+  - Corrigez la cause avant de reprendre les envois, puis laissez la réputation remonter.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_l5
+  family: spamassassin
+  severity: low
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_L5)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''mspikeb-lastexternal'',
+      ''127.0.0.10'') : réputation négative Mailspike du dernier relais externe. Gravité fixée à la main,
+      indépendamment du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_L5
+  title: Réputation Mailspike au plus bas (-5) pour l'IP d'envoi
+  why: L'IP {ip} est au pire niveau de réputation Mailspike. Il faut considérer cette IP comme inutilisable
+    tant que la cause n'est pas traitée.
+  fix:
+  - Suspendez les envois depuis {ip} et vérifiez qu'aucun script ni compte compromis n'envoie à votre
+    insu.
+  - Passez temporairement par un service d'envoi réputé pendant l'assainissement.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_bl
+  family: spamassassin
+  severity: low
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_BL)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta RCVD_IN_MSPIKE_L5
+      || L4 || L3 || réponse 127.0.0.2 (liste noire) sur le dernier relais externe. Gravité fixée à la
+      main, indépendamment du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_BL
+  title: IP d'envoi en liste noire Mailspike
+  why: L'IP {ip} est en liste noire chez Mailspike ou a une réputation de -3 ou moins. Score SpamAssassin
+    symbolique, mais d'autres filtres bloquent sur cette base.
+  fix:
+  - Traitez la cause des envois indésirables depuis {ip}, puis consultez {delist_url} pour le retrait.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_mspike_zbi
+  family: spamassassin
+  severity: low
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_MSPIKE_ZBI)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta réponse 127.0.0.2
+      de Mailspike sans niveau de réputation L3 à L5. Gravité fixée à la main, indépendamment du score
+      SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - RCVD_IN_MSPIKE_ZBI
+  title: IP d'envoi en liste noire Mailspike (zone bloc)
+  why: L'IP {ip} figure dans la liste noire Mailspike sans réputation détaillée. Même traitement que pour
+    une inscription en liste noire.
+  fix:
+  - Cherchez la source d'envoi abusive sur {ip}, corrigez-la, puis demandez le retrait via {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_mailspike.cf
+  - https://mailspike.org/
+- id: sa.rcvd_in_pbl
+  family: spamassassin
+  severity: high
+  penalty: 1.7
+  detect:
+    signal: spamassassin.hit(RCVD_IN_PBL)
+    notes: 'score SA 4.0.x : 3.335 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl(''zen-lastexternal'',
+      ''zen.spamhaus.org.'', ''^127\.0\.0\.1[01]$'') : dernier relais externe dans la Policy Block List.'
+  sa_rules:
+  - RCVD_IN_PBL
+  title: IP d'envoi dans la Spamhaus PBL (plage non destinée à l'envoi direct)
+  why: 'L''IP {ip} appartient à une plage que son fournisseur déclare non prévue pour envoyer des e-mails
+    directement : connexion fibre ou ADSL, IP dynamique. La PBL n''est pas une sanction, mais un serveur
+    qui envoie depuis ces IP est traité comme un ordinateur infecté.'
+  fix:
+  - 'Ne livrez pas directement depuis cette IP : passez par le serveur SMTP de votre messagerie ou d''un
+    service d''envoi, avec authentification.'
+  - Si {ip} est une IP fixe de serveur que vous contrôlez, demandez le retrait sur {delist_url} après
+    avoir configuré son reverse DNS.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dnsbl_tests.cf
+  - https://www.spamhaus.org/pbl/
+- id: sa.rcvd_in_sbl
+  family: spamassassin
+  severity: high
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(RCVD_IN_SBL)
+    notes: 'score SA 4.0.x : 0.141 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''zen'',
+      ''127.0.0.2'') : un relais du message est dans la Spamhaus Block List. Gravité fixée à la main,
+      indépendamment du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - RCVD_IN_SBL
+  title: IP d'envoi dans la Spamhaus SBL
+  why: L'IP {ip} est inscrite dans la SBL, la liste des sources de spam vérifiées par Spamhaus. Le score
+    SpamAssassin est modeste, mais de nombreux serveurs refusent ces messages dès la connexion.
+  fix:
+  - 'Consultez la fiche SBL depuis {delist_url} : elle indique la raison et qui peut demander le retrait.'
+  - 'Si l''IP est chez un hébergeur, ouvrez un ticket chez lui : c''est souvent lui seul qui peut agir.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dnsbl_tests.cf
+  - https://www.spamhaus.org/sbl/
+- id: sa.rcvd_in_sbl_css
+  family: spamassassin
+  severity: high
+  penalty: 1.7
+  detect:
+    signal: spamassassin.hit(RCVD_IN_SBL_CSS)
+    notes: 'score SA 4.0.x : 3.335 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''zen'',
+      ''127.0.0.3'') : relais listé dans la Spamhaus CSS, la partie automatique de la SBL.'
+  sa_rules:
+  - RCVD_IN_SBL_CSS
+  title: IP d'envoi dans la Spamhaus CSS (envoi de spam détecté)
+  why: La CSS liste automatiquement des IP qui ont envoyé du spam récemment, souvent un site ou une boîte
+    compromise, ou un serveur mal configuré (HELO incorrect, absence de reverse DNS).
+  fix:
+  - 'Cherchez sur le serveur {ip} ce qui envoie : formulaire sans protection, script PHP malveillant,
+    compte de messagerie piraté.'
+  - Vérifiez que le nom HELO et le reverse DNS ({ptr}) sont cohérents.
+  - Une fois la cause supprimée, demandez le retrait sur {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dnsbl_tests.cf
+  - https://www.spamhaus.org/css/
+- id: sa.rcvd_in_xbl
+  family: spamassassin
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: spamassassin.hit(RCVD_IN_XBL)
+    notes: 'score SA 4.0.x : 0.375 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl(''zen-lastexternal'',
+      ''zen.spamhaus.org.'', ''^127\.0\.0\.[4567]$'') : dernier relais externe dans l''Exploits Block
+      List.'
+  sa_rules:
+  - RCVD_IN_XBL
+  title: IP d'envoi dans la Spamhaus XBL (machine compromise)
+  why: Spamhaus a vu l'IP {ip} se comporter comme une machine infectée (botnet, proxy ouvert). Les serveurs
+    qui utilisent ZEN refusent souvent ces messages.
+  fix:
+  - Analysez les machines et serveurs qui sortent par {ip} (antivirus, mises à jour, mots de passe).
+  - Après nettoyage, demandez le retrait sur {delist_url}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dnsbl_tests.cf
+  - https://www.spamhaus.org/xbl/
+- id: sa.rcvd_in_zen_blocked
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_ZEN_BLOCKED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl(... ''zen.spamhaus.org.'',
+      ''^127\.255\.255\.255$'') : Spamhaus refuse de répondre (volume).'
+  sa_rules:
+  - RCVD_IN_ZEN_BLOCKED
+  title: Requête Spamhaus refusée au serveur de test
+  why: 'Avis d''administration : Spamhaus n''a pas répondu au serveur d''analyse parce qu''il dépasse
+    le volume gratuit. Cela ne dit rien de votre IP.'
+  fix:
+  - Aucune action de votre part. Les listes Spamhaus n'ont pas été consultées pour ce test.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dnsbl_tests.cf
+  - https://www.spamhaus.org/returnc/vol/
+- id: sa.rcvd_in_zen_blocked_opendns
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_ZEN_BLOCKED_OPENDNS)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl(... ''zen.spamhaus.org.'',
+      ''^127\.255\.255\.254$'') : requête passée par un résolveur DNS public.'
+  sa_rules:
+  - RCVD_IN_ZEN_BLOCKED_OPENDNS
+  title: 'Requête Spamhaus refusée : résolveur public'
+  why: 'Avis d''administration : le serveur d''analyse interroge Spamhaus via un résolveur public, ce
+    que Spamhaus refuse. Votre envoi n''est pas concerné.'
+  fix:
+  - Aucune action de votre part.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dnsbl_tests.cf
+  - https://www.spamhaus.org/returnc/pub/
+- id: sa.rcvd_in_psbl
+  family: spamassassin
+  severity: high
+  penalty: 1.4
+  detect:
+    signal: spamassassin.hit(RCVD_IN_PSBL)
+    notes: 'score SA 4.0.x : 2.7 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl(''psbl-lastexternal'',
+      ''psbl.surriel.com.'') : dernier relais externe listé dans la Passive Spam Block List.'
+  sa_rules:
+  - RCVD_IN_PSBL
+  title: IP d'envoi dans la liste PSBL
+  why: L'IP {ip} a envoyé des messages à des adresses pièges de la PSBL. C'est fréquent pour les serveurs
+    partagés et pour les campagnes envoyées à de vieilles listes.
+  fix:
+  - Retirez de vos listes les adresses jamais confirmées ou inactives depuis longtemps.
+  - 'Demandez le retrait sur {delist_url} : il est en libre-service, mais l''inscription revient si les
+    envois vers les pièges continuent.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kb/20_bug_6156.cf
+- id: sa.rcvd_in_bl_spamcop_net
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(RCVD_IN_BL_SPAMCOP_NET)
+    notes: 'score SA 4.0.x : 1.347 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_txt(''spamcop'',
+      ''bl.spamcop.net.'', ''(?i:spamcop)'') : un relais du message est listé par SpamCop.'
+  sa_rules:
+  - RCVD_IN_BL_SPAMCOP_NET
+  title: IP d'envoi dans la liste SpamCop
+  why: Des destinataires ont signalé des messages venant de {ip} à SpamCop, ou l'IP a touché ses pièges.
+    L'inscription expire seule après l'arrêt des signalements.
+  fix:
+  - Vérifiez que chaque destinataire a bien demandé à recevoir vos messages et que le lien de désinscription
+    est visible.
+  - Si l'IP est partagée chez un prestataire, signalez-lui l'inscription.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dnsbl_tests.cf
+- id: sa.rcvd_in_iadb_vouched
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_IADB_VOUCHED)
+    notes: 'score SA 4.0.x : -2.2 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''iadb-firsttrusted'',
+      ''127.0.1.255'') : IP vouchée dans l''IADB d''ISIPP.'
+  sa_rules:
+  - RCVD_IN_IADB_VOUCHED
+  title: Expéditeur certifié par ISIPP IADB
+  why: L'IP {ip} est cautionnée par le programme de certification ISIPP. Bonus important accordé par SpamAssassin.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dnsbl_tests.cf
+- id: sa.rcvd_in_iadb_listed
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_IADB_LISTED)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''iadb-firsttrusted'',
+      ''^127\.0\.0\.[12]$'') : IP présente dans l''IADB.'
+  sa_rules:
+  - RCVD_IN_IADB_LISTED
+  title: Expéditeur inscrit dans ISIPP IADB
+  why: L'IP {ip} participe au système d'accréditation IADB. Information, sans effet notable.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_iadb.cf
+- id: sa.rcvd_in_iadb_optin
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_IADB_OPTIN)
+    notes: 'score SA 4.0.x : -1.47 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''iadb-firsttrusted'',
+      ''127.3.100.7'').'
+  sa_rules:
+  - RCVD_IN_IADB_OPTIN
+  title: 'IADB : listes de diffusion en opt-in'
+  why: L'expéditeur a déclaré à l'IADB que toutes ses listes sont en inscription volontaire. Bonus.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_iadb.cf
+- id: sa.rcvd_in_iadb_doptin
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_IADB_DOPTIN)
+    notes: 'score SA 4.0.x : -4 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''iadb-firsttrusted'',
+      ''127.3.100.10'').'
+  sa_rules:
+  - RCVD_IN_IADB_DOPTIN
+  title: 'IADB : listes de diffusion en double opt-in'
+  why: L'expéditeur a déclaré à l'IADB que toutes ses listes sont confirmées par double opt-in. Gros bonus.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_iadb.cf
+- id: sa.rcvd_in_iadb_ml_doptin
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RCVD_IN_IADB_ML_DOPTIN)
+    notes: 'score SA 4.0.x : -6 (sa-update r1939780, jeu réseau + Bayes). Teste : check_rbl_sub(''iadb-firsttrusted'',
+      ''127.3.100.100'').'
+  sa_rules:
+  - RCVD_IN_IADB_ML_DOPTIN
+  title: 'IADB : uniquement des listes en double opt-in'
+  why: L'IP n'envoie que des listes de diffusion confirmées par double opt-in, selon l'IADB. C'est l'un
+    des plus forts bonus de SpamAssassin.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_iadb.cf
+- id: sa.razor2_check
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(RAZOR2_CHECK)
+    notes: 'score SA 4.0.x : 0.922 (sa-update r1939780, jeu réseau + Bayes). Teste : check_razor2() :
+      l''empreinte du corps du message est connue du réseau collaboratif Razor.'
+  sa_rules:
+  - RAZOR2_CHECK
+  title: Contenu déjà signalé comme spam dans Razor
+  why: Des utilisateurs de Razor ont signalé un message au contenu identique ou très proche. Pour une
+    newsletter, cela arrive quand des abonnés la déclarent comme spam au lieu de se désinscrire.
+  fix:
+  - Rendez le lien de désinscription visible en haut ou en bas du message, et ajoutez l'en-tête List-Unsubscribe.
+  - N'envoyez qu'aux personnes inscrites récemment ou actives, et rappelez pourquoi elles reçoivent le
+    message.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_razor2.cf
+- id: sa.razor2_cf_range_51_100
+  family: spamassassin
+  severity: medium
+  penalty: 0.9
+  detect:
+    signal: spamassassin.hit(RAZOR2_CF_RANGE_51_100)
+    notes: 'score SA 4.0.x : 1.886 (sa-update r1939780, jeu réseau + Bayes). Teste : check_razor2_range('''',
+      ''51'', ''100'') : niveau de confiance Razor au-dessus de 50 %.'
+  sa_rules:
+  - RAZOR2_CF_RANGE_51_100
+  title: Razor juge ce contenu spam avec plus de 50 % de confiance
+  why: 'Le contenu est largement signalé dans Razor. Le même texte envoyé par d''autres sera pénalisé
+    lui aussi : modèles copiés, textes de prospection partagés.'
+  fix:
+  - Réécrivez le message plutôt que de réutiliser un modèle diffusé tel quel.
+  - Vérifiez que vos destinataires ne le signalent pas massivement (taux de plainte dans l'outil d'envoi).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_razor2.cf
+- id: sa.pyzor_check
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(PYZOR_CHECK)
+    notes: 'score SA 4.0.x : 1.392 (sa-update r1939780, jeu réseau + Bayes). Teste : check_pyzor() : l''empreinte
+      du message est connue du réseau Pyzor.'
+  sa_rules:
+  - PYZOR_CHECK
+  title: Contenu déjà signalé comme spam dans Pyzor
+  why: Le corps du message correspond à une empreinte signalée par des utilisateurs de Pyzor. Les modèles
+    de newsletter très courts et identiques d'un envoi à l'autre y sont exposés.
+  fix:
+  - Personnalisez davantage le contenu et réduisez la part de texte commun à tous vos envois.
+  - Surveillez les plaintes et retirez les destinataires qui ne lisent plus.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_pyzor.cf
+  - https://pyzor.readthedocs.io/en/latest/
+- id: sa.dcc_check
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(DCC_CHECK)
+    notes: 'score SA 4.0.x : 1.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dcc() : le réseau
+      DCC a vu ce message un grand nombre de fois. Dépend du plugin DCC, non chargé par défaut dans SpamAssassin
+      4.0 : la règle n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - DCC_CHECK
+  title: Message détecté comme envoi en nombre par DCC
+  why: 'DCC compte combien de fois un même message circule. Il signale ici un envoi en nombre : c''est
+    normal pour une newsletter, mais SpamAssassin ajoute des points si l''envoi n''est pas reconnu comme
+    sollicité.'
+  fix:
+  - Ajoutez les en-têtes List-Unsubscribe et List-Unsubscribe-Post, et un lien de désinscription visible.
+  - Authentifiez l'envoi (SPF, DKIM, DMARC alignés) pour compenser par des bonus.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dcc.cf
+  - https://www.dcc-servers.net/dcc/
+- id: sa.dcc_reput_00_12
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DCC_REPUT_00_12)
+    notes: 'score SA 4.0.x : -0.4 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dcc_reputation_range(00,
+      12) : l''IP émettrice a une réputation DCC majoritairement légitime. Dépend du plugin DCC, non chargé
+      par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - DCC_REPUT_00_12
+  title: Bonne réputation DCC (0 à 12 % de spam)
+  why: Selon DCC, l'IP {ip} envoie surtout des messages légitimes. Petit bonus.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dcc.cf
+  - https://www.dcc-servers.net/dcc/
+- id: sa.dcc_reput_95_98
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(DCC_REPUT_95_98)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dcc_reputation_range(95,
+      98). Dépend du plugin DCC, non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que
+      si le serveur de test l''active.'
+  sa_rules:
+  - DCC_REPUT_95_98
+  title: Mauvaise réputation DCC (95 à 98 % de spam)
+  why: Selon DCC, l'IP {ip} envoie presque uniquement des messages en nombre non sollicités.
+  fix:
+  - Vérifiez qui d'autre envoie depuis {ip} si elle est partagée, et demandez au prestataire une IP mieux
+    tenue.
+  - Nettoyez vos listes et limitez les envois aux inscrits actifs.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dcc.cf
+  - https://www.dcc-servers.net/dcc/
+- id: sa.dcc_reput_99_100
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(DCC_REPUT_99_100)
+    notes: 'score SA 4.0.x : 1.4 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dcc_reputation_range(99).
+      Dépend du plugin DCC, non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si
+      le serveur de test l''active.'
+  sa_rules:
+  - DCC_REPUT_99_100
+  title: Réputation DCC de spammeur (99 % et plus)
+  why: DCC considère l'IP {ip} comme une source de spam. Ce point s'ajoute aux autres listes noires éventuelles.
+  fix:
+  - Arrêtez les envois depuis {ip} jusqu'à identification de la cause (compte piraté, liste achetée).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dcc.cf
+  - https://www.dcc-servers.net/dcc/
+- id: sa.digest_multiple
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(DIGEST_MULTIPLE)
+    notes: 'score SA 4.0.x : 0.293 (sa-update r1939780, jeu réseau + Bayes). Teste : meta RAZOR2_CHECK
+      + DCC_CHECK + PYZOR_CHECK > 1.'
+  sa_rules:
+  - DIGEST_MULTIPLE
+  title: Contenu signalé par plusieurs réseaux collaboratifs
+  why: Au moins deux réseaux parmi Razor, Pyzor et DCC connaissent ce contenu. Les points se cumulent
+    avec ceux de chaque réseau.
+  fix:
+  - 'Traitez la cause commune : plaintes des destinataires ou modèle de message réutilisé par des spammeurs.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_net_tests.cf
+- id: sa.from_fmbla_newdom
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(FROM_FMBLA_NEWDOM)
+    notes: 'score SA 4.0.x : 1.499 (sa-update r1939780, jeu réseau + Bayes). Teste : askdns _AUTHORDOMAIN_.fresh.fmb.la,
+      réponse 127.2.0.2.'
+  sa_rules:
+  - FROM_FMBLA_NEWDOM
+  title: Domaine de l'expéditeur enregistré il y a moins de 7 jours
+  why: '{domain} a été déposé il y a moins d''une semaine. Les spammeurs utilisent des domaines jetables
+    : un domaine neuf est donc suspect par défaut, même pour une entreprise légitime.'
+  fix:
+  - Attendez quelques semaines avant d'envoyer en nombre depuis {domain}.
+  - Commencez par des envois individuels et des petits volumes vers des destinataires qui vous connaissent.
+  - Publiez dès maintenant SPF, DKIM et DMARC pour que la réputation se construise sur un domaine authentifié.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_freshfmb.cf
+- id: sa.from_fmbla_newdom14
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(FROM_FMBLA_NEWDOM14)
+    notes: 'score SA 4.0.x : 0.999 (sa-update r1939780, jeu réseau + Bayes). Teste : askdns _AUTHORDOMAIN_.fresh.fmb.la,
+      réponse 127.2.0.14.'
+  sa_rules:
+  - FROM_FMBLA_NEWDOM14
+  title: Domaine de l'expéditeur enregistré il y a 7 à 14 jours
+  why: '{domain} a moins de deux semaines. Le malus diminue avec l''âge du domaine.'
+  fix:
+  - Gardez des volumes faibles et réguliers pendant les premières semaines.
+  - Vérifiez que SPF, DKIM et DMARC sont en place.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_freshfmb.cf
+- id: sa.from_fmbla_newdom28
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(FROM_FMBLA_NEWDOM28)
+    notes: 'score SA 4.0.x : 0.799 (sa-update r1939780, jeu réseau + Bayes). Teste : askdns _AUTHORDOMAIN_.fresh.fmb.la,
+      réponse 127.2.0.28.'
+  sa_rules:
+  - FROM_FMBLA_NEWDOM28
+  title: Domaine de l'expéditeur enregistré il y a 14 à 28 jours
+  why: '{domain} a moins d''un mois. Le malus est faible et disparaît après 28 jours.'
+  fix:
+  - Patientez avant les envois massifs. Aucune modification technique ne supprime ce malus.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_freshfmb.cf
+- id: sa.from_fmbla_ndblocked
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FROM_FMBLA_NDBLOCKED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : askdns _AUTHORDOMAIN_.fresh.fmb.la,
+      réponse 127.255.255.255.'
+  sa_rules:
+  - FROM_FMBLA_NDBLOCKED
+  title: Requête fresh.fmb.la refusée au serveur de test
+  why: 'Avis d''administration : le service qui date les domaines n''a pas répondu au serveur d''analyse.
+    Sans rapport avec votre envoi.'
+  fix:
+  - Aucune action de votre part.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_freshfmb.cf
+- id: sa.bayes_00
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(BAYES_00)
+    notes: 'score SA 4.0.x : -1.9 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.00'',
+      ''0.01'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_00
+  title: 'Filtre bayésien : probabilité de spam de 0 à 1 %'
+  why: Le vocabulaire et la structure du message ressemblent à des messages légitimes déjà appris par
+    le serveur. Bonus net.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.bayes_05
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(BAYES_05)
+    notes: 'score SA 4.0.x : -0.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.01'',
+      ''0.05'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_05
+  title: 'Filtre bayésien : probabilité de spam de 1 à 5 %'
+  why: Le contenu ressemble nettement à des messages légitimes. Petit bonus.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.bayes_20
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(BAYES_20)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.05'',
+      ''0.20'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_20
+  title: 'Filtre bayésien : probabilité de spam de 5 à 20 %'
+  why: Le contenu penche du côté légitime. Effet nul sur le score.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.bayes_40
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(BAYES_40)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.20'',
+      ''0.40'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_40
+  title: 'Filtre bayésien : probabilité de spam de 20 à 40 %'
+  why: Le contenu est plutôt neutre. Effet nul sur le score.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.bayes_50
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(BAYES_50)
+    notes: 'score SA 4.0.x : 0.8 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.40'',
+      ''0.60'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_50
+  title: 'Filtre bayésien : probabilité de spam de 40 à 60 %'
+  why: 'Le filtre ne sait pas trancher. C''est le résultat habituel d''un serveur de test qui n''a jamais
+    vu vos messages : il ajoute un peu moins d''un point.'
+  fix:
+  - Pas de correction ciblée possible. Un texte clair, rédigé pour le lecteur et sans formules de vente
+    en série, tire le résultat vers le bas.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.bayes_60
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(BAYES_60)
+    notes: 'score SA 4.0.x : 1.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.60'',
+      ''0.80'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_60
+  title: 'Filtre bayésien : probabilité de spam de 60 à 80 %'
+  why: Le vocabulaire du message ressemble davantage à du spam appris qu'à des messages légitimes. Souvent
+    dû à un ton très commercial (promotions, urgence, prix) ou à un texte court noyé d'images.
+  fix:
+  - Allégez les formules commerciales répétées (« offre exceptionnelle », « dernière chance »).
+  - Ajoutez du vrai texte utile et réduisez la part d'images.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.bayes_80
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(BAYES_80)
+    notes: 'score SA 4.0.x : 2 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.80'',
+      ''0.95'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_80
+  title: 'Filtre bayésien : probabilité de spam de 80 à 95 %'
+  why: Le contenu ressemble fortement à du spam déjà appris. Ce seul point peut faire basculer le message
+    en indésirables avec deux ou trois autres règles.
+  fix:
+  - Réécrivez l'objet et l'introduction dans un style plus informatif.
+  - Retirez les liens raccourcis et les domaines tiers inconnus, ajoutez une version texte cohérente.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.bayes_95
+  family: spamassassin
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: spamassassin.hit(BAYES_95)
+    notes: 'score SA 4.0.x : 3 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.95'',
+      ''0.99'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_95
+  title: 'Filtre bayésien : probabilité de spam de 95 à 99 %'
+  why: 'Le filtre est presque certain qu''il s''agit de spam. Le message partage beaucoup d''éléments
+    avec des spams connus : vocabulaire, liens, structure HTML.'
+  fix:
+  - Comparez avec un message plus simple (texte, un lien vers votre domaine) pour isoler ce qui déclenche.
+  - Évitez les modèles de mise en page achetés ou très répandus et les liens vers des domaines tiers.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.bayes_99
+  family: spamassassin
+  severity: high
+  penalty: 1.8
+  detect:
+    signal: spamassassin.hit(BAYES_99)
+    notes: 'score SA 4.0.x : 3.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.99'',
+      ''1.00'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_99
+  title: 'Filtre bayésien : probabilité de spam de 99 à 100 %'
+  why: 'Le filtre classe le contenu comme spam avec quasi-certitude. C''est l''une des règles qui pèsent
+    le plus : 3,5 points sur les 5 qui suffisent à classer un message en spam par défaut.'
+  fix:
+  - 'Repartez d''un contenu nouveau : objet, texte et liens différents.'
+  - Retestez avec un message minimal pour vérifier que l'infrastructure (domaine, IP) n'est pas elle-même
+    en cause.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.bayes_999
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(BAYES_999)
+    notes: 'score SA 4.0.x : 0.2 (sa-update r1939780, jeu réseau + Bayes). Teste : check_bayes(''0.999'',
+      ''1.00'') : probabilité de spam calculée par le filtre bayésien du serveur de test.'
+  sa_rules:
+  - BAYES_999
+  title: 'Filtre bayésien : probabilité de spam au-delà de 99,9 %'
+  why: S'ajoute à BAYES_99 quand la certitude est encore plus élevée.
+  fix:
+  - 'Voir BAYES_99 : le contenu doit être entièrement revu.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/23_bayes.cf
+- id: sa.awl
+  family: spamassassin
+  severity: low
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(AWL)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_from_in_auto_welcomelist()
+      : ajustement calculé à partir de la moyenne des scores passés de ce couple adresse + réseau. Le
+      score affiché (1) est nominal, le score réel est variable et peut être négatif. Dépend du plugin
+      AWL, non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test
+      l''active. Gravité abaissée à la main : le score SA affiché est nominal, la valeur réelle est recalculée
+      à chaque message. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - AWL
+  title: Score ajusté par l'historique de l'expéditeur (AWL)
+  why: Le serveur de test se souvient des scores de vos messages précédents et rapproche celui-ci de la
+    moyenne. Plusieurs tests ratés d'affilée remontent donc le score du suivant.
+  fix:
+  - 'Corrigez les autres règles : l''ajustement suit la tendance de vos envois.'
+  - Pour une mesure propre, comparez des tests faits depuis une adresse neuve.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/60_awl.cf
+- id: sa.txrep
+  family: spamassassin
+  severity: low
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(TXREP)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_senders_reputation()
+      : ajustement fondé sur l''historique de l''adresse, du domaine, de l''IP et du DKIM. Score nominal
+      1, valeur réelle variable. Dépend du plugin TxRep, non chargé par défaut dans SpamAssassin 4.0 :
+      la règle n''apparaît que si le serveur de test l''active. Gravité abaissée à la main : le score
+      SA affiché est nominal, la valeur réelle est recalculée à chaque message. Pas de ligne score : valeur
+      par défaut de SpamAssassin.'
+  sa_rules:
+  - TXREP
+  title: Score ajusté par la réputation de l'expéditeur (TxRep)
+  why: Le serveur garde une réputation de votre adresse, de votre domaine et de votre IP, construite sur
+    les messages déjà reçus. Elle corrige le score dans un sens ou dans l'autre.
+  fix:
+  - 'Corrigez les autres règles et envoyez de façon régulière : la réputation se reconstruit avec le temps.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/60_txrep.cf
+- id: sa.all_trusted
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(ALL_TRUSTED)
+    notes: 'score SA 4.0.x : -1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_all_trusted()
+      : tous les relais Received sont dans les trusted_networks du serveur.'
+  sa_rules:
+  - ALL_TRUSTED
+  title: Message passé uniquement par des serveurs de confiance
+  why: Le message n'a traversé que des serveurs que l'analyseur considère comme internes. Cas d'un envoi
+    depuis le même réseau que le serveur de test.
+  fix:
+  - Rien à corriger. Ce bonus n'existera pas chez un destinataire externe.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_compensate.cf
+- id: sa.no_relays
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(NO_RELAYS)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_no_relays()
+      : aucun relais détecté dans les en-têtes Received.'
+  sa_rules:
+  - NO_RELAYS
+  title: Message non relayé par SMTP
+  why: 'Information : le message ne porte aucune trace de transport SMTP, par exemple s''il a été déposé
+    directement dans la boîte.'
+  fix:
+  - Rien à corriger. Pour un test représentatif, envoyez le message par votre circuit habituel.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_compensate.cf
+- id: sa.no_received
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(NO_RECEIVED)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta !exists:Received.'
+  sa_rules:
+  - NO_RECEIVED
+  title: Message sans en-tête Received
+  why: 'Information : aucun en-tête Received n''est présent. Rare pour un message réellement envoyé.'
+  fix:
+  - Rien à corriger. Envoyez le test par votre serveur d'envoi réel plutôt que de l'importer.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_compensate.cf
+- id: sa.unparseable_relay
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(UNPARSEABLE_RELAY)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_relays_unparseable()
+      >= 1 : au moins une ligne Received que SpamAssassin ne sait pas analyser.'
+  sa_rules:
+  - UNPARSEABLE_RELAY
+  title: En-tête Received illisible
+  why: Une ligne Received a un format que SpamAssassin ne comprend pas. Il peut alors se tromper sur l'IP
+    d'origine et mal appliquer les listes noires.
+  fix:
+  - Si la ligne vient de votre serveur, laissez le format Received par défaut du logiciel (Postfix, Exim)
+    au lieu d'un format personnalisé.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf

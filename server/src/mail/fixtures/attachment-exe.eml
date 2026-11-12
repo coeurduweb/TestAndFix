@@ -1,0 +1,21 @@
+From: Comptabilite <compta@atelier-exemple.fr>
+To: t-abcd2345@check.localhost
+Subject: Facture 2026-311
+Date: Tue, 10 Nov 2026 15:58:00 +0100
+Message-ID: <fact-311@atelier-exemple.fr>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mx"
+
+--mx
+Content-Type: text/plain; charset=utf-8
+
+Bonjour, veuillez trouver ci-joint la facture du mois de novembre pour les travaux realises.
+
+--mx
+Content-Type: application/octet-stream; name="facture.pdf.exe"
+Content-Disposition: attachment; filename="facture.pdf.exe"
+Content-Transfer-Encoding: base64
+
+TVqQAAMAAAAEAAAA//8AAFRoaXMgcHJvZ3JhbSBjYW5ub3QgYmUgcnVuIGluIERPUyBtb2RlLg==
+
+--mx--

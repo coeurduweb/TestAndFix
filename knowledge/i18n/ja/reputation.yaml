@@ -1,0 +1,118 @@
+reputation.freemail_from_via_third_party:
+  title: "{domain} のアドレスを使いながら、{domain} に属さないサービスから送信しています"
+  why: "メッセージには {domain} のアドレスが付いていますが、{provider} から送信されています。その事業者は {domain} の代わりに署名することも、その SPF に含まれることもできません。DMARC は必ず失敗します。{domain} の現在のポリシー（{value}）では、メッセージは迷惑メールに入るか拒否されます。"
+  fix:
+    - "ご自身の名義でドメインを取得し（例: your-company.example）、そのドメイン上にアドレスを作成してください。"
+    - "そのドメインを送信ツールに登録し、SPF、DKIM、DMARC を設定してください。"
+    - "移行期間中は、無料アドレスを Reply-To として残しても構いません。"
+    - "無料アドレスから単発のメッセージを送る場合は、そのメールサービスの Web メールまたは SMTP サーバーから送信してください。サードパーティのツールからは決して送らないでください。"
+  fix_by_provider:
+    wordpress: "WP Mail SMTP の From Email に gmail.com や orange.fr のアドレスを入力しないでください。サイトのドメインのアドレスを使うか、Gmail のアドレスにこだわる場合はプラグインの Gmail メーラーを利用してください。"
+    mailchimp: "Mailchimp は、リスクのある無料メールアドレスを、Mailchimp 独自のサブドメイン（send.mailchimpapp.com または mail.mailchimpapp.com）のアドレスに自動的に置き換えます。返信は常にお使いのアドレスに届きます。ご自身の名義で送信するには、Website > Domains でご自身のドメインを認証してください。"
+reputation.domain_very_new:
+  title: "送信ドメインは作成されたばかりです"
+  why: "{domain} は {value} 前に登録されました。新しいドメインはスパマーに多く使われ、頻繁に切り替えられます。そのため、送信履歴が生まれるまで、フィルターはほとんど信頼しません。"
+  fix:
+    - "最もエンゲージメントの高い連絡先に、少量から送信し、徐々に量を増やしてください。"
+    - "{domain} にサイトを公開し、会社の身元と法的表示を載せてください。"
+    - "最初の送信から SPF、DKIM、DMARC を設定してください。"
+    - "{domain} を Gmail Postmaster Tools に登録し、評判を確認してください。"
+reputation.from_domain_not_resolvable:
+  title: "送信者のドメインはメールを受信できません"
+  why: "{domain} は DNS に存在しないか、受信サーバーがありません。返信や不達通知は失われ、多くのサーバーは到達できない送信者を拒否します。"
+  fix:
+    - "送信者欄のドメイン名のスペルを確認してください。"
+    - "ドメインが正しい場合は、メールサービスを指す MX レコードを追加してください。"
+    - "ドメインの期限が切れている場合は、新たに送信する前にレジストラで更新してください。"
+reputation.no_website:
+  title: "送信者のドメインで Web サイトが応答していません"
+  why: "https://{domain} が応答しません。Orange は大量送信者に対し、From のドメイン上にある、会社の身元を示すサイトを求めています。送信者が誰かを確かめようとする受信者は、何も見つけられません。"
+  fix:
+    - "{domain} に、少なくとも会社名、住所、法的表示、プライバシーポリシーを載せたページを 1 つ公開してください。"
+    - "サイトが別のドメインにある場合は、https://{domain} をそのサイトへリダイレクトしてください。"
+reputation.from_domain_differs_from_links:
+  title: "送信ドメインが、前面に出しているサイトのドメインと異なります"
+  why: "メッセージは {domain} から送られていますが、主に {value} へのリンクが含まれています。フィルターも読者も両者の関係を結びつけられず、サイトの評判が送信に生かされません。"
+  fix:
+    - "サイトのドメイン、またはそのサブドメイン（例: news.{value}）から送信してください。"
+    - "別のドメインを使い続ける場合は、そのドメインをサイトへリダイレクトし、フッターに記載してください。"
+reputation.lookalike_domain:
+  title: "送信ドメインが有名ブランドのドメインに似ています"
+  why: "{domain} は {value} によく似ています。フィッシング対策フィルターは、大手ブランドに似た隣接ドメインを監視しており、そこからの送信を強く減点します。"
+  fix:
+    - "長年使ってきたご自身のドメインであれば、DMARC を p=reject にし、アイデンティティを強化するために BIMI を設定してください。"
+    - "最近購入したドメインであれば、混同されないドメインから送信してください。"
+reputation.noreply_sender:
+  title: "送信者が「返信不要」アドレスになっています"
+  why: "受信者は返信できません。Microsoft は、返信を受け取れるアドレスを推奨しています。また、返信できない読者は「迷惑メール」ボタンを押しやすくなります。"
+  fix:
+    - "実際に返信を受け取るアドレスを使ってください（例: contact@{domain}）。"
+    - "noreply を残す場合は、確認されている受信箱を指す Reply-To を追加してください。"
+reputation.ip_new_no_history:
+  title: "送信 IP にはまだ履歴がありません"
+  why: "IP {ip} は新しいか、ほとんど送信していません。大手メールサービスは IP を履歴で判断し、未知の IP からの大量送信は、スパムとして扱われます。"
+  fix:
+    - "数週間かけて送信量を段階的に増やし、最もアクティブな連絡先から始めてください。"
+    - "一時的な拒否（4xx コード）を監視し、それが出たら速度を落としてください。"
+    - "送信量が少ない場合は、送信ツールの共有 IP を使うことをお勧めします。共有 IP にはすでに評判があります。"
+  fix_by_provider:
+    sendgrid: "Settings > IP Addresses で、専用 IP の IP Warmup を有効にしてください。SendGrid が送信量を自動的に分散します。"
+    amazon_ses: "専用 IP プールで自動ウォームアップ（standard auto warm-up）を有効にするか、管理された専用 IP を使ってください。"
+reputation.shared_esp_identity:
+  title: "送信メールには、お客様ではなく {provider} の署名が付いています"
+  why: "DKIM は {dkim_domain} のために署名し、バウンスは {envelope_domain} に戻ります。どちらも {provider} のドメインです。そのため、お客様の評判はそのサービスのすべての顧客に左右され、DMARC は {domain} と整合できません。"
+  fix:
+    - "{provider} で {domain} を認証してください。d={domain} の DKIM と、{domain} のサブドメイン上の Return-Path を設定します。"
+    - "ツールが提供する DNS レコードを公開し、テストメールを再送してください。"
+  fix_by_provider:
+    brevo: "設定 > 送信者、ドメイン、専用IP > ドメイン > ドメインを追加 の順に進み、表示された Brevo のレコードを公開してください。"
+    mailchimp: "Website > Domains > Authenticate の順に進み、Mailchimp が提供する DKIM の CNAME を公開してください。"
+    sendgrid: "Settings > Sender Authentication > Authenticate Your Domain の順に進みます。"
+    mailjet: "Mailjet のアカウント設定で、ドメインと送信者アドレスのセクションを開き、{domain} を追加してから、提供される SPF と DKIM のレコードを公開してください。"
+reputation.feedback_id_missing:
+  title: "メッセージに Feedback-ID ヘッダーがありません"
+  why: "Feedback-ID がないと、Gmail Postmaster Tools はどのキャンペーンが苦情を生んでいるかを示せません。Orange も、1 日 1,000 通を超える送信者にこのヘッダーを求めています。"
+  fix:
+    - "Feedback-ID ヘッダーを追加してください： campaign:client:type:SenderId"
+    - "送信者 ID（最後のフィールド、5〜15 文字）を、すべての送信で同じにしてください。"
+    - "ヘッダーは DKIM 署名の前に追加し、Postmaster Tools で確認済みのドメインで署名してください。"
+reputation.feedback_id_malformed:
+  title: "Feedback-ID ヘッダーの形式が正しくありません"
+  why: "Feedback-ID ヘッダーが Google の形式（{value}）に従っていません。Postmaster Tools は苦情をまとめられず、フィードバックループも役に立ちません。"
+  fix:
+    - "1 通のメッセージに Feedback-ID ヘッダーは 1 つだけにしてください。"
+    - "最後のフィールドには、5〜15 文字の固定された送信者 ID を入れてください。"
+    - "メッセージごとに変わる値（Message-ID、受信者のアドレス）は決して使わないでください。"
+    - "feedback-id を DKIM 署名の対象ヘッダーに含めてください。"
+reputation.postmaster_tools_suggested:
+  title: "{domain} を Gmail Postmaster Tools で監視してください"
+  why: "Postmaster Tools は、Gmail が苦情率と、大量送信者に対する要件への適合状況を示す唯一の場所です。これがないと、メッセージがすでに迷惑メールに入ってから問題に気づくことになります。"
+  fix:
+    - "Google アカウントで postmaster.google.com を開き、{domain} を追加してください。"
+    - "提供された確認用 TXT レコードを、{domain} の DNS ゾーンに公開してください。"
+    - "毎週、スパム率と Compliance status の表を確認してください。"
+reputation.snds_suggested:
+  title: "Microsoft SNDS で IP を監視してください"
+  why: "{ip} がお客様専用の場合、Microsoft SNDS では Outlook.com がそのトラフィックをどう見ているかを確認できます。送信量、苦情率、スパムトラップが分かります。Microsoft 版の Postmaster Tools に相当します。"
+  fix:
+    - "sendersupport.olc.protection.outlook.com/snds/ を開き、{ip} を含む IP 範囲へのアクセスを申請してください。"
+    - "提示された連絡先アドレス（IP のドメインの abuse または postmaster）で申請を確認してください。"
+reputation.yahoo_cfl_suggested:
+  title: "{dkim_domain} を Yahoo のフィードバックループに登録してください"
+  why: "Yahoo は、Complaint Feedback Loop に登録された DKIM ドメインへ苦情の詳細を送ります。登録しないと、どの連絡先が苦情を出しているか分からず、そのまま送り続けることになります。"
+  fix:
+    - "署名ドメイン {dkim_domain} を senders.yahooinc.com で登録してください（Complaint Feedback Loop の項目）。"
+    - "受信した報告に現れる連絡先は、自動的に配信停止にしてください。"
+reputation.signal_spam_fbl_suggested:
+  title: "Signal Spam のフィードバックループに IP を登録してください"
+  why: "La Poste は、利用者からの苦情を Signal Spam のフィードバックループ経由で送信しています。登録しないと、laposte.net の受信者からの通報が見えません。"
+  fix:
+    - "Signal Spam の法人向けページでアカウントを作成し、IP {ip} またはドメインを登録してください。"
+    - "通報してきた連絡先は、自動的に配信停止にしてください。"
+reputation.bimi_absent:
+  title: "{domain} には BIMI ロゴがありません"
+  why: "BIMI は、対応するメールサービスでメッセージの横にお客様のロゴを表示します。これがなくても到達率は下がりません。ビジュアルな身元表示のためのボーナスです。"
+  fix:
+    - "まず {domain} の DMARC を p=quarantine または p=reject にしてください（pct=100 または pct なし）。"
+    - "ロゴを SVG Tiny PS プロファイル（baseProfile='tiny-ps', version='1.2'）で用意してください。"
+    - "Gmail のために、認証局から VMC または CMC の証明書を取得し、ロゴのアドレス（l=）と証明書のアドレス（a=）を指定して default._bimi.{domain} を公開してください。"

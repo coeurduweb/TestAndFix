@@ -1,0 +1,528 @@
+# Famille spamassassin, groupe mime. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/mime.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.mime_html_only
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(MIME_HTML_ONLY)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_mime_html_only()
+      : au moins une partie text/html et aucune autre partie text/*.'
+  sa_rules:
+  - MIME_HTML_ONLY
+  title: Le message n'a pas de version texte
+  why: Le message ne contient que du HTML. La pénalité directe est faible, mais elle sert de condition
+    à plusieurs règles plus lourdes (TO_NO_BRKTS_HTML_ONLY, TO_EQ_FM_HTML_ONLY...). Les scripts PHP et
+    certains éditeurs n'envoient que le HTML.
+  fix:
+  - Envoyez un message multipart/alternative avec une partie text/plain lisible et la partie HTML.
+  - Dans l'outil d'envoi, activez la génération automatique de la version texte, puis relisez-la.
+  fix_by_provider:
+    wordpress: 'wp_mail() n''envoie qu''une seule partie : pour ajouter une version texte, renseignez
+      $phpmailer->AltBody dans une fonction accrochée au hook phpmailer_init.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.mime_html_only_multi
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(MIME_HTML_ONLY_MULTI)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta Content-Type
+      multipart/alternative && MIME_HTML_ONLY.'
+  sa_rules:
+  - MIME_HTML_ONLY_MULTI
+  title: Message multipart sans partie texte
+  why: Le message se déclare multipart/alternative (texte et HTML) mais ne contient que du HTML. La structure
+    annonce une version texte qui n'existe pas. Score symbolique.
+  fix:
+  - Ajoutez la partie text/plain manquante ou passez le message en text/html simple.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.mime_html_mostly
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(MIME_HTML_MOSTLY)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_mime_multipart_ratio(''0.00'',
+      ''0.01'') : la partie texte fait moins de 1 % de la partie HTML.'
+  sa_rules:
+  - MIME_HTML_MOSTLY
+  title: Partie texte quasi vide à côté du HTML
+  why: Une version texte existe mais elle est presque vide (« Votre logiciel ne lit pas le HTML »). Les
+    filtres la jugent comme une absence de texte.
+  fix:
+  - 'Remplissez la version texte avec le même contenu que le HTML : titres, paragraphes, liens en clair.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.mpart_alt_diff
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(MPART_ALT_DIFF)
+    notes: 'score SA 4.0.x : 0.79 (sa-update r1939780, jeu réseau + Bayes). Teste : multipart_alternative_difference(''99'',
+      ''100'') : plus de 99 % des mots de la partie HTML ne figurent pas dans la partie texte.'
+  sa_rules:
+  - MPART_ALT_DIFF
+  title: Les versions texte et HTML sont différentes
+  why: 'La version texte ne correspond presque pas au HTML : texte générique, ancien contenu ou version
+    texte d''un autre modèle. Les spammeurs mettent un texte anodin en texte et la vraie offre en HTML.'
+  fix:
+  - Régénérez la version texte à partir du HTML final de cette campagne.
+  - Ne laissez pas la version texte d'un ancien modèle.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.mpart_alt_diff_count
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(MPART_ALT_DIFF_COUNT)
+    notes: 'score SA 4.0.x : 1.112 (sa-update r1939780, jeu réseau + Bayes). Teste : multipart_alternative_difference_count(''3'',
+      ''1'') : rapport mots texte / mots HTML différents supérieur à 3 avec plus d''un mot HTML.'
+  sa_rules:
+  - MPART_ALT_DIFF_COUNT
+  title: La version texte a beaucoup moins de mots que le HTML
+  why: Le nombre de mots différents entre texte et HTML est très déséquilibré. La version texte ne reflète
+    pas le contenu HTML. Plus d'un point.
+  fix:
+  - Faites générer la version texte automatiquement à partir du HTML, puis corrigez-la.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.mime_no_text
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(MIME_NO_TEXT)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : Content-Type
+      multipart et aucune partie text/*, hors rapports de remise, messages chiffrés, Apple Mail, réponses
+      et PDF.'
+  sa_rules:
+  - MIME_NO_TEXT
+  title: Message multipart sans aucune partie texte identifiée
+  why: 'Le message est multipart mais aucune partie n''est déclarée comme texte : tout est en pièces jointes
+    ou en types non textuels. Score symbolique, mais combiné à un X-Mailer PHP il pèse près de 3 points.'
+  fix:
+  - Ajoutez une partie text/plain ou text/html qui décrit le message.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_MIME_no_text.cf
+- id: sa.mime_qp_long_line
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(MIME_QP_LONG_LINE)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_mime(''mime_qp_long_line'')
+      : une ligne encodée en quoted-printable dépasse 78 caractères.'
+  sa_rules:
+  - MIME_QP_LONG_LINE
+  title: Ligne quoted-printable trop longue
+  why: Une ligne encodée en quoted-printable dépasse la longueur prévue par la norme (76 caractères).
+    Score symbolique, mais certains serveurs coupent ces lignes et cassent le HTML ou la signature DKIM.
+  fix:
+  - Laissez la bibliothèque d'envoi faire l'encodage quoted-printable au lieu de l'écrire vous-même.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc2045#section-6.7
+- id: sa.mime_base64_text
+  family: spamassassin
+  severity: medium
+  penalty: 0.9
+  detect:
+    signal: spamassassin.hit(MIME_BASE64_TEXT)
+    notes: 'score SA 4.0.x : 1.741 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_mime(''mime_base64_encoded_text'')
+      : partie text/* encodée en base64 avec un charset ASCII ou absent, non déclarée attachment ou inline.'
+  sa_rules:
+  - MIME_BASE64_TEXT
+  title: Texte simple encodé en base64
+  why: 'Une partie texte en pur ASCII est encodée en base64, ce qui la rend illisible pour un filtre simple.
+    Rien ne le justifie pour un texte sans accent : les spammeurs le font pour masquer leur contenu. Plus
+    d''1,5 point.'
+  fix:
+  - Encodez les parties texte en quoted-printable ou 7bit, et déclarez charset=UTF-8.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.base64_length_79_inf
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(BASE64_LENGTH_79_INF)
+    notes: 'score SA 4.0.x : 1.502 (sa-update r1939780, jeu réseau + Bayes). Teste : check_base64_length(''79'')
+      : la plus longue ligne d''une partie encodée en base64 fait au moins 79 caractères (calendriers
+      ics exclus).'
+  sa_rules:
+  - BASE64_LENGTH_79_INF
+  title: Lignes base64 de plus de 79 caractères
+  why: Une partie encodée en base64 a des lignes trop longues. La norme MIME limite ces lignes à 76 caractères
+    ; les scripts qui encodent avec base64_encode() sans découper produisent une seule ligne. 1,5 point.
+  fix:
+  - Découpez le base64 en lignes de 76 caractères (chunk_split() en PHP), ou laissez la bibliothèque d'envoi
+    encoder.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_other.cf
+  - https://www.rfc-editor.org/rfc/rfc2045#section-6.8
+- id: sa.base64_length_78_79
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(BASE64_LENGTH_78_79)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_base64_length(''78'',
+      ''79'').'
+  sa_rules:
+  - BASE64_LENGTH_78_79
+  title: Lignes base64 de 78 caractères
+  why: Une partie base64 a des lignes de 78 caractères, au-delà des 76 prévus. Pénalité faible.
+  fix:
+  - Découpez le base64 en lignes de 76 caractères.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_other.cf
+  - https://www.rfc-editor.org/rfc/rfc2045#section-6.8
+- id: sa.mime_header_ctype_only
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(MIME_HEADER_CTYPE_ONLY)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : Content-Type
+      présent (pas text/plain) sans MIME-Version, Content-Transfer-Encoding ni Content-Disposition.'
+  sa_rules:
+  - MIME_HEADER_CTYPE_ONLY
+  title: Content-Type sans les autres en-têtes MIME
+  why: Le message déclare un Content-Type mais pas MIME-Version, obligatoire dès qu'on utilise MIME. Cela
+    trahit des en-têtes écrits à la main. Pénalité faible.
+  fix:
+  - 'Ajoutez l''en-tête MIME-Version: 1.0, ou faites construire le message par une bibliothèque.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.rfc-editor.org/rfc/rfc2045#section-4
+- id: sa.mime_suspect_name
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(MIME_SUSPECT_NAME)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_suspect_name()
+      (plugin AntiVirus) : extension du nom de fichier incohérente avec le type MIME déclaré. Dépend du
+      plugin AntiVirus, non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur
+      de test l''active.'
+  sa_rules:
+  - MIME_SUSPECT_NAME
+  title: Le nom de la pièce jointe ne correspond pas à son contenu
+  why: Une pièce jointe porte une extension qui ne correspond pas à son type déclaré (un .pdf déclaré
+    comme image, par exemple). Les logiciels malveillants se déguisent ainsi.
+  fix:
+  - Joignez les fichiers avec leur vrai type MIME (application/pdf pour un PDF) ; les bibliothèques le
+    déduisent de l'extension.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_antivirus.cf
+- id: sa.mime_charset_faraway
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(MIME_CHARSET_FARAWAY)
+    notes: 'score SA 4.0.x : 2.45 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_for_mime(''mime_faraway_charset'')
+      && caractères 8 bits : charset hors des ok_locales du serveur. Sans effet avec ok_locales all (défaut).'
+  sa_rules:
+  - MIME_CHARSET_FARAWAY
+  title: Jeu de caractères MIME d'une langue non attendue
+  why: Une partie du message est déclarée dans un jeu de caractères d'une langue que le serveur de test
+    n'accepte pas. La règle ne se déclenche que si le serveur a restreint ok_locales.
+  fix:
+  - Encodez tout le message en UTF-8.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.charset_faraway_header
+  family: spamassassin
+  severity: high
+  penalty: 1.6
+  detect:
+    signal: spamassassin.hit(CHARSET_FARAWAY_HEADER)
+    notes: 'score SA 4.0.x : 3.2 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_faraway_charset_in_headers()
+      : un mot encodé des en-têtes utilise un charset hors ok_locales.'
+  sa_rules:
+  - CHARSET_FARAWAY_HEADER
+  title: Jeu de caractères d'une langue non attendue dans les en-têtes
+  why: L'objet ou le nom d'expéditeur est encodé dans un jeu de caractères étranger (big5, koi8-r...).
+    Ne se déclenche que si le serveur a restreint ok_locales, mais pèse alors plus de 3 points.
+  fix:
+  - Encodez objet et nom d'expéditeur en UTF-8.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.bogus_mime_version
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(BOGUS_MIME_VERSION)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : MIME-Version sans
+      1.0, ou 1.0 suivi directement d''un autre caractère.'
+  sa_rules:
+  - BOGUS_MIME_VERSION
+  title: En-tête MIME-Version invalide
+  why: L'en-tête MIME-Version ne vaut pas 1.0, seule valeur existante. Typique d'un script qui écrit l'en-tête
+    à la main avec une faute.
+  fix:
+  - 'Écrivez exactement MIME-Version: 1.0.'
+  example_bad: 'MIME-Version: 1.0;'
+  example_good: 'MIME-Version: 1.0'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+  - https://www.rfc-editor.org/rfc/rfc2045#section-4
+- id: sa.mimepart_limit_exceeded
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(MIMEPART_LIMIT_EXCEEDED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_mime(''mimepart_limit_exceeded'')
+      : le nombre de parties MIME dépasse la limite d''analyse de SpamAssassin.'
+  sa_rules:
+  - MIMEPART_LIMIT_EXCEEDED
+  title: Trop de parties MIME
+  why: Le message contient tellement de parties MIME que SpamAssassin a arrêté de les analyser. Score
+    symbolique, mais un message de ce type est suspect pour tous les filtres.
+  fix:
+  - Regroupez les pièces jointes dans une archive ou proposez un lien de téléchargement.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.empty_message
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(EMPTY_MESSAGE)
+    notes: 'score SA 4.0.x : 2.32 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : aucune pièce
+      jointe et corps sans caractère non blanc.'
+  sa_rules:
+  - EMPTY_MESSAGE
+  title: Message sans contenu texte
+  why: Le message n'a ni texte ni pièce jointe. Les envois de test vides et les messages de vérification
+    d'adresse ont ce profil. Plus de 2 points.
+  fix:
+  - Testez avec le vrai contenu du message, pas un envoi vide.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_meta_tests.cf
+- id: sa.pp_mime_fake_ascii_text
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(PP_MIME_FAKE_ASCII_TEXT)
+    notes: 'score SA 4.0.x : 0.241 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_ascii_text_illegal()
+      : partie text/plain sans charset ou us-ascii contenant des octets 0x00, 0x0D isolés ou 0x80 à 0xFF.'
+  sa_rules:
+  - PP_MIME_FAKE_ASCII_TEXT
+  title: Texte déclaré ASCII mais contenant d'autres caractères
+  why: La partie texte se déclare en ASCII (ou ne déclare rien) mais contient des caractères accentués.
+    Chez le destinataire, « é » peut devenir « Ã© ».
+  fix:
+  - 'Déclarez Content-Type: text/plain; charset=UTF-8 pour la partie texte.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kmcgrail/20_bug_7063.cf
+- id: sa.t_mime_malf
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_MIME_MALF)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : message multipart
+      dont le corps contient des en-têtes Content-Type mal placés. Règle de test T_. Pas de ligne score
+      : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_MIME_MALF
+  title: En-têtes MIME dans le corps du message
+  why: Le corps contient des lignes Content-Type qui devraient être des en-têtes de partie. Structure
+    MIME cassée. Règle de test sans poids.
+  fix:
+  - Construisez le MIME avec une bibliothèque ; vérifiez la ligne vide entre en-têtes de partie et contenu.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_MIME_in_body.cf
+- id: sa.body_8bits
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(BODY_8BITS)
+    notes: 'score SA 4.0.x : 1.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_body_8bits()
+      (plugin TextCat) : une ligne du corps contient 8 octets 8 bits consécutifs, si ok_languages n''est
+      pas all et n''inclut aucune langue à alphabet non latin. Dépend du plugin TextCat, non chargé par
+      défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - BODY_8BITS
+  title: Corps avec une longue suite de caractères 8 bits
+  why: Le corps contient de longues suites d'octets non ASCII, typiques des langues non latines ou d'un
+    texte mal encodé. Ne concerne que les serveurs qui ont restreint ok_languages. 1,5 point.
+  fix:
+  - Vérifiez l'encodage déclaré (UTF-8) et qu'aucun texte n'a été mal converti.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_textcat.cf
+- id: sa.null_in_body
+  family: spamassassin
+  severity: medium
+  penalty: 0.8
+  detect:
+    signal: spamassassin.hit(NULL_IN_BODY)
+    notes: 'score SA 4.0.x : 1.596 (sa-update r1939780, jeu réseau + Bayes). Teste : full /\x00/ : le
+      message contient un octet de valeur 0.'
+  sa_rules:
+  - NULL_IN_BODY
+  title: Octet nul dans le message
+  why: Le message contient un caractère nul, interdit dans un e-mail. Il vient en général d'un fichier
+    binaire inséré sans encodage, ou d'un texte en UTF-16. 1,6 point.
+  fix:
+  - Encodez les pièces jointes en base64 et enregistrez les textes en UTF-8, pas en UTF-16.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_other.cf
+- id: sa.mime_php_no_text
+  family: spamassassin
+  severity: high
+  penalty: 1.4
+  detect:
+    signal: spamassassin.hit(MIME_PHP_NO_TEXT)
+    notes: 'score SA 4.0.x : 2.799 (sa-update r1939780, jeu réseau + Bayes). Teste : meta MIME_NO_TEXT
+      && X-Mailer PHP versionné.'
+  sa_rules:
+  - MIME_PHP_NO_TEXT
+  title: Pas de partie texte et X-Mailer PHP
+  why: 'Un script PHP envoie un message multipart sans aucune partie texte. Près de 3 points : c''est
+    la signature d''un script d''envoi en masse.'
+  fix:
+  - Ajoutez une partie texte au message et retirez l'en-tête X-Mailer PHP.
+  - Utilisez PHPMailer ou Symfony Mailer avec AltBody renseigné.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_MIME_no_text.cf
+- id: sa.malf_html_b64
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(MALF_HTML_B64)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta MIME_BASE64_TEXT
+      && HTML_MIME_NO_HTML_TAG.'
+  sa_rules:
+  - MALF_HTML_B64
+  title: HTML encodé en base64 sans balise html
+  why: Le message est un fragment HTML sans balise <html>, encodé en base64. Les deux défauts ensemble
+    forment le profil d'un générateur de spam.
+  fix:
+  - Envoyez un document HTML complet encodé en quoted-printable.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.encrypted_message
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(ENCRYPTED_MESSAGE)
+    notes: 'score SA 4.0.x : -0.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta Content-Type
+      multipart/encrypted ou application/pkcs7-mime.'
+  sa_rules:
+  - ENCRYPTED_MESSAGE
+  title: Message chiffré
+  why: 'Le message est chiffré (PGP ou S/MIME). Les spammeurs ne le font quasiment jamais : bonus d''un
+    point.'
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.microsoft_executable
+  family: spamassassin
+  severity: high
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(MICROSOFT_EXECUTABLE)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_microsoft_executable()
+      (plugin AntiVirus) : pièce jointe dont l''extension est exécutable (.exe, .bat, .js, .lnk, .scr,
+      .vbs, .url, .swf...) ou dont le contenu base64 commence par un en-tête d''exécutable Windows. Dépend
+      du plugin AntiVirus, non chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le
+      serveur de test l''active. Gravité fixée à la main, indépendamment du score SA, qui sous-estime
+      ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - MICROSOFT_EXECUTABLE
+  title: Programme Windows joint
+  why: Une pièce jointe est un programme ou un script Windows, ou porte une extension qui en exécute un.
+    Pénalité faible dans SpamAssassin, mais la plupart des fournisseurs bloquent ces pièces jointes.
+  fix:
+  - 'Ne joignez jamais d''exécutable ni de script : proposez un lien de téléchargement sur votre site.'
+  - Vérifiez qu'aucun fichier .url ou .lnk (raccourci) n'est joint par erreur.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_antivirus.cf
+- id: sa.gmd_pdf_encrypted
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(GMD_PDF_ENCRYPTED)
+    notes: 'score SA 4.0.x : 0.6 (sa-update r1939780, jeu réseau + Bayes). Teste : pdf_is_encrypted()
+      (plugin PDFInfo) : un PDF joint est chiffré. Dépend du plugin PDFInfo, non chargé par défaut dans
+      SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - GMD_PDF_ENCRYPTED
+  title: PDF joint chiffré
+  why: Un PDF joint est protégé par mot de passe ou chiffré, donc impossible à analyser. Les logiciels
+    malveillants passent souvent par des PDF protégés.
+  fix:
+  - Envoyez le PDF sans protection, ou communiquez le document par un lien sécurisé.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_pdfinfo.cf
+- id: sa.gmd_pdf_empty_body
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(GMD_PDF_EMPTY_BODY)
+    notes: 'score SA 4.0.x : 0.25 (sa-update r1939780, jeu réseau + Bayes). Teste : pdf_is_empty_body()
+      (plugin PDFInfo) : PDF joint et corps presque vide. Dépend du plugin PDFInfo, non chargé par défaut
+      dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - GMD_PDF_EMPTY_BODY
+  title: PDF joint avec un message vide
+  why: Le message ne contient qu'un PDF et pas de texte. Cas fréquent des factures et devis envoyés automatiquement,
+    mais aussi des hameçonnages par fausse facture.
+  fix:
+  - Ajoutez quelques lignes qui présentent le document (numéro de facture, montant, contact).
+  fix_by_provider:
+    wordpress: Dans WooCommerce ou l'extension de factures, complétez le texte de l'e-mail qui accompagne
+      le PDF.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_pdfinfo.cf
+- id: sa.any_bounce_message
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(ANY_BOUNCE_MESSAGE)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta CRBOUNCE_MESSAGE
+      || BOUNCE_MESSAGE || VBOUNCE_MESSAGE || OOOBOUNCE_MESSAGE.'
+  sa_rules:
+  - ANY_BOUNCE_MESSAGE
+  title: Message de retour automatique
+  why: 'Le message est un avis de non-remise, une réponse d''absence ou une alerte antivirus. Information
+    : ce n''est pas l''envoi que vous vouliez tester.'
+  fix:
+  - Vérifiez que vous avez bien envoyé le message à l'adresse de test, et non transféré un retour.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_vbounce.cf
+- id: sa.bounce_message
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(BOUNCE_MESSAGE)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : relais de bounce
+      détecté et From MAILER-DAEMON, Return-Path vide, ou objet typique d''avis de non-remise.'
+  sa_rules:
+  - BOUNCE_MESSAGE
+  title: Avis de non-remise d'un serveur de messagerie
+  why: Le message est un avis de non-remise envoyé par un serveur. Information.
+  fix:
+  - Rien à corriger pour ce test. Si vous recevez beaucoup de ces avis, nettoyez votre liste d'envoi.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_vbounce.cf

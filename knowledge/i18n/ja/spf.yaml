@@ -1,0 +1,325 @@
+spf.missing:
+  title: "ドメイン {envelope_domain} に SPF レコードがありません"
+  why: "SPF がなければ、{envelope_domain} に代わって送信してよいサーバーを、受信者は知ることができません。Gmail、Yahoo、Outlook.com はこの認証を要求しており、メッセージはスパムフォルダーに入るか、拒否されるおそれがあります。"
+  fix:
+    - "{envelope_domain} のアドレスで送信するすべてのサービスを一覧にしてください：メール、ウェブサイト、請求ソフトウェア、メール配信ツール。"
+    - "{envelope_domain} のルートに、v=spf1 で始まる TXT レコードを1つ作成してください。サービスごとに include: または ip4: を付け、末尾は ~all にします。"
+    - "次のテストで結果を確認してください。IP {ip} に対して SPF が pass を示す必要があります。"
+  fix_by_provider:
+    google_workspace: "TXT v=spf1 include:_spf.google.com ~all を追加してください（Google Workspace のドキュメント「SPF の設定」）。"
+    microsoft_365: "DNS ホスティング事業者で TXT v=spf1 include:spf.protection.outlook.com -all を追加してください。Microsoft 365 は、カスタムドメインについて自身の画面からはこれを作成できません。"
+    ovh: "OVHcloud の顧客ページで、DNS ゾーン > エントリを追加、種類 SPF の順に進み、v=spf1 include:mx.ovh.com ~all を入力してください（カナダとアジア太平洋のアカウントは include:mx.ovh.ca）。MX Plan、Email Pro、ホスト型 Exchange で有効です。"
+    o2switch: "cPanel で、認証、管理、カスタマイズの順に進んでください。o2switch は、同社のサービスに使うべき include が include:spf.jabatus.fr だけであると示しています。AI ツールが生成した SPF には注意してください。"
+    cpanel: "Email、Email Deliverability で Manage をクリックし、提示された SPF レコード（v=spf1 +a +mx +ip4:… ~all の形式）をインストールしてください。DNS がこのサーバーで管理されていない場合は、DNS ホスティング事業者にコピーしてください。"
+    plesk: "ウェブサイトとドメイン、DNS で、TXT v=spf1 を追加または補完してください（サーバーのテンプレート：ツールと設定、DNS 設定）。"
+    ionos: "ドメインの DNS サーバーが IONOS の場合は、「IONOS SPF (TXT)」レコードを有効にしてください。外部の DNS の場合は、v=spf1 include:_spf-eu.ionos.com ~all を公開してください。"
+    gandi: "v=spf1 include:_mailcust.gandi.net ~all を公開してください。Gandi でホストされたサイトも送信する場合は、include:_spf.gpaas.net を追加してください。"
+    infomaniak: "DNS ゾーンが Infomaniak にある場合、v=spf1 include:spf.infomaniak.ch -all が自動でインストールされます。そうでなければ、この値を公開してください。"
+    zoho: "Zoho Mail の管理コンソールに表示される値を公開してください（ドキュメントの例：v=spf1 include:zoho.com ~all）。"
+    proton: "設定、ドメイン名、確認、SPF タブで、提示されたレコードをコピーしてください（include:_spf.protonmail.ch を含みます）。"
+    brevo: "Brevo は、ドメインの認証に SPF を要求しません。Brevo の include を自分の SPF に統合する場合、公式の値は include:spf.brevo.com です。"
+    mailchimp: "追加は不要です。Mailchimp は独自の戻りドメインで送信し、それはすでに同社の SPF でカバーされています。代わりに、ドメインを DKIM で認証してください（Account & billing、Domains）。"
+    mailjet: "v=spf1 include:spf.mailjet.com ~all を公開してください（または、この include を既存の SPF に追加してください）。"
+    sendgrid: "自動セキュリティ（既定）を使う場合、include:sendgrid.net は、SendGrid が CNAME で委任するサブドメイン em… が担います。Settings、Sender Authentication の CNAME を公開してください。このオプションを使わない場合は、そのサブドメインに v=spf1 include:sendgrid.net ~all を公開してください。"
+    mailgun: "Mailgun に登録した送信ドメイン（多くは mg.{domain} のようなサブドメイン）に、v=spf1 include:mailgun.org ~all を公開してください。"
+    amazon_ses: "既定では SES は amazonses.com の戻りドメインを使い、これはすでにカバーされています。カスタムの戻りドメイン（MAIL FROM）を使う場合は、そのサブドメインに MX 10 feedback-smtp.<リージョン>.amazonses.com と、TXT v=spf1 include:amazonses.com ~all を公開してください。"
+    postmark: "Postmark は、もはや SPF を要求しません。代わりに、Sender Signatures、DNS Settings に表示された pm.mtasv.net への、カスタムの Return-Path の CNAME を作成してください。"
+    hubspot: "ルートの TXT に、アカウント固有の include を追加してください（形式は include:123456.spf03.hubspotemail.net）。値は、Settings、Content、Domains & URLs、Email Sending からコピーしてください。"
+    cloudflare_dns: "DNS、Records、Add record で、種類 TXT、名前 @、内容 v=spf1 … ~all を入力してください。TXT レコードはプロキシを経由することはありません。"
+spf.multiple_records:
+  title: "ドメイン {envelope_domain} が複数の SPF レコードを公開しています"
+  why: "v=spf1 のレコードが2つあると、SPF は無効になります。受信側は恒久的なエラーを返し、正しく宣言されたサービスも含めて、{envelope_domain} のすべての SPF 認証が失われます。"
+  fix:
+    - "既存の各 SPF レコードの仕組み（メカニズム）を書き出してください。"
+    - "1つにまとめてください。先頭に v=spf1 を置き、すべての include: と ip4: を続け、最後に all を1つだけ置きます。"
+    - "ほかの v=spf1 レコードを削除し、テストをやり直してください。"
+  fix_by_provider:
+    o2switch: "cPanel の Zone Editor で重複を削除してから、残ったレコードを、認証、管理、カスタマイズ（INCLUDE のセクション）で補完してください。"
+    brevo: "Brevo は統合の例として v=spf1 include:_spf.google.com include:spf.brevo.com mx ~all を示しています。"
+    cloudflare_dns: "DNS、Records で TXT に絞り込み、一方のレコードを編集してもう一方を統合し、そのあと2つ目を削除してください。"
+spf.type99_only:
+  title: "{envelope_domain} の SPF が、廃止されたレコード型に公開されています"
+  why: "SPF は存在しますが、もはや誰も読まない「SPF」レコード型（99）に置かれています。受信側にとって、{envelope_domain} には SPF がありません。"
+  fix:
+    - "まったく同じ内容を、{envelope_domain} のルートに TXT 型のレコードとして作成してください。"
+    - "その後、SPF 型（99）のレコードを削除してください。"
+spf.type99_leftover:
+  title: "{envelope_domain} に、古い SPF 型（99）のレコードが残っています"
+  why: "読まれるのは TXT レコードだけです。古い型 99 のレコードは役に立たず、正しいレコードの代わりに誤って変更されるおそれがあります。"
+  fix:
+    - "SPF 型（99）のレコードを削除し、TXT だけを残してください。"
+spf.syntax_error:
+  title: "{envelope_domain} の SPF に構文エラーがあります"
+  why: "構文エラーが1つあると、レコード全体が無効になります。受信側はこれを恒久的なエラーとして扱い、{envelope_domain} に SPF がないのと同じになります。"
+  fix:
+    - "テストが示した誤った用語を、「{spf_record}」の中で特定してください。"
+    - "各用語は1つの半角スペースで区切ってください。コロンの後ろには空白を入れず、IPv4 には ip4:、IPv6 には ip6: を使ってください。"
+    - "レコードを修正版に置き換えてください：{suggested_record}"
+spf.unknown_mechanism:
+  title: "{envelope_domain} の SPF が未知のメカニズムを使っています"
+  why: "SPF に、規格が認識しない語が含まれています。多くの場合は誤字です。レコード全体が無効になり、メッセージは SPF の認証を失います。"
+  fix:
+    - "「{spf_record}」の中で未知の用語を特定してください。"
+    - "有効なメカニズムのいずれかで修正してください：include:、ip4:、ip6:、a、mx、exists:、all"
+    - "修正版を公開してください：{suggested_record}"
+spf.version_invalid:
+  title: "{envelope_domain} の SPF が v=spf1 で始まっていません"
+  why: "レコードは SPF のように見えますが、先頭が認識されません。受信側はこれを無視し、{envelope_domain} に SPF がないものとして扱います。"
+  fix:
+    - "レコードを、正確に v=spf1 と1つの空白で始めてください。その前に空白や引用符を入れないでください。"
+    - "DNS 管理画面が自動で引用符を追加する場合は、値の中に引用符を入力しないでください。"
+    - "公開してください：{suggested_record}"
+spf.sender_id_record:
+  title: "{envelope_domain} に、古い Sender ID のレコード（spf2.0）が公開されています"
+  why: "Sender ID は廃止されており、大手プロバイダーはもはや使っていません。このレコードは役に立たず、ドメインの DNS 応答を重くします。"
+  fix:
+    - "spf2.0/ で始まる TXT を削除し、v=spf1 のものだけを残してください。"
+spf.plus_all:
+  title: "{envelope_domain} の SPF が全世界からの送信を許可しています（+all）"
+  why: "+all があると、誰でも {envelope_domain} の名義で送信し、有効な SPF を得られます。受信者はこれを知っており、この SPF はあなたを保護せず、むしろスパムの兆候と見なされることもあります。"
+  fix:
+    - "{envelope_domain} の名義で実際に送信しているサービスを一覧にしてください。"
+    - "+all を ~all に置き換えてください（一覧に確信が持てたら -all）。不足している include: または ip4: を追加してください。"
+    - "公開してください：{suggested_record}"
+spf.neutral_all:
+  title: "{envelope_domain} の SPF が ?all（中立）で終わっています"
+  why: "?all があると、SPF はリストに載っていないサーバーについて何も述べません。なりすまし者は、未知のサーバーと同じ結果を得て、SPF は DMARC がそれをブロックする助けになりません。"
+  fix:
+    - "送信するすべてのサービスがレコードに含まれていることを確認してください。"
+    - "?all を ~all に置き換えてください。DMARC レポートに正当な送信が未対応で残っていないことを確認できたら、-all に進めてください。"
+  fix_by_provider:
+    gandi: "v=spf1 include:_mailcust.gandi.net ?all の ?all を ~all に置き換えてください。"
+    infomaniak: "Infomaniak は ?all の版を提供していますが、既定の値 v=spf1 include:spf.infomaniak.ch -all の方を選んでください。"
+spf.no_all:
+  title: "{envelope_domain} の SPF が all の仕組みで終わっていません"
+  why: "末尾に all がないと、SPF は許可されていないサーバーをどう扱うべきかを示しません。それらのサーバーは中立の結果を得て、あたかもあなたが何も宣言していないかのようになります。"
+  fix:
+    - "レコードの末尾に ~all を追加してください。"
+    - "送信するすべてのサービスが一覧に入っていると確信できたら、-all に進めてください。"
+spf.terms_after_all:
+  title: "{envelope_domain} の SPF で、all の後ろに仕組みが置かれています"
+  why: "all の後ろにあるものはすべて無視されます。そのため、all の後に宣言されたサービスは許可されず、そのメッセージは SPF に失敗します。"
+  fix:
+    - "all の後ろにある用語を、all の直前に移動してください。"
+    - "公開してください：{suggested_record}"
+spf.redirect_with_all:
+  title: "{envelope_domain} の SPF が redirect= と all を併用しています"
+  why: "all がある場合、redirect= は決して従われません。redirect= で許可したつもりのサーバーは、実際には許可されていません。"
+  fix:
+    - "どちらかを選んでください。redirect= だけを使う（判断はすべて対象ドメインに任せる）か、include: の後に all を付けるかです。"
+    - "対象ドメインのポリシーを維持しつつ自社のサーバーを追加したい場合は、all の前で redirect=対象 を include:対象 に置き換えてください。"
+spf.redirect_target_invalid:
+  title: "{envelope_domain} の SPF のリダイレクト先に、SPF がありません"
+  why: "あなたの SPF は、SPF を公開していない別のドメインに完全に委任しています。その結果、すべてのメッセージで恒久的なエラーになります。"
+  fix:
+    - "redirect= の後に指定したドメインのつづりを確認してください。"
+    - "その対象ドメインに SPF を公開するか、リダイレクトを自社の include: と ~all に置き換えてください。"
+spf.lookup_limit:
+  title: "{envelope_domain} の SPF は DNS 照会を {lookup_count} 回必要とします（上限は 10）"
+  why: "10 回を超えると、受信側は評価を止めて恒久的なエラーを返します。{envelope_domain} は、正しく宣言されたサービスのものも含め、すべての送信で SPF の効果を失います。"
+  fix:
+    - "{domain} がもう使っていないサービスの include: を削除してください（以前のホスティング事業者、以前のメール配信ツール）。"
+    - "送信元となるサーバーに対応しない a と mx は削除するか、対応する ip4: アドレスに置き換えてください。"
+    - "マーケティング送信は、独自の SPF を持つサブドメイン（例：news.{domain}）に移してください。"
+    - "このテストで新しい合計を確認してください。10 以下に収まる必要があります。"
+  fix_by_provider:
+    o2switch: "include:spf.jabatus.fr がすでに o2switch からの送信をカバーしている場合は、+a と +mx を削除してください。"
+    cpanel: "cPanel の既定の SPF には +a と +mx（照会2回）が含まれています。役に立たない場合は削除してください。サーバーの ip4: だけで十分です。"
+    sendgrid: "自動セキュリティを使う場合、SendGrid の include はサブドメイン em… が担い、ドメインルートの SPF の照会には数えられません。ルートに include:sendgrid.net を追加していた場合は、それを削除してください。"
+    mailchimp: "Mailchimp は SPF に include を必要としません。SPF に含まれている場合は削除してください。"
+    brevo: "専用 IP を持たない場合、Brevo はドメインの認証に SPF の include を必要としません。include:spf.brevo.com を削除してください。"
+spf.lookup_limit_near:
+  title: "{envelope_domain} の SPF は {lookup_count} 回の照会で、上限の手前にあります"
+  why: "いずれかのプロバイダーが自身の SPF に include を追加するだけで、あなたの SPF は 10 回を超え、突然無効になります。"
+  fix:
+    - "不要な include: を今すぐ削除し、可能であれば a と mx を ip4: に置き換えてください。"
+    - "新しい送信サービスを追加するたびに、この合計を確認してください。"
+spf.void_lookup_limit:
+  title: "{envelope_domain} の SPF に、空の参照が2つを超えて含まれています"
+  why: "SPF に書かれた複数の名前が、もう存在しません。2つを超えると、ほとんどの受信側は恒久的なエラーを返し、SPF は意味を失います。"
+  fix:
+    - "何も返さない用語を特定してください（テストが一覧にします）。以前のプロバイダー、つづりの誤り、削除されたサブドメインなどです。"
+    - "それらを削除するか、つづりを修正してください。"
+    - "公開してください：{suggested_record}"
+spf.mx_too_many_addresses:
+  title: "{envelope_domain} の SPF の mx の仕組みが、多すぎるアドレスを返しています"
+  why: "MX が10を超えるアドレスを返しています。mx の仕組みは恒久的なエラーを生じ、SPF 全体が無効になります。"
+  fix:
+    - "受信用のサーバーがメールを送信しない場合は、SPF から mx を削除してください（ほとんどのプロバイダーに当てはまります。プロバイダーは独自の include: を持っています）。"
+    - "そうでなければ、mx を、実際に送信するサーバーの ip4: と ip6: のアドレスに置き換えてください。"
+spf.ptr_mechanism:
+  title: "{envelope_domain} の SPF が ptr の仕組みを使っています（使用は避けるべきです）"
+  why: "ptr は遅く、信頼性が低いです。一部の受信側は評価せず、本来許可されるはずのサーバーが SPF に失敗します。また、DNS 照会も消費します。"
+  fix:
+    - "ptr が対象としていたサーバーを特定してください。"
+    - "ptr を、それらのサーバーの ip4: と ip6: のアドレスか、そのプロバイダーの include: に置き換えてください。"
+spf.include_no_spf:
+  title: "{envelope_domain} の SPF が、SPF のないドメインを include しています"
+  why: "include: が、SPF のないドメインを指しています。規格では、その場合は SPF 全体が恒久的なエラーで失敗します。そのサービスだけではありません。"
+  fix:
+    - "テストが示した include: を特定し、プロバイダーのドキュメントでつづりを確認してください。"
+    - "そのサービスをもう使っていない場合は、include: を削除してください。"
+    - "公開してください：{suggested_record}"
+spf.include_permerror:
+  title: "{envelope_domain} の SPF が含むドメインの SPF が無効です"
+  why: "自分のレコードは正しいのに、include: が誤りのある SPF を指しています。このエラーはすべてのメッセージに影響します。"
+  fix:
+    - "テストが示した問題の include: を特定してください。"
+    - "それがあなたのドメインのもの（例：_spf.{domain}）であれば修正してください。そうでなければ、プロバイダーにエラーを報告してください。"
+    - "その間は、そのサービスが公開している ip4: アドレスで include: を置き換えてください（公開している場合）。"
+spf.include_loop:
+  title: "{envelope_domain} の SPF が自分自身を include しています（ループ）"
+  why: "SPF が、直接または仲介を経て自分自身を指しています。受信側は同じところを回り続け、停止して恒久的なエラーを返します。"
+  fix:
+    - "{envelope_domain}、またはそこに戻ってくるサブドメインを指している include: や redirect= を削除してください。"
+    - "公開してください：{suggested_record}"
+spf.duplicate_terms:
+  title: "{envelope_domain} の SPF に、重複した用語があります"
+  why: "同じサービスが2回現れています。これはエラーではありませんが、重複するたびに、許可された10回の照会のうち1回を消費します。"
+  fix:
+    - "繰り返されている用語を削除し、サービスごとに1つだけ残してください。"
+    - "Brevo の場合は、文書化された値である include:spf.brevo.com を残し、古い include:spf.sendinblue.com を削除してください。"
+spf.softfail:
+  title: "IP {ip} は {envelope_domain} の SPF で許可されていません（softfail）"
+  why: "このメッセージを送ったサーバー（{ip}、{provider}）は、あなたの SPF に宣言されていません。フィルターはスパムのスコアを加算し、整合した DKIM がない場合、DMARC は失敗します。"
+  fix:
+    - "このメッセージを送ったサービスを特定してください：{provider}、IP {ip}、逆引き DNS {ptr}。"
+    - "そのサービスの公式の include: を SPF に追加するか、自社サーバーであれば ip4: のアドレスを追加してください。"
+    - "公開してください：{suggested_record}"
+  fix_by_provider:
+    google_workspace: "include:_spf.google.com を追加してください。"
+    microsoft_365: "include:spf.protection.outlook.com を追加してください。"
+    ovh: "include:mx.ovh.com を追加してください（カナダとアジア太平洋は include:mx.ovh.ca）。Private Exchange の場合は、サーバーの ip4: を追加してください。"
+    o2switch: "cPanel の認証、管理、カスタマイズで include:spf.jabatus.fr を追加してください。"
+    cpanel: "サーバーの ip4: を追加するか、Email Deliverability の Repair をクリックしてください。"
+    ionos: "include:_spf-eu.ionos.com を追加してください。"
+    gandi: "include:_mailcust.gandi.net を追加してください。Gandi でホストされたサイトの場合は include:_spf.gpaas.net も追加してください。"
+    infomaniak: "include:spf.infomaniak.ch を追加してください。"
+    proton: "include:_spf.protonmail.ch を追加してください。"
+    brevo: "include:spf.brevo.com を追加するか、より良いのは、Senders、Domains、IPs、Domains に表示されるカスタムの戻りドメイン（「Branded」CNAME）を設定することです。"
+    mailjet: "include:spf.mailjet.com を追加してください。"
+    sendgrid: "Settings、Sender Authentication の em… と s1._domainkey と s2._domainkey の CNAME を公開してください。その場合、SPF はサブドメイン em… が担います。"
+    mailgun: "Mailgun に登録した送信ドメインの SPF に、include:mailgun.org を追加してください。"
+    amazon_ses: "カスタムの MAIL FROM を設定し、そのサブドメインに TXT v=spf1 include:amazonses.com ~all を公開してください。"
+    hubspot: "Settings、Content、Domains & URLs、Email Sending に表示される、アカウント固有の include を追加してください。"
+    wordpress: "メッセージがサーバーの mail() 関数から送られている場合は、代わりに SMTP プラグインを使い、メールサービスの認証付き SMTP でサイトから送信してください。"
+spf.fail:
+  title: "IP {ip} は {envelope_domain} の SPF によって拒否されています（fail）"
+  why: "あなたの SPF は、{ip} が {envelope_domain} の名義で送信する権限がないと明示しています。受信者の一部はメッセージを拒否し、ほかは DKIM が DMARC を救わない限りスパムに分類します。"
+  fix:
+    - "送信が正当かどうかを確認してください：{provider}、IP {ip}、逆引き DNS {ptr}。このサーバーに心当たりがない場合は、なりすましであり、SPF が役目を果たしています。"
+    - "正当な場合は、サービスの公式の include: または ip4: を、-all の前に追加してください。"
+    - "公開してください：{suggested_record}。その後、テストをやり直してください。"
+  fix_by_provider:
+    google_workspace: "-all の前に include:_spf.google.com を追加してください。"
+    microsoft_365: "-all の前に include:spf.protection.outlook.com を追加してください。"
+    ovh: "-all の前に include:mx.ovh.com を追加してください。"
+    o2switch: "-all の前に include:spf.jabatus.fr を追加してください。"
+    brevo: "-all の前に include:spf.brevo.com を追加してください。"
+    mailjet: "-all の前に include:spf.mailjet.com を追加してください。"
+    mailgun: "送信ドメインの SPF で、-all の前に include:mailgun.org を追加してください。"
+    amazon_ses: "カスタムの MAIL FROM の SPF に include:amazonses.com を追加してください。"
+spf.temperror:
+  title: "{envelope_domain} の SPF を読み取れませんでした（一時的な DNS エラー）"
+  why: "{envelope_domain} の DNS サーバー、または include されたドメインのサーバーが、時間内に応答しませんでした。受信側はメッセージを遅延させるか、SPF なしで評価します。"
+  fix:
+    - "数分後にテストをやり直し、エラーが再現するか確認してください。"
+    - "それでも続く場合は、{envelope_domain} のすべてのネームサーバー（NS）が応答し、同じ SPF を返すことを確認してください。"
+    - "ゾーンの DNSSEC 署名も確認してください。署名が壊れていると、同じ症状が出ます。"
+spf.helo_fail:
+  title: "サーバー名 {helo} の SPF が IP {ip} を許可していません"
+  why: "サーバーは {helo} の名前で名乗っていますが、その名前の SPF はこのサーバーを許可していません。通常のメッセージへの影響は小さいですが、未達通知にはより大きな影響があります。"
+  fix:
+    - "{helo} の名前に、その IP を許可する SPF を公開してください：v=spf1 a -all（この名前は {ip} を指しています）。"
+    - "または、SPF が {ip} をすでにカバーしている名前を HELO に使ってください。"
+spf.helo_none:
+  title: "サーバー名 {helo} に SPF がありません"
+  why: "サーバー名に SPF があれば、技術的なメッセージ（特に未達通知）を検証できます。ないことの影響は小さいですが、すぐに直せる設定です。"
+  fix:
+    - "{helo} に TXT レコード v=spf1 a -all を公開してください。"
+spf.string_too_long:
+  title: "{envelope_domain} の SPF が、分割されずに 255 文字を超えています"
+  why: "TXT の文字列は 255 文字を超えられません。DNS の管理画面がレコードを拒否するか切り詰めました。末尾（多くの場合は ~all や include）が失われ、SPF は誤りになります。"
+  fix:
+    - "まず、不要なサービスを削除してレコードを短くしてください。"
+    - "それでも長すぎる場合は、複数の文字列に分け、各文字列を引用符で囲み、スペースで区切って入力してください。必要であれば用語の途中で区切ってもかまいません。それらは空白なしで連結されます。"
+    - "dig TXT {envelope_domain} で確認してください：完全なテキストが表示される必要があります。"
+spf.dns_response_too_large:
+  title: "{envelope_domain} の TXT の DNS 応答が 512 バイトを超えています（{value} バイト）"
+  why: "受信側が SPF を探すと、ドメインのすべての TXT がまとめて送られます。512 バイトを超えると、一部のサーバーは応答を受け取れず、{envelope_domain} に SPF がないものとして扱います。"
+  fix:
+    - "もう不要になった検証用の TXT（古い google-site-verification、廃止されたツールのもの）を削除してください。"
+    - "不要なサービスを削除して SPF を短くしてください。"
+    - "可能であれば、あるツールの送信を、独自の SPF を持つサブドメインに移してください。"
+spf.exp_modifier:
+  title: "{envelope_domain} の SPF が修飾子 exp= を使っています"
+  why: "exp= は、拒否の理由を読む管理者にとってのみ役立ちます。到達性には影響せず、失敗時に DNS 照会を1回追加します。"
+  fix:
+    - "説明文を利用する場合にのみ残してください。そうでなければ、レコードを簡潔にするために削除してください。"
+    - "残す場合は、参照先のドメインが ASCII の TXT を1つだけ公開していることを確認してください。"
+spf.macros:
+  title: "{envelope_domain} の SPF がマクロを使っています"
+  why: "マクロは正当な仕組みですが、SPF が、その場で応答する第三者のサービスに依存することになります。そのサービスが停止または消滅すると、あなた側では何も変えていないのに SPF が失敗します。"
+  fix:
+    - "そのマクロを提供しているサービスが、まだ契約中で利用可能であることを確認してください。"
+    - "規格で非推奨とされている p マクロは削除してください。"
+    - "サービスの数が許せば、従来の include: と ip4: に戻してください。"
+spf.range_too_broad:
+  title: "{envelope_domain} の SPF が非常に広いアドレス範囲を許可しています"
+  why: "SPF は巨大な範囲を許可しており、その中には必ず自社以外のサーバーが含まれます。その範囲にホストされたなりすまし者は、SPF を通過してしまいます。"
+  fix:
+    - "範囲を、自社のサーバーのアドレスだけに置き換えてください（IPv4 の 1 台なら /32）。"
+    - "送信サービスについては、範囲全体ではなく、そのサービスの公式の include: を使ってください。"
+spf.non_sending_domain_open:
+  title: "{domain} はメールを受信しませんが、その名義での送信を禁止していません"
+  why: "メールを使わないドメインは、なりすまし者にとって狙いやすい対象です。SPF の v=spf1 -all と DMARC の p=reject があれば、なりすまし者には使えないものになります。"
+  fix:
+    - "{domain} が一切メールを送信しない場合は、TXT v=spf1 -all を公開してください。"
+    - "_dmarc.{domain} に DMARC v=DMARC1; p=reject を追加してください。"
+    - "サービス（ウェブサイト、請求）が {domain} のアドレスで送信している場合は、これを行わないでください。"
+spf.domain_nxdomain:
+  title: "ドメイン {envelope_domain} が DNS に存在しません"
+  why: "DNS は {envelope_domain} が存在しないと応答しています。SPF を読み取ることはできず、このドメインは未達通知を受け取れません。多くのサーバーは、ドメインが存在しない送信者からのメッセージを拒否します（例：Postfix の reject_unknown_sender_domain の設定）。"
+  fix:
+    - "ツールに入力したドメイン、または設定した送信元アドレスのつづりを確認してください。"
+    - "ドメインを最近購入した場合は、レジストラーで有効であり、DNS ホスティング事業者のネームサーバーに委任されていることを確認してください。"
+    - "送信用のサブドメイン（bounce.、mail.）の場合は、メインドメインのゾーンに、少なくともその SPF レコードと一緒に作成してください。"
+spf.unknown_modifier:
+  title: "{envelope_domain} の SPF に未知の修飾子があります：{value}"
+  why: "受信側は、理解できない修飾子を無視します。そのため {value} は何の効果もありません。redirect= のつづりの誤りであれば、意図した委任は行われません。"
+  fix:
+    - "{value} がつづりの誤り（redirct=、redirection=）であれば、redirect= に修正してください。"
+    - "そうでなければ削除してください。古い設定の残りや、別のレコードからコピーされた値であることが多いです。"
+spf.permerror:
+  title: "{envelope_domain} の SPF が恒久的なエラーになっています"
+  why: "評価がエラー（{value}）で止まります。受信側はメッセージを有効な SPF のないものとして扱い、一部は拒否し、DMARC は SPF に頼れなくなります。{envelope_domain} を認証できるのは、整合した DKIM だけになります。"
+  fix:
+    - "{envelope_domain} に対して SPF 検査ツールを実行してください。問題の用語を示し、修正したレコードを提案します。"
+    - "理由に DNS 照会の多さが書かれている場合は、使っていないサービスの include: を削除するか、a と mx を ip4: に置き換えてください。"
+    - "複数のレコードが書かれている場合は、1つの TXT（v=spf1 で始まる）にまとめてください。"
+    - "include: が SPF のないものを指している場合は、include: の名前を修正するか、削除してください。"
+    - "評価をやり直してください。IP {ip} に対する結果が pass である必要があります。"
+spf.eval_neutral:
+  title: "IP {ip} は {envelope_domain} の SPF によって、許可も拒否もされていません"
+  why: "{envelope_domain} の SPF は {ip} について判断していません（{value}）。neutral の結果は、DMARC にとって SPF の成功とはみなされません。{ip} が実際にあなたの名義で送信している場合、そのメッセージはこの認証を失います。"
+  fix:
+    - "{ip} が {envelope_domain} の名義で正当に送信している場合は、all の前に ip4:{ip}（またはそのプロバイダーの公式の include:）を追加してください。"
+    - "レコードに all がない場合は ~all で終わらせ、すべてのサービスが一覧に入ったら -all に進めてください。"
+    - "仕組みが ? で始まる場合は、その ? を削除するか、?all を ~all に置き換えてください。"
+spf.neutral:
+  title: "{envelope_domain} の SPF は IP {ip} について判断していません"
+  why: "あなたの SPF は、このメッセージを送ったサーバーについて、賛成も反対もしていません。neutral の結果は、DMARC にとって SPF の成功とはみなされません。メッセージは DKIM だけに頼ることになり、なりすまし者も同じ結果を得ます。"
+  fix:
+    - "送信が正当かどうかを確認してください：{provider}、IP {ip}、逆引き DNS {ptr}。"
+    - "正当な場合は、all の前にサービスの公式の include: または ip4:{ip} を追加してください（? の修飾子は付けないでください）。"
+    - "最後の all がレコードにない場合は、~all を追加してください。"
+    - "公開してください：{suggested_record}。その後、テストをやり直してください。"
+  fix_by_provider:
+    google_workspace: "all の前に include:_spf.google.com を追加してください。"
+    microsoft_365: "all の前に include:spf.protection.outlook.com を追加してください。"
+    ovh: "all の前に include:mx.ovh.com を追加してください。"
+    o2switch: "all の前に include:spf.jabatus.fr を追加してください。"
+    brevo: "all の前に include:spf.brevo.com を追加してください。"
+    mailjet: "all の前に include:spf.mailjet.com を追加してください。"
+    mailgun: "送信ドメインの SPF で、all の前に include:mailgun.org を追加してください。"
+    amazon_ses: "カスタムの MAIL FROM の SPF に include:amazonses.com を追加してください。"

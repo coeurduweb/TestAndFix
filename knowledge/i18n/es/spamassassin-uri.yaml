@@ -1,0 +1,194 @@
+sa.uri_try_3ld:
+  title: Enlace a un subdominio de llamada a la acción (try., get., check., join., my.…)
+  why: Un enlace apunta a un host .com o .net cuyo nombre empieza por try, start, get, save, check, act, compare, join, learn, request, visit o my (get.oferta-ejemplo.com, check.miservicio.com). Los spammers crean estos subdominios de llamada a la acción; un servicio legítimo que use uno también es penalizado.
+  fix:
+    - Haz que los enlaces apunten a tu dominio principal (www.{domain}) o a una ruta (/prueba), en lugar de a un subdominio que empiece por una de estas palabras.
+sa.uri_try_usme:
+  title: Enlace «try» o «get» a una extensión .us, .me, .mobi o .club
+  why: Un enlace de llamada a la acción apunta a un dominio en .us, .me, .mobi o .club, extensiones que usan a menudo los spammers.
+  fix:
+    - Usa enlaces a tu dominio principal y firma el mensaje con DKIM (la regla no se aplica a los mensajes firmados).
+sa.uri_optout_3ld:
+  title: Enlace de baja en un subdominio del tipo «remove» o «stop»
+  why: El enlace de baja apunta a un host del tipo remove.ejemplo.com o stop.ejemplo.net. Es un patrón visto en spammers que cambian de dominio en cada campaña.
+  fix:
+    - Aloja la página de baja en tu dominio o en el de tu herramienta de envío, con una ruta (/baja).
+sa.uri_optout_usme:
+  title: Enlace de baja «remove» o «stop» en .us, .me, .mobi o .club
+  why: El enlace de baja apunta a un subdominio de parada en una extensión muy usada de forma abusiva.
+  fix:
+    - Usa el enlace de baja nativo de tu herramienta de envío.
+sa.uri_novowel:
+  title: Enlace a un nombre de host con una larga secuencia de consonantes
+  why: Un enlace apunta a un host que contiene siete consonantes seguidas, como los dominios generados al azar. Los dominios de seguimiento de las herramientas de envío (identificadores codificados) a veces lo activan.
+  fix:
+    - Configura en tu herramienta de envío un dominio de seguimiento personalizado y legible (clic.{domain}).
+sa.uri_hex:
+  title: Enlace a un nombre de host con una larga secuencia hexadecimal
+  why: El nombre de host de un enlace contiene al menos seis caracteres hexadecimales (a1b2c3), típicos de los subdominios generados. Penalización baja.
+  fix:
+    - Usa nombres de host legibles en los enlaces, en particular para el seguimiento de clics.
+sa.numeric_http_addr:
+  title: Enlace a una dirección IP en lugar de un nombre de dominio
+  why: "Un enlace apunta a una dirección IP (http://203.0.113.10/...). Ningún sitio serio hace esto en un correo, y los filtros de enlaces no pueden verificar nada. Más de 1 punto."
+  fix:
+    - Sustituye la IP por el nombre de dominio del sitio.
+    - Para un enlace de prueba o de preproducción que quedó en una plantilla, sustitúyelo por la dirección de producción.
+sa.normal_http_to_ip:
+  title: Enlace a una dirección IPv4 pública
+  why: Un enlace apunta a una dirección IP pública. Puntuación simbólica, pero NUMERIC_HTTP_ADDR suele activarse al mismo tiempo.
+  fix:
+    - Usa un nombre de dominio en los enlaces.
+sa.https_http_mismatch:
+  title: El texto de un enlace muestra otro dominio distinto de su destino
+  why: "Un enlace muestra https://www.ejemplo.com pero en realidad lleva a otro dominio. Es la técnica básica del phishing; un boletín cuyos enlaces pasan por un dominio de seguimiento mientras muestra la dirección final en claro también la activa."
+  fix:
+    - "No escribas una dirección https:// como texto de enlace: pon una etiqueta («Ver la tienda»)."
+    - O configura el seguimiento de clics en un subdominio de {domain} para que el dominio mostrado y el dominio real coincidan.
+sa.http_escaped_host:
+  title: Nombre de host de un enlace codificado en %
+  why: "El nombre de host de un enlace contiene caracteres codificados (%2E en lugar de un punto), un procedimiento para ocultar el destino real. Penalización baja."
+  fix:
+    - Escribe el nombre de host en claro; solo los parámetros después de ? pueden codificarse.
+sa.http_excessive_escapes:
+  title: Enlace con codificaciones % innecesarias
+  why: Un enlace codifica letras o cifras corrientes (%61 por a). Puntuación simbólica.
+  fix:
+    - Codifica en los enlaces solo los caracteres que lo requieren (espacios, acentos, &).
+sa.weird_port:
+  title: Enlace con un puerto poco habitual
+  why: "Un enlace especifica un puerto de red poco habitual (https://ejemplo.com:8443/). Suele ser un enlace de preproducción o de administración olvidado. Puntuación simbólica."
+  fix:
+    - Usa la dirección pública del sitio sin número de puerto.
+sa.uri_truncated:
+  title: Un enlace se truncó durante el análisis
+  why: "Un enlace supera los 8 192 caracteres o el mensaje contiene demasiados enlaces: SpamAssassin no lo analizó todo. Puntuación simbólica, pero un enlace de este tamaño es anómalo."
+  fix:
+    - Acorta los enlaces demasiado largos (parámetros de seguimiento en exceso) y limita el número de enlaces.
+sa.uri_data:
+  title: "Enlace data: (contenido incrustado en la dirección)"
+  why: "Un enlace usa el esquema data: para incrustar un documento (a menudo HTML) en la propia dirección. Es una técnica de phishing para mostrar una página falsa sin servidor."
+  fix:
+    - Sustituye este enlace por uno que apunte a una página alojada en tu sitio.
+sa.uri_wpadmin:
+  title: Enlace a la administración de un WordPress
+  why: Un enlace apunta a /wp-admin/ de un sitio WordPress. Los phishings alojan sus páginas falsas en WordPress pirateados; un enlace de administración en un boletín también es un error.
+  fix:
+    - Sustituye el enlace por la dirección pública de la página (sin /wp-admin/).
+  fix_by_provider:
+    wordpress: "Copia el enlace desde el botón «Ver» del artículo, no desde la pantalla de edición."
+sa.uri_wp_hacked:
+  title: Enlace a un archivo PHP o HTML en wp-content o wp-includes
+  why: "Un enlace apunta a un archivo .php o .html en wp-content o wp-includes. Estos directorios normalmente solo contienen imágenes y scripts internos: es la ruta típica de una página subida por un pirata. Más de 2,5 puntos."
+  fix:
+    - "Si el enlace es tuyo, revisa ese archivo: si no tiene nada que hacer ahí, el sitio está comprometido."
+    - Para un enlace legítimo a un documento, usa la dirección de la página pública o de un PDF en uploads.
+    - "Autentica el mensaje (SPF o DKIM): la regla no se aplica a los mensajes autenticados."
+sa.uri_php_redir:
+  title: Enlace que pasa por redirect.php
+  why: Un enlace pasa por un script redirect.php que reenvía a otra dirección. Las redirecciones abiertas de sitios de terceros sirven para ocultar destinos maliciosos.
+  fix:
+    - Pon la dirección de destino directamente en el enlace.
+sa.url_shortener_disabled:
+  title: Enlace acortado desactivado por abuso
+  why: Un enlace acortado fue suspendido por el servicio de acortamiento por abuso. El lector llegará a una página de advertencia, y SpamAssassin suma 2 puntos.
+  fix:
+    - Sustituye el enlace acortado por la dirección completa de la página.
+    - "No uses un acortador público en un correo: se comparte con spammers."
+sa.url_shortener_chained:
+  title: Enlace acortado que redirige a otro acortador
+  why: Un enlace acortado lleva a otro enlace acortado. La cadena sirve para ocultar el destino final. Puntuación simbólica, pero los filtros de enlaces lo tienen en cuenta.
+  fix:
+    - Usa la dirección final directamente, sin acortador.
+sa.t_short_shortner:
+  title: Mensaje corto con sobre todo un enlace acortado
+  why: "El mensaje tiene unas pocas palabras y un enlace acortado. La lista de SpamAssassin también incluye youtu.be, amzn.to, wp.me o eepurl.com (Mailchimp). Perfil típico de un spam o de un mensaje de cuenta pirateada. Regla de prueba sin peso."
+  fix:
+    - Añade contexto al mensaje y usa la dirección completa de la página.
+sa.redir_url_chained:
+  title: Enlace redirigido a otros redirectores
+  why: Un enlace pasa por varios servicios de redirección sucesivos. Puntuación simbólica, pero es un medio clásico para ocultar un destino.
+  fix:
+    - Limita la cadena a una sola redirección (el seguimiento de tu herramienta de envío) y después la dirección final.
+sa.redir_url_loop:
+  title: Enlace redirigido que se repite en bucle
+  why: Un enlace de redirección vuelve a sí mismo. El lector nunca llegará a la página.
+  fix:
+    - Prueba el enlace en un navegador y corrige la redirección.
+sa.redir_url_maxchain:
+  title: Enlace con demasiadas redirecciones
+  why: El enlace pasa por tantas redirecciones que el análisis se detuvo. Los navegadores también pueden abandonar.
+  fix:
+    - Reduce el número de redirecciones entre el enlace del mensaje y la página final.
+sa.gb_google_obfur:
+  title: Enlace oculto tras una redirección de Google
+  why: "El enlace es una dirección google.com/url?...&url=... copiada de una página de resultados de Google. Oculta el destino real, y los spammers la usan para eludir las listas negras."
+  fix:
+    - Abre el enlace y copia la dirección real de la página en la barra del navegador.
+sa.uri_google_proxy:
+  title: Enlace que pasa por el proxy de imágenes de Google
+  why: "Un enlace o una imagen pasa por googleusercontent.com/proxy/, la dirección que Gmail da a las imágenes que almacena en caché. Aparece cuando se copia una imagen de un mensaje recibido en Gmail."
+  fix:
+    - Vuelve a insertar las imágenes desde su archivo original o su dirección en tu sitio.
+sa.uri_dq_unsub:
+  title: Enlace de baja a una dirección IP
+  why: El enlace de baja apunta a una dirección IP. Los destinatarios y los filtros no tienen forma de identificar al remitente.
+  fix:
+    - Aloja la página de baja bajo un nombre de dominio (el tuyo o el de la herramienta de envío).
+sa.spoof_com2com:
+  title: Enlace con .com en medio y al final del nombre de host
+  why: "El nombre de host del tipo banco.com.otro-sitio.com imita un dominio conocido. Puntuación simbólica, pero es un indicio de suplantación."
+  fix:
+    - "Evita los subdominios que contienen «.com»: usa el dominio real."
+sa.spoof_com2oth:
+  title: Enlace con .com en medio del nombre de host
+  why: "El nombre de host contiene «.com.» en medio (ejemplo.com.sitio.net). Puntuación simbólica."
+  fix:
+    - Usa un nombre de host sin «.com» intermedio.
+sa.long_hex_uri:
+  title: Enlace con una secuencia hexadecimal muy larga
+  why: Un enlace contiene un identificador hexadecimal de 128 caracteres. Los enlaces de seguimiento personalizados por destinatario a veces generan esto. 1 punto.
+  fix:
+    - Si es el enlace de seguimiento de tu herramienta, usa un identificador más corto o un dominio de seguimiento personalizado.
+sa.uppercase_uri:
+  title: Protocolo de enlace escrito con mayúsculas y minúsculas inusuales
+  why: "El inicio de un enlace mezcla minúsculas y mayúsculas (hTTps://). Es un procedimiento para eludir filtros ingenuos. Casi 3 puntos."
+  fix:
+    - Escribe https:// en minúsculas en todos los enlaces.
+sa.uri_excess_slashes:
+  title: Enlace con demasiadas barras después del protocolo
+  why: "Un enlace empieza por https:/// (tres barras o más). Los navegadores lo corrigen, pero los filtros lo ven como un intento de elusión. 2,5 puntos."
+  fix:
+    - "Corrige el enlace: https:// seguido directamente del dominio."
+    - Revisa la variable de plantilla que construye el enlace (dominio vacío, barra de más).
+sa.body_uri_only:
+  title: El cuerpo del mensaje es solo un enlace
+  why: El mensaje se reduce a un enlace o a una imagen en la que se puede hacer clic. Puntuación simbólica, pero es el perfil de los mensajes enviados desde cuentas pirateadas.
+  fix:
+    - "Añade una o dos frases que expliquen el enlace y firma el mensaje con DKIM."
+sa.mxg_email_frag:
+  title: "Enlace que contiene una dirección de correo después de #"
+  why: "Un enlace contiene una dirección de correo después del #. Los phishings la usan para rellenar previamente una falsa página de inicio de sesión. Penalización baja."
+  fix:
+    - Pasa el identificador del destinatario mediante un parámetro opaco, no su dirección de correo en claro.
+sa.tracker_id:
+  title: Párrafo reducido a un identificador de seguimiento
+  why: Un párrafo del mensaje es solo un código aleatorio, como los que los spammers añaden para que cada mensaje sea único. Penalización baja.
+  fix:
+    - Quita los identificadores técnicos visibles en el texto; colócalos en los enlaces o en las cabeceras.
+sa.uri_firebaseapp:
+  title: Enlace a una aplicación alojada en firebaseapp.com o web.app
+  why: Un enlace lleva a una aplicación alojada en Firebase. Este alojamiento gratuito se usa mucho para páginas de phishing, de ahí casi 3 puntos incluso para una aplicación legítima.
+  fix:
+    - Asocia un dominio personalizado a la aplicación de Firebase y úsalo en los enlaces.
+sa.t_pds_other_bad_tld:
+  title: Enlace a una extensión de dominio poco fiable
+  why: Un enlace apunta a una extensión que las reglas clasifican como poco fiable. Regla de prueba sin peso, pero otros filtros penalizan estas extensiones.
+  fix:
+    - Si es tu dominio, considera una extensión más extendida para los enlaces de las campañas.
+sa.shortener_short_img:
+  title: HTML corto con imagen en la que se puede hacer clic y enlace acortado
+  why: El mensaje es un HTML minúsculo con una imagen en la que se puede hacer clic que lleva a un enlace acortado. Combinación típica del spam. Más de 2 puntos.
+  fix:
+    - Sustituye el enlace acortado por la dirección completa y añade texto al mensaje.
+    - "Atención: youtu.be, amzn.to, wp.me y eepurl.com cuentan como acortadores; usa las direcciones largas."

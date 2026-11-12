@@ -1,0 +1,224 @@
+sa.uppercase_50_75:
+  title: Texto del mensaje con un 50 a 75 % en mayúsculas
+  why: Más de la mitad de las letras del cuerpo están en mayúsculas. Puntuación simbólica hoy, pero el mensaje parece gritado y los lectores lo denuncian con más facilidad.
+  fix:
+    - Reescribe el texto con mayúsculas y minúsculas normales; reserva las mayúsculas para las siglas.
+sa.uppercase_75_100:
+  title: Texto del mensaje casi enteramente en mayúsculas
+  why: Más de las tres cuartas partes de las letras están en mayúsculas. Puntuación simbólica.
+  fix:
+    - Reescribe el texto con mayúsculas y minúsculas normales.
+sa.lots_of_money:
+  title: El mensaje cita grandes sumas de dinero
+  why: "El texto menciona grandes sumas (10 000 €, «millones»). Puntuación simbólica, pero esta regla entra en varias reglas combinadas de fraude."
+  fix:
+    - Nada obligatorio. Evita poner importes grandes en el asunto y en el primer párrafo.
+sa.money_back:
+  title: Mención « money back guarantee »
+  why: El texto contiene la expresión en inglés « money back guarantee ». 1 punto.
+  fix:
+    - "Reformula (« reembolso en 30 días ») o quita la expresión en inglés del pie de página."
+sa.risk_free:
+  title: Promesa « sin riesgo »
+  why: "El texto promete ausencia de riesgo (« risk free », « 100% safe ») sin ningún signo de lista de difusión. Casi 3 puntos: la fórmula es típica de las estafas."
+  fix:
+    - "Quita la fórmula, o añade un enlace de baja real y la cabecera List-Unsubscribe: entonces la regla ya no se aplica."
+sa.guaranteed_100_percent:
+  title: Mención « 100% guaranteed »
+  why: El texto contiene « 100% guaranteed ». Casi 3 puntos solo por esta expresión.
+  fix:
+    - Quita la expresión o formula la garantía con precisión (duración, condiciones).
+sa.bang_guar:
+  title: "« Guaranteed! » con signo de exclamación"
+  why: El texto contiene « guarantee! » o « guaranteed! ». 1 punto.
+  fix:
+    - Quita el signo de exclamación o la expresión.
+sa.free_quote_instant:
+  title: Oferta de presupuesto gratuito e inmediato
+  why: "El texto propone un « free instant quote » o un « free no-obligation quote ». Fórmula de los spams de prospección en inglés. Más de 1 punto."
+  fix:
+    - Reformula la llamada a la acción sin « free » ni « instant » pegados a « quote ».
+sa.low_price:
+  title: Mención « lowest price »
+  why: El texto contiene « Low Price » o « Lowest Price ». Penalización leve.
+  fix:
+    - Ningún cambio obligatorio; evita la fórmula en el asunto.
+sa.act_now_caps:
+  title: "« Act Now » en mayúsculas"
+  why: El texto contiene « Act Now » en mayúsculas. Penalización leve.
+  fix:
+    - "Sustitúyelo por una llamada a la acción precisa (« Reserva tu plaza »)."
+sa.this_ad:
+  title: El texto habla de « this ad » o « this promotion »
+  why: "El texto contiene « this ad », « this advertisement » o « this promotion ». Suele aparecer en una mención legal en inglés del pie de página. Casi 3 puntos."
+  fix:
+    - Quita o traduce la mención en inglés del pie de página.
+sa.admits_spam:
+  title: El texto se presenta como publicidad
+  why: "El mensaje contiene « This is an advertisement »: algunas leyes imponen esta mención, pero los filtros la tratan como una confesión. 2 puntos."
+  fix:
+    - Si la mención no es exigida para tu público, quítala.
+    - "Si no, usa una herramienta de envío que añada sus cabeceras de campaña (la regla no se aplica con X-Campaignid)."
+sa.ad_prefs:
+  title: Enlace o mención de « advertising preferences »
+  why: El texto contiene « marketing preferences » o « ad settings ». Penalización leve, a menudo por el enlace de gestión de preferencias en inglés.
+  fix:
+    - "Traduce la etiqueta del enlace de preferencias (« Gestionar mis preferencias »)."
+sa.excuse_remove:
+  title: Fórmula « to be removed from our mailings »
+  why: "El texto contiene « to be removed from ... mailings » o « ... offers ». Fórmula de los viejos spams en inglés, penalizada en más de 3 puntos."
+  fix:
+    - "Sustituye la frase por un enlace de baja directo: « Darse de baja »."
+sa.excuse_4:
+  title: Fórmula « To Be Removed, Please »
+  why: "El texto contiene « To be removed, please... ». Más de 1 punto."
+  fix:
+    - Sustitúyela por un enlace de baja con un clic.
+sa.end_future_emails:
+  title: Fórmula de baja típica del spam
+  why: El texto de baja usa una fórmula en inglés que los spammers emplean mucho, y el mensaje no está firmado con DKIM. Penalización leve.
+  fix:
+    - "Firma el mensaje con DKIM: la regla no se aplica a los mensajes firmados."
+sa.remove_before_link:
+  title: "« No thanks » o « unsubscribe here » justo antes de un enlace http"
+  why: Una fórmula de rechazo va seguida de un enlace http:// sin cifrar. Penalización leve.
+  fix:
+    - Usa un enlace https:// y una etiqueta pulsable en lugar de una dirección mostrada.
+sa.obfu_unsub_ul:
+  title: Texto de baja con guiones bajos en lugar de espacios
+  why: "El texto contiene expresiones como « click_here » o « to_unsubscribe », escritas con guiones bajos para eludir los filtros. Un nombre de archivo o de variable dejado a la vista también puede activarla."
+  fix:
+    - Escribe el texto con normalidad, con espacios.
+    - Comprueba que ninguna etiqueta de plantilla (to_unsubscribe, click_here) aparece sin sustituir.
+sa.marketing_partners:
+  title: Mención de socios de marketing
+  why: "El texto menciona un « marketing partner » o un « partner site », fórmula de las listas alquiladas. Puntuación simbólica."
+  fix:
+    - Ningún cambio obligatorio. Envía solo a contactos que se hayan inscrito en tu sitio.
+sa.cant_see_ad:
+  title: "Fórmula « can't see the images below »"
+  why: "El mensaje contiene la fórmula en inglés « If you can't see this newsletter... » y no tiene cabecera List-Unsubscribe. 1 punto."
+  fix:
+    - "Añade la cabecera List-Unsubscribe (la regla deja de aplicarse) o traduce la frase del enlace «versión en línea»."
+sa.not_spam:
+  title: El mensaje afirma que no es spam
+  why: "El texto afirma « This email is not spam » (en inglés, español o alemán). Los mensajes legítimos no necesitan decirlo. 1 punto."
+  fix:
+    - Elimina la frase. Explica mejor por qué recibe el mensaje el destinatario (inscripción, cliente).
+sa.urg_biz:
+  title: El texto habla de un asunto urgente
+  why: "El texto contiene « urgent reply », « urgent business » o « urgent request ». Fórmula típica de fraude en inglés. Penalización moderada."
+  fix:
+    - Quita la fórmula de urgencia; indica una fecha concreta si es necesario.
+sa.dear_something:
+  title: "Fórmula de saludo genérica « Dear Sir », « Dear Madam »..."
+  why: "El mensaje empieza por « Dear Sir », « Dear Madam », « Dear Candidate »... Los mensajes personalizados usan el nombre. Casi 2 puntos."
+  fix:
+    - Personaliza el saludo con el nombre o el apellido del destinatario, o elimínalo.
+sa.dear_friend:
+  title: "Fórmula de saludo « Dear Friend »"
+  why: "El mensaje empieza por « Dear Friend ». Fórmula emblemática de las estafas, más de 2,5 puntos."
+  fix:
+    - Personaliza el saludo o elimínalo.
+sa.one_time:
+  title: Mención « one time offer »
+  why: "El texto contiene « one-time offer » o « one time charge ». Penalización moderada."
+  fix:
+    - Reformula la oferta sin la expresión en inglés.
+sa.prices_are_affordable:
+  title: Mención « affordable prices »
+  why: El texto contiene « affordable prices ». Penalización moderada.
+  fix:
+    - Indica el precio o la ventaja concreta en lugar de la fórmula.
+sa.new_products:
+  title: Anuncio de nuevos productos con estilo de spam
+  why: "El texto presenta novedades con una fórmula en inglés de las prospecciones masivas (« We are pleased to introduce our... »). 1 punto."
+  fix:
+    - Presenta el producto directamente, con su nombre y su interés, sin fórmula de introducción.
+sa.ready_to_ship:
+  title: "Fórmulas « ready to ship from our warehouse »"
+  why: "El texto presume de existencias listas para enviar desde un almacén, fórmula de los spams de proveedores industriales. Más de 1 punto."
+  fix:
+    - Reformula con información precisa (plazo, referencia, condiciones) en lugar de la fórmula hecha.
+sa.investment_advice:
+  title: Mención « investment advice »
+  why: "El texto contiene « investment advice », a menudo en una advertencia legal. Penalización leve."
+  fix:
+    - Nada obligatorio si la mención es exigida.
+sa.fin_free:
+  title: Promesa de libertad financiera
+  why: "El texto promete « financial freedom » o « financially independent ». Penalización leve."
+  fix:
+    - Reformula sin prometer ganancias.
+sa.compensation:
+  title: Mención de compensación económica
+  why: "El texto habla de « compensation » sin ningún signo de lista o de autenticación. Puntuación simbólica."
+  fix:
+    - Nada obligatorio. Autentica el mensaje (SPF, DKIM).
+sa.fill_this_form:
+  title: Petición de rellenar un formulario con datos personales
+  why: "El mensaje pide responder dando nombre, dirección, teléfono, profesión... Es el esquema de las estafas en inglés. Puntuación simbólica, pero forma parte de un conjunto de reglas combinadas más pesado."
+  fix:
+    - Remite a un formulario de tu sitio en lugar de pedir los datos respondiendo al correo electrónico.
+sa.fsl_bulk_sig:
+  title: Envío masivo detectado sin enlace de baja
+  why: "Una red colaborativa ha visto este mensaje en gran número y no contiene ningún medio para darse de baja. Puntuación simbólica, pero es un defecto real: Gmail y Yahoo exigen la baja con un clic para los envíos masivos."
+  fix:
+    - Añade un enlace de baja visible y las cabeceras List-Unsubscribe y List-Unsubscribe-Post.
+sa.english_uce_subject:
+  title: Asunto que empieza por « ADV »
+  why: "El asunto empieza por « ADV » o « ADVERT », etiqueta de publicidad impuesta por algunas leyes estadounidenses y buscada por los filtros. Casi 3 puntos."
+  fix:
+    - Quita el prefijo ADV del asunto, salvo obligación legal para tu público.
+sa.subj_as_seen:
+  title: Asunto que contiene « As Seen »
+  why: "El asunto contiene « As Seen » (« as seen on TV »). Casi 1,5 puntos."
+  fix:
+    - Reformula el asunto.
+sa.unicode_obfu_zw:
+  title: Caracteres invisibles insertados en las palabras
+  why: "Se insertan caracteres invisibles (espacios de ancho cero) dentro de algunas palabras. Es una técnica de ofuscación; algunas plantillas de preheader también los añaden. Puntuación simbólica."
+  fix:
+    - Quita los caracteres de ancho cero del texto visible; firma el mensaje con DKIM.
+sa.unicode_obfu_zw_many:
+  title: Numerosos caracteres invisibles insertados en las palabras
+  why: "El texto está plagado de caracteres de ancho cero. Los preheaders que encadenan &zwnj; o &#8203; para ocultar el inicio del mensaje producen muchos. 3 puntos."
+  fix:
+    - "Limita el relleno del preheader: basta con unos pocos &nbsp;, o con ninguno."
+    - Quita los caracteres de ancho cero pegados al texto visible.
+sa.unicode_obfu_asc:
+  title: Letras cirílicas mezcladas con palabras latinas
+  why: "Se mezclan con el texto letras cirílicas que se parecen a las latinas. Es una técnica para burlar los filtros de palabras, y copiar y pegar desde un documento mal codificado puede introducirlas. 2,5 puntos."
+  fix:
+    - Vuelve a escribir a teclado las palabras afectadas, o pasa el texto por una herramienta que señale los caracteres no latinos.
+sa.percent_random:
+  title: Macro %RND o %RANDOM sin sustituir
+  why: "El mensaje contiene una macro %RND o %RANDOM dejada tal cual: un programa de envío masivo no ha sustituido su variable aleatoria. Casi 2 puntos."
+  fix:
+    - Localiza la macro en el asunto, las cabeceras o el HTML y quítala de la plantilla.
+sa.longwords:
+  title: Larga sucesión de palabras largas
+  why: "El texto contiene largas sucesiones de palabras largas en minúsculas, como los textos aleatorios que añaden los spammers para engañar a los filtros. 1 punto."
+  fix:
+    - "Comprueba que no quede en el mensaje ningún texto de relleno ni palabras clave en serie (atributo alt, texto oculto, lista de palabras clave)."
+sa.unwanted_language_body:
+  title: Mensaje redactado en un idioma no aceptado
+  why: "El servidor de pruebas solo acepta algunos idiomas y el mensaje está escrito en otro. Solo ocurre si ok_languages se ha restringido. 2,8 puntos."
+  fix:
+    - "Ningún cambio en el mensaje si el idioma es el deseado; indica que el servidor de pruebas filtra idiomas."
+sa.nice_reply_a:
+  title: El mensaje parece una respuesta real
+  why: "El mensaje tiene las cabeceras de una respuesta real dentro de un hilo de conversación. Gran bonificación (casi 3 puntos)."
+  fix:
+    - "Nada que corregir. No simules falsos Re: en una campaña: no activa esta regla y molesta a los lectores."
+sa.gtube:
+  title: Mensaje de prueba antispam GTUBE
+  why: "El mensaje contiene la cadena GTUBE, creada expresamente para que todos los filtros la reconozcan como spam. 1000 puntos."
+  fix:
+    - "Quita la cadena GTUBE: solo sirve para comprobar que un filtro funciona."
+spamassassin.over_threshold:
+  title: "SpamAssassin clasifica este mensaje como spam ({value} puntos, umbral {rule_score})"
+  why: "Por encima de este umbral, un servidor que filtra con SpamAssassin y su configuración por defecto envía el mensaje a no deseados o lo rechaza. Los puntos proceden de las reglas listadas en « Riesgo de correo no deseado »."
+  fix:
+    - Corrige primero las reglas de SpamAssassin que más puntos cuestan.
+    - "Envía después un mensaje de prueba: debe quedar por debajo de {rule_score} puntos."

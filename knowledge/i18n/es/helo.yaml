@@ -1,0 +1,104 @@
+helo.not_fqdn:
+  title: "El servidor se presenta con un nombre incompleto ({helo})"
+  why: "Tu servidor anuncia « {helo} », un nombre sin dominio que nadie puede verificar en Internet. Varios filtros antispam suman puntos a este tipo de mensaje, y algunos servidores estrictos lo rechazan ya en el comando EHLO."
+  fix:
+    - "Elige un nombre completo que pertenezca a tu dominio, por ejemplo mail.{domain}."
+    - "Crea un registro A (y AAAA si envías por IPv6) para ese nombre, apuntando a {ip}."
+    - "Pide al proveedor de la IP {ip} que configure el DNS inverso (PTR) con ese mismo nombre."
+    - "Declara ese nombre como nombre de host del servidor de envío (consulta el procedimiento de tu software más abajo) y reinicia el servicio."
+  fix_by_provider:
+    postfix: "En /etc/postfix/main.cf, indica myhostname = mail.{domain} (smtp_helo_name toma $myhostname por defecto), y ejecuta postfix reload."
+    exim: "Ajusta primary_hostname = mail.{domain} en la configuración principal, o la opción helo_data del transporte smtp, y reinicia Exim."
+    wordpress: "Si tu sitio envía por SMTP con PHPMailer, fija $phpmailer->Hostname = 'mail.{domain}' en un hook phpmailer_init (o en el campo equivalente de tu extensión SMTP)."
+    cpanel: "En alojamiento compartido, el HELO es el nombre del servidor que elige el proveedor: abre un ticket con él citando el nombre « {helo} »."
+helo.ip_unbracketed:
+  title: "El servidor se presenta con una dirección IP sin corchetes ({helo})"
+  why: "Anunciar una IP sin corchetes infringe la sintaxis SMTP. Es una firma clásica de las máquinas infectadas y de los scripts de envío improvisados: SpamAssassin y otros filtros penalizan este caso."
+  fix:
+    - "Asigna al servidor un nombre completo del tipo mail.{domain} y crea su registro A apuntando a {ip}."
+    - "Haz que el DNS inverso de {ip} coincida con ese nombre."
+    - "Configura ese nombre como HELO del software de envío y reinícialo."
+  fix_by_provider:
+    postfix: "En main.cf, myhostname = mail.{domain}; comprueba que ningún smtp_helo_name contiene una dirección IP, y ejecuta postfix reload."
+    exim: "Fija primary_hostname o helo_data en mail.{domain} en lugar de $sending_ip_address."
+    wordpress: "Una IP en el HELO suele venir de un PHPMailer sin nombre de host: ajusta $phpmailer->Hostname en phpmailer_init."
+helo.address_literal:
+  title: "El servidor se presenta con un literal de dirección ({helo})"
+  why: "La sintaxis es correcta, pero un servidor de correo legítimo normalmente anuncia su nombre. Sin nombre, el destinatario no puede verificar el SPF del HELO ni relacionar {helo} con tu dominio, lo que quita una señal de confianza."
+  fix:
+    - "Asigna al servidor un nombre completo, por ejemplo mail.{domain}, con un registro A apuntando a {ip}."
+    - "Ajusta el DNS inverso de {ip} con ese nombre."
+    - "Sustituye el literal por ese nombre en la configuración HELO del software de envío."
+  fix_by_provider:
+    postfix: "En main.cf, myhostname = mail.{domain}, y ejecuta postfix reload."
+    exim: "Ajusta helo_data = mail.{domain} en el transporte smtp."
+helo.localhost:
+  title: "El servidor se presenta como « {helo} »"
+  why: "Un servidor que anuncia « localhost » desde Internet parece una máquina infectada. Los filtros antispam penalizan mucho este caso y varios servidores rechazan el mensaje ya en el comando EHLO."
+  fix:
+    - "Elige el nombre público del servidor, por ejemplo mail.{domain}, y crea su registro A apuntando a {ip}."
+    - "Ajusta el DNS inverso de {ip} con ese mismo nombre."
+    - "Indica ese nombre en la configuración del software de envío (y en /etc/hostname si el software lo toma del sistema), y reinícialo."
+  fix_by_provider:
+    postfix: "En main.cf, myhostname = mail.{domain}; sin este ajuste Postfix toma el nombre del sistema, a menudo localhost. Después, postfix reload."
+    exim: "Fija primary_hostname = mail.{domain}; si no, Exim toma el nombre del sistema."
+    wordpress: "Un HELO localhost suele venir de PHPMailer en un servidor sin nombre: ajusta $phpmailer->Hostname = 'mail.{domain}' en phpmailer_init, o usa el SMTP autenticado de tu servicio de correo."
+    plesk: "En Herramientas y ajustes, Ajustes del servidor, sustituye el nombre de host completo por mail.{domain}."
+helo.default_template:
+  title: "El servidor se presenta con un nombre por defecto ({helo})"
+  why: "« {helo} » es un nombre que se deja por defecto durante la instalación, o un dominio reservado a las redes privadas. No se resuelve en Internet y señala a los filtros un servidor sin configurar."
+  fix:
+    - "Sustituye este nombre por un nombre público de tu dominio, por ejemplo mail.{domain}."
+    - "Crea el registro A de ese nombre apuntando a {ip} y ajusta el DNS inverso de {ip} con ese nombre."
+    - "Reinicia el software de envío y repite la prueba."
+  fix_by_provider:
+    postfix: "En main.cf, myhostname = mail.{domain} y comprueba mydomain, después postfix reload."
+    exim: "Ajusta primary_hostname = mail.{domain}."
+helo.not_resolving:
+  title: "El nombre anunciado ({helo}) no existe en el DNS"
+  why: "El destinatario no encuentra ninguna dirección para « {helo} ». Varios filtros, entre ellos los servidores Postfix configurados con reject_unknown_helo_hostname, rechazan o penalizan este caso."
+  fix:
+    - "Crea un registro A para {helo} apuntando a {ip} en la zona DNS del dominio correspondiente."
+    - "Si {helo} no pertenece a un dominio que gestionas, cambia el HELO por un nombre de {domain}, por ejemplo mail.{domain}."
+    - "Espera a la propagación (duración del TTL) y repite la prueba."
+  fix_by_provider:
+    cloudflare_dns: "En DNS, Records, añade un registro A con el nombre {helo} apuntando a {ip}, con el proxy desactivado (nube gris): un nombre de servidor de correo no debe pasar por el proxy."
+    postfix: "Si el nombre es incorrecto, corrige myhostname en main.cf y ejecuta postfix reload."
+helo.ip_mismatch:
+  title: "El nombre anunciado ({helo}) no apunta a la IP de envío {ip}"
+  why: "Tu servidor anuncia « {helo} », pero ese nombre designa una dirección distinta de {ip}. Los filtros ven aquí un error de configuración tras un cambio de IP, o una suplantación de nombre."
+  fix:
+    - "Si {ip} es la IP actual del servidor, actualiza el registro A (o AAAA) de {helo} apuntando a {ip}."
+    - "Si el servidor sale por otra IP (NAT, retransmisor), usa como HELO el nombre que corresponde a esa IP de salida."
+    - "Comprueba que el DNS inverso de {ip} devuelve ese mismo nombre."
+helo.ptr_mismatch:
+  title: "El HELO ({helo}) difiere del DNS inverso ({ptr})"
+  why: "El servidor anuncia un nombre y su IP devuelve otro. No es un error, pero un HELO idéntico al PTR, que a su vez se resuelve a {ip}, es la configuración más legible para los filtros."
+  fix:
+    - "Elige un nombre único para el servidor, por ejemplo {ptr} si pertenece a tu dominio."
+    - "Usa ese nombre a la vez como HELO y como DNS inverso de {ip}, y comprueba que su registro A apunta a {ip}."
+  fix_by_provider:
+    postfix: "En main.cf, myhostname = {ptr}, y ejecuta postfix reload."
+    exim: "Ajusta primary_hostname = {ptr}."
+helo.impersonation:
+  title: "El servidor se presenta con el nombre de un dominio que no es suyo ({helo})"
+  why: "Tu servidor anuncia un nombre que pertenece a otra organización, cuando {ip} no le pertenece. Los destinatarios interpretan este caso como una suplantación, y es muy probable que el mensaje se rechace."
+  fix:
+    - "Sustituye de inmediato este HELO por un nombre de tu propio dominio, por ejemplo mail.{domain}."
+    - "Crea su registro A apuntando a {ip} y ajusta el DNS inverso de {ip} con ese nombre."
+    - "Si no gestionas este servidor, averigua quién lo configuró: un software instalado sin tu permiso puede ser la causa."
+helo.invalid_characters:
+  title: "El nombre anunciado ({helo}) contiene caracteres no permitidos"
+  why: "Un carácter como el guion bajo, el espacio o una etiqueta vacía hace que el nombre no sea válido. Algunos servidores rechazan entonces el comando EHLO, y otros penalizan el mensaje."
+  fix:
+    - "Renombra el servidor usando solo letras, cifras, puntos y guiones, por ejemplo mail.{domain}."
+    - "Crea el registro A correspondiente apuntando a {ip} y alinea el DNS inverso."
+    - "Actualiza el HELO del software de envío y reinícialo."
+helo.dynamic_name:
+  title: "El servidor se presenta con un nombre de conexión residencial ({helo})"
+  why: "Este nombre se parece al que un proveedor de acceso asigna a un router o a un cliente de consumo. Los filtros penalizan mucho estos mensajes, porque la mayoría de los envíos desde este tipo de conexión proceden de máquinas infectadas."
+  fix:
+    - "No envíes directamente desde esta conexión: usa el servidor SMTP autenticado de tu servicio de correo (puerto 587) o un servicio de envío."
+    - "Si el servidor es realmente un servidor dedicado, pide al proveedor de alojamiento un DNS inverso personalizado, por ejemplo mail.{domain}, y usa ese nombre como HELO."
+  fix_by_provider:
+    postfix: "Para retransmitir a través de tu servicio de correo, configura relayhost = [smtp.tu-proveedor]:587 con autenticación SASL, y ejecuta postfix reload."

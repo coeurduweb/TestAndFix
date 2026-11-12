@@ -1,0 +1,153 @@
+sa.mime_html_only:
+  title: The message has no plain-text version
+  why: The message contains only HTML. The direct penalty is low, but it is a condition for several heavier rules (TO_NO_BRKTS_HTML_ONLY, TO_EQ_FM_HTML_ONLY...). PHP scripts and some editors send only HTML.
+  fix:
+    - Send a multipart/alternative message with a readable text/plain part and the HTML part.
+    - "In your sending tool, turn on automatic generation of the text version, then read it through."
+  fix_by_provider:
+    wordpress: "wp_mail() sends only one part: to add a text version, set $phpmailer->AltBody in a function hooked to phpmailer_init."
+sa.mime_html_only_multi:
+  title: Multipart message without a text part
+  why: The message declares itself multipart/alternative (text and HTML) but contains only HTML. The structure announces a text version that does not exist. Negligible score.
+  fix:
+    - Add the missing text/plain part, or switch the message to a plain text/html message.
+sa.mime_html_mostly:
+  title: Text part almost empty next to the HTML
+  why: "A text version exists but is almost empty (“Your software does not read HTML”). Filters treat it as an absence of text."
+  fix:
+    - "Fill the text version with the same content as the HTML: headings, paragraphs, plain-text links."
+sa.mpart_alt_diff:
+  title: The text and HTML versions are different
+  why: "The text version hardly matches the HTML: generic text, old content, or a text version from another template. Spammers put harmless text in the text part and the real offer in the HTML."
+  fix:
+    - Regenerate the text version from the final HTML of this campaign.
+    - Do not leave the text version of an old template in place.
+sa.mpart_alt_diff_count:
+  title: The text version has far fewer words than the HTML
+  why: The number of different words between text and HTML is very unbalanced. The text version does not reflect the HTML content. More than one point.
+  fix:
+    - Have the text version generated automatically from the HTML, then correct it.
+sa.mime_no_text:
+  title: Multipart message with no identified text part
+  why: "The message is multipart but no part is declared as text: everything is in attachments or non-text types. Negligible score, but combined with an X-Mailer PHP it weighs close to 3 points."
+  fix:
+    - Add a text/plain or text/html part that describes the message.
+sa.mime_qp_long_line:
+  title: Quoted-printable line too long
+  why: A line encoded in quoted-printable exceeds the length set by the standard (76 characters). Negligible score, but some servers cut these lines and break the HTML or the DKIM signature.
+  fix:
+    - Let the sending library do the quoted-printable encoding instead of writing it yourself.
+sa.mime_base64_text:
+  title: Plain text encoded in base64
+  why: "A plain-text part in pure ASCII is encoded in base64, which makes it unreadable for a simple filter. Nothing justifies this for text without accents: spammers do it to hide their content. More than 1.5 points."
+  fix:
+    - Encode the text parts in quoted-printable or 7bit, and declare charset=UTF-8.
+sa.base64_length_79_inf:
+  title: Base64 lines longer than 79 characters
+  why: A base64-encoded part has lines that are too long. The MIME standard limits these lines to 76 characters. Scripts that encode with base64_encode() without splitting produce a single line. 1.5 points.
+  fix:
+    - Split the base64 into lines of 76 characters (chunk_split() in PHP), or let the sending library do the encoding.
+sa.base64_length_78_79:
+  title: Base64 lines of 78 characters
+  why: A base64 part has lines of 78 characters, beyond the 76 expected. Low penalty.
+  fix:
+    - Split the base64 into lines of 76 characters.
+sa.mime_header_ctype_only:
+  title: Content-Type without the other MIME headers
+  why: The message declares a Content-Type but no MIME-Version, which is mandatory as soon as MIME is used. This gives away hand-written headers. Low penalty.
+  fix:
+    - "Add the MIME-Version: 1.0 header, or have the message built by a library."
+sa.mime_suspect_name:
+  title: Attachment name does not match its content
+  why: An attachment has an extension that does not match its declared type (a .pdf declared as an image, for example). Malware disguises itself this way.
+  fix:
+    - "Attach files with their real MIME type (application/pdf for a PDF). Libraries deduce it from the extension."
+sa.mime_charset_faraway:
+  title: MIME character set from an unexpected language
+  why: Part of the message is declared in a character set from a language that the test server does not accept. The rule only triggers if the server has restricted ok_locales.
+  fix:
+    - Encode the whole message in UTF-8.
+sa.charset_faraway_header:
+  title: Character set from an unexpected language in the headers
+  why: The subject or the sender name is encoded in a foreign character set (big5, koi8-r...). Only triggers if the server has restricted ok_locales, but then weighs more than 3 points.
+  fix:
+    - Encode the subject and the sender name in UTF-8.
+sa.bogus_mime_version:
+  title: Invalid MIME-Version header
+  why: The MIME-Version header is not 1.0, the only existing value. Typical of a script that writes the header by hand with a typo.
+  fix:
+    - "Write exactly MIME-Version: 1.0."
+sa.mimepart_limit_exceeded:
+  title: Too many MIME parts
+  why: The message contains so many MIME parts that SpamAssassin stopped analyzing them. Negligible score, but a message of this kind is suspicious to all filters.
+  fix:
+    - Group the attachments into an archive, or offer a download link.
+sa.empty_message:
+  title: Message with no text content
+  why: The message has neither text nor attachment. Empty test sends and address verification messages have this profile. More than 2 points.
+  fix:
+    - Test with the real content of the message, not an empty send.
+sa.pp_mime_fake_ascii_text:
+  title: Text declared as ASCII but containing other characters
+  why: "The text part declares itself as ASCII (or declares nothing) but contains accented characters. On the recipient's side, “é” can turn into “Ã©”."
+  fix:
+    - "Declare Content-Type: text/plain; charset=UTF-8 for the text part."
+sa.t_mime_malf:
+  title: MIME headers in the message body
+  why: The body contains Content-Type lines that should be part headers. Broken MIME structure. Test rule with no weight.
+  fix:
+    - Build the MIME with a library, and check the blank line between part headers and content.
+sa.body_8bits:
+  title: Body with a long run of 8-bit characters
+  why: The body contains long runs of non-ASCII bytes, typical of non-Latin languages or of badly encoded text. Only affects servers that have restricted ok_languages. 1.5 points.
+  fix:
+    - Check the declared encoding (UTF-8), and that no text has been wrongly converted.
+sa.null_in_body:
+  title: Null byte in the message
+  why: The message contains a null character, which is forbidden in email. It usually comes from a binary file inserted without encoding, or from UTF-16 text. 1.6 points.
+  fix:
+    - Encode the attachments in base64, and save texts as UTF-8, not UTF-16.
+sa.mime_php_no_text:
+  title: No text part and X-Mailer PHP
+  why: "A PHP script sends a multipart message without any text part. Close to 3 points: this is the signature of a mass-mailing script."
+  fix:
+    - Add a text part to the message and remove the X-Mailer PHP header.
+    - Use PHPMailer or Symfony Mailer with AltBody set.
+sa.malf_html_b64:
+  title: HTML encoded in base64 without an html tag
+  why: The message is an HTML fragment without an <html> tag, encoded in base64. Together, the two defects form the profile of a spam generator.
+  fix:
+    - Send a complete HTML document encoded in quoted-printable.
+sa.encrypted_message:
+  title: Encrypted message
+  why: "The message is encrypted (PGP or S/MIME). Spammers almost never do this: a bonus of one point."
+  fix:
+    - Nothing to fix.
+sa.microsoft_executable:
+  title: Windows program attached
+  why: An attachment is a Windows program or script, or has an extension that runs one. Low penalty in SpamAssassin, but most providers block these attachments.
+  fix:
+    - "Never attach an executable or a script: offer a download link on your site."
+    - Check that no .url or .lnk (shortcut) file is attached by mistake.
+sa.gmd_pdf_encrypted:
+  title: Encrypted PDF attached
+  why: An attached PDF is password-protected or encrypted, so it cannot be analyzed. Malware often uses password-protected PDFs.
+  fix:
+    - Send the PDF without protection, or share the document through a secure link.
+sa.gmd_pdf_empty_body:
+  title: PDF attached with an empty message
+  why: The message contains only a PDF and no text. This is a common case for invoices and quotes sent automatically, but also for phishing with a fake invoice.
+  fix:
+    - Add a few lines introducing the document (invoice number, amount, contact).
+  fix_by_provider:
+    wordpress: In WooCommerce or the invoice plugin, complete the text of the email that accompanies the PDF.
+sa.any_bounce_message:
+  title: Automatic return message
+  why: "The message is a non-delivery notice, an out-of-office reply or an antivirus alert. Information only: this is not the mail you wanted to test."
+  fix:
+    - Check that you sent the message to the test address, and did not forward a bounce.
+sa.bounce_message:
+  title: Non-delivery notice from a mail server
+  why: The message is a non-delivery notice sent by a server. Information only.
+  fix:
+    - Nothing to fix for this test. If you receive many of these notices, clean up your sending list.

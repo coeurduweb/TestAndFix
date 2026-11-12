@@ -1,0 +1,106 @@
+mta-sts.missing:
+  title: "{domain} no publica una política MTA-STS"
+  why: "Sin MTA-STS, un atacante situado en la red puede obligar a los remitentes a entregar en claro el correo destinado a {domain}. No es un criterio de entregabilidad de tus envíos, sino una protección de tu recepción."
+  fix:
+    - "Crea el subdominio mta-sts.{domain} servido por HTTPS con un certificado válido."
+    - "Publica en la dirección https://mta-sts.{domain}/.well-known/mta-sts.txt un archivo de texto en modo testing que enumere tus MX."
+    - "Añade el registro TXT _mta-sts.{domain} con v=STSv1 y un identificador id=."
+    - "Publica también un registro TLS-RPT para recibir los informes y, después, pasa al modo enforce tras algunas semanas sin errores."
+mta-sts.policy_unreachable:
+  title: "No se encuentra el archivo de política MTA-STS de {domain}"
+  why: "El registro DNS anuncia una política MTA-STS, pero el archivo no se sirve. Los remitentes no pueden aplicarla y, si tienen una política antigua en caché, siguen aplicando una versión caducada."
+  fix:
+    - "Crea el registro A o CNAME de mta-sts.{domain} apuntando a un servidor web."
+    - "Coloca el archivo exactamente en /.well-known/mta-sts.txt, sin redirección."
+    - "Comprueba que la dirección https://mta-sts.{domain}/.well-known/mta-sts.txt responde 200 en un navegador."
+  fix_by_provider:
+    cloudflare_dns: "Puedes servir el archivo con un Worker de Cloudflare o con una página estática en mta-sts.{domain}; el proxy puede seguir activo para este subdominio web."
+mta-sts.policy_redirect:
+  title: "La política MTA-STS de {domain} se sirve mediante una redirección"
+  why: "Los remitentes no siguen las redirecciones para leer una política MTA-STS. Para ellos, tu política no existe, aunque un navegador la muestre."
+  fix:
+    - "Desactiva, solo para el subdominio mta-sts.{domain}, la redirección a www o a otro sitio."
+    - "Sirve el archivo directamente por HTTPS en la dirección https://mta-sts.{domain}/.well-known/mta-sts.txt."
+mta-sts.policy_cert_invalid:
+  title: "El certificado HTTPS de mta-sts.{domain} no es válido"
+  why: "Los remitentes se niegan a leer una política MTA-STS servida con un certificado caducado, autofirmado o emitido para otro nombre. Tu política se ignora entonces."
+  fix:
+    - "Emite un certificado que cubra exactamente mta-sts.{domain} (Let's Encrypt sirve)."
+    - "Instálalo en el servidor que sirve este subdominio y automatiza su renovación."
+mta-sts.policy_malformed:
+  title: "El archivo de política MTA-STS de {domain} tiene un formato incorrecto"
+  why: "Los remitentes ignoran una política ilegible. Si tenían una versión correcta en caché, la conservarán hasta que caduque, lo que puede bloquear un cambio de MX."
+  fix:
+    - "Escribe una línea por clave, con la forma clave: valor, sin comillas."
+    - "Indica version: STSv1, después mode, una línea mx: por cada servidor MX y max_age en segundos."
+    - "Cambia después el valor id= del registro _mta-sts.{domain} para señalar la nueva versión."
+mta-sts.wrong_content_type:
+  title: "La política MTA-STS de {domain} no se sirve como text/plain"
+  why: "Una parte de los remitentes comprueba el tipo del archivo y rechaza una política servida como HTML o con un tipo desconocido."
+  fix:
+    - "Configura el servidor web para servir mta-sts.txt con la cabecera Content-Type: text/plain."
+  fix_by_provider:
+    cpanel: "Añade en el .htaccess del subdominio: AddType text/plain .txt"
+mta-sts.testing_mode:
+  title: "La política MTA-STS de {domain} está en modo de prueba"
+  why: "El modo testing no protege nada: sirve para recoger informes antes de aplicar la política. Si los informes ya no muestran ningún fallo, es momento de pasar a enforce."
+  fix:
+    - "Lee los informes TLS-RPT recibidos desde su puesta en marcha y comprueba que ningún MX falla."
+    - "Sustituye mode: testing por mode: enforce en el archivo de política."
+    - "Cambia el valor id= del registro _mta-sts.{domain}."
+mta-sts.mode_none:
+  title: "La política MTA-STS de {domain} está desactivada (modo none)"
+  why: "El modo none anula una política anterior. Es normal durante una retirada; si no, {domain} no se beneficia de ninguna protección MTA-STS."
+  fix:
+    - "Si la retirada ha terminado y max_age ya ha vencido, elimina el registro _mta-sts.{domain} y el archivo."
+    - "Si no, vuelve a pasar a testing y después a enforce, y cambia el valor id=."
+mta-sts.mx_not_covered:
+  title: "Un MX de {domain} no está autorizado por su política MTA-STS"
+  why: "En modo enforce, los remitentes que aplican MTA-STS se niegan a entregar a un MX que no figura en la política. Parte del correo destinado a {domain} puede quedar bloqueado y acabar devuelto con un error."
+  fix:
+    - "Añade una línea mx: por cada servidor MX actual (un comodín como *.{domain} cubre un solo nivel de subdominio)."
+    - "Cambia de inmediato el valor id= del registro _mta-sts.{domain} para que los remitentes vuelvan a leer el archivo."
+    - "Si cambias de proveedor, pasa antes a testing durante todo el max_age."
+mta-sts.enforce_tls_broken:
+  title: "La política MTA-STS de {domain} bloquea un MX con certificado no válido"
+  why: "Tu política exige un TLS válido, pero uno de tus MX no lo proporciona. Los remitentes que aplican MTA-STS se niegan a entregarle el correo: pierdes correo entrante."
+  fix:
+    - "Corrige el certificado del MX afectado (consulta la anomalía TLS señalada para ese servidor)."
+    - "Mientras tanto, vuelve a poner la política en modo testing y cambia el valor id=."
+mta-sts.id_unchanged:
+  title: "La política MTA-STS de {domain} cambió sin cambiar el identificador"
+  why: "Los remitentes conservan la política antigua en caché mientras no cambie el valor id=, hasta que termine el max_age. Tu modificación no se verá hasta mucho después, lo que puede bloquear un nuevo MX."
+  fix:
+    - "Cambia el valor id= del registro _mta-sts.{domain}, por ejemplo con la fecha y la hora del cambio."
+    - "Hazlo en cada modificación del archivo, sin excepción."
+mta-sts.txt_malformed:
+  title: "El registro _mta-sts de {domain} no es válido"
+  why: "Un identificador con guiones o puntos, o dos registros en conflicto, hacen que la política no exista a ojos de los remitentes."
+  fix:
+    - "Mantén un único registro TXT que empiece por v=STSv1 en _mta-sts.{domain}."
+    - "Usa un id= de 32 caracteres como máximo, compuesto solo por letras y cifras."
+mta-sts.max_age_short:
+  title: "El max_age de la política MTA-STS de {domain} es muy corto"
+  why: "Con una duración corta, basta con que un atacante bloquee el acceso a tu política durante unas horas para que los remitentes vuelvan a TLS opcional."
+  fix:
+    - "Cuando la política sea estable en enforce, sube max_age a al menos 604800 (una semana), o incluso a 1209600 o más."
+    - "No superes 31557600, que es el valor máximo."
+    - "Cambia el valor id= después de la modificación."
+mta-sts.max_age_too_long:
+  title: "El max_age de la política MTA-STS de {domain} supera el máximo"
+  why: "El valor supera el límite fijado por la norma: algunos remitentes rechazan la política entera."
+  fix:
+    - "Reduce max_age a 31557600 como máximo (vale cualquier valor entre 604800 y 31557600)."
+    - "Cambia el valor id= después de la modificación."
+mta-sts.tlsrpt_missing:
+  title: "{domain} publica MTA-STS sin dirección para los informes TLS-RPT"
+  why: "Aplicas una política de cifrado sin recibir los informes de fallo. Si un MX o un certificado da problemas, algunos remitentes dejarán de entregarte correo sin que lo sepas."
+  fix:
+    - "Crea una dirección dedicada a los informes, por ejemplo tlsrpt@{domain}."
+    - "Publica el registro TXT _smtp._tls.{domain} con v=TLSRPTv1 y rua=mailto: seguido de esa dirección."
+mta-sts.tlsrpt_malformed:
+  title: "El registro TLS-RPT de {domain} no es válido"
+  why: "Los remitentes ignoran un registro TLS-RPT mal formado: no recibes ningún informe sobre los fallos de cifrado."
+  fix:
+    - "Empieza el registro por v=TLSRPTv1."
+    - "Indica rua= seguido de una dirección con el prefijo mailto: (o de una URL https:)."

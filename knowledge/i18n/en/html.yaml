@@ -1,0 +1,118 @@
+html.invalid_structure:
+  title: "The HTML contains structural errors"
+  why: "The analysis finds {value} structural errors. Google asks for HTML that complies with the standards: broken code displays differently from one client to another and resembles the makeshift templates used by spam."
+  fix:
+    - "Run the HTML through a validator (validator.w3.org, Validate by Direct Input tab) and fix the unclosed tags."
+    - "If you paste HTML exported from a word processor, start again from a clean email template."
+html.no_doctype:
+  title: "The HTML has no doctype declaration"
+  why: "Without a doctype, webmails and applications display the message in compatibility mode: margins, sizes and alignments differ from one client to another."
+  fix:
+    - "Add <!DOCTYPE html> on the first line of the HTML part."
+    - "Wrap the content in html, head (with meta charset) and body."
+html.script_tag:
+  title: "The HTML contains JavaScript"
+  why: "No mail client runs scripts, but their presence is a strong sign of a malicious message. Microsoft offers to classify these messages as high-confidence spam."
+  fix:
+    - "Remove all the script tags from the message."
+    - "Replace interactive elements (counter, form, carousel) with a link to a page on {domain}."
+html.event_handlers:
+  title: "The HTML contains JavaScript attributes (onclick, onload...)"
+  why: "The attribute {value} is JavaScript. It does not work in any mail client, and filters treat it as a script."
+  fix:
+    - "Remove all attributes that start with on (onclick, onload, onmouseover)."
+    - "For a hover effect, use the CSS :hover pseudo-class in the style block."
+html.iframe:
+  title: "The HTML contains an iframe"
+  why: "Iframes do not display in most clients and are used to load hidden external content. Microsoft offers to classify these messages as high-confidence spam."
+  fix:
+    - "Remove the iframe."
+    - "For a video or a map, use a clickable image that links to the page on {domain} where it is embedded."
+html.form:
+  title: "The HTML contains a form"
+  why: "A form in an email is most often used to steal credentials. Microsoft offers to classify these messages as high-confidence spam, and many clients disable the form."
+  fix:
+    - "Remove the form from the message."
+    - "Add a button that links to a form hosted on {domain}, over HTTPS."
+html.object_embed:
+  title: "The HTML contains object or embed tags"
+  why: "These tags are used to load plugins or documents into the page. They do not work in mail clients, and Microsoft offers to classify these messages as spam."
+  fix:
+    - "Remove the object, embed and applet tags."
+    - "Replace the embedded content with an image and a link to {domain}."
+html.meta_refresh:
+  title: "The HTML contains an automatic redirect (meta refresh)"
+  why: "A meta refresh tag tries to send the reader to another page without a click. It is a phishing technique: filters penalize it and clients ignore it."
+  fix:
+    - "Remove the meta http-equiv='refresh' tag."
+    - "If the HTML comes from a web page, start again from a template designed for email."
+html.base_href:
+  title: "The HTML contains a base tag"
+  why: "The base tag changes the destination of all relative links. Clients do not all handle it the same way: your links may point elsewhere, and filters are wary of it."
+  fix:
+    - "Remove the base tag."
+    - "Write all links and images with a full address, for example https://{domain}/page."
+html.external_stylesheet:
+  title: "The formatting depends on an external stylesheet"
+  why: "The message loads its stylesheet from {url}. Most clients do not load it: the recipient sees a message with no formatting."
+  fix:
+    - "Copy the necessary CSS rules into a style block placed in the head of the message."
+    - "For essential rules (colors, sizes, widths), also move them into the style attribute of the elements."
+    - "Remove the link rel='stylesheet' tag and the @import rules."
+html.external_fonts:
+  title: "The message loads external fonts"
+  why: "External fonts are not displayed by all clients and add a request to a third-party server. Without a fallback font, the text may display in an unexpected font."
+  fix:
+    - "Always declare a fallback font stack: font-family: 'Your font', Arial, Helvetica, sans-serif."
+    - "Check how the message renders with the fallback font alone."
+html.base64_inline_heavy:
+  title: "The HTML contains images encoded in base64"
+  why: "Base64 inline images add {value} to the weight of the HTML. Several clients do not display them, and the message becomes heavy enough to be clipped by Gmail."
+  fix:
+    - "Host the images on {domain} or on your sending tool, then replace each src='data:...' with the https address of the image."
+    - "Keep only very small inline icons if you want them, or better, host them too."
+html.hidden_text_color:
+  title: "Some text is hidden by its color (white text on a white background)"
+  why: "Some of the text has the same color as the background. Google asks that no content be hidden with HTML and CSS: it is a known and penalized spam technique."
+  fix:
+    - "Remove the invisible text."
+    - "If it is preview text (preheader), use the field provided by your sending tool."
+    - "If it is intended for an image background, add a fallback background color on the same element."
+html.hidden_text_size:
+  title: "Some text is hidden by its size or by display:none"
+  why: "The message contains {value} invisible words. Google asks that no content be hidden with HTML and CSS: filters see text stuffing designed to fool the analysis."
+  fix:
+    - "Remove the invisible text blocks."
+    - "Keep only a short preview text, and set it in the field provided by your tool."
+  fix_by_provider:
+    mailchimp: "Enter the preview text in the Preview text field of the campaign instead of a hidden block."
+    brevo: "Enter the preview text in the field provided at the Objet step of the campaign."
+html.obfuscated_entities:
+  title: "Some words are written as HTML codes to hide them"
+  why: "Ordinary letters are written as numeric HTML codes. This technique is used to hide words from filters, which detect it and penalize it."
+  fix:
+    - "Write the text in normal characters in the template."
+    - "If your editor produces these codes, turn off the character encoding option or change editor."
+html.fixed_width_wide:
+  title: "The message has a fixed width that is too large"
+  why: "A block measures {value} pixels wide. On mobile, the message forces sideways scrolling or displays very small, which increases deletions without reading."
+  fix:
+    - "Give the main container a maximum width suited to reading, for example width='600' with style='max-width:600px;width:100%'."
+    - "Add an @media (max-width: 600px) rule that sets the columns to 100% width."
+html.style_head_only:
+  title: "All the formatting is in the style block in the head"
+  why: "No element has an inline style. Clients that remove the style block will display the message without colors or layout."
+  fix:
+    - "Move the essential styles into the style attribute of each element with a CSS inlining tool."
+    - "Keep the style block for the @media rules and the :hover states."
+html.conditional_comments:
+  title: "The HTML contains conditional comments for Outlook"
+  why: "These comments are used to correct the display in Outlook for Windows. They are normal. They only become a problem if they hide content that differs from what is seen elsewhere."
+  fix:
+    - "Check that the text inside the [if mso] and [if !mso] blocks says the same thing in both versions."
+    - "Test the display in Outlook for Windows before an important send."
+html.lang_missing:
+  title: "The language of the message is not declared"
+  why: "Without a lang attribute, a screen reader may read your French text with English pronunciation. This does not change filtering but hinders some of your readers."
+  fix:
+    - "Add lang='fr' to the html tag, and dir='ltr'."

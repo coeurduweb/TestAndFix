@@ -1,0 +1,143 @@
+content.no_text_part:
+  title: The message has no plain text version
+  why: The message contains only HTML. Spam filters count the absence of a text version as a signal, and readers that display plain text see nothing readable.
+  fix:
+    - "Send the message as multipart/alternative: a text/plain part first, then the text/html part."
+    - Enable automatic generation of the text version in your tool, then proofread it.
+  fix_by_provider:
+    mailchimp: In the campaign, open Plain-text email and leave automatic generation enabled, or write the text version yourself.
+    sendgrid: "In the v3 /mail/send API call, provide two entries in content: one of type text/plain, then one of type text/html."
+    wordpress: With PHPMailer, set $phpmailer->AltBody in a phpmailer_init filter, or use an SMTP plugin that generates the text version.
+content.text_part_empty:
+  title: The text version of the message is empty
+  why: An empty text part next to a filled HTML part is a known trick for fooling filters that read the text. It is penalized, and readers in text mode see nothing.
+  fix:
+    - Fill the text version with the same content as the HTML version.
+    - If your tool generates it, check that it is not receiving an empty variable.
+content.text_html_mismatch:
+  title: The text and HTML versions do not say the same thing
+  why: "The two versions resemble each other only to {value}. A message whose text and HTML diverge is a concealment technique that filters know, and it is often a forgotten old template."
+  fix:
+    - Regenerate the text version from the current HTML.
+    - If you write it by hand, update it every time the HTML changes.
+  fix_by_provider:
+    mailchimp: In Plain-text email, click Regenerate from HTML after every change to the content.
+content.text_too_short:
+  title: The message contains very little text
+  why: "The body has only {value} words. With so little text, filters lack elements to judge the message and rely mostly on links and reputation, often to your detriment."
+  fix:
+    - Add a few sentences that explain why the recipient is getting this message and what you are offering.
+    - Add a signature with the company name and a way to contact you.
+content.url_only_body:
+  title: The message is just a link
+  why: A message that contains only a web address is the typical format of phishing and link spam. It is almost always filtered.
+  fix:
+    - "Write at least a few sentences: who you are, why you are writing, what the link contains."
+    - Place the link on explicit text rather than pasting the bare address.
+content.trigger_words:
+  title: The text piles up aggressive promotional phrases
+  why: The message contains {value} expressions typical of spam. Taken alone they weigh little, but their accumulation reinforces the other negative signals.
+  fix:
+    - "Replace generic phrases with a precise description of the offer: product, price, end date."
+    - Replace “click here” with link text that says where the link goes.
+content.excessive_caps:
+  title: The text contains a lot of capital letters
+  why: A large share of the text is in capitals. This gives an aggressive tone and is one of the criteria of content filters.
+  fix:
+    - Rewrite the passages in capitals in normal case.
+    - To emphasize, use bold or an HTML heading instead of capitals.
+content.excessive_punctuation:
+  title: The message contains runs of exclamation marks or symbols
+  why: Sequences such as “!!!” or “€€€” are a well-known spam signature for filters and readers.
+  fix:
+    - Use at most one exclamation mark per sentence.
+    - Write amounts as numbers followed by their currency, without repeating the symbol.
+content.invisible_characters:
+  title: The text contains invisible characters
+  why: "The message contains {value} invisible characters. Inserted into words, they are used to get around filters: the filters detect them and penalize the message as an attempt at concealment."
+  fix:
+    - Paste your text into an editor that shows invisible characters and remove them.
+    - "Do not copy directly from a word processor or a web page: paste as plain text, then reapply the formatting."
+content.homoglyphs:
+  title: Some words mix several alphabets
+  why: "The word {value} contains letters from another alphabet that look like Latin letters. This technique is used to impersonate brands and fool filters: it is heavily penalized."
+  fix:
+    - Retype the flagged words on the keyboard instead of copying them.
+    - If your text was machine-translated, proofread the words that contain Greek or Cyrillic characters.
+content.image_only:
+  title: The message is made of images with almost no text
+  why: "Apart from the images, the message has almost no text: {value}. Filters cannot read the text in images and distrust this format, which spam uses heavily. If images are blocked, the recipient sees an almost empty message."
+  fix:
+    - Write the title, the offer and the call-to-action button as HTML text, and keep images for illustration.
+    - Replace image buttons with HTML and CSS buttons.
+    - Add a descriptive alt attribute to each remaining image.
+  fix_by_provider:
+    mailchimp: Replace the Image block with a Text block for the title and offer, and use the Button block for the call to action.
+    brevo: In the drag-and-drop editor, use the Title, Text and Button blocks instead of a single image.
+content.html_clipped_gmail:
+  title: The HTML is heavy enough to be clipped by Gmail
+  why: "The HTML weighs {value}. Mailchimp states that Gmail cuts messages beyond about 102 KB and displays “[Message clipped]”. The unsubscribe link and the open-tracking pixel, placed at the bottom, then disappear."
+  fix:
+    - Remove duplicate CSS styles and comments from the HTML.
+    - Shorten the message or split it into several sends.
+    - Replace base64-encoded images in the HTML with hosted images.
+    - Place the unsubscribe link high enough in the footer that it stays visible if the message is clipped.
+  fix_by_provider:
+    mailchimp: "Avoid pasting HTML exported from another tool into a Code block: it often contains duplicate styles."
+content.mojibake:
+  title: Accented letters display as garbage characters
+  why: "The text contains sequences such as {value}: UTF-8 was converted one time too many. The message looks sloppy to readers, and filters read distorted words."
+  fix:
+    - Check that your templates are saved as UTF-8 and declared as charset=UTF-8.
+    - "Look for the step that converts the text a second time: database export, utf8_encode() in PHP, or copy-pasting from a file saved incorrectly."
+    - In MySQL, use the utf8mb4 character set for the connection and the tables.
+content.replacement_characters:
+  title: The text contains replacement characters (�)
+  why: Letters were lost during an encoding conversion and replaced by a diamond with a question mark. The text is permanently damaged at that spot.
+  fix:
+    - Find the affected words and retype them in the source template.
+    - "Fix the processing chain: the text must be read and written as UTF-8 at every step."
+content.mixed_languages:
+  title: The message mixes several languages
+  why: "A large part of the message is written in {value}. A mix of languages often betrays a poorly translated template or a forgotten default template, and it confuses the recipient."
+  fix:
+    - Translate the blocks left in the language of the original template, often the footer and the buttons.
+    - If you write to several audiences, send one version per language.
+  fix_by_provider:
+    mailchimp: The footer and unsubscribe page texts are translated in Audience > Settings > Audience name and defaults, language field.
+content.unreplaced_merge_tags:
+  title: Personalization tags are not replaced
+  why: "The recipient sees the tag {value} instead of their own content. The message looks automated and sloppy, which increases spam reports."
+  fix:
+    - Check the exact spelling of the tag in the documentation of your sending tool.
+    - Fill in the matching field for all contacts, or set a default value.
+    - Send a test to a real contact on the list rather than to an empty test address.
+  fix_by_provider:
+    mailchimp: "Check the tag in Audience > Settings > Audience fields and *|MERGE|* tags, and set a default value for the field."
+content.placeholder_text:
+  title: The message contains placeholder text
+  why: "The text “{value}” appears in the message: a block of the template was never written. The message looks unproofread, and this text is known to filters."
+  fix:
+    - Replace or delete the placeholder text block.
+    - Proofread the full preview, mobile version included, before each send.
+content.sender_identity_missing:
+  title: The message does not clearly say who sends it
+  why: No company name or address appears in this commercial message. In France, a prospecting message must make it possible to identify the advertiser, and an anonymous sender is more often reported as spam.
+  fix:
+    - Add the company name, its postal address and a link to your website on {domain} in the footer.
+    - Explain in one sentence why the recipient is getting this message (sign-up, purchase, customer account).
+  fix_by_provider:
+    mailchimp: "The address comes from the *|LIST:ADDRESS|* tag in the footer: set it in Audience > Settings > Audience name and defaults."
+    brevo: "Enter the company address in the account settings: the Footer block of the editor picks it up."
+content.text_part_base64:
+  title: The text part is unnecessarily base64-encoded
+  why: The text is almost entirely ASCII but encoded in base64. This unnecessary precaution is common in spam, where it hides content from simple filters, and some filters score it.
+  fix:
+    - "Encode the text parts as quoted-printable: accented letters stay readable and the text stays visible."
+    - In PHPMailer, set $mail->Encoding = 'quoted-printable'.
+content.empty_message:
+  title: The message is completely empty
+  why: "No subject, no text, no attachment: when the option is enabled, Microsoft filters classify this type of message as spam with high confidence, and it has no chance of being read anywhere else."
+  fix:
+    - Check that your application passes the template content along at send time.
+    - Test the send with a filled-in message before relaunching a campaign.

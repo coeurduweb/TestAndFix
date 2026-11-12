@@ -1,0 +1,214 @@
+/* History (Signal): a list read at a glance. Lit dot, input in mono, tool, time, score. */
+.hist {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+}
+.hist .page-head {
+  /* components.css still draws the v2 rule under the head (border-bottom 2px ink): cancelled here */
+  display: grid;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+.hist-filters {
+  display: grid;
+  gap: var(--s3);
+}
+.hist-search {
+  position: relative;
+  max-width: 36rem;
+}
+.hist-search > svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+.hist-search .input {
+  padding-left: 36px;
+  min-height: 40px;
+}
+.hist-tools {
+  flex-wrap: wrap;
+}
+@media (max-width: 40rem) {
+  .hist-tools {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 calc(-1 * var(--s4));
+    padding: 0 var(--s4) var(--s2);
+    scrollbar-width: none;
+  }
+  .hist-tools .chip {
+    flex: none;
+    min-height: 44px;
+  }
+}
+.hist-groups {
+  display: grid;
+  gap: var(--s5);
+  transition: opacity var(--t) var(--ease-out);
+}
+.hist-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  display: grid;
+  gap: 1px;
+}
+.hist-row {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto 3.5rem 32px;
+  gap: var(--s4);
+  align-items: center;
+  min-height: 52px;
+  padding: 6px var(--s3);
+  border-radius: 8px;
+}
+.hist-row:hover {
+  background: var(--surface-hover);
+}
+.hist-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.hist-obj {
+  justify-self: start;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.hist-obj:hover {
+  color: var(--lab);
+  text-decoration: underline;
+}
+.hist-sub {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.hist-sub svg {
+  color: var(--fam);
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.hist-when {
+  display: grid;
+  justify-items: end;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.hist-when small {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  color: var(--ink-faint);
+}
+.hist-score {
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+.hist-score.is-ok {
+  color: var(--in);
+}
+.hist-score.is-mid {
+  color: var(--warn);
+}
+.hist-score.is-low {
+  color: var(--out);
+}
+@media (max-width: 40rem) {
+  .hist-row {
+    grid-template-columns: 8px minmax(0, 1fr) auto;
+    gap: var(--s1) var(--s3);
+    padding-block: var(--s2);
+  }
+  .hist-when {
+    grid-column: 2;
+    grid-row: 2;
+    justify-items: start;
+    display: flex;
+    gap: var(--s2);
+  }
+  .hist-score {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+  .hist-row {
+    grid-template-columns: 8px minmax(0, 1fr) auto 44px;
+  }
+  .hist-del {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+    width: 44px;
+    height: 44px;
+  }
+  .hist-row[data-asking] .hist-ask {
+    grid-column: 2 / -1;
+    grid-row: 3;
+    justify-content: flex-start;
+  }
+  .hist-ask .btn {
+    min-height: 44px;
+  }
+}
+.hist-pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.hist-pages__btns {
+  display: flex;
+  gap: var(--s2);
+}
+
+/* the notebook line under the title */
+.hist-private {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+.hist-private svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--ink-faint);
+}
+
+/* delete one line: a ghost icon, then a confirmation in place of the time and the score */
+.hist-row[data-asking] {
+  background: var(--surface-hover);
+}
+.hist-row[data-asking] .hist-when,
+.hist-row[data-asking] .hist-score {
+  display: none;
+}
+.hist-ask {
+  grid-column: 3 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s2);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+}

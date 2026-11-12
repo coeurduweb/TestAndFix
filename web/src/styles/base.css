@@ -1,0 +1,160 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: var(--lh);
+  font-feature-settings: 'kern', 'liga', 'tnum' 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  caret-color: var(--lab);
+  accent-color: var(--lab);
+}
+@media (max-width: 40rem) {
+  body {
+    font-size: 1rem;
+  }
+}
+::selection {
+  background: var(--selection);
+  color: var(--ink);
+}
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: var(--lh-tight);
+  text-wrap: balance;
+  font-weight: 650;
+}
+p {
+  margin: 0;
+  text-wrap: pretty;
+  max-width: 70ch;
+}
+a {
+  color: var(--lab);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+a:hover {
+  color: var(--lab-strong);
+}
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono);
+  font-size: max(12px, 0.92em);
+  /* JetBrains Mono ligatures turn "->>" into a dash-like glyph: never in measured values */
+  font-variant-ligatures: none;
+}
+kbd {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 0 0.35em;
+  border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  text-align: center;
+  color: var(--ink-2);
+  background: var(--paper);
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+.num,
+.mono,
+.c-val,
+.c-ref,
+.dev {
+  font-variant-ligatures: none;
+}
+.num,
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'zero' 0;
+}
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.skip-link {
+  position: absolute;
+  left: var(--s3);
+  top: -3rem;
+  z-index: var(--z-toast);
+  padding: var(--s2) var(--s3);
+  background: var(--lab);
+  color: var(--lab-ink);
+  border-radius: var(--radius);
+}
+.skip-link:focus {
+  top: var(--s3);
+}
+
+/* scrollbars from the palette */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  border-radius: 10px;
+  border: 2px solid var(--paper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

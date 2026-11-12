@@ -1,0 +1,89 @@
+phishing.safe_browsing:
+  title: O Google Safe Browsing classifica este link como perigoso ({value})
+  why: O Google classificou {url} nas suas listas de sites perigosos ({value}). Os navegadores que usam o Safe Browsing, entre eles o Chrome, exibem uma página de alerta vermelha nesse endereço, e uma mensagem que contém esse link é tratada como ameaça.
+  fix:
+    - Não abra o link nem informe nenhum dado na página.
+    - Se você já fez isso, troque imediatamente a senha em questão, em todos os lugares onde a usa, e solicite o bloqueio do cartão junto ao seu banco se tiver informado um cartão.
+    - Denuncie a mensagem ao Signal Spam (https://www.signal-spam.fr/).
+    - "Se o site for seu, ele provavelmente foi invadido: limpe todas as páginas afetadas e, no Google Search Console, abra o relatório Problemas de segurança e clique em Solicitar análise."
+phishing.virustotal:
+  title: "{value} mecanismo(s) do VirusTotal sinalizam este link como malicioso"
+  why: Vários mecanismos de segurança independentes classificam {url} como perigoso. Um único mecanismo às vezes se engana; quando vários concordam, raramente se trata de um erro.
+  fix:
+    - Não abra o link.
+    - Se você o abriu e informou dados, troque a senha em questão e avise o seu banco se tiver informado um cartão.
+    - Se o site for seu, abra a ficha do VirusTotal para ver os mecanismos envolvidos, limpe o site e depois refaça a análise.
+    - "Se um mecanismo se enganar, escreva ao desenvolvedor dele com o link da ficha do VirusTotal: o próprio VirusTotal não altera os veredictos."
+phishing.virustotal_single:
+  title: Um único mecanismo do VirusTotal sinaliza este link
+  why: Um mecanismo isolado se engana com frequência. Esse sinal não basta para julgar {url}, mas soma-se aos outros indícios deste relatório.
+  fix:
+    - Abra a ficha do VirusTotal e veja qual mecanismo sinaliza o link e com qual veredito.
+    - Se os outros controles deste relatório estiverem bons e o site for antigo e conhecido, em geral trata-se de um alarme falso.
+    - Se o site for seu, informe o alarme falso ao desenvolvedor do mecanismo em questão, com o link da ficha do VirusTotal.
+phishing.urlhaus:
+  title: Este link está registrado no URLhaus como distribuidor de software malicioso
+  why: "O URLhaus, mantido pela abuse.ch e pela Spamhaus, registra endereços que distribuem software malicioso. {url} consta ali ({value}). A base dele é compartilhada com desenvolvedores de antivírus e de listas de bloqueio."
+  fix:
+    - Não abra o link nem baixe nada.
+    - Se algum arquivo já foi aberto, desconecte o computador da rede e faça uma análise antivírus completa.
+    - Se o site for seu, apague o arquivo malicioso e descubra como ele foi colocado (extensão vulnerável, senha FTP roubada), depois entre em contato com a abuse.ch pelo https://contact.abuse.ch/.
+phishing.urlhaus_host:
+  title: O site {domain} hospeda outros links maliciosos registrados no URLhaus
+  why: Este link específico não está registrado, mas {value} outro(s) endereço(s) de {domain} estão distribuindo software malicioso neste momento, o que indica um site invadido ou montado para uma campanha.
+  fix:
+    - Evite este site enquanto ele não for limpo, e não baixe nada dele.
+    - Se o site for seu, consulte a lista de endereços registrados no URLhaus, apague os arquivos e corrija a falha, depois entre em contato com a abuse.ch pelo https://contact.abuse.ch/.
+phishing.openphish:
+  title: Este link consta da lista de phishing da OpenPhish
+  why: "A OpenPhish publica as páginas de phishing que detectou. {url} faz parte delas: a página imita um serviço conhecido para roubar credenciais ou dados de pagamento."
+  fix:
+    - Não abra o link nem informe nenhum dado.
+    - Se você digitou uma senha, troque-a imediatamente no site oficial, em todos os lugares onde a usa, e ative a autenticação em dois fatores.
+    - Se você informou um cartão, solicite o bloqueio junto ao seu banco.
+    - Denuncie a página à Phishing Initiative (https://phishing-initiative.fr/contrib/) e a mensagem ao Signal Spam (https://www.signal-spam.fr/).
+phishing.openphish_host:
+  title: Outras páginas do site {domain} constam da lista da OpenPhish
+  why: Este endereço específico não está na lista, mas outras páginas de {domain} estão. Isso acontece quando um site serve de base para uma campanha de phishing, ou quando ele foi invadido.
+  fix:
+    - Desconfie de qualquer página deste site que peça senha, código ou pagamento.
+    - Para entrar em um serviço, digite você mesmo o endereço oficial dele no navegador.
+    - Se o site for seu, procure as páginas acrescentadas sem o seu conhecimento (muitas vezes em uma pasta oculta ou em uma subpasta incomum), apague-as e troque as senhas de acesso à hospedagem.
+phishing.brand_lookalike:
+  title: O domínio {url} imita o de {value}
+  why: "O nome se parece com o de {value} sem pertencer à marca: é o truque mais comum do phishing, que conta com uma leitura rápida do endereço. O site oficial é {domain}."
+  fix:
+    - "Não use este link: digite você mesmo o endereço oficial {domain} no navegador, ou use o aplicativo."
+    - Se você informou um login ou um cartão nesta página, troque a senha em {domain} e avise a organização em questão e o seu banco.
+    - Denuncie o endereço à Phishing Initiative (https://phishing-initiative.fr/contrib/).
+phishing.deep_subdomains:
+  title: O endereço {url} empilha {value} níveis de subdomínios
+  why: "Um nome com muitos subdomínios costuma servir para colocar um nome conhecido no começo do endereço, onde ele é lido, enquanto o verdadeiro proprietário está no fim: {domain}."
+  fix:
+    - "Leia o endereço da direita para a esquerda: o verdadeiro proprietário é {domain}, qualquer que seja o nome escrito no início."
+    - Se {domain} não for o serviço que você espera, não informe nada na página.
+phishing.js_redirect:
+  title: O link redireciona por meio de um script da página
+  why: "A página {url} envia o visitante para outro lugar por JavaScript, em vez de um redirecionamento normal. Os filtros que não leem scripts não veem o destino real: a técnica costuma servir para ocultar uma página de phishing."
+  fix:
+    - Veja o destino final da cadeia exibida neste relatório antes de confiar no link.
+    - Se o site for seu, substitua o redirecionamento por script por um redirecionamento HTTP 301 ou 302 configurado no servidor.
+phishing.credential_form:
+  title: A página pede {value} em um site que se faz passar por outro
+  why: "A página final contém um formulário que pede {value}, e o site apresenta sinais de falsificação. É a forma exata de uma página de phishing: o que for digitado vai parar nas mãos do autor da página."
+  fix:
+    - Não informe nada nesta página.
+    - "Se já fez isso: troque a senha no site oficial e em todos os lugares onde você a usa, ative a autenticação em dois fatores e, se informou um cartão, solicite o bloqueio dele ao seu banco."
+    - Denuncie a página à Phishing Initiative (https://phishing-initiative.fr/contrib/) e a mensagem ao Signal Spam (https://www.signal-spam.fr/).
+phishing.form_on_page:
+  title: A página final pede {value}
+  why: "Nenhum outro sinal de falsificação foi identificado, e muitos sites legítimos têm uma página de login ou de pagamento. Só o endereço diz se é o serviço que você espera: aqui, {domain}."
+  fix:
+    - Antes de digitar qualquer coisa, confirme que o nome de domínio na barra de endereço é mesmo o do serviço esperado.
+    - Na dúvida, abra o serviço digitando você mesmo o endereço, em vez de seguir o link.
+phishing.title_brand_mismatch:
+  title: O título da página cita {value}, mas o site é {domain}
+  why: "O título da página nomeia uma marca à qual o domínio não pertence. É normal em um artigo ou em um comparativo; em uma página que se apresenta como a de {value}, é um sinal de falsificação."
+  fix:
+    - Se a página se apresentar como a de {value}, não informe nada nela e acesse o site oficial da marca.
+    - Se a página redirecionar você em seguida para um formulário, refaça a verificação nesse novo endereço.

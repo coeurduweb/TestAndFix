@@ -1,0 +1,67 @@
+subdomains.takeover_risk:
+  title: "Un desconocido puede hacerse con {subdomain} en {service}"
+  why: "{subdomain} apunta a {target}, un recurso de {service} que ya no existe. Cualquiera puede abrir una cuenta en {service}, volver a crear ese recurso con este nombre y publicar lo que quiera en {subdomain}: una página de phishing con tu nombre, el robo de las cookies colocadas en {domain}, un certificado obtenido a tus espaldas."
+  fix:
+    - "Si {subdomain} ya no se usa: elimina su registro CNAME de la zona DNS de {domain}. Es la corrección más segura."
+    - "Si debe seguir funcionando: vuelve a crear de inmediato el recurso en {service} con el nombre {target}, en tu cuenta, y luego vincula {subdomain} a él."
+    - "Vuelve a lanzar la medición: {subdomain} debe pasar a «no resuelve» o a «activo» sin alerta."
+    - "Para el futuro: elimina el CNAME antes de borrar el recurso en el servicio, nunca después."
+subdomains.takeover_possible:
+  title: "{subdomain} apunta a un recurso de {service} que ya no existe"
+  why: "{subdomain} apunta a {target}, y {service} responde que ningún sitio está vinculado a ese nombre. Según la configuración del servicio, otro cliente puede reclamar {subdomain} y publicar allí su contenido. Aunque nadie lo tome, tus visitantes llegan a una página de error de {service}."
+  fix:
+    - "Si {subdomain} ya no se usa: elimina su registro CNAME de la zona DNS de {domain}."
+    - "Si debe seguir funcionando: vuelve a vincular {subdomain} a tu sitio o aplicación en {service}."
+    - "En GitHub Pages, verifica {domain} en la configuración de Pages de tu cuenta u organización: así nadie más podrá usarlo."
+    - "Vuelve a lanzar la medición para confirmar que la alerta ha desaparecido."
+subdomains.cname_dangling:
+  title: "CNAME hacia un destino que ya no existe: {value}"
+  why: "{subdomain} apunta a {target}, un nombre que no existe (NXDOMAIN). El subdominio ya no sirve para nada, y si el dominio del destino caduca o queda libre, quien lo compre también controlará tu subdominio."
+  fix:
+    - "Para cada nombre de la lista, abre la zona DNS de {domain} y elimina el registro CNAME si ya no sirve."
+    - "Si el nombre debe seguir funcionando, sustituye el destino por la dirección actual del servicio."
+    - "Comprueba que el dominio de cada destino siga siendo tuyo o pertenezca al servicio esperado."
+subdomains.cert_expiring:
+  title: "Subdominios cuyo certificado servido caduca pronto: {value}"
+  why: "El certificado que {subdomain} presenta en este momento está a punto de caducar, cuando ya debería haberse renovado. La renovación automática probablemente ha fallado: al vencer, los navegadores mostrarán una alerta de seguridad y bloquearán el sitio."
+  fix:
+    - "En el servidor que sirve {subdomain}, lanza la renovación a mano (por ejemplo, certbot renew) y lee el error."
+    - "Causas frecuentes: registro DNS modificado, desafío HTTP bloqueado por una redirección o un cortafuegos, tarea programada detenida."
+    - "Si {subdomain} pasa a estar detrás de una CDN o de un proveedor de alojamiento, verifica que el certificado esté activo allí."
+    - "Vuelve a lanzar la medición: la fecha de caducidad mostrada debe ser posterior."
+subdomains.cert_expired_active:
+  title: "Subdominios que sirven un certificado caducado: {value}"
+  why: "{subdomain} presenta en este momento un certificado caducado: los navegadores muestran una alerta de seguridad y la mayoría de los visitantes se detienen ahí. Las aplicaciones y las API rechazan la conexión."
+  fix:
+    - "En el servidor que sirve {subdomain}, renueva el certificado (por ejemplo, certbot renew) y recarga el servidor web."
+    - "Si {subdomain} ya no se usa, elimina su registro en la zona DNS de {domain}."
+    - "Vuelve a lanzar la medición para confirmar la nueva fecha de caducidad."
+subdomains.internal_names:
+  title: "Nombres internos visibles para todos: {value}"
+  why: "Cada certificado queda inscrito en registros públicos de transparencia que cualquiera puede leer. Nombres como {subdomain} indican a un atacante dónde están tus entornos de prueba y tus herramientas de administración, a menudo menos protegidos que el sitio principal."
+  fix:
+    - "Verifica que cada nombre activo de la lista exija autenticación o solo sea accesible desde tu red (lista de direcciones autorizadas, VPN)."
+    - "Para los entornos de prueba, prefiere un certificado comodín (*.{domain}): no revela el nombre exacto de cada subdominio."
+    - "Elimina de la zona DNS los nombres que ya no se usan. Los registros de transparencia, en cambio, conservan el historial para siempre."
+subdomains.dead_names:
+  title: "Subdominios que ya no resuelven: {value}"
+  why: "Estos nombres tuvieron un certificado, pero hoy ya no tienen dirección. Los registros públicos de transparencia los conservan para siempre: es normal y no supone peligro mientras no quede ningún CNAME apuntando a un servicio eliminado."
+  fix:
+    - "No hay nada que hacer si estos nombres ya no se usan."
+    - "Si alguno debiera seguir funcionando, vuelve a crear su registro en la zona DNS de {domain}."
+subdomains.wildcard_dns:
+  title: "La zona de {domain} responde a cualquier nombre"
+  why: "Un nombre inventado bajo {domain} recibe la dirección {value}. Los subdominios que reciben esa misma dirección se marcan como «vía comodín DNS»: puede que ya no existan como tales."
+  fix:
+    - "Si el comodín no es deseado, elimina el registro *.{domain} de la zona DNS."
+    - "Si es deseado, revisa los nombres marcados como «vía comodín DNS»: los que ya no se usan no requieren ninguna acción."
+subdomains.resolution_capped:
+  title: "Subdominios listados sin resolución DNS: {value}"
+  why: "Los registros de transparencia dan más de 500 nombres para {domain}. Los 500 vistos más recientemente están resueltos; los {value} restantes aparecen listados sin estado DNS, y la puntuación no los tiene en cuenta."
+  fix:
+    - "Mide un subdominio más concreto (por ejemplo, dev.{domain}) para resolver todos sus nombres."
+subdomains.none_found:
+  title: "Ningún certificado publicado para {domain}"
+  why: "Los registros Certificate Transparency no contienen ningún certificado con ese nombre. O bien {domain} no sirve ningún sitio en https, o bien sus certificados cubren otros nombres."
+  fix:
+    - "Verifica la ortografía del dominio y, si introdujiste un subdominio, mide después el dominio principal."

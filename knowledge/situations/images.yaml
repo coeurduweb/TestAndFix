@@ -1,0 +1,250 @@
+# Famille images : images du corps HTML (hébergées ou intégrées).
+# Les seuils nommés config.* sont des réglages internes de l'outil.
+# Les réglages ASF de Microsoft Defender cités ici sont désactivés par défaut.
+
+- id: images.missing_alt
+  family: images
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "html.images.filter(i => !i.is_tracking_pixel && i.alt == null).count > 0"
+    notes: "Images de contenu sans attribut alt. Une image décorative doit avoir alt=\"\" (vide), pas d'attribut absent."
+  sa_rules: []
+  title: "Des images n'ont pas de texte alternatif"
+  why: >
+    Ces images n'ont pas d'attribut alt (leur liste est sous l'anomalie). Quand les images sont
+    bloquées, ce qui reste le réglage par défaut chez plusieurs clients, le lecteur ne voit qu'un
+    cadre vide à leur place.
+  fix:
+    - "Ajoutez à chaque image un attribut alt qui dit ce qu'elle montre ou ce qu'elle fait (par exemple « Voir la collection hiver »)."
+    - "Pour une image purement décorative, mettez alt=\"\"."
+  fix_by_provider:
+    mailchimp: "Cliquez sur l'image, puis Edit et remplissez le champ Alt text."
+    brevo: "Sélectionnez l'image dans l'éditeur, puis remplissez le champ Texte alternatif dans le panneau de droite."
+  example_bad: "<img src=\"https://{domain}/img/soldes.jpg\">"
+  example_good: "<img src=\"https://{domain}/img/soldes.jpg\" alt=\"Soldes d'hiver : jusqu'à 40 % sur les manteaux\" width=\"600\">"
+  references:
+    - https://www.w3.org/WAI/tutorials/images/
+    - https://html.spec.whatwg.org/multipage/images.html#alt
+
+- id: images.http_insecure
+  family: images
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "html.images.any(i => i.src.scheme == 'http')"
+    notes: "Microsoft Defender, option ASF Image links to remote websites, cite justement les images chargées en http comme exemple."
+  sa_rules: []
+  title: "Des images sont chargées en http non chiffré"
+  why: >
+    L'image {url} est chargée sans chiffrement. Certains clients ne l'affichent pas ou affichent un
+    avertissement, et les filtres de Microsoft peuvent augmenter le score de spam.
+  fix:
+    - "Remplacez http:// par https:// dans l'adresse de chaque image."
+    - "Vérifiez que le serveur qui héberge les images a un certificat valide."
+  example_bad: "<img src=\"http://{domain}/img/logo.png\" alt=\"Logo\">"
+  example_good: "<img src=\"https://{domain}/img/logo.png\" alt=\"Logo\">"
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: images.third_party_host
+  family: images
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "html.images.any(i => !org_domain(i.src.host) in [org_domain(headers.from.domain), provider.image_hosts])"
+    notes: "Images hébergées ni sur le domaine de l'expéditeur ni sur l'outil d'envoi détecté (banque d'images, site d'un tiers, hébergeur d'images public)."
+  sa_rules: []
+  title: "Des images sont hébergées sur le site d'un tiers"
+  why: >
+    L'image {url} est chargée depuis un site qui n'est ni {domain} ni votre outil d'envoi. Si ce site
+    la retire ou est mal réputé, l'image disparaît ou entraîne votre message avec lui.
+  fix:
+    - "Téléchargez l'image et hébergez-la sur {domain} ou dans la bibliothèque d'images de votre outil d'envoi."
+    - "Vérifiez que vous avez le droit d'utiliser cette image."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: images.ip_host
+  family: images
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "html.images.any(i => i.src.host.is_ip)"
+    notes: "Microsoft Defender, option ASF Numeric IP address in URL."
+  sa_rules: []
+  title: "Une image est chargée depuis une adresse IP"
+  why: >
+    L'image {url} est chargée depuis une adresse IP au lieu d'un nom de domaine. C'est un indice de
+    serveur improvisé que les filtres, dont ceux de Microsoft, comptent contre le message.
+  fix:
+    - "Hébergez l'image sur un nom de domaine, par exemple https://{domain}/img/."
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: images.unreachable
+  family: images
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "html.images.any(i => i.http_status >= 400 || i.fetch_error)"
+    notes: "Téléchargement de chaque image avec un identifiant de navigateur ordinaire. Un 403 ou un 429 peut venir d'une protection contre les robots : à confirmer."
+  sa_rules: []
+  title: "Une image du message ne se charge pas"
+  why: >
+    L'image {url} renvoie {status}. Le lecteur voit un cadre vide ou une icône cassée, et un
+    message à moitié vide paraît suspect.
+  fix:
+    - "Ouvrez l'adresse de l'image dans un navigateur pour confirmer l'erreur."
+    - "Corrigez le chemin dans le modèle ou remettez l'image en ligne."
+    - "Si votre hébergeur bloque les requêtes sans référent, autorisez le chargement direct des images du dossier concerné."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.5
+
+- id: images.wrong_content_type
+  family: images
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "html.images.any(i => i.http_status == 200 && !i.response.content_type ~ /^image\\//)"
+    notes: "L'adresse de l'image renvoie une page HTML (page de connexion, page d'erreur personnalisée) au lieu d'une image."
+  sa_rules: []
+  title: "L'adresse d'une image renvoie autre chose qu'une image"
+  why: >
+    L'adresse {url} renvoie un contenu de type {value} au lieu d'une image : souvent une page de
+    connexion ou d'erreur. L'image ne s'affichera pas.
+  fix:
+    - "Vérifiez que l'image est publique et ne demande pas de connexion."
+    - "Utilisez le lien direct vers le fichier image, pas celui de la page de partage."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-8.3
+
+- id: images.too_heavy
+  family: images
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "html.images.any(i => i.bytes > config.max_image_bytes)"
+    notes: "Poids de chaque image hébergée. Seuil interne."
+  sa_rules: []
+  title: "Une image est très lourde"
+  why: >
+    L'image {url} pèse {value}. Sur mobile, elle met du temps à s'afficher et consomme des données :
+    le lecteur referme souvent le message avant de l'avoir vue.
+  fix:
+    - "Redimensionnez l'image aux dimensions où elle s'affiche dans le message, avec une marge seulement pour les écrans haute densité."
+    - "Compressez-la en JPEG pour les photos, en PNG pour les logos et les aplats."
+  references:
+    - https://web.dev/articles/fast#optimize_your_images
+
+- id: images.image_heavy
+  family: images
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "html.images.content_area / html.total_area > config.max_image_area_ratio && body.visible_text.words >= config.min_body_words"
+    notes: "Texte présent mais très minoritaire face aux images. Le cas sans texte est traité par content.image_only ; ne pas cumuler."
+  sa_rules: []
+  title: "Les images dominent largement le texte"
+  why: >
+    L'essentiel du message est fait d'images. Quand elles sont bloquées, le lecteur ne voit presque
+    rien, et les filtres ont peu de texte pour juger le message.
+  fix:
+    - "Sortez des images les informations clés (offre, date, prix, bouton) et écrivez-les en texte HTML."
+    - "Gardez les images pour illustrer, pas pour porter le message."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: images.inline_cid_many
+  family: images
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "mime.parts.filter(p => p.type ~ /^image\\// && p.content_id != null).count > config.max_inline_images"
+    notes: "Images jointes au message et appelées par cid: (RFC 2392). Elles alourdissent chaque envoi et apparaissent parfois comme pièces jointes."
+  sa_rules: []
+  title: "Le message embarque beaucoup d'images en pièces jointes intégrées"
+  why: >
+    Le message transporte {value} images intégrées par cid:. Chacune alourdit le message, et certains
+    clients les affichent aussi en pièces jointes, ce qui ressemble à un envoi suspect.
+  fix:
+    - "Hébergez les images sur {domain} ou chez votre outil d'envoi et appelez-les par une adresse https."
+    - "Gardez au plus le logo en image intégrée si vous voulez qu'il s'affiche sans téléchargement."
+  fix_by_provider:
+    microsoft_365: "Dans Outlook, une image collée dans le corps devient une image intégrée. Pour une newsletter, utilisez un outil d'envoi plutôt que la messagerie."
+    wordpress: "Si une extension de notification ajoute les images en pièces jointes intégrées, désactivez cette option et utilisez des images hébergées sur le site."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc2392
+
+- id: images.tracking_pixel
+  family: images
+  severity: info
+  penalty: 0
+  detect:
+    signal: "html.images.any(i => i.is_tracking_pixel)"
+    notes: "Image de 1 x 1 pixel ou cachée, servant à mesurer l'ouverture. Microsoft Defender propose l'option ASF Web bugs in HTML, désactivée par défaut, qui classe ces messages en spam à haute confiance."
+  sa_rules: []
+  title: "Le message contient un pixel de mesure d'ouverture"
+  why: >
+    Le message contient une image invisible qui mesure l'ouverture. C'est courant dans les
+    newsletters, mais les organisations qui ont activé l'option Web bugs de Microsoft Defender classent
+    ces messages en spam à haute confiance.
+  fix:
+    - "Pour les messages transactionnels et les échanges personnels, désactivez la mesure d'ouverture dans votre outil."
+    - "Pour les newsletters vers des entreprises sous Microsoft 365, comparez les taux de livraison avec et sans pixel."
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: images.tracking_pixel_without_content
+  family: images
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "html.images.any(i => i.is_tracking_pixel) && body.visible_text.words < config.min_body_words && html.images.filter(i => !i.is_tracking_pixel).count == 0"
+    notes: "Pixel de suivi dans un message presque vide : profil des messages de vérification d'adresse envoyés par les spammeurs."
+  sa_rules: []
+  title: "Le message ne contient qu'un pixel de suivi et presque rien d'autre"
+  why: >
+    Un message presque vide avec un pixel de suivi sert surtout à vérifier que l'adresse est active.
+    C'est une pratique de spammeur, et les filtres la reconnaissent.
+  fix:
+    - "Vérifiez que le contenu du modèle est bien transmis à l'envoi."
+    - "Si le message est un test technique, retirez le pixel de suivi."
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: images.missing_dimensions
+  family: images
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "html.images.filter(i => !i.is_tracking_pixel && i.width_attr == null).count > 0"
+    notes: "Sans attribut width, Outlook pour Windows affiche l'image à sa taille réelle, et les clients qui bloquent les images ne réservent pas sa place."
+  sa_rules: []
+  title: "Des images n'ont pas de largeur déclarée"
+  why: >
+    Sans largeur déclarée, une grande image peut déborder dans Outlook pour Windows, et la mise en
+    page se décale quand les images sont bloquées.
+  fix:
+    - "Ajoutez l'attribut width (en pixels, sans unité) sur chaque image, et height si le rapport largeur hauteur est fixe."
+    - "Complétez avec style='max-width:100%;height:auto' pour l'affichage mobile."
+  example_good: "<img src=\"https://{domain}/img/banniere.jpg\" width=\"600\" alt=\"Nouvelle collection\" style=\"max-width:100%;height:auto;display:block\">"
+  references:
+    - https://html.spec.whatwg.org/multipage/embedded-content-other.html#dimension-attributes
+
+- id: images.redirecting_src
+  family: images
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "html.images.any(i => !i.is_tracking_pixel && i.redirects.count > 0)"
+    notes: "Adresse d'image qui redirige avant de servir le fichier."
+  sa_rules: []
+  title: "L'adresse d'une image passe par une redirection"
+  why: >
+    L'image {url} est servie après une redirection. L'affichage est plus lent, et certains proxys
+    d'images ne suivent pas toutes les redirections.
+  fix:
+    - "Mettez dans le message l'adresse finale du fichier image."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+data/
+.env
+.env.local
+research/raw/
+test-results/
+playwright-report/
+*.log
+.impeccable/review/
+.impeccable/config.local.json
+
+__pycache__/
+*.pyc
+i18n/todo/

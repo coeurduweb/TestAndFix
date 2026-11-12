@@ -1,0 +1,429 @@
+# Famille links : liens du corps du message.
+# Les seuils nommés config.* sont des réglages internes de l'outil.
+# Les réglages ASF de Microsoft Defender cités ici sont désactivés par défaut : ils ne s'appliquent
+# que chez les organisations Microsoft 365 qui les ont activés.
+
+- id: links.shortener
+  family: links
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "body.links.any(l => l.host in config.url_shorteners)"
+    notes: "Liste interne de raccourcisseurs publics (bit.ly, tinyurl.com, t.ly, is.gd, cutt.ly...). Le domaine du raccourcisseur est partagé avec des spammeurs et souvent listé sur les listes de domaines."
+  sa_rules: []
+  title: "Le message utilise un raccourcisseur de liens"
+  why: >
+    Le lien {url} passe par un raccourcisseur public. Ces domaines sont partagés avec des spammeurs :
+    leur réputation retombe sur votre message, et le destinataire ne voit pas où il va.
+  fix:
+    - "Remplacez le lien raccourci par l'adresse complète de la page sur {domain}."
+    - "Si l'adresse est trop longue, créez une redirection courte sur votre propre domaine, par exemple https://{domain}/promo."
+    - "Si vous avez besoin du suivi des clics, utilisez celui de votre outil d'envoi avec un domaine de suivi personnalisé."
+  example_bad: "https://bit.ly/3xYz12"
+  example_good: "https://{domain}/soldes-hiver"
+  references:
+    - https://www.spamhaus.org/blocklists/domain-blocklist/
+    - https://www.surbl.org/
+
+- id: links.text_url_mismatch
+  family: links
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "body.links.any(l => l.text.looks_like_url && registrable_domain(l.text) != registrable_domain(l.final_href) && !l.is_known_esp_tracking_of(l.text))"
+    notes: "Texte du lien qui affiche une adresse, cible qui mène vers un autre domaine enregistrable. Les liens de suivi de l'outil d'envoi détecté sont résolus avant comparaison."
+  sa_rules: []
+  title: "Un lien affiche une adresse et mène vers une autre"
+  why: >
+    Le texte du lien montre une adresse mais le clic mène vers {url}. C'est la marque de
+    l'hameçonnage : les filtres antihameçonnage sanctionnent fortement ce décalage.
+  fix:
+    - "Si le texte du lien est une adresse, faites-la pointer exactement vers cette adresse."
+    - "Sinon, écrivez un texte de lien descriptif, par exemple « Voir ma commande », au lieu d'une adresse."
+    - "Si l'écart vient du suivi des clics, configurez un domaine de suivi sur un sous-domaine de {domain}."
+  example_bad: "<a href=\"https://exemple-tracking.test/r/8f2\">https://{domain}/compte</a>"
+  example_good: "<a href=\"https://{domain}/compte\">Accéder à mon compte</a>"
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: links.http_not_https
+  family: links
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "body.links.any(l => l.scheme == 'http')"
+    notes: "Liens non chiffrés. Les navigateurs affichent un avertissement sur les formulaires en HTTP."
+  sa_rules: []
+  title: "Des liens utilisent http au lieu de https"
+  why: >
+    Le lien {url} n'est pas chiffré. Les navigateurs le signalent comme non sécurisé, et un lien en
+    clair est un signal négatif pour les filtres qui évaluent la qualité des liens.
+  fix:
+    - "Remplacez http:// par https:// dans tous les liens du modèle."
+    - "Si la page ne répond pas en HTTPS, installez un certificat sur le site (Let's Encrypt est gratuit chez la plupart des hébergeurs)."
+  fix_by_provider:
+    sendgrid: "Si le http vient du suivi des clics, activez SSL sur le domaine de suivi : Settings > Sender Authentication > Link Branding, puis suivez la procédure SSL click tracking de SendGrid."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-4.2.2
+
+- id: links.ip_literal
+  family: links
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "body.links.any(l => l.host.is_ip)"
+    notes: "Microsoft Defender, option ASF Numeric IP address in URL : augmentation du score de spam."
+  sa_rules: []
+  title: "Un lien pointe vers une adresse IP au lieu d'un nom de domaine"
+  why: >
+    Le lien {url} utilise une adresse IP. Les sites légitimes ont un nom de domaine : les filtres, dont
+    ceux de Microsoft, traitent ces liens comme suspects.
+  fix:
+    - "Remplacez l'adresse IP par le nom de domaine du site, par exemple https://{domain}/."
+    - "Si le service n'a pas de nom, créez un sous-domaine de {domain} qui pointe vers cette IP et installez un certificat."
+  example_bad: "http://203.0.113.10/facture"
+  example_good: "https://espace.{domain}/facture"
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: links.nonstandard_port
+  family: links
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "body.links.any(l => l.port != null && l.port !in [80, 443, 8080])"
+    notes: "Microsoft Defender, option ASF URL redirect to other port : liens vers un port TCP autre que 80, 8080 ou 443."
+  sa_rules: []
+  title: "Un lien pointe vers un port inhabituel"
+  why: >
+    Le lien {url} vise un port autre que les ports web habituels. Microsoft propose d'augmenter le
+    score de spam de ces messages, et certains réseaux d'entreprise bloquent ces ports.
+  fix:
+    - "Servez la page sur le port 443 (HTTPS standard) et retirez le numéro de port du lien."
+    - "Si l'application tourne sur un autre port, placez-la derrière un proxy inverse sur un sous-domaine de {domain}."
+  example_bad: "https://{domain}:8443/inscription"
+  example_good: "https://{domain}/inscription"
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+
+- id: links.uribl_listed
+  family: links
+  severity: critical
+  penalty: 2.5
+  detect:
+    signal: "body.links.any(l => uribl.listed(l.registrable_domain))"
+    notes: "Domaine d'un lien présent sur une liste de domaines (Spamhaus DBL, SURBL, URIBL). Le diagnostic détaillé et la procédure de retrait relèvent de la famille blacklist ; cette entrée signale le lien concerné."
+  sa_rules: []
+  title: "Un lien du message pointe vers un domaine sur liste noire"
+  why: >
+    Le domaine du lien {url} est inscrit sur {list_name}. Les filtres consultent ces listes pour
+    chaque lien : un seul domaine listé suffit souvent à envoyer le message en indésirables.
+  fix:
+    - "Si le domaine n'est pas le vôtre, retirez ce lien du message ou remplacez-le par une autre source."
+    - "Si c'est votre domaine ou votre domaine de suivi, consultez le diagnostic de la famille liste noire, corrigez la cause puis demandez le retrait sur {delist_url}."
+    - "Vérifiez que le lien ne passe pas par un raccourcisseur ou un domaine de suivi partagé."
+  references:
+    - https://www.spamhaus.org/blocklists/domain-blocklist/
+    - https://www.surbl.org/
+    - https://www.uribl.com/
+
+- id: links.domain_recent
+  family: links
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "body.links.any(l => rdap.created(l.registrable_domain) > now - config.recent_domain_age)"
+    notes: "Date de création lue dans le RDAP du registre. Seuil interne. Sans réponse RDAP, la situation n'est pas déclenchée."
+  sa_rules: []
+  title: "Un lien pointe vers un domaine créé très récemment"
+  why: >
+    Le domaine du lien {url} a été enregistré il y a {value}. Les domaines neufs sont massivement
+    utilisés pour l'hameçonnage : les filtres leur accordent peu de confiance.
+  fix:
+    - "Si possible, faites pointer le lien vers une page de votre domaine principal {domain}, plus ancien."
+    - "Si le nouveau domaine doit rester, mettez-le en ligne avec un vrai site, et augmentez progressivement le volume des envois qui le citent."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9083
+
+- id: links.broken
+  family: links
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "body.links.any(l => l.http_status >= 400)"
+    notes: "Requête HEAD puis GET si HEAD est refusé, avec un identifiant de navigateur ordinaire. Une erreur 403 ou 429 peut venir d'un pare-feu qui bloque les robots : à confirmer avant de conclure."
+  sa_rules: []
+  title: "Un lien du message est cassé"
+  why: >
+    Le lien {url} répond par une erreur {value}. Le lecteur tombe sur une page d'erreur, et un lien
+    mort est un signe de message négligé pour les filtres qui suivent les liens.
+  fix:
+    - "Ouvrez le lien dans un navigateur pour confirmer l'erreur."
+    - "Corrigez l'adresse dans le modèle, ou rétablissez la page sur le site."
+    - "Si la page a déménagé, ajoutez une redirection 301 de l'ancienne adresse vers la nouvelle."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.5
+
+- id: links.redirect_chain
+  family: links
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "body.links.any(l => l.redirects.count > config.max_link_redirects)"
+    notes: "Nombre de redirections suivies jusqu'à la page finale. Seuil interne."
+  sa_rules: []
+  title: "Un lien passe par plusieurs redirections"
+  why: >
+    Le lien {url} fait {value} redirections avant d'arriver. Chaque étape ralentit l'ouverture et peut
+    passer par un domaine de mauvaise réputation. Les chaînes longues sont typiques du spam.
+  fix:
+    - "Mettez dans le message l'adresse finale de la page, après les redirections."
+    - "Gardez une seule redirection au plus : celle du suivi des clics de votre outil d'envoi."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9110#section-15.4
+
+- id: links.open_redirect
+  family: links
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "body.links.any(l => l.query.values.any(v => v.is_absolute_url && registrable_domain(v) != registrable_domain(l)) && l.host in config.known_open_redirectors)"
+    notes: "Lien qui passe par une redirection ouverte d'un grand site (par exemple un paramètre url= ou q= vers un domaine tiers). Technique de contournement des filtres de liens."
+  sa_rules: []
+  title: "Un lien passe par une redirection ouverte d'un site tiers"
+  why: >
+    Le lien {url} emprunte la redirection d'un autre site pour masquer la vraie destination. Cette
+    technique est utilisée pour contourner les filtres, qui la reconnaissent.
+  fix:
+    - "Remplacez ce lien par l'adresse directe de la page de destination."
+    - "Si vous avez copié le lien depuis un moteur de recherche ou un réseau social, ouvrez la page et copiez l'adresse affichée dans la barre du navigateur."
+  references:
+    - https://cwe.mitre.org/data/definitions/601.html
+
+- id: links.tracking_domain_unbranded
+  family: links
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "body.links.share(l => l.host.is_esp_tracking_domain && registrable_domain(l.host) != registrable_domain(headers.from.domain)) > 0"
+    notes: "Liens de suivi sur le domaine partagé de l'outil d'envoi au lieu d'un sous-domaine de {domain}."
+  sa_rules: []
+  title: "Les liens de suivi utilisent le domaine partagé de l'outil d'envoi"
+  why: >
+    Les clics passent par le domaine de {provider}, partagé avec tous ses clients. Si l'un d'eux
+    envoie du spam, ce domaine peut être pénalisé, et vos liens avec lui.
+  fix:
+    - "Configurez un domaine de suivi personnalisé sur un sous-domaine, par exemple clic.{domain}."
+    - "Publiez l'enregistrement CNAME indiqué par votre outil d'envoi, puis activez le domaine dans ses réglages."
+  fix_by_provider:
+    sendgrid: "Settings > Sender Authentication > Link Branding > Brand your links : choisissez un sous-domaine de {domain} et publiez les CNAME affichés."
+    mailgun: "Dans le domaine d'envoi, section Tracking, renseignez un domaine de suivi sur {domain} et publiez le CNAME indiqué."
+    amazon_ses: "Créez un configuration set avec un domaine de redirection personnalisé (custom redirect domain) pour le suivi des clics, puis publiez le CNAME vers le point de terminaison de suivi de votre région."
+  references:
+    - https://www.twilio.com/docs/sendgrid/ui/account-and-settings/how-to-set-up-link-branding
+    - https://docs.aws.amazon.com/ses/latest/dg/configure-custom-open-click-domains.html
+
+- id: links.executable_target
+  family: links
+  severity: high
+  penalty: 2.0
+  detect:
+    signal: "body.links.any(l => l.path.extension in config.dangerous_extensions || l.response.content_disposition.filename.extension in config.dangerous_extensions)"
+    notes: "Liste d'extensions reprise de la liste des fichiers bloqués par Gmail (.exe, .msi, .js, .vbs, .scr, .bat, .iso...)."
+  sa_rules: []
+  title: "Un lien télécharge un fichier exécutable"
+  why: >
+    Le lien {url} télécharge directement un fichier de type {value}. Gmail refuse ce type de fichier
+    en pièce jointe, et les filtres traitent un lien vers un exécutable de la même façon.
+  fix:
+    - "Remplacez le lien direct par un lien vers une page de téléchargement de {domain} qui explique le fichier."
+    - "Si c'est un logiciel, distribuez-le depuis une boutique d'applications ou une page de téléchargement signée."
+  references:
+    - https://support.google.com/mail/answer/6590
+
+- id: links.unsafe_scheme
+  family: links
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "body.links.any(l => l.scheme in ['javascript','data','vbscript','file'])"
+    notes: "Liens javascript:, data:, vbscript: ou file:. Les clients les neutralisent ; leur présence signe un message malveillant ou un gabarit cassé."
+  sa_rules: []
+  title: "Un lien utilise un protocole dangereux (javascript:, data:, file:)"
+  why: >
+    Le lien {url} n'est pas une adresse web. Les clients le désactivent, et les filtres y voient une
+    tentative d'exécuter du code ou d'ouvrir un fichier local.
+  fix:
+    - "Remplacez chaque lien de ce type par une adresse https vers une page de {domain}."
+    - "Si l'éditeur de votre outil a créé un lien javascript:void(0), supprimez le lien ou donnez-lui une vraie destination."
+  references:
+    - https://learn.microsoft.com/en-us/defender-office-365/anti-spam-policies-asf-settings-about
+    - https://www.rfc-editor.org/rfc/rfc3986
+
+- id: links.userinfo_in_url
+  family: links
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "body.links.any(l => l.userinfo != null)"
+    notes: "RFC 3986 §3.2.1 : la partie avant @ dans l'autorité est un identifiant. https://banque.fr@pirate.test/ mène à pirate.test. La RFC 3986 §7.6 décrit ce risque."
+  sa_rules: []
+  title: "Un lien contient un @ qui masque sa vraie destination"
+  why: >
+    Dans {url}, tout ce qui précède le @ est ignoré par le navigateur : le lien semble mener vers un
+    site et mène vers un autre. C'est une technique d'hameçonnage connue et sanctionnée.
+  fix:
+    - "Supprimez la partie identifiant:mot de passe@ du lien."
+    - "Si le lien doit transmettre un identifiant, passez-le en paramètre de requête après le ?."
+  example_bad: "https://{domain}@exemple.test/connexion"
+  example_good: "https://{domain}/connexion"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3986#section-3.2.1
+    - https://www.rfc-editor.org/rfc/rfc3986#section-7.6
+
+- id: links.punycode_lookalike
+  family: links
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "body.links.any(l => l.host.labels.any(x => x.startsWith('xn--')) && l.host.unicode.is_confusable_with(config.protected_brands_domains))"
+    notes: "Domaine internationalisé (punycode, RFC 3492) dont la forme Unicode imite un domaine connu. Détection selon Unicode TR39."
+  sa_rules: []
+  title: "Un lien utilise un domaine accentué qui imite un domaine connu"
+  why: >
+    Le lien {url} utilise un nom de domaine écrit avec des caractères qui ressemblent à ceux d'un
+    domaine connu. C'est une technique d'usurpation que les filtres et les navigateurs surveillent.
+  fix:
+    - "Si ce domaine n'est pas le vôtre, retirez le lien."
+    - "Si c'est votre domaine accentué, préférez dans les e-mails sa version sans accent sur {domain}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3492
+    - https://www.unicode.org/reports/tr39/
+
+- id: links.free_hosting_or_dyndns
+  family: links
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "body.links.any(l => registrable_domain(l.host) in config.free_hosting_and_dyndns_suffixes)"
+    notes: "Liste interne d'hébergeurs gratuits, de services de DNS dynamique et de générateurs de pages (sous-domaines attribués à n'importe qui)."
+  sa_rules: []
+  title: "Un lien pointe vers un hébergement gratuit ou un DNS dynamique"
+  why: >
+    Le lien {url} est hébergé sur un service où n'importe qui peut créer une page gratuitement. Ces
+    services sont très utilisés pour l'hameçonnage, et leur réputation est faible.
+  fix:
+    - "Hébergez la page sur votre propre domaine {domain}."
+    - "Si vous utilisez un générateur de pages, reliez-y un sous-domaine de {domain}."
+  references:
+    - https://www.spamhaus.org/blocklists/domain-blocklist/
+
+- id: links.cloud_share
+  family: links
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "body.links.any(l => l.host in config.file_sharing_hosts) && body.visible_text.words < config.min_body_words"
+    notes: "Lien de partage de fichier (stockage en ligne, transfert de fichiers) dans un message court. Format très utilisé par l'hameçonnage à la facture."
+  sa_rules: []
+  title: "Le message renvoie vers un partage de fichier avec peu d'explication"
+  why: >
+    Un message court qui renvoie vers un fichier partagé ressemble aux faux envois de factures. Les
+    filtres et les destinataires s'en méfient.
+  fix:
+    - "Expliquez en quelques phrases ce que contient le fichier et pourquoi vous l'envoyez."
+    - "Pour un document attendu (facture, devis), joignez un PDF ou mettez-le à disposition dans un espace client sur {domain}."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: links.no_link_to_sender_domain
+  family: links
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "message.is_bulk && body.links.count > 0 && !body.links.any(l => org_domain(l.final_host) == org_domain(headers.from.domain))"
+    notes: "Aucun lien, une fois les redirections de suivi résolues, ne mène vers le domaine de l'expéditeur. Orange demande un site derrière le domaine du From."
+  sa_rules: []
+  title: "Aucun lien ne mène au site de l'expéditeur"
+  why: >
+    Le message vient de {domain} mais aucun lien ne mène vers ce domaine. Les filtres rapprochent le
+    domaine d'envoi et les liens : un écart total rappelle les envois pour le compte de tiers.
+  fix:
+    - "Ajoutez au moins un lien vers votre site sur {domain}, par exemple dans le logo et le pied de page."
+    - "Si vous vendez sur une place de marché, ajoutez aussi un lien vers votre propre site."
+  references:
+    - https://postmaster.orange.fr/
+
+- id: links.localhost_or_staging
+  family: links
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "body.links.any(l => l.host ~ /^(localhost|127\\.|10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)|\\.(local|test|localhost|internal)$|(^|\\.)(staging|preprod|recette)\\./i)"
+    notes: "Liens vers une machine locale, un réseau privé ou un environnement de recette."
+  sa_rules: []
+  title: "Un lien pointe vers un environnement de test ou un réseau privé"
+  why: >
+    Le lien {url} ne fonctionne que sur votre réseau ou votre serveur de test. Le destinataire tombe
+    sur une erreur, et le message paraît non relu.
+  fix:
+    - "Remplacez l'adresse de test par l'adresse publique, sur {domain}."
+    - "Dans votre application, réglez l'adresse de base du site (par exemple APP_URL ou siteurl) sur la valeur de production."
+  fix_by_provider:
+    wordpress: "Vérifiez Réglages > Général > Adresse du site, et cherchez l'ancienne adresse dans la base avec WP-CLI : wp search-replace 'https://preprod.{domain}' 'https://{domain}' --dry-run."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1918
+    - https://www.rfc-editor.org/rfc/rfc6761
+
+- id: links.too_many
+  family: links
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "body.links.unique_count > config.max_links || body.links.count / max(body.visible_text.words, 1) > config.max_link_word_ratio"
+    notes: "Nombre de liens élevé ou proportion liens / mots élevée. Seuils internes."
+  sa_rules: []
+  title: "Le message contient beaucoup de liens pour peu de texte"
+  why: >
+    Le message contient {value} liens. Une forte densité de liens par rapport au texte est un profil
+    typique du spam, et elle multiplie les risques de tomber sur un domaine mal réputé.
+  fix:
+    - "Gardez un appel à l'action principal et quelques liens secondaires."
+    - "Supprimez les liens en double qui mènent à la même page."
+  references:
+    - https://support.google.com/mail/answer/81126
+
+- id: links.empty_href
+  family: links
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "html.elements('a').any(a => a.href in ['', '#'] || a.href == null)"
+    notes: "Liens sans destination, souvent oubliés dans un modèle."
+  sa_rules: []
+  title: "Des liens n'ont pas de destination"
+  why: >
+    Certains boutons ou liens ne mènent nulle part. Le lecteur clique sans résultat, et le message
+    paraît non terminé.
+  fix:
+    - "Donnez une adresse https à chaque lien, ou retirez la balise a autour du texte."
+    - "Vérifiez en particulier les icônes de réseaux sociaux du pied de page."
+  references:
+    - https://html.spec.whatwg.org/multipage/links.html
+
+- id: links.mailto_only
+  family: links
+  severity: info
+  penalty: 0
+  detect:
+    signal: "body.links.count > 0 && body.links.all(l => l.scheme == 'mailto')"
+    notes: "Informatif : un message qui ne contient que des liens mailto n'est pas pénalisé en soi."
+  sa_rules: []
+  title: "Le message ne contient que des liens de courrier (mailto)"
+  why: >
+    Tous les liens ouvrent un nouveau message. Ce n'est pas pénalisant, mais le lecteur n'a aucun
+    moyen de vérifier qui vous êtes sur un site.
+  fix:
+    - "Ajoutez un lien vers votre site sur {domain}, par exemple dans la signature."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6068

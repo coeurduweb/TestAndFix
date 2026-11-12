@@ -1,0 +1,893 @@
+# Famille spf : Sender Policy Framework (RFC 7208). Le SPF est évalué sur le domaine de
+# l'enveloppe ({envelope_domain}, Return-Path / MAIL FROM), et non sur le domaine visible
+# {domain}, sauf quand les deux sont identiques. Le HELO ({helo}) a son propre SPF.
+# Valeurs include: des fournisseurs relevées sur leur documentation officielle le 2026-11-10.
+# Zoho : la documentation officielle ne donne que include:zoho.com ; pour un compte du centre
+# de données européen, recopier la valeur affichée dans la console (valeur UE non vérifiée).
+
+- id: spf.missing
+  family: spf
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "spf.result == none && spf.record == null"
+    notes: "Aucun enregistrement TXT commençant par v=spf1 sur {envelope_domain}. Gmail exige SPF ou DKIM de tous les expéditeurs, SPF et DKIM au-delà de 5 000 messages par jour ; Yahoo et Outlook.com ont des exigences équivalentes."
+  sa_rules: [SPF_NONE]
+  title: "Le domaine {envelope_domain} n'a pas d'enregistrement SPF"
+  why: >
+    Sans SPF, rien n'indique aux destinataires quels serveurs ont le droit d'envoyer pour
+    {envelope_domain}. Gmail, Yahoo et Outlook.com exigent cette authentification : vos
+    messages risquent le dossier spam ou le rejet.
+  fix:
+    - "Listez tous les services qui envoient avec une adresse de {envelope_domain} : messagerie, site web, logiciel de facturation, outil d'emailing."
+    - "Créez un seul enregistrement TXT à la racine de {envelope_domain} commençant par v=spf1, avec un include: ou un ip4: par service, et terminé par ~all."
+    - "Vérifiez le résultat avec ce test : le SPF doit indiquer pass pour l'IP {ip}."
+  fix_by_provider:
+    google_workspace: "Ajoutez le TXT v=spf1 include:_spf.google.com ~all (documentation Google Workspace, Configurer SPF)."
+    microsoft_365: "Ajoutez chez votre hébergeur DNS le TXT v=spf1 include:spf.protection.outlook.com -all ; Microsoft 365 ne permet pas de le créer dans son interface pour un domaine personnalisé."
+    ovh: "Dans l'espace client OVHcloud, Zone DNS, Ajouter une entrée, type SPF : v=spf1 include:mx.ovh.com ~all (include:mx.ovh.ca pour les comptes Canada et Asie-Pacifique). Valable pour MX Plan, Email Pro et Exchange hébergé."
+    o2switch: "Dans cPanel, Authentification, Gérer, Personnaliser : o2switch indique que le seul include à utiliser pour ses services est include:spf.jabatus.fr. Méfiez-vous des SPF générés par des outils d'IA."
+    cpanel: "Dans Email, Email Deliverability, cliquez sur Manage puis installez l'enregistrement SPF proposé (de la forme v=spf1 +a +mx +ip4:… ~all). Si le DNS n'est pas géré par ce serveur, recopiez-le chez votre hébergeur DNS."
+    plesk: "Dans Sites Web et domaines, DNS, ajoutez ou complétez le TXT v=spf1 (modèle du serveur : Outils et paramètres, Paramètres DNS)."
+    ionos: "Pour un domaine aux serveurs DNS IONOS, activez l'enregistrement « IONOS SPF (TXT) » ; avec un DNS externe, publiez v=spf1 include:_spf-eu.ionos.com ~all."
+    gandi: "Publiez v=spf1 include:_mailcust.gandi.net ~all, et ajoutez include:_spf.gpaas.net si votre site hébergé chez Gandi envoie aussi."
+    infomaniak: "Infomaniak installe automatiquement v=spf1 include:spf.infomaniak.ch -all quand la zone DNS est chez lui ; sinon publiez cette valeur."
+    zoho: "Publiez la valeur affichée dans la console d'administration Zoho Mail (documentation : v=spf1 include:zoho.com ~all)."
+    proton: "Dans Paramètres, Noms de domaine, Revoir, onglet SPF, recopiez l'enregistrement proposé (il contient include:_spf.protonmail.ch)."
+    brevo: "Brevo n'exige pas de SPF pour authentifier un domaine ; si vous fusionnez son include dans votre SPF, la valeur officielle est include:spf.brevo.com."
+    mailchimp: "Rien à ajouter : Mailchimp envoie avec son propre domaine de retour, déjà couvert par son SPF. Authentifiez plutôt le domaine en DKIM (Account & billing, Domains)."
+    mailjet: "Publiez v=spf1 include:spf.mailjet.com ~all (ou ajoutez cet include à votre SPF existant)."
+    sendgrid: "Avec l'option automated security (par défaut), l'include sendgrid.net est porté par le sous-domaine em… que SendGrid vous fait déléguer en CNAME : publiez les CNAME de Settings, Sender Authentication. Sans cette option, publiez sur ce sous-domaine v=spf1 include:sendgrid.net ~all."
+    mailgun: "Publiez sur le domaine d'envoi déclaré dans Mailgun (souvent un sous-domaine comme mg.{domain}) : v=spf1 include:mailgun.org ~all."
+    amazon_ses: "Par défaut SES utilise un domaine de retour amazonses.com, déjà couvert. Pour un domaine de retour personnalisé (MAIL FROM), publiez sur ce sous-domaine un MX 10 feedback-smtp.<région>.amazonses.com et le TXT v=spf1 include:amazonses.com ~all."
+    postmark: "Postmark ne demande plus de SPF : créez plutôt le CNAME de Return-Path personnalisé vers pm.mtasv.net indiqué dans Sender Signatures, DNS Settings."
+    hubspot: "Ajoutez au TXT racine l'include propre à votre compte (de la forme include:123456.spf03.hubspotemail.net), à recopier dans Settings, Content, Domains & URLs, Email Sending."
+    cloudflare_dns: "Dans DNS, Records, Add record, type TXT, nom @, contenu v=spf1 … ~all. Les TXT ne passent jamais par le proxy."
+  example_good: "v=spf1 include:_spf.google.com include:spf.brevo.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-3
+    - https://support.google.com/mail/answer/81126
+    - https://knowledge.workspace.google.com/admin/security/set-up-spf
+    - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-spf-configure
+    - https://docs.ovhcloud.com/fr/guides/web-cloud/domains/dns-zone-spf
+    - https://faq.o2switch.fr/cpanel/emails/delivrabilite-spf-dkim/
+    - https://docs.cpanel.net/cpanel/email/email-deliverability-in-cpanel/
+    - https://www.ionos.fr/assistance/domaines/configurer-les-serveurs-de-messagerie-et-les-enregistrements-associes/eviter-lenvoi-de-courrier-indesirable-spam-grace-a-un-enregistrement-spf/
+    - https://helpdesk.gandi.net/hc/fr/articles/14023116166172-Enregistrement-SPF
+    - https://www.infomaniak.com/fr/support/faq/2199/gerer-les-enregistrements-spf
+    - https://www.zoho.com/mail/help/adminconsole/spf-configuration.html
+    - https://proton.me/support/anti-spoofing-custom-domain
+    - https://help.brevo.com/hc/en-us/articles/4414335084434-Merge-multiple-SPF-records
+    - https://documentation.mailjet.com/hc/en-us/articles/360049641733-Authenticating-Domains-with-SPF-and-DKIM-A-Complete-Guide
+    - https://www.twilio.com/docs/sendgrid/ui/account-and-settings/how-to-set-up-domain-authentication
+    - https://documentation.mailgun.com/docs/mailgun/user-manual/domains/domains-verify
+    - https://docs.aws.amazon.com/ses/latest/dg/mail-from.html
+    - https://knowledge.hubspot.com/marketing-email/manage-email-authentication-in-hubspot
+
+- id: spf.multiple_records
+  family: spf
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "count(r for r in dns.TXT(envelope_domain) if lower(r) starts with 'v=spf1') > 1"
+    notes: "RFC 7208 §3.2 : un domaine ne doit pas publier plusieurs enregistrements SPF ; §4.5 : s'il y en a plusieurs, le résultat est permerror. Cas typique : un enregistrement ajouté par l'hébergeur et un autre par l'outil d'emailing."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Le domaine {envelope_domain} publie plusieurs enregistrements SPF"
+  why: >
+    Deux enregistrements v=spf1 annulent le SPF : le destinataire renvoie une erreur
+    permanente et {envelope_domain} perd toute authentification SPF, y compris pour les
+    services correctement déclarés.
+  fix:
+    - "Relevez les mécanismes de chaque enregistrement SPF existant."
+    - "Fusionnez-les en un seul : un v=spf1 au début, tous les include: et ip4: à la suite, un seul all à la fin."
+    - "Supprimez les autres enregistrements v=spf1 et refaites le test."
+  fix_by_provider:
+    o2switch: "Dans cPanel, Zone Editor, supprimez le doublon puis complétez l'enregistrement restant par Authentification, Gérer, Personnaliser (section INCLUDE)."
+    brevo: "Brevo donne cet exemple de fusion : v=spf1 include:_spf.google.com include:spf.brevo.com mx ~all."
+    cloudflare_dns: "Dans DNS, Records, filtrez sur TXT, modifiez un des enregistrements pour y fusionner l'autre, puis supprimez le second."
+  example_bad: "v=spf1 include:_spf.google.com ~all  et  v=spf1 include:spf.brevo.com ~all"
+  example_good: "v=spf1 include:_spf.google.com include:spf.brevo.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-3.2
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.5
+    - https://help.brevo.com/hc/en-us/articles/4414335084434-Merge-multiple-SPF-records
+
+- id: spf.type99_only
+  family: spf
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dns.SPF(envelope_domain) != [] && count(r for r in dns.TXT(envelope_domain) if lower(r) starts with 'v=spf1') == 0"
+    notes: "Enregistrement de type SPF (code 99) publié sans TXT. RFC 7208 §3.1 : le SPF doit être publié en TXT ; le type 99 a été retiré du protocole. Les vérificateurs ne lisent que le TXT."
+  sa_rules: [SPF_NONE]
+  title: "Le SPF de {envelope_domain} est publié dans un type d'enregistrement abandonné"
+  why: >
+    Votre SPF existe, mais dans le type d'enregistrement « SPF » (99) que plus aucun
+    destinataire ne lit. Pour eux, {envelope_domain} n'a pas de SPF.
+  fix:
+    - "Recréez exactement le même contenu dans un enregistrement de type TXT à la racine de {envelope_domain}."
+    - "Supprimez ensuite l'enregistrement de type SPF (99)."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-3.1
+    - https://www.rfc-editor.org/rfc/rfc7208#appendix-B
+
+- id: spf.type99_leftover
+  family: spf
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dns.SPF(envelope_domain) != [] && count(r for r in dns.TXT(envelope_domain) if lower(r) starts with 'v=spf1') >= 1"
+    notes: "Un TXT valable existe en plus d'un ancien type 99. Sans effet, sauf si les deux divergent et qu'on modifie le mauvais."
+  sa_rules: []
+  title: "Un ancien enregistrement de type SPF (99) subsiste sur {envelope_domain}"
+  why: >
+    Seul votre TXT est lu. L'ancien enregistrement de type 99 ne sert à rien et risque d'être
+    modifié par erreur à la place du bon.
+  fix:
+    - "Supprimez l'enregistrement de type SPF (99) et ne gardez que le TXT."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-3.1
+
+- id: spf.syntax_error
+  family: spf
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "spf.result == permerror && spf.reason ~ /syntax|invalid|parse/i"
+    notes: "Terme mal formé : espace manquant (include:a.cominclude:b.com), deux-points en trop (ip4: 1.2.3.4), CIDR invalide (ip4:1.2.3.4/33), adresse IPv6 dans ip4:. Le résultat est permerror (RFC 7208 §4.6)."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Le SPF de {envelope_domain} contient une erreur de syntaxe"
+  why: >
+    Une seule erreur de syntaxe rend tout l'enregistrement invalide : les destinataires le
+    traitent comme une erreur permanente, comme si {envelope_domain} n'avait pas de SPF.
+  fix:
+    - "Repérez le terme en erreur signalé par le test dans « {spf_record} »."
+    - "Séparez chaque terme par un espace simple, sans espace après les deux-points, avec ip4: pour IPv4 et ip6: pour IPv6."
+    - "Remplacez l'enregistrement par la version corrigée : {suggested_record}."
+  example_bad: "v=spf1 ip4: 203.0.113.10 include:_spf.google.cominclude:spf.brevo.com ~all"
+  example_good: "v=spf1 ip4:203.0.113.10 include:_spf.google.com include:spf.brevo.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.6
+    - https://www.rfc-editor.org/rfc/rfc7208#section-12
+
+- id: spf.unknown_mechanism
+  family: spf
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "spf.result == permerror && spf.reason ~ /unknown mechanism/i"
+    notes: "Mécanismes valides : all, include, a, mx, ptr, ip4, ip6, exists (RFC 7208 §5). Un mot inconnu (ipv4:, inlude:, spf:) produit permerror. Les modificateurs inconnus de la forme nom=valeur sont, eux, ignorés (§6)."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Le SPF de {envelope_domain} utilise un mécanisme inconnu"
+  why: >
+    Le SPF contient un mot que la norme ne connaît pas, souvent une faute de frappe. Tout
+    l'enregistrement devient invalide et vos messages perdent l'authentification SPF.
+  fix:
+    - "Repérez le terme inconnu dans « {spf_record} »."
+    - "Corrigez-le avec l'un des mécanismes valides : include:, ip4:, ip6:, a, mx, exists:, all."
+    - "Publiez la version corrigée : {suggested_record}."
+  example_bad: "v=spf1 ipv4:203.0.113.10 inlude:_spf.google.com ~all"
+  example_good: "v=spf1 ip4:203.0.113.10 include:_spf.google.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5
+    - https://www.rfc-editor.org/rfc/rfc7208#section-6
+
+- id: spf.version_invalid
+  family: spf
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "spf.record == null && any(r ~ /spf1/i && not (lower(r) starts with 'v=spf1 ' || lower(r) == 'v=spf1') for r in dns.TXT(envelope_domain))"
+    notes: "Un TXT ressemble à un SPF mais ne commence pas exactement par v=spf1 suivi d'une espace (RFC 7208 §4.5) : « v=spf1» collé au terme suivant, « v=spf 1 », « spf1 », espace initiale, guillemets saisis dans la valeur. Il est ignoré, le résultat est none."
+  sa_rules: [SPF_NONE]
+  title: "Le SPF de {envelope_domain} ne commence pas par v=spf1"
+  why: >
+    Votre enregistrement ressemble à un SPF mais son début n'est pas reconnu. Les
+    destinataires l'ignorent et considèrent que {envelope_domain} n'a pas de SPF.
+  fix:
+    - "Faites commencer l'enregistrement exactement par v=spf1 suivi d'une espace, sans espace ni guillemet avant."
+    - "Si votre interface DNS ajoute elle-même les guillemets, ne les saisissez pas dans la valeur."
+    - "Publiez : {suggested_record}."
+  example_bad: "\"v=spf1 include:_spf.google.com ~all\" (guillemets saisis dans la valeur) ou v=spf1include:_spf.google.com ~all"
+  example_good: "v=spf1 include:_spf.google.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.5
+
+- id: spf.sender_id_record
+  family: spf
+  severity: info
+  penalty: 0
+  detect:
+    signal: "any(lower(r) starts with 'spf2.0/' for r in dns.TXT(envelope_domain))"
+    notes: "Enregistrement Sender ID (spf2.0/pra, RFC 4406, expérimental et abandonné). Sans effet sur SPF, mais encombre la réponse DNS."
+  sa_rules: []
+  title: "{envelope_domain} publie un ancien enregistrement Sender ID (spf2.0)"
+  why: >
+    Sender ID est abandonné et n'est plus utilisé par les grands fournisseurs. L'enregistrement
+    ne sert à rien et alourdit la réponse DNS de votre domaine.
+  fix:
+    - "Supprimez le TXT qui commence par spf2.0/ et gardez uniquement le v=spf1."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4406
+    - https://www.rfc-editor.org/rfc/rfc7208#section-3.4
+
+- id: spf.plus_all
+  family: spf
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "spf.all_qualifier == '+'"
+    notes: "+all (ou all sans qualificatif, qui vaut +all) autorise n'importe quelle IP au monde. Plusieurs filtres traitent ce SPF comme suspect."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} autorise le monde entier (+all)"
+  why: >
+    Avec +all, n'importe qui peut envoyer au nom de {envelope_domain} et obtenir un SPF
+    valide. Les destinataires le savent : ce SPF ne vous protège pas et peut même être
+    considéré comme un signal de spam.
+  fix:
+    - "Listez les services qui envoient réellement pour {envelope_domain}."
+    - "Remplacez +all par ~all (ou -all une fois sûr de la liste), et ajoutez les include: ou ip4: manquants."
+    - "Publiez : {suggested_record}."
+  example_bad: "v=spf1 include:_spf.google.com +all"
+  example_good: "v=spf1 include:_spf.google.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5.1
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.6.2
+
+- id: spf.neutral_all
+  family: spf
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "spf.all_qualifier == '?'"
+    notes: "?all renvoie neutral pour toute IP non listée : le domaine n'affirme rien (RFC 7208 §8.2). Gandi documente ?all pour sa messagerie dans l'une de ses pages et ~all dans une autre."
+  sa_rules: [SPF_NEUTRAL]
+  title: "Le SPF de {envelope_domain} se termine par ?all (neutre)"
+  why: >
+    Avec ?all, votre SPF ne dit rien des serveurs non listés. Un usurpateur obtient le même
+    résultat qu'un serveur inconnu, et votre SPF n'aide pas DMARC à le bloquer.
+  fix:
+    - "Vérifiez que tous vos services d'envoi figurent dans l'enregistrement."
+    - "Remplacez ?all par ~all, puis par -all quand les rapports DMARC ne montrent plus d'envoi légitime non couvert."
+  fix_by_provider:
+    gandi: "Remplacez ?all par ~all dans v=spf1 include:_mailcust.gandi.net ?all."
+    infomaniak: "Infomaniak propose une variante en ?all ; préférez la valeur par défaut v=spf1 include:spf.infomaniak.ch -all."
+  example_bad: "v=spf1 include:_mailcust.gandi.net ?all"
+  example_good: "v=spf1 include:_mailcust.gandi.net ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-8.2
+    - https://helpdesk.gandi.net/hc/fr/articles/14023116166172-Enregistrement-SPF
+
+- id: spf.no_all
+  family: spf
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "spf.record != null && spf.all_qualifier == null && spf.redirect == null"
+    notes: "Sans all ni redirect=, une IP non listée obtient le résultat par défaut neutral (RFC 7208 §4.7)."
+  sa_rules: [SPF_NEUTRAL]
+  title: "Le SPF de {envelope_domain} ne se termine pas par un mécanisme all"
+  why: >
+    Sans all final, votre SPF ne dit pas quoi faire des serveurs non autorisés : ils
+    obtiennent un résultat neutre, comme si vous n'aviez rien déclaré à leur sujet.
+  fix:
+    - "Ajoutez ~all à la fin de l'enregistrement."
+    - "Passez à -all quand vous êtes sûr que tous vos services d'envoi sont listés."
+  example_bad: "v=spf1 include:_spf.google.com"
+  example_good: "v=spf1 include:_spf.google.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.7
+
+- id: spf.terms_after_all
+  family: spf
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "spf.all_qualifier != null && spf.terms_after_all != []"
+    notes: "RFC 7208 §5.1 : les mécanismes placés après all ne sont jamais évalués. Cas typique : un include ajouté à la fin par un outil."
+  sa_rules: []
+  title: "Des mécanismes du SPF de {envelope_domain} sont placés après all"
+  why: >
+    Tout ce qui suit all est ignoré. Le service déclaré après all n'est donc pas autorisé, et
+    ses messages échouent au SPF.
+  fix:
+    - "Déplacez les termes situés après all juste avant lui."
+    - "Publiez : {suggested_record}."
+  example_bad: "v=spf1 include:_spf.google.com ~all include:spf.brevo.com"
+  example_good: "v=spf1 include:_spf.google.com include:spf.brevo.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5.1
+
+- id: spf.redirect_with_all
+  family: spf
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "spf.redirect != null && spf.all_qualifier != null"
+    notes: "RFC 7208 §6.1 : redirect= est ignoré dès qu'un mécanisme all figure dans l'enregistrement."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} combine redirect= et all"
+  why: >
+    Quand all est présent, la redirection n'est jamais suivie : les serveurs que vous pensiez
+    autoriser par redirect= ne le sont pas.
+  fix:
+    - "Choisissez : soit redirect= seul (le domaine cible décide de tout), soit des include: suivis de all."
+    - "Pour garder la politique du domaine cible tout en ajoutant vos propres serveurs, remplacez redirect=cible par include:cible avant all."
+  example_bad: "v=spf1 ip4:203.0.113.10 redirect=_spf.{domain} ~all"
+  example_good: "v=spf1 ip4:203.0.113.10 include:_spf.{domain} ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-6.1
+
+- id: spf.redirect_target_invalid
+  family: spf
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "spf.redirect != null && spf.all_qualifier == null && dns.spf_record(spf.redirect) == null"
+    notes: "RFC 7208 §6.1 : si le domaine cible de redirect= n'a pas de SPF, le résultat est permerror."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "La redirection SPF de {envelope_domain} pointe vers un domaine sans SPF"
+  why: >
+    Votre SPF délègue entièrement à un autre domaine qui ne publie pas de SPF. Le résultat
+    est une erreur permanente pour tous vos messages.
+  fix:
+    - "Vérifiez l'orthographe du domaine indiqué après redirect=."
+    - "Publiez un SPF sur ce domaine cible, ou remplacez la redirection par vos propres include: suivis de ~all."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-6.1
+
+- id: spf.lookup_limit
+  family: spf
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "spf.result == permerror && spf.lookup_count > 10"
+    notes: "RFC 7208 §4.6.4 : include, a, mx, ptr, exists et redirect comptent, y compris dans les include imbriqués ; au-delà de 10, permerror. ip4, ip6 et all ne comptent pas."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Le SPF de {envelope_domain} demande {lookup_count} requêtes DNS (maximum 10)"
+  why: >
+    Au-delà de 10 requêtes, le destinataire arrête l'évaluation et renvoie une erreur
+    permanente : {envelope_domain} perd le bénéfice du SPF pour tous ses envois, même ceux
+    des services bien déclarés.
+  fix:
+    - "Retirez les include: des services que {domain} n'utilise plus (ancien hébergeur, ancien outil d'emailing)."
+    - "Retirez a et mx s'ils ne correspondent pas à des serveurs qui envoient, ou remplacez-les par les adresses ip4: correspondantes."
+    - "Déplacez les envois marketing sur un sous-domaine (par exemple news.{domain}) doté de son propre SPF."
+    - "Contrôlez le nouveau total avec ce test : il doit rester à 10 ou moins."
+  fix_by_provider:
+    o2switch: "Supprimez +a et +mx si le seul include:spf.jabatus.fr couvre déjà vos envois depuis o2switch."
+    cpanel: "Le SPF par défaut de cPanel contient +a et +mx (2 requêtes) : retirez-les s'ils ne servent à rien, l'ip4: du serveur suffit."
+    sendgrid: "Avec automated security, l'include de SendGrid est porté par le sous-domaine em… et ne compte pas dans le SPF de votre domaine racine : retirez include:sendgrid.net de la racine si vous l'y aviez ajouté."
+    mailchimp: "Mailchimp n'a pas besoin d'include dans votre SPF : retirez-le s'il y figure."
+    brevo: "Brevo n'exige pas d'include SPF pour authentifier un domaine en IP partagée : retirez include:spf.brevo.com si vous n'avez pas d'IP dédiée."
+  example_bad: "v=spf1 a mx include:_spf.google.com include:spf.protection.outlook.com include:sendgrid.net include:mailgun.org include:spf.mailjet.com ~all"
+  example_good: "v=spf1 ip4:203.0.113.10 include:_spf.google.com include:spf.mailjet.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4
+    - https://mailchimp.com/newsroom/google-changes-bulk-senders/
+    - https://help.brevo.com/hc/en-us/articles/12163873383186
+
+- id: spf.lookup_limit_near
+  family: spf
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "spf.lookup_count in [9, 10] && spf.result != permerror"
+    notes: "Avertissement : le SPF est valide mais à une ou deux requêtes de la limite ; un fournisseur qui ajoute un include imbriqué suffit à le faire basculer."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} est à {lookup_count} requêtes, au bord de la limite"
+  why: >
+    Il suffit qu'un de vos fournisseurs ajoute un include dans son propre SPF pour que le
+    vôtre dépasse 10 requêtes et devienne invalide du jour au lendemain.
+  fix:
+    - "Retirez dès maintenant les include: inutiles et remplacez a et mx par des ip4: quand c'est possible."
+    - "Surveillez ce total après chaque ajout d'un nouveau service d'envoi."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4
+
+- id: spf.void_lookup_limit
+  family: spf
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "spf.void_lookups > 2"
+    notes: "RFC 7208 §4.6.4 : les implémentations SHOULD limiter à 2 les requêtes « vides » (réponse sans enregistrement ou NXDOMAIN) ; au-delà, permerror. Causes : include vers un domaine disparu, a ou mx sur un nom sans adresse."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Le SPF de {envelope_domain} contient plus de deux références vides"
+  why: >
+    Plusieurs noms cités dans votre SPF n'existent plus. Au-delà de deux, la plupart des
+    destinataires renvoient une erreur permanente et votre SPF ne vaut plus rien.
+  fix:
+    - "Repérez les termes qui ne renvoient rien (le test les liste) : ancien fournisseur, faute de frappe, sous-domaine supprimé."
+    - "Supprimez-les ou corrigez leur orthographe."
+    - "Publiez : {suggested_record}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4
+
+- id: spf.mx_too_many_addresses
+  family: spf
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "any(spf.mx_address_count(t) > 10 for t in spf.mx_terms)"
+    notes: "RFC 7208 §4.6.4 : l'évaluation d'un mécanisme mx ne doit pas interroger plus de 10 adresses ; sinon permerror. Fréquent avec des MX de grands fournisseurs qui renvoient beaucoup d'adresses."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Le mécanisme mx du SPF de {envelope_domain} renvoie trop d'adresses"
+  why: >
+    Vos MX renvoient plus de 10 adresses : le mécanisme mx produit une erreur permanente et
+    tout votre SPF devient invalide.
+  fix:
+    - "Retirez mx du SPF si vos serveurs de réception n'envoient pas de courrier (c'est le cas chez la plupart des fournisseurs, qui ont leur propre include:)."
+    - "Sinon remplacez mx par les adresses ip4: et ip6: des serveurs qui envoient réellement."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4
+
+- id: spf.ptr_mechanism
+  family: spf
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "spf.ptr_terms != [] || '%{p}' in spf.record"
+    notes: "RFC 7208 §5.5 : le mécanisme ptr ne doit pas être publié (lent, peu fiable, charge les serveurs DNS) ; certains vérificateurs l'ignorent."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} utilise le mécanisme ptr, à proscrire"
+  why: >
+    ptr est lent et peu fiable : certains destinataires ne l'évaluent pas, et les serveurs
+    qu'il était censé autoriser échouent alors au SPF. Il consomme aussi des requêtes DNS.
+  fix:
+    - "Identifiez les serveurs que ptr devait couvrir."
+    - "Remplacez ptr par leurs adresses ip4: et ip6:, ou par l'include: de leur fournisseur."
+  example_bad: "v=spf1 ptr:{domain} ~all"
+  example_good: "v=spf1 ip4:203.0.113.10 ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5.5
+
+- id: spf.include_no_spf
+  family: spf
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "any(dns.spf_record(i) == null for i in spf.includes)"
+    notes: "RFC 7208 §5.2 : si le domaine cité dans include: n'a pas de SPF, le résultat de l'include est permerror, qui remonte à tout l'enregistrement. Cas typique : un ancien include sendinblue, un fournisseur disparu, une faute de frappe."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Le SPF de {envelope_domain} inclut un domaine qui n'a pas de SPF"
+  why: >
+    Un include: pointe vers un domaine sans SPF. La norme fait alors échouer tout votre SPF
+    en erreur permanente, pas seulement ce service.
+  fix:
+    - "Repérez l'include signalé par le test et vérifiez son orthographe sur la documentation du fournisseur."
+    - "Si le service n'est plus utilisé, supprimez l'include."
+    - "Publiez : {suggested_record}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5.2
+
+- id: spf.include_permerror
+  family: spf
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "any(spf.evaluate(i).result == permerror for i in spf.includes)"
+    notes: "Le domaine inclus publie lui-même un SPF invalide (doublon, syntaxe, limite de requêtes) : l'erreur remonte à {envelope_domain}."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Un domaine inclus dans le SPF de {envelope_domain} a un SPF invalide"
+  why: >
+    Votre propre enregistrement est correct, mais un include: renvoie à un SPF en erreur.
+    Cette erreur s'applique à tous vos messages.
+  fix:
+    - "Identifiez l'include fautif signalé par le test."
+    - "S'il vous appartient (par exemple _spf.{domain}), corrigez-le ; sinon signalez l'erreur au fournisseur."
+    - "En attendant, remplacez cet include par les adresses ip4: du service si le fournisseur les publie."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5.2
+
+- id: spf.include_loop
+  family: spf
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "spf.reason ~ /loop|recurs/i || envelope_domain in spf.include_chain"
+    notes: "Un include ou un redirect finit par revenir au domaine de départ. L'évaluation dépasse la limite de 10 requêtes et finit en permerror."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Le SPF de {envelope_domain} s'inclut lui-même (boucle)"
+  why: >
+    Votre SPF renvoie, directement ou par un intermédiaire, vers lui-même. Le destinataire
+    tourne en rond, s'arrête et renvoie une erreur permanente.
+  fix:
+    - "Supprimez l'include: ou le redirect= qui pointe vers {envelope_domain} ou vers un sous-domaine qui y revient."
+    - "Publiez : {suggested_record}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4
+
+- id: spf.duplicate_terms
+  family: spf
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "has_duplicates(spf.terms) || spf.includes_overlap == true"
+    notes: "Même include deux fois, ou include couvert par un autre (par exemple include:spf.brevo.com et include:spf.sendinblue.com, qui publient le même contenu au 2026-11-10). Chaque doublon consomme une requête."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} contient des termes en double"
+  why: >
+    Un même service apparaît deux fois. Ce n'est pas une erreur, mais chaque doublon consomme
+    une des 10 requêtes autorisées.
+  fix:
+    - "Supprimez le terme répété et gardez une seule occurrence par service."
+    - "Pour Brevo, gardez include:spf.brevo.com, la valeur documentée, et retirez l'ancien include:spf.sendinblue.com."
+  example_bad: "v=spf1 include:spf.sendinblue.com include:spf.brevo.com include:_spf.google.com ~all"
+  example_good: "v=spf1 include:spf.brevo.com include:_spf.google.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4
+    - https://help.brevo.com/hc/en-us/articles/4414335084434-Merge-multiple-SPF-records
+
+- id: spf.softfail
+  family: spf
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "spf.result == softfail"
+    notes: "L'IP {ip} n'est pas autorisée et le SPF se termine par ~all. Si DKIM est aligné, DMARC passe quand même ; sinon le message dépend de la politique DMARC."
+  sa_rules: [SPF_SOFTFAIL]
+  title: "L'IP {ip} n'est pas autorisée par le SPF de {envelope_domain} (softfail)"
+  why: >
+    Le serveur qui a envoyé ce message ({ip}, {provider}) n'est pas déclaré dans votre SPF.
+    Les filtres ajoutent des points de spam et, sans DKIM aligné, DMARC échoue.
+  fix:
+    - "Identifiez le service qui a envoyé ce message : {provider}, IP {ip}, reverse DNS {ptr}."
+    - "Ajoutez l'include: officiel de ce service à votre SPF, ou son adresse ip4: si c'est votre propre serveur."
+    - "Publiez : {suggested_record}."
+  fix_by_provider:
+    google_workspace: "Ajoutez include:_spf.google.com."
+    microsoft_365: "Ajoutez include:spf.protection.outlook.com."
+    ovh: "Ajoutez include:mx.ovh.com (include:mx.ovh.ca pour le Canada et l'Asie-Pacifique) ; pour Private Exchange, ajoutez les ip4: des serveurs."
+    o2switch: "Ajoutez include:spf.jabatus.fr par cPanel, Authentification, Gérer, Personnaliser."
+    cpanel: "Ajoutez l'ip4: du serveur ou cliquez sur Repair dans Email Deliverability."
+    ionos: "Ajoutez include:_spf-eu.ionos.com."
+    gandi: "Ajoutez include:_mailcust.gandi.net, et include:_spf.gpaas.net pour un site hébergé chez Gandi."
+    infomaniak: "Ajoutez include:spf.infomaniak.ch."
+    proton: "Ajoutez include:_spf.protonmail.ch."
+    brevo: "Ajoutez include:spf.brevo.com, ou mieux, configurez le domaine de retour personnalisé (CNAME « Branded ») proposé dans Senders, Domains, IPs, Domains."
+    mailjet: "Ajoutez include:spf.mailjet.com."
+    sendgrid: "Publiez les CNAME em…, s1._domainkey et s2._domainkey de Settings, Sender Authentication ; le SPF est alors porté par le sous-domaine em…."
+    mailgun: "Ajoutez include:mailgun.org au SPF du domaine d'envoi déclaré dans Mailgun."
+    amazon_ses: "Configurez un MAIL FROM personnalisé avec le TXT v=spf1 include:amazonses.com ~all sur ce sous-domaine."
+    hubspot: "Ajoutez l'include propre à votre compte, affiché dans Settings, Content, Domains & URLs, Email Sending."
+    wordpress: "Si le message vient de la fonction mail() du serveur web, faites plutôt envoyer le site par le SMTP authentifié de votre messagerie avec une extension SMTP."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-8.5
+    - https://support.google.com/mail/answer/81126
+
+- id: spf.fail
+  family: spf
+  severity: critical
+  penalty: 2.5
+  detect:
+    signal: "spf.result == fail"
+    notes: "L'IP {ip} n'est pas autorisée et le SPF se termine par -all. Certains destinataires rejettent dès la commande MAIL FROM (RFC 7208 §8.4)."
+  sa_rules: [SPF_FAIL]
+  title: "L'IP {ip} est refusée par le SPF de {envelope_domain} (fail)"
+  why: >
+    Votre SPF dit explicitement que {ip} n'a pas le droit d'envoyer pour {envelope_domain}.
+    Une partie des destinataires rejette le message, les autres le classent en spam si DKIM
+    ne sauve pas DMARC.
+  fix:
+    - "Vérifiez que l'envoi est légitime : {provider}, IP {ip}, reverse DNS {ptr}. Si vous ne reconnaissez pas ce serveur, c'est une usurpation et le SPF fait son travail."
+    - "S'il est légitime, ajoutez l'include: officiel du service ou son ip4: avant -all."
+    - "Publiez : {suggested_record}, puis refaites le test."
+  fix_by_provider:
+    google_workspace: "Ajoutez include:_spf.google.com avant -all."
+    microsoft_365: "Ajoutez include:spf.protection.outlook.com avant -all."
+    ovh: "Ajoutez include:mx.ovh.com avant -all."
+    o2switch: "Ajoutez include:spf.jabatus.fr avant -all."
+    brevo: "Ajoutez include:spf.brevo.com avant -all."
+    mailjet: "Ajoutez include:spf.mailjet.com avant -all."
+    mailgun: "Ajoutez include:mailgun.org avant -all sur le domaine d'envoi."
+    amazon_ses: "Ajoutez include:amazonses.com au SPF du MAIL FROM personnalisé."
+  example_bad: "v=spf1 include:_spf.google.com -all (envoi depuis Brevo)"
+  example_good: "v=spf1 include:_spf.google.com include:spf.brevo.com -all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-8.4
+
+- id: spf.temperror
+  family: spf
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "spf.result == temperror"
+    notes: "Erreur DNS transitoire (délai dépassé, SERVFAIL) pendant l'évaluation. RFC 7208 §8.6 : le destinataire peut différer le message (code 4xx). À confirmer par un second test avant d'alerter."
+  sa_rules: [T_SPF_TEMPERROR]
+  title: "Le SPF de {envelope_domain} n'a pas pu être lu (erreur DNS temporaire)"
+  why: >
+    Les serveurs DNS de {envelope_domain}, ou d'un domaine inclus, n'ont pas répondu à temps.
+    Les destinataires retardent alors vos messages ou les évaluent sans SPF.
+  fix:
+    - "Refaites le test dans quelques minutes pour confirmer que l'erreur se répète."
+    - "Si elle persiste, vérifiez que tous les serveurs de noms (NS) de {envelope_domain} répondent et donnent le même SPF."
+    - "Vérifiez aussi la signature DNSSEC de la zone : une signature cassée produit le même symptôme."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-8.6
+
+- id: spf.helo_fail
+  family: spf
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "spf.helo_result in [fail, softfail]"
+    notes: "RFC 7208 §2.3 recommande de vérifier aussi l'identité HELO. Le SPF du nom {helo} n'autorise pas {ip}. Pour les messages de rejet (MAIL FROM vide), c'est la seule identité SPF disponible."
+  sa_rules: [SPF_HELO_FAIL, SPF_HELO_SOFTFAIL]
+  title: "Le SPF du nom de serveur {helo} n'autorise pas l'IP {ip}"
+  why: >
+    Votre serveur se présente sous le nom {helo}, mais le SPF de ce nom ne l'autorise pas.
+    L'effet est faible sur vos messages normaux, plus fort sur vos avis de non-remise.
+  fix:
+    - "Publiez sur le nom {helo} un SPF qui autorise son IP : v=spf1 a -all (le nom pointe vers {ip})."
+    - "Ou utilisez comme HELO un nom dont le SPF couvre déjà {ip}."
+  example_good: "{helo}. IN TXT \"v=spf1 a -all\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-2.3
+
+- id: spf.helo_none
+  family: spf
+  severity: info
+  # 0 since 2026-11-11: SpamAssassin gives SPF_HELO_NONE 0, and the HELO name is often the provider's
+  # (mail-xx.google.com), which the sender cannot change. Was 0.1, a false alarm.
+  penalty: 0
+  detect:
+    signal: "spf.helo_result == none && helo.is_fqdn"
+    notes: "Aucun SPF sur le nom HELO. Recommandé par la RFC 7208 §2.3, rarement pénalisé."
+  sa_rules: [SPF_HELO_NONE]
+  title: "Le nom de serveur {helo} n'a pas de SPF"
+  why: >
+    Un SPF sur le nom du serveur permet de valider ses messages techniques, notamment les
+    avis de non-remise. Son absence pèse peu, mais c'est un réglage rapide.
+  fix:
+    - "Publiez sur {helo} l'enregistrement TXT v=spf1 a -all."
+  example_good: "{helo}. IN TXT \"v=spf1 a -all\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-2.3
+
+- id: spf.string_too_long
+  family: spf
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "any(len(s) > 255 for s in dns.TXT_strings(envelope_domain)) || dns.update_rejected_reason ~ /too long/i || spf.record_truncated == true"
+    notes: "RFC 7208 §3.3 : une chaîne TXT est limitée à 255 octets ; un SPF plus long doit être découpé en plusieurs chaînes, concaténées sans espace. Certaines interfaces tronquent la valeur silencieusement, ce qui casse le dernier terme."
+  sa_rules: [T_SPF_PERMERROR]
+  title: "Le SPF de {envelope_domain} dépasse 255 caractères sans être découpé"
+  why: >
+    Une chaîne TXT ne peut pas dépasser 255 caractères. Votre interface DNS a refusé ou
+    tronqué l'enregistrement : la fin, souvent ~all ou un include, a disparu et le SPF est
+    faux.
+  fix:
+    - "Raccourcissez d'abord l'enregistrement en retirant les services inutiles."
+    - "S'il reste trop long, saisissez-le en plusieurs chaînes entre guillemets séparées par une espace, en coupant au milieu d'un terme si besoin : elles seront recollées sans espace."
+    - "Vérifiez le résultat avec dig TXT {envelope_domain} : le texte complet doit apparaître."
+  example_good: "\"v=spf1 ip4:203.0.113.10 include:_spf.google.com include:spf.brevo.com \" \"include:spf.mailjet.com ~all\""
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-3.3
+
+- id: spf.dns_response_too_large
+  family: spf
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dns.response_size(envelope_domain, TXT) > 512"
+    notes: "RFC 7208 §3.4 : la réponse SPF SHOULD tenir dans 512 octets (repère : moins de 450 octets pour le nom et tous les TXT du domaine). Au-delà, bascule en TCP ou EDNS0, que certains pare-feu bloquent : le SPF peut être ignoré silencieusement. Les autres TXT du domaine (vérifications Google, Facebook…) comptent dans la taille."
+  sa_rules: []
+  title: "La réponse DNS TXT de {envelope_domain} dépasse 512 octets ({value} octets)"
+  why: >
+    Tous les TXT de votre domaine sont envoyés ensemble quand un destinataire cherche le SPF.
+    Au-delà de 512 octets, certains serveurs ne reçoivent pas la réponse et traitent
+    {envelope_domain} comme s'il n'avait pas de SPF.
+  fix:
+    - "Supprimez les TXT de vérification devenus inutiles (anciens google-site-verification, outils abandonnés)."
+    - "Raccourcissez le SPF en retirant les services inutiles."
+    - "Si possible, placez les envois d'un outil sur un sous-domaine qui porte son propre SPF."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-3.4
+
+- id: spf.exp_modifier
+  family: spf
+  severity: info
+  penalty: 0
+  detect:
+    signal: "spf.exp != null"
+    notes: "RFC 7208 §6.2 : exp= fournit un texte d'explication en cas de fail ; il coûte une requête DNS à l'évaluation d'un échec, est ignoré en cas d'erreur DNS et doit produire de l'ASCII. Il n'améliore pas la délivrabilité."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} utilise le modificateur exp="
+  why: >
+    exp= n'est utile qu'aux administrateurs qui lisent les rejets. Il ne change rien à la
+    délivrabilité et ajoute une requête DNS lors d'un échec.
+  fix:
+    - "Gardez-le seulement si vous exploitez le texte d'explication ; sinon retirez-le pour simplifier l'enregistrement."
+    - "S'il est conservé, vérifiez que le domaine cité publie un seul TXT en ASCII."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-6.2
+
+- id: spf.macros
+  family: spf
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "spf.macros != []"
+    notes: "Macros SPF (RFC 7208 §7), souvent utilisées avec exists: par des services de « SPF dynamique ». Valides, mais elles rendent l'enregistrement illisible et dépendent d'un tiers ; %{p} est à proscrire (§5.5), et les macros s, l, o et h exposent l'adresse de l'expéditeur dans le DNS (§7.4 et §11)."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} utilise des macros"
+  why: >
+    Les macros sont légitimes mais rendent votre SPF dépendant d'un service tiers qui répond
+    à la volée. S'il tombe en panne ou disparaît, votre SPF échoue sans que rien ne change de
+    votre côté.
+  fix:
+    - "Vérifiez que le service qui fournit ces macros est toujours sous contrat et disponible."
+    - "Retirez toute macro « p », déconseillée par la norme."
+    - "Si le nombre de services le permet, revenez à des include: et ip4: classiques."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-7
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5.5
+
+- id: spf.range_too_broad
+  family: spf
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "any(prefix_len(t) < 16 for t in spf.ip4_terms) || any(prefix_len(t) < 32 for t in spf.ip6_terms)"
+    notes: "Plage IPv4 plus large qu'un /16 ou IPv6 plus large qu'un /32 autorisée en pass : des milliers d'adresses que vous ne contrôlez pas peuvent envoyer en votre nom."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} autorise une plage d'adresses très large"
+  why: >
+    Votre SPF autorise une plage immense, qui contient forcément des serveurs qui ne sont pas
+    les vôtres. Un usurpateur hébergé dans cette plage passerait le SPF.
+  fix:
+    - "Remplacez la plage par les seules adresses de vos serveurs (en /32 pour une IP IPv4)."
+    - "Pour un service d'envoi, utilisez son include: officiel plutôt que sa plage complète."
+  example_bad: "v=spf1 ip4:203.0.0.0/8 ~all"
+  example_good: "v=spf1 ip4:203.0.113.10 ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5.6
+
+- id: spf.non_sending_domain_open
+  family: spf
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "(dns.MX(domain) == [] || mx.is_null(domain)) && spf.all_qualifier_of(domain) != '-'"
+    notes: "Domaine qui ne reçoit pas de courrier (pas de MX ou Null MX) et n'affiche pas v=spf1 -all. La RFC 7505 §4.2 suggère aux domaines qui n'envoient pas de publier -all."
+  sa_rules: []
+  title: "{domain} ne reçoit pas de courrier mais n'interdit pas les envois en son nom"
+  why: >
+    Un domaine sans messagerie est une cible facile pour les usurpateurs. Un SPF « v=spf1
+    -all » et un DMARC p=reject suffisent à le rendre inutilisable pour eux.
+  fix:
+    - "Si {domain} n'envoie jamais de courrier, publiez le TXT v=spf1 -all."
+    - "Ajoutez un DMARC v=DMARC1; p=reject sur _dmarc.{domain}."
+    - "Ne le faites pas si un service (site web, facturation) envoie avec une adresse de {domain}."
+  example_good: "v=spf1 -all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7505#section-4.2
+    - https://www.rfc-editor.org/rfc/rfc7208#section-5.1
+
+# Fiches ajoutées le 2026-11-10 pour les situations émises par les vérificateurs SPF
+# (domaine et évaluation d'une IP) qui n'avaient qu'un texte de repli.
+
+- id: spf.domain_nxdomain
+  family: spf
+  severity: critical
+  penalty: 2.0
+  detect:
+    signal: "dns.query(envelope_domain, TXT).rcode == NXDOMAIN"
+    notes: "RFC 7208 §4.3 : si la requête DNS renvoie NXDOMAIN, check_host() s'arrête aussitôt avec le résultat none. Le domaine n'existe pas dans le DNS : ni SPF, ni MX, ni rien d'autre."
+  sa_rules: []
+  title: "Le domaine {envelope_domain} n'existe pas dans le DNS"
+  why: >
+    Le DNS répond que {envelope_domain} n'existe pas : aucun SPF ne peut y être lu, et ce
+    domaine ne peut pas recevoir les avis de non-remise. Beaucoup de serveurs refusent un
+    expéditeur dont le domaine n'existe pas (réglage reject_unknown_sender_domain de Postfix,
+    par exemple).
+  fix:
+    - "Vérifiez l'orthographe du domaine saisi ou de l'adresse d'expédition configurée dans votre outil."
+    - "Si le domaine vient d'être acheté, vérifiez chez le registraire qu'il est actif et délégué aux serveurs de noms de votre hébergeur DNS."
+    - "Si c'est un sous-domaine d'envoi (bounce., mail.), créez-le dans la zone DNS du domaine principal avec au moins son enregistrement SPF."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.3
+    - https://www.postfix.org/postconf.5.html#reject_unknown_sender_domain
+
+- id: spf.unknown_modifier
+  family: spf
+  severity: info
+  penalty: 0
+  detect:
+    signal: "any(t.kind == modifier && t.name not in ['redirect', 'exp'] for t in spf.terms)"
+    notes: "RFC 7208 §6 : les modificateurs inconnus doivent être ignorés, où qu'ils soient et quel que soit leur nombre. Seuls redirect= et exp= sont définis. {value} est le terme en cause."
+  sa_rules: []
+  title: "Modificateur inconnu dans le SPF de {envelope_domain} : {value}"
+  why: >
+    Les destinataires ignorent les modificateurs qu'ils ne connaissent pas : {value} n'a donc
+    aucun effet. Si c'était une faute de frappe pour redirect=, la délégation voulue ne se
+    fait pas.
+  fix:
+    - "Si {value} est une faute de frappe (redirct=, redirection=), corrigez-le en redirect=."
+    - "Sinon, retirez-le : c'est souvent un reste d'ancienne configuration ou une valeur copiée d'un autre enregistrement."
+  example_bad: "v=spf1 include:_spf.google.com redirct=_spf.exemple.fr ~all"
+  example_good: "v=spf1 include:_spf.google.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-6
+
+- id: spf.permerror
+  family: spf
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "spf.eval(ip, envelope_domain).result == permerror"
+    notes: "Résultat permerror de l'évaluation d'une IP (RFC 7208 §2.6.7 : les enregistrements publiés ne peuvent pas être interprétés, une intervention sur le DNS est nécessaire). {value} est la raison donnée par l'évaluateur. Causes courantes : plus de 10 requêtes DNS, deux enregistrements SPF, terme mal écrit, include: vers un domaine sans SPF."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} est en erreur permanente"
+  why: >
+    L'évaluation s'arrête sur une erreur ({value}). Les destinataires traitent le message
+    comme sans SPF valide, certains le refusent, et DMARC ne peut pas s'appuyer sur le SPF :
+    seul un DKIM aligné peut encore authentifier {envelope_domain}.
+  fix:
+    - "Lancez le vérificateur SPF sur {envelope_domain} : il indique le terme en cause et propose un enregistrement corrigé."
+    - "Si la raison mentionne trop de requêtes DNS, retirez les include: des services que vous n'utilisez plus ou remplacez a et mx par des ip4:."
+    - "Si elle mentionne plusieurs enregistrements, fusionnez-les en un seul TXT commençant par v=spf1."
+    - "Si elle mentionne un include: sans SPF, corrigez le nom de l'include ou retirez-le."
+    - "Refaites l'évaluation : le résultat doit être pass pour {ip}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-2.6.7
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4
+    - https://www.rfc-editor.org/rfc/rfc7208#section-3.2
+
+- id: spf.eval_neutral
+  family: spf
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "spf.eval(ip, envelope_domain).result == neutral"
+    notes: "Résultat neutral de l'évaluation d'une IP : un mécanisme qualifié ? a correspondu, ou aucun mécanisme n'a correspondu et l'enregistrement n'a ni all ni redirect= (RFC 7208 §4.7). DMARC ne compte pas un SPF neutral comme réussi."
+  sa_rules: []
+  title: "L'IP {ip} n'est ni autorisée ni refusée par le SPF de {envelope_domain}"
+  why: >
+    Le SPF de {envelope_domain} ne se prononce pas sur {ip} ({value}). Le résultat neutral ne
+    compte pas comme un SPF réussi pour DMARC : si {ip} envoie vraiment pour vous, ses
+    messages perdent cette authentification.
+  fix:
+    - "Si {ip} envoie légitimement pour {envelope_domain}, ajoutez ip4:{ip} (ou l'include: officiel de son fournisseur) avant le all."
+    - "Si l'enregistrement n'a pas de all, terminez-le par ~all, puis par -all quand tous vos services sont listés."
+    - "Si un mécanisme commence par ?, retirez ce ? ou remplacez ?all par ~all."
+  example_bad: "v=spf1 include:_spf.google.com ?all"
+  example_good: "v=spf1 include:_spf.google.com ip4:203.0.113.10 ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.7
+    - https://www.rfc-editor.org/rfc/rfc7208#section-8.2
+
+- id: spf.neutral
+  family: spf
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "spf.result == neutral && spf.all_qualifier != '?'"
+    notes: "Le message a reçu un SPF neutral alors que l'enregistrement ne se termine pas par ?all (cas traité par spf.neutral_all) : un mécanisme qualifié ? a correspondu à {ip}, ou l'enregistrement n'a ni all ni redirect= et {ip} n'y figure pas (RFC 7208 §4.7)."
+  sa_rules: []
+  title: "Le SPF de {envelope_domain} ne se prononce pas sur {ip}"
+  why: >
+    Votre SPF ne dit ni oui ni non pour le serveur qui a envoyé ce message. Un résultat
+    neutral ne compte pas comme un SPF réussi pour DMARC : le message ne tient plus que par
+    DKIM, et un usurpateur obtiendrait le même résultat.
+  fix:
+    - "Vérifiez que l'envoi est légitime : {provider}, IP {ip}, reverse DNS {ptr}."
+    - "Si c'est le cas, ajoutez l'include: officiel du service ou ip4:{ip} avant le all, sans qualificatif ?."
+    - "Si l'enregistrement n'a pas de all final, ajoutez ~all."
+    - "Publiez : {suggested_record}, puis refaites le test."
+  fix_by_provider:
+    google_workspace: "Ajoutez include:_spf.google.com avant le all."
+    microsoft_365: "Ajoutez include:spf.protection.outlook.com avant le all."
+    ovh: "Ajoutez include:mx.ovh.com avant le all."
+    o2switch: "Ajoutez include:spf.jabatus.fr avant le all."
+    brevo: "Ajoutez include:spf.brevo.com avant le all."
+    mailjet: "Ajoutez include:spf.mailjet.com avant le all."
+    mailgun: "Ajoutez include:mailgun.org avant le all sur le domaine d'envoi."
+    amazon_ses: "Ajoutez include:amazonses.com au SPF du MAIL FROM personnalisé."
+  example_bad: "v=spf1 ?include:spf.brevo.com include:_spf.google.com"
+  example_good: "v=spf1 include:spf.brevo.com include:_spf.google.com ~all"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7208#section-4.7
+    - https://www.rfc-editor.org/rfc/rfc7208#section-8.2

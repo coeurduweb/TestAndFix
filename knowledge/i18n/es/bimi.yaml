@@ -1,0 +1,109 @@
+bimi.missing:
+  title: "{domain} podría mostrar su logotipo con BIMI"
+  why: Tu DMARC está aplicado, que es la condición principal de BIMI. Un registro BIMI permite mostrar tu logotipo junto a tus mensajes en Yahoo, y en Gmail y Apple con un certificado de marca.
+  fix:
+    - Prepara tu logotipo en formato SVG Tiny PS, cuadrado y alojado en HTTPS.
+    - "Publica el TXT default._bimi.{domain}: v=BIMI1; l=https://{domain}/bimi/logo.svg"
+    - Para Gmail, obtén un certificado VMC (marca registrada) o CMC de una autoridad incluida en la lista del BIMI Group, y añade a=https://{domain}/bimi/certificat.pem.
+bimi.dmarc_not_enforced:
+  title: "El logotipo BIMI de {domain} no puede mostrarse: DMARC no está aplicado"
+  why: Publicas un registro BIMI, pero tu DMARC está en p=none o no existe. Ninguna mensajería mostrará tu logotipo mientras DMARC no esté en quarantine o reject.
+  fix:
+    - Comprueba en tus informes DMARC que todos tus envíos legítimos pasan.
+    - Cambia la política a p=quarantine (o p=reject) en _dmarc.{domain}.
+bimi.dmarc_pct_below_100:
+  title: "El logotipo BIMI está bloqueado por pct={value} en el DMARC de {domain}"
+  why: Gmail y el BIMI Group exigen que la política DMARC se aplique al 100 % de los mensajes. Con un pct inferior, el logotipo no se muestra.
+  fix:
+    - Sustituye pct={value} por pct=100, o elimina pct= (100 es el valor por defecto).
+bimi.dmarc_subdomain_none:
+  title: El DMARC de {domain} deja sus subdominios en sp=none, lo que BIMI rechaza
+  why: Según la guía del BIMI Group, la política también debe proteger los subdominios. Con sp=none, algunas mensajerías se niegan a mostrar tu logotipo.
+  fix:
+    - Sustituye sp=none por sp=quarantine o sp=reject, o elimina sp= para heredar p=.
+bimi.syntax_invalid:
+  title: El registro BIMI de {domain} está mal formado
+  why: "Tu registro BIMI no se reconoce: debe empezar por v=BIMI1 e indicar la dirección del logotipo. Ninguna mensajería lo utilizará."
+  fix:
+    - "Publica en default._bimi.{domain}: v=BIMI1; l=https://… (URL del SVG); a=https://… (URL del certificado PEM, si tienes uno)."
+    - Separa las etiquetas con punto y coma.
+bimi.declined:
+  title: "{domain} ha desactivado BIMI voluntariamente"
+  why: Tu registro BIMI está vacío, lo que significa «sin logotipo». Es una opción válida; elimínalo si no lo necesitas.
+  fix:
+    - "Ninguna acción, salvo que quieras mostrar un logotipo: en ese caso, indica l= y a=."
+bimi.selector_not_found:
+  title: El selector BIMI que pide el mensaje no existe
+  why: "El mensaje pide mostrar el logotipo de un selector concreto, pero ese selector no está publicado en el DNS de {domain}: no se muestra ningún logotipo."
+  fix:
+    - Publica el registro en <selector>._bimi.{domain}, o elimina la cabecera BIMI-Selector para usar default._bimi.{domain}.
+bimi.logo_unreachable:
+  title: El logotipo BIMI de {domain} es inaccesible
+  why: Las mensajerías descargan el logotipo de la dirección indicada. Si no responde, no se muestra ningún logotipo, aunque todo lo demás sea correcto.
+  fix:
+    - Abre la dirección del logotipo en un navegador y comprueba que devuelve directamente el archivo SVG.
+    - Excluye este archivo de las protecciones anti-robots (cortafuegos de aplicación, desafío JavaScript) que bloquearían a las mensajerías.
+bimi.logo_not_https:
+  title: El logotipo BIMI de {domain} no se sirve en HTTPS
+  why: Gmail solo acepta logotipos servidos en HTTPS. Una dirección http:// basta para bloquear la visualización.
+  fix:
+    - Aloja el SVG en una dirección https:// y actualiza l= en default._bimi.{domain}.
+bimi.svg_not_tiny_ps:
+  title: El logotipo BIMI de {domain} no está en formato SVG Tiny PS
+  why: Las mensajerías solo aceptan este perfil restringido del SVG; de lo contrario, el logotipo se ignora. Una exportación estándar desde un programa de dibujo casi nunca lo respeta.
+  fix:
+    - Exporta el logotipo como SVG Tiny 1.2 desde tu programa de dibujo, o pide que lo conviertan a SVG Tiny PS.
+    - Comprueba que el elemento raíz contiene version="1.2" y baseProfile="tiny-ps".
+    - Elimina los atributos x e y del elemento raíz y cualquier referencia externa.
+bimi.svg_forbidden_content:
+  title: El logotipo BIMI de {domain} contiene elementos prohibidos
+  why: El archivo contiene un script, una animación o un recurso externo, o atributos x e y en su raíz. Gmail rechaza entonces el logotipo.
+  fix:
+    - Elimina del SVG los elementos script, las animaciones y cualquier referencia a un archivo o fuente externa.
+    - Elimina los atributos x e y del elemento svg raíz.
+bimi.logo_size:
+  title: "El logotipo BIMI de {domain} no respeta las dimensiones recomendadas ({value})"
+  why: Gmail recomienda un logotipo cuadrado de al menos 96 píxeles de lado y un archivo de 32 KB como máximo. Fuera de estos valores, el logotipo puede recortarse o rechazarse.
+  fix:
+    - Centra el logotipo en un cuadrado (viewBox de la misma anchura y altura).
+    - Simplifica los trazos para reducir el archivo por debajo de 32 KB.
+bimi.no_certificate:
+  title: "El logotipo BIMI de {domain} no tiene certificado (a= ausente)"
+  why: Sin certificado, tu logotipo puede aparecer en Yahoo, pero no en Gmail, que exige un certificado VMC o CMC, ni en Apple Mail.
+  fix:
+    - Para un logotipo registrado como marca, solicita un VMC (Verified Mark Certificate); si no, un CMC (Common Mark Certificate) basta para Gmail.
+    - Elige una autoridad incluida en la lista del BIMI Group (DigiCert, GlobalSign, SSL.com, a fecha 2026-11-10).
+    - Publica el archivo PEM en HTTPS y añade a=https://… al registro BIMI.
+bimi.certificate_invalid:
+  title: "El certificado BIMI de {domain} no es válido o es inaccesible"
+  why: Gmail verifica el certificado antes de mostrar el logotipo. Si ha caducado, es ilegible o se emitió para otro dominio, el logotipo no aparece.
+  fix:
+    - Comprueba que la dirección a= devuelve el archivo .pem completo (certificado y cadena).
+    - Renueva el certificado si ha caducado, o pide que lo emitan para {domain} si cubre otro dominio.
+bimi.certificate_logo_mismatch:
+  title: El logotipo BIMI de {domain} no coincide con el de su certificado
+  why: El logotipo servido en la dirección l= no es el que se validó en el certificado. Las mensajerías que lo comprueban se niegan entonces a mostrarlo.
+  fix:
+    - Publica en la dirección l= exactamente el archivo SVG que enviaste a la autoridad de certificación.
+    - Si el logotipo ha cambiado, solicita un nuevo certificado para la nueva versión.
+bimi.cmc_no_checkmark:
+  title: "El logotipo de {domain} se mostrará sin marca de verificación (certificado CMC)"
+  why: Con un CMC, Gmail muestra tu logotipo, pero sin la marca azul de verificación, que está reservada a los certificados VMC respaldados por una marca registrada.
+  fix:
+    - No hace falta ninguna acción. Si quieres la marca de verificación, registra el logotipo como marca y luego solicita un VMC.
+bimi.svg_recommendation:
+  title: El logotipo BIMI de {domain} puede mejorarse
+  why: "Estos puntos no bloquean la visualización del logotipo, pero el perfil SVG Tiny PS o Google los recomiendan: {value}."
+  fix:
+    - Abre el archivo SVG ({url}) en un editor de texto.
+    - Conserva un único elemento <title>, justo después de la etiqueta <svg>, con el nombre de tu organización de 64 caracteres como máximo.
+    - Añade justo después un elemento <desc> que describa el logotipo en una frase.
+    - "Atención si el registro BIMI referencia un certificado VMC o CMC (a=): el certificado contiene una copia del logotipo, y cualquier retoque del archivo, incluso del título, crea una diferencia con él. En ese caso, haz estos retoques en la próxima renovación del certificado."
+    - Sin certificado, vuelve a publicar el archivo en la misma dirección y repite la verificación.
+bimi.missing_dmarc_not_enforced:
+  title: Sin BIMI para {domain}, y el DMARC todavía no lo permitiría
+  why: "BIMI solo muestra un logotipo si DMARC está aplicado (p=quarantine o p=reject). Estado medido: {value}. Publicar BIMI ahora no cambiaría nada en la visualización."
+  fix:
+    - Pasa primero el DMARC a p=quarantine y después a p=reject, siguiendo los informes agregados (consulta la página DMARC).
+    - "Solo después, publica el TXT default._bimi.{domain}: v=BIMI1; l=https://{domain}/bimi/logo.svg"
+    - "Para Gmail y Apple, añade un certificado VMC o CMC: a=https://{domain}/bimi/certificat.pem"

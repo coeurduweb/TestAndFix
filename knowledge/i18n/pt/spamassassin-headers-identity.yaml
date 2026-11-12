@@ -1,0 +1,317 @@
+sa.freemail_from:
+  title: "O remetente usa um e-mail gratuito"
+  why: "O endereço de envio está em um serviço de e-mail de uso geral. A pontuação é quase nula, mas esta regra serve de condição para outras mais pesadas, e uma empresa que escreve a partir do Gmail ou do Orange inspira menos confiança do que um endereço do próprio domínio."
+  fix:
+    - "Para envios profissionais, use um endereço do seu próprio domínio."
+    - "Nunca envie newsletters com um endereço Gmail, Outlook.com ou Yahoo como From: enviado por outro serviço, a mensagem não passa no DMARC desse domínio, e o Yahoo publica uma política de rejeição."
+sa.freemail_replyto:
+  title: "Reply-To em um e-mail gratuito diferente do remetente"
+  why: "As respostas vão para um endereço gratuito que não é o do remetente. É a montagem dos golpes (escreve-se a partir de um endereço e recebem-se as respostas em outro), mas também a de um formulário que coloca o endereço Gmail do visitante em Reply-To."
+  fix:
+    - "Se for um formulário de contato, isso é esperado: verifique apenas se o From é um endereço do seu domínio autenticado por SPF e DKIM."
+    - "Para uma campanha, coloque em Reply-To um endereço do seu domínio."
+sa.freemail_forged_replyto:
+  title: "Reply-To em um e-mail gratuito, embora o remetente não seja um"
+  why: "A mensagem vem de um endereço de empresa, mas pede para responder a um endereço Gmail, Outlook ou similar. É muito típico dos golpes do falso presidente e das faturas falsas, daí uma penalidade de mais de 2 pontos."
+  fix:
+    - "Coloque em Reply-To um endereço do seu domínio, ou remova o cabeçalho Reply-To."
+    - "Para um formulário do site que coloca o endereço do visitante em Reply-To, aceite essa penalidade ou copie o endereço do visitante no corpo da mensagem."
+  fix_by_provider:
+    wordpress: "No Contact Form 7 ou no WPForms, o cabeçalho Reply-To: [your-email] aciona esta regra quando o visitante tem um endereço gratuito. Isso não traz risco para uma notificação interna."
+sa.freemail_reply:
+  title: "O corpo da mensagem cita um endereço gratuito diferente do remetente"
+  why: "A mensagem convida a escrever para outro endereço gratuito, diferente do que envia. Os golpes usam isso para fazer responder a uma caixa que ainda não foi denunciada."
+  fix:
+    - "Indique na mensagem um endereço de contato idêntico ao remetente, ou um endereço do seu domínio."
+sa.freemail_envfrom_end_digit:
+  title: "Endereço de envelope gratuito terminado em número"
+  why: "O endereço de envelope é uma caixa gratuita do tipo joao.silva75@gmail.com. As contas criadas em massa pelos spammers costumam ter esse formato. Penalidade pequena."
+  fix:
+    - "Envie a partir de um endereço do seu domínio para evitar esta regra e as regras vizinhas."
+sa.freemail_replyto_end_digit:
+  title: "Reply-To gratuito terminado em número"
+  why: "O endereço de resposta é uma caixa gratuita cujo identificador termina em número. Sinal fraco que se soma às outras regras de e-mail gratuito."
+  fix:
+    - "Use em Reply-To um endereço do seu domínio."
+sa.freemail_forged_fromdomain:
+  title: "Remetente gratuito enviado a partir de outro domínio de envelope"
+  why: "O From é um endereço gratuito (Gmail, Orange...), mas o envelope pertence a outro domínio. É o que produz uma ferramenta de envio ou um site configurado com um endereço Gmail como remetente. A mensagem então não pode ser alinhada ao domínio do provedor gratuito e falha no DMARC em todos os lugares onde esse domínio publica um registro DMARC."
+  fix:
+    - "Use como remetente um endereço do seu próprio domínio, autenticado na ferramenta de envio."
+    - "Se você não tem domínio, envie pelo webmail do próprio provedor gratuito, e não por um serviço de terceiros."
+sa.header_from_different_domains:
+  title: "O domínio do From é diferente do domínio do envelope"
+  why: "O From mostra {domain}, mas o Return-Path pertence a {envelope_domain}. É a configuração padrão de muitas ferramentas de envio (Brevo, Mailchimp, Mailjet) que gerenciam os retornos no próprio domínio. Penalidade pequena, mas o SPF então não fica alinhado para o DMARC."
+  fix:
+    - "Configure na ferramenta de envio um domínio de retorno personalizado (Return-Path) sob {domain}, por exemplo bounce.{domain}."
+    - "Caso contrário, garanta que o DKIM assine com {domain}, para que o DMARC passe mesmo assim."
+  fix_by_provider:
+    brevo: "Autentique {domain} na seção Domínios do Brevo: a assinatura DKIM passa a ser feita com o seu domínio, e o DMARC passa pelo DKIM mesmo que o Return-Path não esteja sob {domain}."
+    mailchimp: "Autentique {domain} na seção Domains do Mailchimp: a assinatura DKIM passa a ser feita com o seu domínio, e o DMARC passa pelo DKIM mesmo que o Return-Path não esteja sob {domain}."
+    amazon_ses: "Configure um MAIL FROM personalizado (subdomínio de {domain}) na identidade do SES."
+sa.replyto_without_to_cc:
+  title: "Reply-To presente sem destinatário To nem Cc"
+  why: "A mensagem tem um endereço de resposta, mas nenhum destinatário visível: todos os destinatários estão em cópia oculta. É o que faz um envio em grupo a partir de um e-mail com a lista em Cco, esquema frequente no spam."
+  fix:
+    - "Adicione um cabeçalho To: o endereço do destinatário, para um envio individual, ou o seu próprio endereço se você mantiver a lista em Cco."
+    - "Para mais de algumas dezenas de destinatários, use uma ferramenta de envio que endereçe cada mensagem individualmente."
+sa.to_no_brkts_dynip:
+  title: "Destinatário sem os sinais < > e IP de envio de uso geral"
+  why: "O To contém um endereço nu (sem “Nome <...>”), e a mensagem sai de um IP cujo reverse DNS é de conexão residencial. A combinação é característica de máquinas infectadas que enviam spam, daí uma penalidade de 3 pontos."
+  fix:
+    - "Escreva o destinatário com um nome e os sinais < >: \"Nome Sobrenome\" <endereco@exemplo.com.br>. As ferramentas de envio fazem isso quando o campo de nome está preenchido."
+    - "Adicione o cabeçalho List-Unsubscribe e um link de cancelamento de inscrição: várias variantes desta regra deixam de se aplicar nesse caso."
+sa.to_no_brkts_from_mssp:
+  title: "Destinatário sem os sinais < > e remetente mal formatado"
+  why: "O endereço do destinatário é nu, e o From está escrito sem espaço entre o nome e o sinal < (Nome<endereço>). Esses dois defeitos de formatação juntos denunciam um script de envio artesanal."
+  fix:
+    - "Escreva o destinatário com um nome e os sinais < >: \"Nome Sobrenome\" <endereco@exemplo.com.br>. As ferramentas de envio fazem isso quando o campo de nome está preenchido."
+    - "Adicione o cabeçalho List-Unsubscribe e um link de cancelamento de inscrição: várias variantes desta regra deixam de se aplicar nesse caso."
+sa.to_no_brkts_html_img:
+  title: "Destinatário sem os sinais < >, HTML com uma única imagem"
+  why: "Endereço de destinatário nu e mensagem HTML reduzida a uma imagem. Pontuação simbólica, mas é o perfil dos spams em imagem."
+  fix:
+    - "Escreva o destinatário com um nome e os sinais < >: \"Nome Sobrenome\" <endereco@exemplo.com.br>. As ferramentas de envio fazem isso quando o campo de nome está preenchido."
+    - "Adicione o cabeçalho List-Unsubscribe e um link de cancelamento de inscrição: várias variantes desta regra deixam de se aplicar nesse caso."
+sa.to_no_brkts_html_only:
+  title: "Destinatário sem os sinais < > e mensagem somente em HTML"
+  why: "Endereço de destinatário nu e mensagem sem versão em texto. É o que produzem a função mail() do PHP ou um script caseiro que envia HTML bruto. Penalidade próxima de 2 pontos."
+  fix:
+    - "Escreva o destinatário com um nome e os sinais < >: \"Nome Sobrenome\" <endereco@exemplo.com.br>. As ferramentas de envio fazem isso quando o campo de nome está preenchido."
+    - "Adicione o cabeçalho List-Unsubscribe e um link de cancelamento de inscrição: várias variantes desta regra deixam de se aplicar nesse caso."
+sa.to_no_brkts_msft:
+  title: "Destinatário sem os sinais < > e cabeçalhos do Outlook"
+  why: "A mensagem alega vir do Outlook, mas o endereço do destinatário é nu, o que o Outlook não faz em condições normais. Softwares de envio que imitam o Outlook são visados."
+  fix:
+    - "Escreva o destinatário com um nome e os sinais < >: \"Nome Sobrenome\" <endereco@exemplo.com.br>. As ferramentas de envio fazem isso quando o campo de nome está preenchido."
+    - "Adicione o cabeçalho List-Unsubscribe e um link de cancelamento de inscrição: várias variantes desta regra deixam de se aplicar nesse caso."
+sa.to_no_brkts_nordns_html:
+  title: "Destinatário sem os sinais < >, IP sem reverse DNS, somente HTML"
+  why: "Endereço de destinatário nu, mensagem somente em HTML e IP sem reverse DNS: três defeitos que descrevem um servidor improvisado."
+  fix:
+    - "Escreva o destinatário com um nome e os sinais < >: \"Nome Sobrenome\" <endereco@exemplo.com.br>. As ferramentas de envio fazem isso quando o campo de nome está preenchido."
+    - "Adicione o cabeçalho List-Unsubscribe e um link de cancelamento de inscrição: várias variantes desta regra deixam de se aplicar nesse caso."
+sa.to_no_brkts_pcnt:
+  title: "Destinatário sem os sinais < > e porcentagens no texto"
+  why: "Endereço de destinatário nu e porcentagens em destaque (“-50%”): perfil de uma promoção enviada sem ferramenta de envio nem link de cancelamento de inscrição."
+  fix:
+    - "Escreva o destinatário com um nome e os sinais < >: \"Nome Sobrenome\" <endereco@exemplo.com.br>. As ferramentas de envio fazem isso quando o campo de nome está preenchido."
+    - "Adicione o cabeçalho List-Unsubscribe e um link de cancelamento de inscrição: várias variantes desta regra deixam de se aplicar nesse caso."
+sa.to_malformed:
+  title: "O cabeçalho To está mal formado"
+  why: "O campo To não contém um endereço válido. Em geral, é uma tag de mesclagem que ficou vazia ou não foi substituída, ou um nome sem endereço."
+  fix:
+    - "Verifique a variável de mesclagem usada para o destinatário na ferramenta de envio ou no script."
+    - "Use o formato \"Nome\" <endereco@dominio.com.br> ou um endereço sozinho."
+sa.to_in_subj:
+  title: "O endereço do destinatário aparece no assunto"
+  why: "O assunto contém o endereço de e-mail completo do destinatário, procedimento comum em spams e em falsos avisos de caixa de e-mail (“contato@exemplo.com.br: sua caixa está cheia”). Penalidade pequena."
+  fix:
+    - "Personalize o assunto com o primeiro nome, e não com o endereço de e-mail."
+sa.to_eq_fm_html_only:
+  title: "Remetente igual ao destinatário, somente HTML"
+  why: "A mensagem aparenta vir do próprio destinatário e contém somente HTML. É a forma dos falsos alertas de conta. Um formulário que envia ao proprietário do site com o endereço dele como remetente também dispara a regra."
+  fix:
+    - "Use no From um endereço técnico do domínio, diferente do endereço de recebimento."
+    - "Adicione uma versão em texto à mensagem e assine-a com DKIM."
+sa.to_eq_fm_dom_html_only:
+  title: "Mesmo domínio para remetente e destinatário, somente HTML"
+  why: "A mensagem alega vir de dentro da empresa destinatária, sem autenticação e sem versão em texto. Os golpes de “suporte de TI” usam esse esquema. Caso legítimo: as notificações de um site enviadas pelo servidor web."
+  fix:
+    - "Faça o domínio assinar essas mensagens com DKIM, ou envie-as pelo SMTP autenticado do serviço de e-mail."
+    - "Adicione uma parte de texto (multipart/alternative)."
+sa.to_eq_fm_direct_mx:
+  title: "Remetente igual ao destinatário, entregue diretamente ao servidor"
+  why: "A mensagem é enviada de si para si e entregue diretamente ao servidor de recebimento, sem passar por um servidor de envio. Pontuação simbólica, mas a regra seguinte, com somente HTML, pesa muito."
+  fix:
+    - "Envie pelo servidor SMTP do seu serviço de e-mail, em vez de entregar diretamente ao MX."
+sa.to_eq_fm_html_direct:
+  title: "Remetente igual ao destinatário, somente HTML e entrega direta"
+  why: "A mensagem aparenta vir do próprio destinatário, contém somente HTML e foi entregue diretamente ao servidor de recebimento. É o esquema exato dos falsos avisos de “senha expirada”: mais de 3,5 pontos sozinho."
+  fix:
+    - "Nunca coloque o endereço do destinatário como From: use um endereço de envio dedicado."
+    - "Faça o envio passar pelo seu servidor SMTP autenticado e adicione uma versão em texto."
+sa.localpart_in_subject:
+  title: "O identificador do destinatário aparece no assunto"
+  why: "O assunto repete a parte antes do @ do endereço do destinatário (“jsilva, sua oferta”). Os spammers personalizam assim quando só têm o endereço. Uma ferramenta que insere a tag do endereço no lugar do primeiro nome produz o mesmo efeito."
+  fix:
+    - "Personalize o assunto com o primeiro nome real do contato, ou não personalize."
+    - "Verifique se a variável de mesclagem não recai no endereço quando o primeiro nome está vazio."
+sa.from_in_to_and_subj:
+  title: "O endereço de envio também está no To e no assunto"
+  why: "O mesmo endereço é remetente, destinatário e aparece no assunto. É a assinatura dos falsos avisos “sua caixa {domain} será desativada”."
+  fix:
+    - "Retire o endereço do assunto e use um endereço de envio diferente do endereço do destinatário."
+sa.from_blank_name:
+  title: "O nome do remetente está vazio"
+  why: "O From tem a forma \"\" <endereço>: um campo de nome vazio entre aspas. É o resultado de uma variável de nome não preenchida em um script ou CMS."
+  fix:
+    - "Preencha o nome do remetente (nome da empresa ou da pessoa) na ferramenta de envio."
+    - "Se nenhum nome estiver disponível, escreva só o endereço, sem aspas vazias."
+  fix_by_provider:
+    wordpress: "Preencha o campo From Name da extensão SMTP; sem ele, algumas extensões gravam um nome vazio."
+sa.from_no_user:
+  title: "O endereço de envio não tem identificador antes do @"
+  why: "O endereço de envio é do tipo @exemplo.com.br ou <>. Os destinatários não conseguem responder, e os filtros veem um endereço fabricado."
+  fix:
+    - "Corrija a variável de remetente do script: o identificador antes do @ está vazio."
+sa.from_excess_base64:
+  title: "O nome do remetente está codificado em base64 sem necessidade"
+  why: "O nome do remetente está codificado em base64, embora não contenha nenhum acento. Algumas ferramentas fazem isso por padrão, e os spammers também, para ocultar o nome dos filtros. Pontuação simbólica."
+  fix:
+    - "Deixe a biblioteca de envio codificar somente quando for necessário, e em quoted-printable em vez de base64."
+sa.from_illegal_chars:
+  title: "O From contém caracteres não codificados"
+  why: "O nome do remetente contém caracteres acentuados ou especiais enviados crus, sem a codificação prevista para cabeçalhos. Alguns programas os exibem mal."
+  fix:
+    - "Codifique o nome do remetente segundo a RFC 2047 (as bibliotecas fazem isso se você declarar o conjunto de caracteres UTF-8)."
+sa.from_local_digits:
+  title: "O endereço de envio contém uma longa sequência de números"
+  why: "O identificador do endereço de envio contém pelo menos 11 números seguidos, formato de endereços gerados automaticamente. Pontuação simbólica."
+  fix:
+    - "Use um endereço de envio legível (contato@, newsletter@)."
+sa.from_local_hex:
+  title: "O endereço de envio contém uma longa sequência hexadecimal"
+  why: "O identificador do endereço de envio se parece com um código aleatório (pelo menos 11 caracteres 0-9 e a-f). Típico de endereços gerados por uma ferramenta. Pontuação simbólica."
+  fix:
+    - "Mostre no From um endereço legível; deixe os identificadores técnicos no Return-Path."
+sa.from_local_novowel:
+  title: "O endereço de envio contém uma sequência de consoantes"
+  why: "O identificador antes do @ contém sete consoantes seguidas, sinal de um endereço aleatório. Pode atingir siglas ou nomes regionais."
+  fix:
+    - "Se possível, use um endereço de envio mais legível (contato@, info@)."
+sa.from_domain_novowel:
+  title: "O domínio do remetente contém uma sequência de consoantes"
+  why: "O domínio {domain} contém sete consoantes seguidas, padrão dos domínios gerados ao acaso. Uma sigla ou um nome composto pode acionar a regra sem motivo."
+  fix:
+    - "Nada urgente se o domínio for antigo e autenticado. Para um novo domínio de envio, prefira um nome pronunciável."
+sa.from_starts_with_nums:
+  title: "O endereço de envio começa com vários números"
+  why: "O identificador começa com pelo menos três números seguidos de letras (123info@...). Formato frequente em endereços descartáveis."
+  fix:
+    - "Use um endereço de envio que comece com uma palavra."
+sa.from_misspaced:
+  title: "Sem espaço entre o nome e o endereço no From"
+  why: "O From está escrito \"Nome\"<endereço> sem espaço. A norma tolera, mas poucos programas legítimos escrevem assim: é a marca de scripts de envio caseiros."
+  fix:
+    - "Adicione um espaço entre o nome entre aspas e o sinal < de abertura."
+sa.from_wsp_lead:
+  title: "Espaço depois do sinal < de abertura no From"
+  why: "O endereço de envio está escrito < contato@exemplo.com.br> com um espaço depois do sinal. Esse defeito vem de uma concatenação mal feita em um script, e o SpamAssassin o penaliza em mais de 3 pontos."
+  fix:
+    - "Corrija a montagem do cabeçalho From para que não haja nenhum espaço dentro dos sinais < >."
+sa.from_wsp_trail:
+  title: "Espaço antes do sinal > de fechamento no From"
+  why: "O endereço está escrito <contato@exemplo.com.br > com um espaço antes do sinal de fechamento, muitas vezes um espaço que ficou no fim de um campo de digitação. Mais de 2 pontos."
+  fix:
+    - "Remova os espaços no fim do valor (trim) antes de montar o From."
+sa.from_unbal1:
+  title: "Falta o sinal > de fechamento no From"
+  why: "O From abre um sinal < que nunca é fechado. O cabeçalho é inválido, e alguns programas não exibem o remetente."
+  fix:
+    - "Corrija a string do remetente no script ou na configuração da ferramenta: \"Nome\" <endereço>."
+sa.from_addr_ws:
+  title: "O endereço de envio contém um espaço"
+  why: "O endereço de e-mail extraído do From contém um espaço, o que o torna inválido. Costuma ser um copia e cola ou uma variável mal concatenada. Quase 3 pontos."
+  fix:
+    - "Retire o espaço do endereço de envio na configuração ou no código."
+sa.from_long_dom:
+  title: "Domínio de envio anormalmente longo"
+  why: "O primeiro nível do domínio de envio tem pelo menos 30 caracteres sem ponto. Domínios descartáveis gerados automaticamente costumam ter esse perfil."
+  fix:
+    - "Envie a partir de um domínio curto e identificável; reserve os domínios longos para a web, se necessário."
+sa.fromspace:
+  title: "Espaço depois da aspa de abertura do nome do remetente"
+  why: "O nome do remetente começa com uma aspa seguida de um espaço (\" Atelier Martin\"). Formato idiossincrático observado em softwares de spam."
+  fix:
+    - "Remova o espaço inicial do nome do remetente na configuração da ferramenta."
+sa.apostrophe_from:
+  title: "O endereço de envio contém um apóstrofo"
+  why: "O próprio endereço de e-mail (não o nome) contém um apóstrofo. É permitido, mas raro, e costuma ser sinal de um nome mal colocado no endereço."
+  fix:
+    - "Verifique se o apóstrofo não pertence ao nome exibido (\"D'Almeida Modas\") que teria sido colado no endereço."
+sa.name_email_diff:
+  title: "O nome do remetente é outro endereço de e-mail"
+  why: "O nome exibido é um endereço de e-mail diferente do endereço de envio, por exemplo \"servico@banco.com.br\" <x@outro.com>. É um procedimento clássico de falsificação."
+  fix:
+    - "Coloque no nome do remetente um nome simples (empresa ou pessoa), e não um endereço."
+sa.from_suspicious_ntld:
+  title: "O domínio do remetente usa uma extensão frequentemente abusada"
+  why: "A extensão do domínio {domain} faz parte das novas extensões amplamente usadas por spammers (domínios baratos). A penalidade atinge também as empresas legítimas que as escolheram."
+  fix:
+    - "Para os envios, prefira um domínio em .com.br, .com ou uma extensão setorial já estabelecida."
+    - "Se mantiver esse domínio, capriche no SPF, DKIM e DMARC para compensar."
+sa.from_suspicious_ntld_fp:
+  title: "Extensão de domínio abusada, sem sinal de conversa"
+  why: "A extensão de {domain} está na lista das extensões abusadas, e a mensagem não é uma resposta nem um envio de lista. Quase 2 pontos."
+  fix:
+    - "Envie as campanhas a partir de um domínio em uma extensão mais comum, ou por uma lista de distribuição que acrescente os cabeçalhos List-*."
+sa.pds_from_2_emails:
+  title: "O From contém dois endereços diferentes"
+  why: "O cabeçalho From exibe um endereço no nome e usa outro para o envio. Os falsificadores usam isso para mostrar um endereço de confiança. Quase 3,5 pontos."
+  fix:
+    - "Substitua o nome exibido por um nome simples; apenas um endereço deve aparecer no From."
+sa.pds_from_name_to_domain:
+  title: "O nome do remetente repete o domínio do destinatário"
+  why: "O nome exibido do remetente é o domínio do destinatário (“exemplo.com.br”). Técnica dos falsos avisos de administração de caixa. Pontuação simbólica, mas revelador."
+  fix:
+    - "Use como nome do remetente a sua própria marca."
+sa.t_fromname_equals_to:
+  title: "O nome do remetente é o endereço do destinatário"
+  why: "O nome exibido do remetente é o próprio endereço do destinatário. Os falsos avisos de caixa de e-mail fazem isso para parecer internos."
+  fix:
+    - "Use o seu nome ou a sua marca como nome do remetente."
+sa.t_fromname_spoofed_email:
+  title: "O nome do remetente imita outro endereço"
+  why: "O nome exibido contém um endereço que não corresponde ao endereço real de envio. Regra de teste sem peso, mas o padrão é o de falsificação."
+  fix:
+    - "Não coloque endereço de e-mail no nome do remetente."
+sa.t_pds_to_eq_from_name:
+  title: "O nome do remetente repete o endereço do destinatário"
+  why: "O nome exibido do remetente é o endereço do destinatário. Regra de teste sem peso."
+  fix:
+    - "Mostre o seu próprio nome ou a sua marca como remetente."
+sa.hk_random_from:
+  title: "O identificador do endereço de envio parece aleatório"
+  why: "O identificador antes do @ se parece com uma cadeia sorteada ao acaso. Os endereços de spam gerados em massa têm esse perfil."
+  fix:
+    - "Use endereços legíveis (contato@, newsletter@, bounce@): os identificadores que começam com bounce-, mail- ou contêm + ou = são ignorados pela regra."
+sa.hk_random_envfrom:
+  title: "O identificador do endereço de envelope parece aleatório"
+  why: "O endereço de envelope (Return-Path) tem um identificador de aparência aleatória. As ferramentas de envio usam identificadores codificados, mas com + ou = (VERP), que a regra ignora."
+  fix:
+    - "Use endereços legíveis (contato@, newsletter@, bounce@): os identificadores que começam com bounce-, mail- ou contêm + ou = são ignorados pela regra."
+sa.hk_random_replyto:
+  title: "O identificador do endereço de resposta parece aleatório"
+  why: "O endereço de resposta se parece com uma cadeia aleatória, o que sugere uma caixa descartável criada para receber as respostas."
+  fix:
+    - "Use endereços legíveis (contato@, newsletter@, bounce@): os identificadores que começam com bounce-, mail- ou contêm + ou = são ignorados pela regra."
+sa.sorted_recips:
+  title: "A lista de destinatários está em ordem alfabética"
+  why: "A mensagem é endereçada a uma longa lista de destinatários visíveis, organizados em ordem alfabética: comportamento de um software que percorre um arquivo de endereços. Os destinatários também veem todos os endereços, o que é um problema de privacidade."
+  fix:
+    - "Não envie a mesma mensagem para dezenas de destinatários visíveis: envie uma mensagem por destinatário, por meio de uma ferramenta adequada."
+sa.suspicious_recips:
+  title: "Os destinatários têm endereços muito parecidos"
+  why: "Muitos destinatários têm endereços quase idênticos (contato1@, contato2@...), sinal de uma lista gerada ou comprada. Mais de 2,5 pontos."
+  fix:
+    - "Envie uma mensagem por destinatário e retire da sua lista os endereços gerados ou adivinhados."
+sa.spoofed_freemail:
+  title: "Endereço de e-mail gratuito sem prova de origem"
+  why: "O From é um endereço Gmail, Outlook ou similar, mas a mensagem não foi autenticada por SPF ou DKIM nem enviada pelos servidores do provedor. Alguém está usando o endereço gratuito a partir de outro servidor."
+  fix:
+    - "Envie as mensagens de um endereço gratuito pelo próprio provedor (webmail ou SMTP do provedor)."
+    - "Para um site ou uma ferramenta, use um endereço do seu domínio."
+sa.forged_gmail_rcvd:
+  title: "Remetente gmail.com sem passagem pelos servidores do Google"
+  why: "O endereço de envio é @gmail.com, mas a mensagem não passou pelo Google. Ela não pode então ser alinhada com gmail.com e falha no DMARC nos destinatários que fazem a verificação."
+  fix:
+    - "Não use um endereço @gmail.com como remetente em um site ou em uma ferramenta de envio: use um endereço do seu domínio."
+    - "Se você quiser continuar com o Gmail, configure a ferramenta para enviar por smtp.gmail.com com a sua conta."
+  fix_by_provider:
+    wordpress: "Na extensão SMTP, escolha o modo Gmail (OAuth) ou substitua o endereço From por um endereço do seu domínio."
+sa.forged_yahoo_rcvd:
+  title: "Remetente yahoo.com sem passagem pelos servidores do Yahoo"
+  why: "O endereço de envio é @yahoo.com, mas a mensagem não passou pelo Yahoo. O Yahoo publica um DMARC rigoroso: essas mensagens são rejeitadas por muitos destinatários."
+  fix:
+    - "Substitua o endereço Yahoo por um endereço do seu domínio nos envios feitos a partir de um site ou de uma ferramenta."

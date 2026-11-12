@@ -1,0 +1,67 @@
+subdomains.takeover_risk:
+  title: "{subdomain} kann bei {service} von einem Unbekannten übernommen werden"
+  why: "{subdomain} zeigt auf {target}, eine Ressource von {service}, die nicht mehr existiert. Jeder kann bei {service} ein Konto eröffnen, diese Ressource unter diesem Namen neu anlegen und auf {subdomain} veröffentlichen, was er will: Phishing-Seite unter Ihrem Namen, Diebstahl der auf {domain} gesetzten Cookies, ein ohne Ihr Wissen erlangtes Zertifikat."
+  fix:
+    - "Wenn {subdomain} nicht mehr genutzt wird: Löschen Sie seinen CNAME-Eintrag in der DNS-Zone von {domain}. Das ist die sicherste Korrektur."
+    - "Soll er weiter dienen: Legen Sie die Ressource sofort bei {service} unter dem Namen {target} in Ihrem Konto neu an und binden Sie {subdomain} daran."
+    - "Wiederholen Sie die Messung: {subdomain} muss in den Zustand „löst nicht mehr auf“ oder „aktiv“ wechseln, ohne Warnung."
+    - "Für die Zukunft gilt: Löschen Sie den CNAME, bevor Sie die Ressource beim Dienst löschen, niemals danach."
+subdomains.takeover_possible:
+  title: "{subdomain} zeigt auf eine Ressource von {service}, die nicht mehr existiert"
+  why: "{subdomain} verweist auf {target}, und {service} meldet, dass kein Site mit diesem Namen verbunden ist. Je nach Einstellungen des Dienstes kann ein anderer Kunde {subdomain} beanspruchen und dort seinen Inhalt veröffentlichen. Auch ohne Übernahme landen Ihre Besucher auf einer Fehlerseite von {service}."
+  fix:
+    - "Wenn {subdomain} nicht mehr genutzt wird: Löschen Sie seinen CNAME-Eintrag in der DNS-Zone von {domain}."
+    - "Soll er weiter dienen: Verbinden Sie {subdomain} bei {service} erneut mit Ihrer Website oder Anwendung."
+    - "Bei GitHub Pages prüfen Sie {domain} in den Pages-Einstellungen Ihres Kontos oder Ihrer Organisation: Dann kann sie niemand anderes mehr nutzen."
+    - Wiederholen Sie die Messung, um zu bestätigen, dass die Warnung verschwunden ist.
+subdomains.cname_dangling:
+  title: "CNAME auf ein Ziel, das nicht mehr existiert: {value}"
+  why: "{subdomain} zeigt auf {target}, einen Namen, der nicht existiert (NXDOMAIN). Die Subdomain dient zu nichts mehr, und wenn die Domain des Ziels abläuft oder frei wird, kontrolliert auch derjenige Ihre Subdomain, der sie erwirbt."
+  fix:
+    - Öffnen Sie für jeden aufgelisteten Namen die DNS-Zone von {domain} und löschen Sie den CNAME-Eintrag, wenn er nicht mehr genutzt wird.
+    - Soll der Name weiter dienen, ersetzen Sie das Ziel durch die aktuelle Adresse des Dienstes.
+    - Prüfen Sie, dass die Domain jedes Ziels noch Ihnen oder dem erwarteten Dienst gehört.
+subdomains.cert_expiring:
+  title: "Subdomains, deren ausgeliefertes Zertifikat bald abläuft: {value}"
+  why: "Das Zertifikat, das {subdomain} gerade ausliefert, läuft ab, obwohl es schon hätte erneuert werden müssen. Die automatische Erneuerung ist wohl ausgefallen: Bei Ablauf zeigen Browser eine Sicherheitswarnung und blockieren die Website."
+  fix:
+    - Starten Sie auf dem Server, der {subdomain} ausliefert, die Erneuerung von Hand (zum Beispiel certbot renew) und lesen Sie den Fehler.
+    - "Häufige Ursachen: geänderter DNS-Eintrag, HTTP-Challenge durch eine Weiterleitung oder eine Firewall blockiert, geplante Aufgabe angehalten."
+    - Liegt {subdomain} hinter einem CDN oder einem Hoster, prüfen Sie, ob dort das Zertifikat aktiv ist.
+    - "Wiederholen Sie die Messung: Das angezeigte Ablaufdatum muss sich nach hinten verschoben haben."
+subdomains.cert_expired_active:
+  title: "Subdomains, die ein abgelaufenes Zertifikat ausliefern: {value}"
+  why: "{subdomain} liefert gerade ein abgelaufenes Zertifikat aus: Browser zeigen eine Sicherheitswarnung, und die meisten Besucher brechen dann ab. Anwendungen und APIs verweigern die Verbindung."
+  fix:
+    - Erneuern Sie auf dem Server, der {subdomain} ausliefert, das Zertifikat (zum Beispiel certbot renew) und laden Sie den Webserver neu.
+    - Dient {subdomain} nicht mehr, löschen Sie seinen Eintrag in der DNS-Zone von {domain}.
+    - Wiederholen Sie die Messung, um das neue Ablaufdatum zu bestätigen.
+subdomains.internal_names:
+  title: "Interne Namen, für alle sichtbar: {value}"
+  why: Jedes Zertifikat wird in öffentlichen Protokollen eingetragen, die jeder lesen kann. Namen wie {subdomain} zeigen einem Angreifer, wo Ihre Testumgebungen und Verwaltungswerkzeuge liegen, die oft schwächer geschützt sind als die Hauptwebsite.
+  fix:
+    - Prüfen Sie, dass jeder aktive Name der Liste eine Authentifizierung verlangt oder nur aus Ihrem Netz erreichbar ist (Liste erlaubter Adressen, VPN).
+    - "Für Testumgebungen bevorzugen Sie ein Wildcard-Zertifikat (*.{domain}): Es verrät nicht den genauen Namen jeder Subdomain."
+    - Löschen Sie in der DNS-Zone die Namen, die nicht mehr dienen. Die Protokolle dagegen bewahren den Verlauf für immer.
+subdomains.dead_names:
+  title: "Subdomains, die nicht mehr auflösen: {value}"
+  why: "Diese Namen hatten ein Zertifikat, haben heute aber keine Adresse mehr. Die öffentlichen Protokolle bewahren sie für immer auf: Das ist normal und ungefährlich, solange kein CNAME auf einen gelöschten Dienst verweist."
+  fix:
+    - Nichts zu tun, wenn diese Namen nicht mehr genutzt werden.
+    - Sollte einer davon noch dienen, legen Sie seinen Eintrag in der DNS-Zone von {domain} neu an.
+subdomains.wildcard_dns:
+  title: Die Zone von {domain} antwortet auf jeden Namen
+  why: "Ein erfundener Name unter {domain} erhält die Adresse {value}. Subdomains, die dieselbe Adresse erhalten, werden mit „über den DNS-Platzhalter“ markiert: Sie existieren womöglich nicht mehr als eigenständige Namen."
+  fix:
+    - Ist der Platzhalter nicht gewollt, löschen Sie den Eintrag *.{domain} aus der DNS-Zone.
+    - "Ist er gewollt, prüfen Sie die Namen, die mit „über den DNS-Platzhalter“ markiert sind: Die, die nicht mehr dienen, erfordern keine Maßnahme."
+subdomains.resolution_capped:
+  title: "Subdomains ohne DNS-Auflösung aufgelistet: {value}"
+  why: "Die Protokolle ergeben mehr als 500 Namen für {domain}. Die zuletzt gesehenen 500 werden aufgelöst; die übrigen {value} werden ohne DNS-Status aufgelistet, und die Bewertung berücksichtigt sie nicht."
+  fix:
+    - Messen Sie eine genauere Subdomain (zum Beispiel dev.{domain}), um alle ihre Namen aufzulösen.
+subdomains.none_found:
+  title: Für {domain} ist kein Zertifikat veröffentlicht
+  why: Die Certificate-Transparency-Protokolle enthalten kein Zertifikat für diesen Namen. Entweder betreibt {domain} keine Website über https, oder seine Zertifikate decken andere Namen ab.
+  fix:
+    - Prüfen Sie die Schreibweise der Domain und messen Sie danach die Hauptdomain, wenn Sie eine Subdomain eingegeben haben.

@@ -1,0 +1,240 @@
+/* Design tokens v3: "Signal" (2026-11-11, validated by the user on the mockup
+   https://claude.ai/artifact/N8k9en4MPiLdUeQwT2MRDW).
+   Dark first, the way the best-loved tools are (Linear, Raycast, Vercel): solid surfaces lifted by a
+   hairline and a top light, never glass; one blue for actions; state colours (green, amber, red)
+   light up only on what is measured; numbers in wide solid type.
+   Rejected before, do not come back to them: lab report (v1), pastel bands and pills (v2, "logiciel
+   Windows"), graphite "Instrument" (too austere), "Aurore" (violet gradient, gradient text, glass:
+   AI tells), "Par avion" (postcard metaphor, harder to read).
+   Legacy names (--paper, --lab, --out, --in...) are kept so every page follows the palette; --s1..--s8
+   stay the spacing scale. */
+
+:root {
+  color-scheme: dark;
+
+  /* grounds */
+  --ground: oklch(0.145 0.008 260); /* app background */
+  --paper: oklch(0.185 0.009 260); /* surfaces: cards, panels */
+  --paper-2: oklch(0.165 0.008 260); /* sunken: inputs, code, wells */
+  --paper-3: oklch(0.235 0.01 260); /* hover, pressed */
+  --surface-hover: oklch(0.215 0.01 260);
+  --surface-press: oklch(0.255 0.011 260);
+  --rail: var(--paper);
+  --hi: oklch(1 0 0 / 0.06); /* the top light on a surface */
+
+  /* ink */
+  --ink: oklch(0.97 0.004 260);
+  --ink-2: oklch(0.84 0.008 260);
+  --ink-3: oklch(0.7 0.01 260);
+  --ink-faint: oklch(0.62 0.012 260); /* 4.5:1 on --paper, checked by axe */
+
+  /* hairlines */
+  --rule: oklch(0.29 0.01 260);
+  --rule-strong: oklch(0.36 0.012 260);
+  --line: var(--rule);
+
+  /* one blue: actions, links, selection */
+  --lab: oklch(0.7 0.16 250);
+  --lab-strong: oklch(0.8 0.12 250);
+  --lab-pale: oklch(0.7 0.16 250 / 0.16);
+  --lab-ink: oklch(0.15 0.03 250);
+
+  /* states: lit only where something was measured */
+  --out: oklch(0.72 0.19 25);
+  --out-pale: oklch(0.72 0.19 25 / 0.14);
+  --out-field: oklch(0.72 0.19 25 / 0.2);
+  --warn: oklch(0.84 0.15 75);
+  --warn-ink: oklch(0.84 0.15 75);
+  --warn-pale: oklch(0.84 0.15 75 / 0.14);
+  --warn-field: oklch(0.84 0.15 75 / 0.2);
+  --in: oklch(0.8 0.17 152);
+  --in-pale: oklch(0.8 0.17 152 / 0.14);
+  --in-field: oklch(0.8 0.17 152 / 0.2);
+  --info: var(--ink-3);
+  --glow-in: oklch(0.8 0.17 152 / 0.45);
+  --glow-warn: oklch(0.84 0.15 75 / 0.42);
+  --glow-out: oklch(0.72 0.19 25 / 0.42);
+
+  /* the two axes of a mail report, used as tags only */
+  --sender: oklch(0.78 0.12 215);
+  --message: oklch(0.8 0.11 320);
+
+  /* tool families (2026-11-11, "moins austère"): wayfinding hues on icon tiles, the menus, the tool
+     heads and the ambient light. Never on a measured state: green, amber and red keep that job, so
+     the family hues stay away from 25, 75 and 152. Mail cyan, Domaine blue, DNS teal, Réputation
+     rose, Rapports periwinkle, Générateurs coral (choice of the user, 2026-11-11). */
+  --fam-mail: oklch(0.8 0.12 215);
+  --fam-domaine: oklch(0.76 0.13 262);
+  --fam-dns: oklch(0.8 0.11 185);
+  --fam-reputation: oklch(0.76 0.14 350);
+  --fam-rapports: oklch(0.76 0.12 295);
+  --fam-generateurs: oklch(0.79 0.12 45);
+  --fam-outils: oklch(0.78 0.02 260);
+  --fam: var(--lab);
+
+  /* map, ambient light, message preview */
+  --land: oklch(0.6 0.02 260 / 0.38);
+  --ambient: oklch(0.55 0.14 250 / 0.22);
+  --mail-bg: oklch(1 0 0);
+  --mail-ink: oklch(0.25 0 0);
+  --mail-link: oklch(0.45 0.15 260);
+
+  --focus: var(--lab);
+  --selection: oklch(0.7 0.16 250 / 0.35);
+  --scrim: oklch(0.08 0.01 260 / 0.6);
+
+  /* type: one family in two widths, mono for measured values */
+  --font-display: 'Mona Sans Variable', 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-ui: 'Mona Sans Variable', 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --wide: 112%; /* font-stretch for titles */
+  --wider: 125%; /* font-stretch for big numbers */
+  --fs-xs: 0.78125rem; /* 12.5 */
+  --fs-sm: 0.84375rem; /* 13.5 */
+  --fs-md: 0.9375rem; /* 15 body */
+  --fs-lg: 1.0625rem; /* 17 */
+  --fs-xl: 1.25rem; /* 20 */
+  --fs-2xl: 1.75rem; /* 28 */
+  --fs-3xl: clamp(1.75rem, 3vw, 2.25rem); /* tool titles */
+  --fs-score: clamp(4.5rem, 8.5vw, 7.25rem); /* the score */
+  --lh-tight: 1.15;
+  --lh: 1.5;
+
+  /* space */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+  --s8: 4.5rem;
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --rail-w: 16.5rem;
+  --content-max: 82.5rem;
+
+  /* elevation: a hairline and a top light; depth only for what floats */
+  --edge: inset 0 0 0 1px var(--rule), inset 0 1px 0 var(--hi);
+  --shadow-1: var(--edge);
+  --shadow-2: var(--edge), 0 24px 48px -24px oklch(0 0 0 / 0.6);
+  --shadow-pop: 0 0 0 1px var(--rule-strong), 0 24px 60px -16px oklch(0 0 0 / 0.75);
+  --shadow-toast: 0 0 0 1px var(--rule-strong), 0 16px 40px -12px oklch(0 0 0 / 0.7);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --t-fast: 140ms;
+  --t: 200ms;
+
+  --z-sticky: 10;
+  --z-drawer: 40;
+  --z-pop: 50;
+  --z-toast: 100;
+}
+
+/* light: designed with the dark one, not inverted. Applied when the system asks for it (theme
+   "auto") or when the user picks it. Keep both blocks identical. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --ground: oklch(0.975 0.003 260);
+    --paper: oklch(1 0 0);
+    --paper-2: oklch(0.975 0.003 260);
+    --paper-3: oklch(0.955 0.005 260);
+    --surface-hover: oklch(0.97 0.004 260);
+    --surface-press: oklch(0.94 0.006 260);
+    --hi: oklch(1 0 0 / 0);
+    --ink: oklch(0.2 0.012 260);
+    --ink-2: oklch(0.37 0.012 260);
+    --ink-3: oklch(0.48 0.012 260);
+    --ink-faint: oklch(0.53 0.01 260);
+    --rule: oklch(0.91 0.005 260);
+    --rule-strong: oklch(0.84 0.008 260);
+    --lab: oklch(0.53 0.19 255);
+    --lab-strong: oklch(0.44 0.18 255);
+    --lab-pale: oklch(0.53 0.19 255 / 0.1);
+    --lab-ink: oklch(1 0 0);
+    --out: oklch(0.55 0.21 25);
+    --out-pale: oklch(0.6 0.2 25 / 0.1);
+    --out-field: oklch(0.6 0.2 25 / 0.14);
+    --warn: oklch(0.53 0.125 62); /* text-safe on white */
+    --warn-ink: oklch(0.5 0.12 60);
+    --warn-pale: oklch(0.75 0.15 75 / 0.16);
+    --warn-field: oklch(0.75 0.15 75 / 0.24);
+    --in: oklch(0.52 0.14 152);
+    --in-pale: oklch(0.6 0.15 152 / 0.12);
+    --in-field: oklch(0.6 0.15 152 / 0.18);
+    --glow-in: oklch(0.7 0.17 152 / 0.3);
+    --glow-warn: oklch(0.8 0.15 75 / 0.4);
+    --glow-out: oklch(0.65 0.2 25 / 0.3);
+    --sender: oklch(0.5 0.12 220);
+    --message: oklch(0.5 0.15 320);
+    --fam-mail: oklch(0.52 0.11 220);
+    --fam-domaine: oklch(0.5 0.17 262);
+    --fam-dns: oklch(0.52 0.1 185);
+    --fam-reputation: oklch(0.52 0.18 355);
+    --fam-rapports: oklch(0.5 0.15 295);
+    --fam-generateurs: oklch(0.56 0.15 42);
+    --fam-outils: oklch(0.45 0.02 260);
+    --land: oklch(0.45 0.03 260 / 0.25);
+    --ambient: oklch(0.75 0.1 250 / 0.25);
+    --selection: oklch(0.53 0.19 255 / 0.2);
+    --scrim: oklch(0.2 0.02 260 / 0.35);
+    --shadow-2: var(--edge), 0 20px 40px -24px oklch(0.2 0.02 260 / 0.25);
+    --shadow-pop: 0 0 0 1px var(--rule-strong), 0 24px 60px -18px oklch(0.2 0.02 260 / 0.35);
+    --shadow-toast: 0 0 0 1px var(--rule-strong), 0 16px 40px -12px oklch(0.2 0.02 260 / 0.35);
+  }
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --ground: oklch(0.975 0.003 260);
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.975 0.003 260);
+  --paper-3: oklch(0.955 0.005 260);
+  --surface-hover: oklch(0.97 0.004 260);
+  --surface-press: oklch(0.94 0.006 260);
+  --hi: oklch(1 0 0 / 0);
+  --ink: oklch(0.2 0.012 260);
+  --ink-2: oklch(0.37 0.012 260);
+  --ink-3: oklch(0.48 0.012 260);
+  --ink-faint: oklch(0.53 0.01 260);
+  --rule: oklch(0.91 0.005 260);
+  --rule-strong: oklch(0.84 0.008 260);
+  --lab: oklch(0.53 0.19 255);
+  --lab-strong: oklch(0.44 0.18 255);
+  --lab-pale: oklch(0.53 0.19 255 / 0.1);
+  --lab-ink: oklch(1 0 0);
+  --out: oklch(0.55 0.21 25);
+  --out-pale: oklch(0.6 0.2 25 / 0.1);
+  --out-field: oklch(0.6 0.2 25 / 0.14);
+  --warn: oklch(0.53 0.125 62); /* text-safe on white */
+  --warn-ink: oklch(0.5 0.12 60);
+  --warn-pale: oklch(0.75 0.15 75 / 0.16);
+  --warn-field: oklch(0.75 0.15 75 / 0.24);
+  --in: oklch(0.52 0.14 152);
+  --in-pale: oklch(0.6 0.15 152 / 0.12);
+  --in-field: oklch(0.6 0.15 152 / 0.18);
+  --glow-in: oklch(0.7 0.17 152 / 0.3);
+  --glow-warn: oklch(0.8 0.15 75 / 0.4);
+  --glow-out: oklch(0.65 0.2 25 / 0.3);
+  --sender: oklch(0.5 0.12 220);
+  --message: oklch(0.5 0.15 320);
+  --fam-mail: oklch(0.52 0.11 220);
+  --fam-domaine: oklch(0.5 0.17 262);
+  --fam-dns: oklch(0.52 0.1 185);
+  --fam-reputation: oklch(0.52 0.18 355);
+  --fam-rapports: oklch(0.5 0.15 295);
+  --fam-generateurs: oklch(0.56 0.15 42);
+  --fam-outils: oklch(0.45 0.02 260);
+  --land: oklch(0.45 0.03 260 / 0.25);
+  --ambient: oklch(0.75 0.1 250 / 0.25);
+  --selection: oklch(0.53 0.19 255 / 0.2);
+  --scrim: oklch(0.2 0.02 260 / 0.35);
+  --shadow-2: var(--edge), 0 20px 40px -24px oklch(0.2 0.02 260 / 0.25);
+  --shadow-pop: 0 0 0 1px var(--rule-strong), 0 24px 60px -18px oklch(0.2 0.02 260 / 0.35);
+  --shadow-toast: 0 0 0 1px var(--rule-strong), 0 16px 40px -12px oklch(0.2 0.02 260 / 0.35);
+}

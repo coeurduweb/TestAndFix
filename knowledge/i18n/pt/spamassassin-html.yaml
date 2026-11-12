@@ -1,0 +1,317 @@
+sa.html_message:
+  title: "A mensagem contém HTML"
+  why: "Informação: a mensagem tem uma parte HTML. Pontuação zero, é o normal para uma newsletter."
+  fix:
+    - "Nada a corrigir. Sempre inclua uma versão em texto (multipart/alternative) junto com o HTML."
+sa.html_mime_no_html_tag:
+  title: "Mensagem HTML sem tag html"
+  why: "A mensagem contém somente HTML, e esse HTML nem sequer tem a tag <html>. É um fragmento colado assim como está, o que scripts e alguns editores produzem."
+  fix:
+    - "Envie um documento completo: <!DOCTYPE html>, <html>, <head> com meta charset, <body>."
+    - "Adicione uma parte de texto."
+sa.html_image_only_04:
+  title: "Mensagem HTML quase sem texto, com imagem (0 a 400 bytes de texto)"
+  why: "O HTML contém uma ou mais imagens e menos de 400 bytes de texto: na prática, a mensagem é um cartaz. Os filtros não leem imagens, e isso é a técnica dos spams em imagem. Caso comum: folheto exportado do Canva colado no corpo da mensagem."
+  fix:
+    - "Adicione texto real no HTML (título, parágrafos, chamada para ação), em vez de colocá-lo na imagem."
+    - "Almeje pelo menos algumas centenas de palavras de texto real; mantenha as imagens para ilustração."
+    - "Preencha um atributo alt descritivo em cada imagem."
+sa.html_image_only_08:
+  title: "Mensagem HTML com imagem e muito pouco texto (400 a 800 bytes)"
+  why: "Imagens e 400 a 800 bytes de texto: o conteúdo principal está na imagem. Penalidade de mais de 1,5 ponto."
+  fix:
+    - "Adicione texto real no HTML (título, parágrafos, chamada para ação), em vez de colocá-lo na imagem."
+    - "Almeje pelo menos algumas centenas de palavras de texto real; mantenha as imagens para ilustração."
+    - "Preencha um atributo alt descritivo em cada imagem."
+sa.html_image_only_12:
+  title: "Mensagem HTML com imagem e pouco texto (800 a 1.200 bytes)"
+  why: "Imagens e 800 a 1.200 bytes de texto. Mais de 2 pontos: é a faixa mais penalizada, típica de newsletters feitas de um grande banner e duas linhas."
+  fix:
+    - "Adicione texto real no HTML (título, parágrafos, chamada para ação), em vez de colocá-lo na imagem."
+    - "Almeje pelo menos algumas centenas de palavras de texto real; mantenha as imagens para ilustração."
+    - "Preencha um atributo alt descritivo em cada imagem."
+sa.html_image_only_16:
+  title: "Mensagem HTML com imagem e pouco texto (1.200 a 1.600 bytes)"
+  why: "Imagens e 1.200 a 1.600 bytes de texto. A proporção de texto sobre imagens continua baixa."
+  fix:
+    - "Adicione texto real no HTML (título, parágrafos, chamada para ação), em vez de colocá-lo na imagem."
+    - "Almeje pelo menos algumas centenas de palavras de texto real; mantenha as imagens para ilustração."
+    - "Preencha um atributo alt descritivo em cada imagem."
+sa.html_image_only_20:
+  title: "Mensagem HTML com imagem e pouco texto (1.600 a 2.000 bytes)"
+  why: "Imagens e 1.600 a 2.000 bytes de texto. Ainda penalizado em 1,5 ponto."
+  fix:
+    - "Adicione texto real no HTML (título, parágrafos, chamada para ação), em vez de colocá-lo na imagem."
+    - "Almeje pelo menos algumas centenas de palavras de texto real; mantenha as imagens para ilustração."
+    - "Preencha um atributo alt descritivo em cada imagem."
+sa.html_image_only_24:
+  title: "Mensagem HTML com imagem e pouco texto (2.000 a 2.400 bytes)"
+  why: "Imagens e 2.000 a 2.400 bytes de texto. Um parágrafo a mais costuma bastar para sair dessa faixa."
+  fix:
+    - "Adicione texto real no HTML (título, parágrafos, chamada para ação), em vez de colocá-lo na imagem."
+    - "Almeje pelo menos algumas centenas de palavras de texto real; mantenha as imagens para ilustração."
+    - "Preencha um atributo alt descritivo em cada imagem."
+sa.html_image_only_28:
+  title: "Mensagem HTML com imagem e pouco texto (2.400 a 2.800 bytes)"
+  why: "Imagens e 2.400 a 2.800 bytes de texto. Última faixa penalizada de forma notável."
+  fix:
+    - "Adicione texto real no HTML (título, parágrafos, chamada para ação), em vez de colocá-lo na imagem."
+    - "Almeje pelo menos algumas centenas de palavras de texto real; mantenha as imagens para ilustração."
+    - "Preencha um atributo alt descritivo em cada imagem."
+sa.html_image_only_32:
+  title: "Mensagem HTML com imagem e um pouco de texto (2.800 a 3.200 bytes)"
+  why: "Imagens e 2.800 a 3.200 bytes de texto. Pontuação simbólica: a mensagem quase saiu dos limites."
+  fix:
+    - "Adicione texto real no HTML (título, parágrafos, chamada para ação), em vez de colocá-lo na imagem."
+    - "Almeje pelo menos algumas centenas de palavras de texto real; mantenha as imagens para ilustração."
+    - "Preencha um atributo alt descritivo em cada imagem."
+sa.html_image_ratio_02:
+  title: "Muito pouco texto em relação à área das imagens"
+  why: "O texto é minúsculo comparado à área das imagens declaradas. Pontuação simbólica, mas o indicador antecipa as regras HTML_IMAGE_ONLY."
+  fix:
+    - "Adicione texto HTML ou reduza as dimensões declaradas das imagens (width, height)."
+sa.html_image_ratio_04:
+  title: "Pouco texto em relação à área das imagens"
+  why: "A proporção entre texto e área de imagem é baixa. Pontuação simbólica."
+  fix:
+    - "Adicione texto HTML ou reduza as dimensões declaradas das imagens (width, height)."
+sa.html_image_ratio_06:
+  title: "Proporção de texto sobre imagens bastante baixa"
+  why: "A proporção entre texto e área de imagem continua baixa. Pontuação simbólica."
+  fix:
+    - "Adicione texto HTML ou reduza as dimensões declaradas das imagens (width, height)."
+sa.html_image_ratio_08:
+  title: "Proporção de texto sobre imagens um pouco baixa"
+  why: "A proporção entre texto e área de imagem está logo abaixo do limite. Pontuação simbólica."
+  fix:
+    - "Adicione texto HTML ou reduza as dimensões declaradas das imagens (width, height)."
+sa.html_short_link_img_1:
+  title: "HTML muito curto com uma imagem clicável"
+  why: "O HTML tem menos de 1 KB e contém uma imagem clicável. É o formato “clique no cartaz” dos spams. Pontuação simbólica aqui, mas combinado a um link encurtado chega a 2 pontos (SHORTENER_SHORT_IMG)."
+  fix:
+    - "Adicione texto ao redor da imagem clicável, e um link de texto equivalente."
+sa.html_short_link_img_2:
+  title: "HTML curto com uma imagem clicável"
+  why: "O HTML tem de 1 a 1,5 KB e contém uma imagem clicável. Pontuação simbólica."
+  fix:
+    - "Adicione texto ao redor da imagem clicável, e um link de texto equivalente."
+sa.html_short_link_img_3:
+  title: "HTML bastante curto com uma imagem clicável"
+  why: "O HTML tem de 1,5 a 2 KB com uma imagem clicável. Penalidade pequena."
+  fix:
+    - "Adicione texto ao redor da imagem clicável, e um link de texto equivalente."
+sa.html_font_low_contrast:
+  title: "Texto com cor próxima demais do fundo"
+  why: "Parte do texto tem quase a mesma cor do fundo, por isso fica invisível ou ilegível. Os spammers escondem texto assim para enganar os filtros. Em uma newsletter, isso costuma vir de um texto branco sobre uma imagem de fundo que o SpamAssassin não enxerga, ou de um preheader oculto na cor do fundo."
+  fix:
+    - "Declare uma cor de fundo (bgcolor ou background-color) na célula que contém o texto claro, além da imagem de fundo."
+    - "Oculte o preheader com display:none e mso-hide:all, e não com uma cor igual à do fundo."
+sa.html_font_size_huge:
+  title: "Fonte HTML muito grande (24 ou mais)"
+  why: "A mensagem usa um tamanho de fonte muito grande. Pontuação simbólica: é uma informação sobre um estilo muito carregado."
+  fix:
+    - "Nada obrigatório. Mantenha tamanhos muito grandes apenas para um título curto."
+sa.html_font_size_large:
+  title: "Fonte HTML grande (18 a 24)"
+  why: "A mensagem usa um tamanho de fonte grande. Informação sem efeito."
+  fix:
+    - "Nada a corrigir."
+sa.html_font_face_bad:
+  title: "Nome de fonte HTML inválido"
+  why: "Uma tag <font face=\"...\"> contém um valor que não é um nome de fonte (números, caracteres especiais). Pontuação simbólica."
+  fix:
+    - "Use nomes de fonte simples separados por vírgulas: Arial, Helvetica, sans-serif."
+sa.t_kam_html_font_invalid:
+  title: "Cor HTML inválida"
+  why: "Um atributo de cor (color, bgcolor) contém um valor ilegível: # ausente, código de 5 dígitos, nome desconhecido. Regra de teste sem peso, mas entra em regras combinadas (CONTENT_AFTER_HTML)."
+  fix:
+    - "Escreva as cores em hexadecimal completo, com a cerquilha: #1a3c6e."
+sa.html_obfuscate_05_10:
+  title: "5 a 10% das tags HTML cortam palavras"
+  why: "Tags são inseridas no meio de palavras (Pro<b>mo</b>ção). Os spammers fazem isso para ocultar palavras-chave; um editor que aplica um estilo a parte de uma palavra produz o mesmo efeito."
+  fix:
+    - "Localize as palavras cortadas por tags (<span>, <b>, <font>) no meio de uma palavra e limpe o HTML."
+    - "Se o HTML veio de um copia e cola do Word ou do Google Docs, cole o texto sem formatação e depois reaplique os estilos."
+sa.html_obfuscate_10_20:
+  title: "10 a 20% das tags HTML cortam palavras"
+  why: "Uma parcela considerável das tags corta palavras. Penalidade pequena."
+  fix:
+    - "Localize as palavras cortadas por tags (<span>, <b>, <font>) no meio de uma palavra e limpe o HTML."
+    - "Se o HTML veio de um copia e cola do Word ou do Google Docs, cole o texto sem formatação e depois reaplique os estilos."
+sa.html_obfuscate_20_30:
+  title: "20 a 30% das tags HTML cortam palavras"
+  why: "Uma tag em cada quatro, aproximadamente, corta uma palavra. Penalidade de 2 pontos."
+  fix:
+    - "Localize as palavras cortadas por tags (<span>, <b>, <font>) no meio de uma palavra e limpe o HTML."
+    - "Se o HTML veio de um copia e cola do Word ou do Google Docs, cole o texto sem formatação e depois reaplique os estilos."
+sa.html_obfuscate_90_100:
+  title: "Quase todas as tags HTML cortam palavras"
+  why: "Quase todas as tags estão no meio de palavras: técnica deliberada de ofuscação ou HTML gerado de forma muito defeituosa. 2 pontos."
+  fix:
+    - "Localize as palavras cortadas por tags (<span>, <b>, <font>) no meio de uma palavra e limpe o HTML."
+    - "Se o HTML veio de um copia e cola do Word ou do Google Docs, cole o texto sem formatação e depois reaplique os estilos."
+sa.html_tag_balance_body:
+  title: "Tags body de abertura e de fechamento desbalanceadas"
+  why: "Falta um </body> ou há um <body> a mais, em geral porque um modelo foi inserido dentro de outro. Penalidade pequena."
+  fix:
+    - "Mantenha um único par <body>...</body>; remova os que estiverem nos blocos colados."
+sa.html_tag_balance_head:
+  title: "Tags head de abertura e de fechamento desbalanceadas"
+  why: "O HTML contém um <head> sem </head>, ou o inverso. Caso comum de um modelo dividido em pedaços por um CMS. Quase um ponto."
+  fix:
+    - "Feche a tag head antes de <body> e verifique o HTML final gerado, e não o modelo."
+sa.html_tag_balance_center:
+  title: "Tags center desbalanceadas"
+  why: "O HTML contém tags <center> que não fecham corretamente. O SpamAssassin vê nisso um HTML de spam mal gerado e soma 3,5 pontos. O caso aparece com modelos antigos de newsletter."
+  fix:
+    - "Substitua as tags <center> por align=\"center\" nas tabelas, ou por text-align:center no estilo."
+    - "Se isso não for possível, verifique se cada <center> tem o seu </center>."
+sa.html_extra_close:
+  title: "Tags de fechamento demais no HTML"
+  why: "O HTML fecha tags que nunca foram abertas. Pontuação simbólica, mas a exibição pode ser imprevisível no Outlook."
+  fix:
+    - "Passe o HTML por um validador e remova as tags de fechamento órfãs."
+sa.html_text_invisible_font:
+  title: "Texto tornado invisível pela cor ou pelo tamanho da fonte"
+  why: "Vários blocos de texto ficam invisíveis por causa da cor ou do tamanho. Pontuação simbólica, mas é um sinal de envenenamento dos filtros."
+  fix:
+    - "Remova o texto oculto desnecessário. Para um preheader, use um único bloco oculto com display:none."
+sa.html_text_invisible_style:
+  title: "Muito texto oculto por CSS e outros sinais de spam"
+  why: "A mensagem contém mais de cinco elementos ocultos por display:none ou visibility:hidden, combinados a outro defeito. Os editores de newsletter ocultam blocos para celular ou desktop dessa forma, o que pode bastar para ultrapassar o limite se o envio também tiver um problema de infraestrutura."
+  fix:
+    - "Reduza o número de blocos ocultos: um único preheader e variantes para celular limitadas."
+    - "Corrija o outro defeito que acompanha a regra (em geral, a ausência de reverse DNS)."
+sa.html_nonelement_30_40:
+  title: "30 a 40% das tags HTML não são padrão"
+  why: "Uma grande parte das tags não é HTML padrão. As tags do Office (<o:p>, <v:...>) coladas do Word ou geradas para o Outlook costumam ser a causa. Pontuação simbólica."
+  fix:
+    - "Limpe o HTML colado do Word e limite as tags específicas do Outlook aos blocos condicionais."
+sa.html_comment_saved_url:
+  title: "O HTML é uma página web salva"
+  why: "O HTML contém o comentário “saved from url” que o Internet Explorer adiciona ao salvar uma página web. Enviar uma página web como está é uma prática de spammer."
+  fix:
+    - "Remova o comentário <!-- saved from url=... --> no início do arquivo."
+    - "Monte a mensagem com um editor de e-mail, e não a partir de uma página web salva."
+sa.html_title_subj_diff:
+  title: "A tag title do HTML é muito mais longa que o assunto"
+  why: "A tag <title> do HTML tem mais de 3,5 vezes o comprimento do assunto. Isso acontece quando o modelo mantém um título genérico longo (“Newsletter da empresa, edição de novembro e novidades”). Mais de 2 pontos."
+  fix:
+    - "Coloque em <title> o mesmo texto do assunto, ou um título curto."
+    - "Na ferramenta de envio, verifique se o título do modelo é preenchido com o assunto da campanha."
+sa.html_short_center:
+  title: "HTML muito curto centralizado por uma tag center"
+  why: "Um HTML de menos de 384 bytes centralizado por <center>. Formato dos spams minimalistas. Penalidade moderada."
+  fix:
+    - "Adicione conteúdo real e substitua <center> por estilo."
+sa.html_off_page:
+  title: "Elemento HTML posicionado fora da página"
+  why: "Um elemento está posicionado a -100 px ou mais no topo ou à esquerda, portanto fora da tela. Técnica de texto oculto, também usada por alguns modelos para o preheader."
+  fix:
+    - "Oculte o preheader com display:none, e não com um posicionamento negativo."
+    - "Assine a mensagem com DKIM: a regra deixa de se aplicar."
+sa.html_entity_ascii:
+  title: "Texto ASCII escrito em entidades HTML"
+  why: "Letras comuns estão escritas como entidades (&#80;&#114;&#111;...) em vez de texto. É um procedimento de ocultação de palavras; alguns geradores também codificam assim todos os endereços de e-mail."
+  fix:
+    - "Escreva o texto em texto claro, em UTF-8. Use entidades apenas para os caracteres que exigem isso (&amp;, &lt;)."
+sa.html_embeds:
+  title: "HTML com objeto incorporado"
+  why: "O HTML contém uma tag <embed>, <object> ou <applet>. Nenhum programa de e-mail comum a exibe. Pontuação simbólica."
+  fix:
+    - "Substitua o vídeo ou a animação incorporada por uma imagem clicável que leve à página que a hospeda."
+sa.html_attach:
+  title: "Anexo HTML"
+  why: "A mensagem anexa um arquivo HTML. Os phishings o usam para exibir uma falsa página de login fora dos filtros de links. Pontuação simbólica, mas muitos gateways bloqueiam esses anexos."
+  fix:
+    - "Coloque o conteúdo no corpo da mensagem ou em um PDF, ou ofereça um link para o seu site."
+sa.html_charset_faraway:
+  title: "Conjunto de caracteres HTML de um idioma inesperado"
+  why: "O HTML declara um conjunto de caracteres asiático ou cirílico, enquanto o servidor de teste aceita apenas alguns idiomas. A regra só dispara se o servidor tiver restringido ok_locales."
+  fix:
+    - "Declare <meta charset=\"utf-8\"> e codifique toda a mensagem em UTF-8."
+sa.html_shrt_cmnt_obfu_many:
+  title: "Muitos comentários HTML curtos no meio de palavras"
+  why: "Comentários HTML curtos são inseridos no meio de palavras, técnica de ocultação de palavras-chave."
+  fix:
+    - "Remova os comentários HTML do corpo da mensagem, ou pelo menos os que estiverem colados ao texto."
+sa.obfuscating_comment:
+  title: "Comentários HTML que cortam palavras"
+  why: "Um comentário HTML é colocado entre duas letras (Gra<!-- -->tuito). Alguns editores deixam comentários de formatação no meio do texto."
+  fix:
+    - "Retire os comentários HTML colados ao texto; mantenha apenas os comentários condicionais do Outlook entre blocos."
+sa.many_span_in_text:
+  title: "Muitas tags span inseridas nas palavras"
+  why: "Tags <span> abrem e fecham no meio das palavras. Os editores visuais geram isso quando se muda a cor ou o negrito de algumas letras. Quase 2,5 pontos."
+  fix:
+    - "Limpe o texto: aplique os estilos a palavras inteiras, e não a pedaços de palavras."
+    - "Cole o texto sem formatação no editor e depois reaplique os estilos."
+sa.content_after_html:
+  title: "Conteúdo depois da tag html de fechamento, com outros sinais"
+  why: "Há texto depois de </html>. Os spammers colocam texto aleatório ali para enganar os filtros; uma ferramenta que acrescenta um rodapé ou um pixel depois do documento faz a mesma coisa."
+  fix:
+    - "Coloque todo o conteúdo (rodapé, pixel de rastreamento, avisos) antes de </body></html>."
+sa.content_after_html_weak:
+  title: "Conteúdo depois da tag html de fechamento"
+  why: "Há texto depois de </html>, em geral uma assinatura ou um aviso legal acrescentado pelo servidor de saída ou por um antivírus. 1 ponto."
+  fix:
+    - "Se for o seu servidor que acrescenta um rodapé, configure-o para inseri-lo antes de </body>, ou desative-o."
+    - "Caso contrário, mova para o modelo qualquer conteúdo que esteja depois de </html>."
+sa.mixed_href_case:
+  title: "Atributo href escrito com capitalização mista"
+  why: "Os links aparecem às vezes como <a href=, às vezes como <A HREF= ou <a HREF=. Essa mistura vem de HTML montado a partir de fontes diferentes, ou de programas de spam. Quase 2 pontos."
+  fix:
+    - "Escreva todas as tags e atributos em minúsculas; um formatador de HTML faz isso automaticamente."
+sa.mixed_img_case:
+  title: "Tag img escrita com capitalização mista"
+  why: "Uma tag de imagem está escrita com capitalização mista (<Img). Sinal de HTML feito à mão ou alterado por um programa de spam."
+  fix:
+    - "Escreva <img em minúsculas."
+sa.ac_div_bonanza:
+  title: "Dez divs vazias ou mais em sequência"
+  why: "O HTML contém pelo menos dez tags <div> seguidas, em geral vazias. Pontuação simbólica: é um resto de layout de um editor."
+  fix:
+    - "Remova as divs vazias; use margens ou espaçamento de tabela."
+sa.ac_br_bonanza:
+  title: "Trinta quebras de linha ou mais em sequência"
+  why: "O HTML contém pelo menos trinta <br> consecutivos. Técnica para empurrar texto para fora da vista, ou layout feito com quebras de linha. Pontuação simbólica."
+  fix:
+    - "Substitua as sequências de <br> por espaçamento em CSS (padding, margin)."
+sa.long_invisible_text:
+  title: "Bloco longo de texto oculto"
+  why: "A mensagem contém um longo bloco de texto invisível. Os spammers colocam texto ali para “envenenar” os filtros bayesianos."
+  fix:
+    - "Remova os blocos de texto ocultos desnecessários; um preheader deve ter uma frase."
+sa.word_invis:
+  title: "Uma palavra tornada invisível"
+  why: "Uma palavra está oculta por um tamanho de fonte zero ou uma cor transparente. É uma técnica de ocultação, mas modelos de newsletter também a usam para o espaçamento do preheader. 3 pontos."
+  fix:
+    - "Remova os elementos com font-size:0 ou color:transparent que contenham texto."
+    - "Para o preheader, use display:none; para o espaçamento, use &zwnj;&nbsp; dentro de um bloco oculto."
+sa.t_remote_image:
+  title: "A mensagem carrega uma imagem remota"
+  why: "A mensagem exibe uma imagem hospedada em um servidor externo, sem texto de descadastro. Regra de teste sem peso: apenas uma indicação."
+  fix:
+    - "Nada obrigatório. Adicione um texto que explique por que o destinatário recebeu a mensagem."
+sa.dc_image_spam_html:
+  title: "Possível spam em imagem (HTML)"
+  why: "A mensagem contém uma imagem grande, quase nenhum texto e nenhum link. Perfil dos spams em imagem, que exibem o texto em um GIF."
+  fix:
+    - "Coloque o texto em HTML e adicione pelo menos um link para o seu site."
+sa.dc_image_spam_text:
+  title: "Possível spam em imagem com pouco texto"
+  why: "Uma imagem grande, quase nenhum texto e nenhum link. Mesmo perfil de DC_IMAGE_SPAM_HTML."
+  fix:
+    - "Adicione texto real e um link para o seu site."
+sa.long_img_uri:
+  title: "Endereço de imagem com um identificador muito longo"
+  why: "Uma imagem é carregada de um endereço que contém um segmento de 45 caracteres ou mais, como os pixels espiões. As ferramentas de envio geram endereços desse tipo. Penalidade pequena."
+  fix:
+    - "Hospede as imagens da mensagem em endereços legíveis sob o seu domínio."
+sa.uri_img_wp_redir:
+  title: "Imagem servida pelo proxy de imagens do WordPress.com"
+  why: "Uma imagem passa por i0.wp.com ou i2.wp.com, o serviço de aceleração de imagens do Jetpack. Os spammers usam esse proxy para ocultar a origem das imagens: o SpamAssassin soma um ponto. Isso acontece quando uma newsletter reutiliza as imagens de um artigo WordPress com o Jetpack ativo."
+  fix:
+    - "Use o endereço direto da imagem no seu site (https://{domain}/wp-content/uploads/...)."
+  fix_by_provider:
+    wordpress: "Desative o acelerador de imagens (Site Accelerator) do Jetpack, ou copie o endereço original da imagem na biblioteca de mídia."

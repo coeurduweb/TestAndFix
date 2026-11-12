@@ -1,0 +1,19 @@
+dmarc-report.forwarding:
+  title: "Probable forwarding by {ip} (reverse DNS: {ptr})"
+  why: "{value} message(s) from {domain} arrive through a server that relays mail (address forwarding, mailing list). SPF fails by design in this case: this is normal, and only DKIM keeps these messages authenticated."
+  fix:
+    - "Do not add {ip} to your SPF: you would authorize a server you do not control to send on behalf of {domain}."
+    - "Check that all your sending is signed with DKIM using d={domain}: it is the only authentication that survives forwarding."
+    - "Nothing else to do. Before moving to p=reject, note that a forwarded message whose DKIM signature was broken along the way (a list that changes the subject or the body) fails DMARC and may be rejected."
+dmarc-report.more_sources:
+  title: "{value} other unaligned source(s) are not detailed"
+  why: "Only the ten largest sources in each category have a record. The others appear in the sources table, with their volume and alignment."
+  fix:
+    - "Open the sources table and sort it by number of messages."
+    - "Deal first with the sources detailed here: fixing a sending service often corrects several IPs at once."
+dmarc-report.low_volume:
+  title: "Report volume still low ({value} messages)"
+  why: "The reports uploaded cover only {value} message(s): a monthly mailing or a rarely used tool may not appear yet. The alignment rates are not yet representative."
+  fix:
+    - "Upload the reports of the coming weeks, from all the recipients who send them to you."
+    - "Do not tighten your DMARC policy on the basis of these reports alone."

@@ -1,0 +1,61 @@
+arc.chain_fail:
+  title: "La cadena ARC del mensaje está rota"
+  why: "Un intermediario ha añadido encabezados ARC, pero ya no se verifican. Por tanto, el destinatario no puede apoyarse en ARC para compensar un fallo de DMARC causado por el reenvío, y el mensaje corre el riesgo de acabar en spam o de ser rechazado si {domain} aplica p=quarantine o p=reject."
+  fix:
+    - "Localiza en los encabezados la instancia ARC (i=1, i=2…) que falla y el servidor que la añadió (campo d= del ARC-Seal)."
+    - "Si ese servidor es tuyo (pasarela, antivirus, lista), comprueba que sella el mensaje después de sus propias modificaciones y con una clave publicada en el DNS."
+    - "Si es de un tercero, envíale los encabezados completos del mensaje."
+arc.seal_invalid:
+  title: "Un sello ARC (ARC-Seal) no se verifica"
+  why: "El sello que protege la cadena ARC no es válido. Entonces se rechaza toda la cadena y se pierden los resultados de autenticación que transportaba."
+  fix:
+    - "Lee los campos d= y s= del ARC-Seal que falla y consulta s._domainkey.d en el DNS para comprobar que la clave existe."
+    - "Si la clave se cambió hace poco, vuelve a publicar la anterior hasta que se entreguen los mensajes en curso."
+    - "Comprueba que ningún servidor colocado después del sellador reescribe los encabezados ARC."
+arc.message_signature_invalid:
+  title: "El mensaje se modificó después del último sellado ARC"
+  why: "Un servidor situado después del último intermediario ARC modificó el cuerpo o los encabezados firmados. La cadena ARC queda invalidada, y con ella el testimonio que podría haber salvado un fallo de DMARC."
+  fix:
+    - "Identifica el servidor siguiente en los encabezados Received (pie de página añadido, asunto modificado, antivirus)."
+    - "Configura ese servidor para que añada él mismo una instancia ARC después de su modificación, o para que deje de modificar el mensaje."
+arc.incomplete_set:
+  title: "Una instancia ARC está incompleta"
+  why: "Falta uno de los tres encabezados ARC de una misma instancia. La cadena es entonces inválida y ya no sirve de nada al destinatario."
+  fix:
+    - "Localiza la instancia incompleta (i=) y el servidor que la añadió."
+    - "Comprueba que ese servidor genera los tres encabezados juntos y que ningún filtro posterior elimina alguno de ellos."
+arc.instance_sequence:
+  title: "La numeración de las instancias ARC es incoherente"
+  why: "Falta una instancia ARC o aparece dos veces. El destinatario considera inválida la cadena, lo que quita al mensaje el beneficio de ARC."
+  fix:
+    - "Localiza en los encabezados el salto de número o el duplicado y el servidor que lo produjo."
+    - "Corrige ese servidor para que numere su nueva instancia a continuación de la más alta que ya está presente."
+arc.cv_inconsistent:
+  title: "El campo cv= de un sello ARC es incoherente"
+  why: "El primer sello debe indicar cv=none y los siguientes cv=pass o cv=fail. Un valor incoherente invalida toda la cadena."
+  fix:
+    - "Identifica el servidor que añadió la instancia defectuosa (campo d= del ARC-Seal)."
+    - "Actualiza su software ARC (por ejemplo OpenARC o el módulo ARC de Rspamd) o notifica la anomalía a su desarrollador."
+arc.too_many_instances:
+  title: "El mensaje lleva más de 50 instancias ARC"
+  why: "Una cadena ARC está limitada a 50 eslabones. Un número tan alto indica casi siempre un bucle de reenvío entre dos servidores, que acabará en rechazo."
+  fix:
+    - "Lee los encabezados Received para encontrar los dos servidores que se reenvían el mensaje."
+    - "Elimina la regla de reenvío o el alias que crea el bucle."
+arc.missing_on_forward:
+  title: "El mensaje se retransmitió sin ARC y falla DMARC"
+  why: "Un intermediario reenvió o modificó el mensaje sin dar testimonio con ARC. El destinatario solo ve un fallo de DMARC y aplica la política de {domain}, lo que puede llevar el mensaje a spam o hacer que lo rechacen."
+  fix:
+    - "Si el intermediario es tu servidor (reenvío automático, lista, pasarela), activa el sellado ARC en ese servidor."
+    - "Haz que el remitente original firme con DKIM por {domain}: una firma DKIM sobrevive a un simple reenvío, a diferencia del SPF."
+    - "En una lista de distribución, activa en su software la opción que sustituye la dirección From por la de la lista cuando el dominio de origen publica una política DMARC estricta."
+  fix_by_provider:
+    postfix: "Añade un milter ARC (OpenARC, o Rspamd con su módulo arc) en el servidor que reenvía."
+arc.valid_untrusted:
+  title: "ARC es válido pero DMARC falla"
+  why: "El intermediario dio testimonio correctamente de que el mensaje estaba autenticado antes de pasar por él. El destinatario puede entregar el mensaje a pesar del fallo de DMARC si confía en ese sellador, pero nada le obliga a hacerlo."
+  fix:
+    - "Si administras el correo de recepción, añade el dominio del sellador ARC a la lista de selladores de confianza."
+    - "Por el lado del remitente, la solución duradera sigue siendo una firma DKIM alineada con {domain}, que sobrevive al reenvío."
+  fix_by_provider:
+    microsoft_365: "En el portal de Microsoft Defender, Email & collaboration, Policies & rules, Threat policies, Email Authentication Settings, pestaña ARC, haz clic en Add e introduce el dominio del campo d= de los encabezados ARC-Seal (no tu propio dominio). En PowerShell: Set-ArcConfig -Identity Default -ArcTrustedSealers \"dominio-del-sellador.example\" (este comando sustituye la lista existente)."

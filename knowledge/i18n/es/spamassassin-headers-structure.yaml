@@ -1,0 +1,365 @@
+sa.missing_date:
+  title: "Falta el encabezado Date"
+  why: "El mensaje no tiene encabezado Date, que es obligatorio. Los scripts que construyen los encabezados a mano suelen olvidarlo, y varios proveedores rechazan los mensajes que no respetan la RFC 5322."
+  fix:
+    - "Añade un encabezado Date en formato RFC 5322, o deja que la biblioteca de envío lo genere (PHPMailer, Symfony Mailer y Nodemailer lo hacen)."
+sa.missing_from:
+  title: "Falta el encabezado From"
+  why: "El mensaje no indica ningún remitente. El encabezado From es obligatorio según la RFC 5322, que Gmail exige cumplir, y DMARC depende por completo de él."
+  fix:
+    - "Añade un encabezado From con una dirección de tu dominio."
+sa.missing_headers:
+  title: "Falta el encabezado To"
+  why: "El mensaje no tiene encabezado To. Es lo que ocurre cuando todos los destinatarios van en copia oculta, práctica asociada a los envíos masivos no solicitados."
+  fix:
+    - "Añade un encabezado To con la dirección del destinatario, o con tu propia dirección si envías en Cco."
+    - "Para un envío masivo, usa una herramienta que envíe un mensaje por destinatario."
+sa.missing_mid:
+  title: "Falta el encabezado Message-ID"
+  why: "El mensaje no tiene identificador único. La mayoría de los servidores le añaden uno al enviar; su ausencia indica un script que entrega el mensaje directamente. Gmail puede rechazar un mensaje sin Message-ID válido."
+  fix:
+    - "Genera un Message-ID único con la forma <identificador@{domain}>, o deja que la biblioteca de envío lo haga."
+    - "Comprueba que tu servidor SMTP saliente añade un Message-ID cuando falta."
+  fix_by_provider:
+    postfix: "Ajusta always_add_missing_headers = yes en main.cf para que Postfix complete Date, Message-ID y From cuando falten."
+sa.missing_subject:
+  title: "Falta el encabezado Subject"
+  why: "El mensaje no tiene asunto (el encabezado está ausente, no solo vacío). Casi 2 puntos: es un defecto frecuente de los scripts de envío."
+  fix:
+    - "Añade un asunto claro y descriptivo."
+sa.missing_mimeole:
+  title: "Encabezado X-MSMail-Priority sin X-MimeOLE"
+  why: "El mensaje lleva un encabezado de prioridad propio de Outlook Express sin el encabezado que siempre lo acompaña. Algunas bibliotecas PHP añaden X-MSMail-Priority por imitación, y SpamAssassin lo detecta."
+  fix:
+    - "Elimina los encabezados X-MSMail-Priority y X-Priority que añade el script: no aportan nada."
+    - "Si los conservas, firma el mensaje con DKIM: la regla deja de aplicarse."
+sa.missing_mime_hb_sep:
+  title: "Falta la línea vacía entre los encabezados MIME y el contenido"
+  why: "Una parte MIME no tiene línea vacía entre sus encabezados y su contenido. El mensaje está mal formado y puede mostrarse mal. Puntuación simbólica."
+  fix:
+    - "Usa una biblioteca de envío para construir el MIME en lugar de concatenarlo a mano."
+sa.no_headers_message:
+  title: "Mensaje casi sin encabezados"
+  why: "Faltan a la vez Date, To, Message-ID y Received: el mensaje se inyectó sin pasar por un circuito de envío normal."
+  fix:
+    - "Envía la prueba a través de tu servidor de envío real, con una biblioteca que genere los encabezados obligatorios."
+sa.date_in_future_03_06:
+  title: "La fecha del mensaje está entre 3 y 6 horas en el futuro"
+  why: "El encabezado Date indica una hora posterior en 3 a 6 horas a la de llegada al servidor. Causa habitual: zona horaria declarada mal (hora de París escrita con +0000, o al revés). Más de 3 puntos."
+  fix:
+    - "Comprueba la hora y la zona horaria del servidor o del equipo que genera el mensaje (NTP activado, zona Europe/Paris)."
+    - "En un script, genera la Date en el momento del envío con el desfase horario, no una hora local seguida de +0000."
+    - "Para un envío programado, la Date debe ser la del envío real, no la de creación de la campaña."
+sa.date_in_future_06_12:
+  title: "La fecha del mensaje está entre 6 y 12 horas en el futuro"
+  why: "La Date va adelantada de 6 a 12 horas respecto a la recepción. Reloj o zona horaria del servidor incorrectos, o desfase entre continentes mal declarado."
+  fix:
+    - "Comprueba la hora y la zona horaria del servidor o del equipo que genera el mensaje (NTP activado, zona Europe/Paris)."
+    - "En un script, genera la Date en el momento del envío con el desfase horario, no una hora local seguida de +0000."
+    - "Para un envío programado, la Date debe ser la del envío real, no la de creación de la campaña."
+sa.date_in_future_12_24:
+  title: "La fecha del mensaje está entre 12 y 24 horas en el futuro"
+  why: "La Date va adelantada de 12 a 24 horas. Los spammers datan en el futuro para quedarse arriba en la bandeja de entrada; un servidor mal configurado produce el mismo efecto. Más de 3 puntos."
+  fix:
+    - "Comprueba la hora y la zona horaria del servidor o del equipo que genera el mensaje (NTP activado, zona Europe/Paris)."
+    - "En un script, genera la Date en el momento del envío con el desfase horario, no una hora local seguida de +0000."
+    - "Para un envío programado, la Date debe ser la del envío real, no la de creación de la campaña."
+sa.date_in_future_24_48:
+  title: "La fecha del mensaje está entre 1 y 2 días en el futuro"
+  why: "La Date va adelantada de uno a dos días respecto a la recepción. Reloj del equipo o del servidor desajustado."
+  fix:
+    - "Comprueba la hora y la zona horaria del servidor o del equipo que genera el mensaje (NTP activado, zona Europe/Paris)."
+    - "En un script, genera la Date en el momento del envío con el desfase horario, no una hora local seguida de +0000."
+    - "Para un envío programado, la Date debe ser la del envío real, no la de creación de la campaña."
+sa.date_in_future_48_96:
+  title: "La fecha del mensaje está entre 2 y 4 días en el futuro"
+  why: "La Date va adelantada de dos a cuatro días. Reloj del sistema de envío muy desajustado."
+  fix:
+    - "Comprueba la hora y la zona horaria del servidor o del equipo que genera el mensaje (NTP activado, zona Europe/Paris)."
+    - "En un script, genera la Date en el momento del envío con el desfase horario, no una hora local seguida de +0000."
+    - "Para un envío programado, la Date debe ser la del envío real, no la de creación de la campaña."
+sa.date_in_future_96_q:
+  title: "La fecha del mensaje está entre 4 días y 4 meses en el futuro"
+  why: "La Date va muy adelantada respecto a la recepción. Error de fecha en el script (mes y día invertidos, año mal escrito) o reloj no sincronizado. Casi 3,5 puntos."
+  fix:
+    - "Comprueba la hora y la zona horaria del servidor o del equipo que genera el mensaje (NTP activado, zona Europe/Paris)."
+    - "En un script, genera la Date en el momento del envío con el desfase horario, no una hora local seguida de +0000."
+    - "Para un envío programado, la Date debe ser la del envío real, no la de creación de la campaña."
+sa.t_date_in_future_q_plus:
+  title: "La fecha del mensaje está a más de 4 meses en el futuro"
+  why: "La Date es más de cuatro meses posterior a la recepción. Regla de prueba sin peso, pero el error de fecha es evidente."
+  fix:
+    - "Comprueba la hora y la zona horaria del servidor o del equipo que genera el mensaje (NTP activado, zona Europe/Paris)."
+    - "En un script, genera la Date en el momento del envío con el desfase horario, no una hora local seguida de +0000."
+    - "Para un envío programado, la Date debe ser la del envío real, no la de creación de la campaña."
+sa.date_in_past_03_06:
+  title: "La fecha del mensaje está entre 3 y 6 horas en el pasado"
+  why: "El mensaje tiene una fecha de 3 a 6 horas antes de su llegada. Envío que quedó en la cola, campaña preparada y enviada más tarde con su fecha de creación, o zona horaria mal declarada."
+  fix:
+    - "Genera el encabezado Date en el momento del envío real, sobre todo en los envíos diferidos, puestos en cola o reenviados."
+    - "Comprueba el reloj y la zona horaria del servidor que crea el mensaje."
+    - "Si el mensaje permaneció en una cola, busca por qué no salió de inmediato (servidor retransmisor saturado, cron de WordPress retrasado)."
+sa.date_in_past_06_12:
+  title: "La fecha del mensaje está entre 6 y 12 horas en el pasado"
+  why: "El mensaje tiene una fecha de 6 a 12 horas antes de su llegada. Mismas causas: cola de envío, fecha de creación reutilizada o zona horaria."
+  fix:
+    - "Genera el encabezado Date en el momento del envío real, sobre todo en los envíos diferidos, puestos en cola o reenviados."
+    - "Comprueba el reloj y la zona horaria del servidor que crea el mensaje."
+    - "Si el mensaje permaneció en una cola, busca por qué no salió de inmediato (servidor retransmisor saturado, cron de WordPress retrasado)."
+sa.date_in_past_12_24:
+  title: "La fecha del mensaje está entre 12 y 24 horas en el pasado"
+  why: "El mensaje tiene la fecha de la víspera respecto a su llegada. A menudo es un mensaje retenido en una cola y liberado después."
+  fix:
+    - "Genera el encabezado Date en el momento del envío real, sobre todo en los envíos diferidos, puestos en cola o reenviados."
+    - "Comprueba el reloj y la zona horaria del servidor que crea el mensaje."
+    - "Si el mensaje permaneció en una cola, busca por qué no salió de inmediato (servidor retransmisor saturado, cron de WordPress retrasado)."
+sa.date_in_past_24_48:
+  title: "La fecha del mensaje está entre 1 y 2 días en el pasado"
+  why: "El mensaje llegó uno o dos días después de su fecha. Los servidores que reintentan durante mucho tiempo tras un rechazo temporal producen este desfase."
+  fix:
+    - "Genera el encabezado Date en el momento del envío real, sobre todo en los envíos diferidos, puestos en cola o reenviados."
+    - "Comprueba el reloj y la zona horaria del servidor que crea el mensaje."
+    - "Si el mensaje permaneció en una cola, busca por qué no salió de inmediato (servidor retransmisor saturado, cron de WordPress retrasado)."
+sa.date_in_past_48_96:
+  title: "La fecha del mensaje está entre 2 y 4 días en el pasado"
+  why: "El mensaje lleva una fecha de dos a cuatro días antes de su llegada."
+  fix:
+    - "Genera el encabezado Date en el momento del envío real, sobre todo en los envíos diferidos, puestos en cola o reenviados."
+    - "Comprueba el reloj y la zona horaria del servidor que crea el mensaje."
+    - "Si el mensaje permaneció en una cola, busca por qué no salió de inmediato (servidor retransmisor saturado, cron de WordPress retrasado)."
+sa.date_in_past_96_xx:
+  title: "La fecha del mensaje está a más de 4 días en el pasado"
+  why: "El mensaje tiene una fecha de más de cuatro días antes de su llegada. Los spams reenviados o las plantillas antiguas reutilizadas tal cual tienen este perfil. Casi 3,5 puntos."
+  fix:
+    - "Genera el encabezado Date en el momento del envío real, sobre todo en los envíos diferidos, puestos en cola o reenviados."
+    - "Comprueba el reloj y la zona horaria del servidor que crea el mensaje."
+    - "Si el mensaje permaneció en una cola, busca por qué no salió de inmediato (servidor retransmisor saturado, cron de WordPress retrasado)."
+sa.invalid_date:
+  title: "Encabezado Date con formato no válido"
+  why: "El encabezado Date no tiene el formato esperado: mes en francés, formato ISO 2026-11-10 o zona horaria ausente. Los scripts que formatean la fecha ellos mismos se equivocan a menudo."
+  fix:
+    - "Formatea la fecha en RFC 5322: día y mes abreviados en inglés, hora y desfase horario numérico."
+    - "En PHP, usa date(DATE_RFC2822) o deja que PHPMailer la genere."
+sa.invalid_date_tz_absurd:
+  title: "Zona horaria imposible en la Date"
+  why: "El desfase horario de la Date no existe (por ejemplo +0160 o +2500). Es un error de cálculo en el código que genera la fecha."
+  fix:
+    - "Genera el desfase con la función de fecha del lenguaje en lugar de calcularlo a mano."
+sa.msgid_from_mta_header:
+  title: "Message-ID añadido por un servidor retransmisor"
+  why: "El mensaje salió sin Message-ID y fue un servidor intermedio quien lo añadió. Puntuación simbólica, pero muestra un software de envío incompleto."
+  fix:
+    - "Haz que el Message-ID lo genere la aplicación que crea el mensaje."
+sa.msgid_short:
+  title: "Message-ID anormalmente corto"
+  why: "El Message-ID tiene menos de 16 caracteres o su parte izquierda menos de 5. Corre el riesgo de no ser único. Puntuación simbólica."
+  fix:
+    - "Genera un identificador largo y único (marca de tiempo más un valor aleatorio) seguido de @{domain}."
+sa.msgid_multiple_at:
+  title: "Message-ID con varias @"
+  why: "El Message-ID contiene dos @, a menudo porque el código pegó una dirección de correo completa después de la @. Formato no válido."
+  fix:
+    - "Construye el Message-ID con solo el dominio después de la @: <identificador@{domain}>."
+sa.msgid_hdr_malf:
+  title: "Encabezado MessageID mal escrito"
+  why: "El mensaje contiene un encabezado « MessageID » sin guion, que no existe. El software de envío quería escribir Message-ID."
+  fix:
+    - "Corrige el nombre del encabezado a Message-ID en el código de envío."
+sa.invalid_msgid:
+  title: "Message-ID no conforme"
+  why: "El Message-ID no sigue la forma <identificador@dominio>: faltan los corchetes angulares, hay un espacio o una tilde. Los destinatarios pueden gestionar mal los hilos de conversación."
+  fix:
+    - "Encierra el identificador entre corchetes angulares y usa solo caracteres ASCII sin espacios."
+sa.subj_all_caps:
+  title: "Asunto totalmente en mayúsculas"
+  why: "El asunto está escrito todo en mayúsculas. Penalización moderada, pero es también lo que los lectores más denuncian como spam."
+  fix:
+    - "Escribe el asunto en minúsculas con mayúscula inicial; reserva las mayúsculas para una palabra como máximo."
+sa.subject_needs_encoding:
+  title: "Asunto con caracteres sin codificar"
+  why: "El asunto contiene tildes o caracteres especiales enviados sin codificar en lugar de estar codificados. Algunos programas muestran entonces caracteres ilegibles."
+  fix:
+    - "Declara el asunto en UTF-8 y deja que la biblioteca lo codifique (=?UTF-8?Q?...?=)."
+    - "En PHP con mail(), codifica el asunto con mb_encode_mimeheader()."
+sa.subj_illegal_chars:
+  title: "Demasiados caracteres brutos ilegales en el asunto"
+  why: "El asunto contiene varios caracteres de 8 bits sin codificar. Un asunto en español con acentos enviado por un script sin codificación activa esta regla con 1,5 puntos."
+  fix:
+    - "Codifica el asunto en RFC 2047 (UTF-8, quoted-printable o base64)."
+  fix_by_provider:
+    wordpress: "Usa wp_mail() en lugar de mail(): WordPress codifica bien el asunto."
+sa.bad_enc_header:
+  title: "Encabezado mal codificado"
+  why: "Un encabezado contiene una palabra codificada (=?UTF-8?Q?...) cortada por un espacio o sin cerrar con ?=. El texto se muestra con códigos. Puntuación simbólica."
+  fix:
+    - "Usa la función de codificación de la biblioteca de envío en lugar de montar la cadena a mano."
+sa.hdrs_lcase:
+  title: "Encabezados con mayúsculas y minúsculas inusuales"
+  why: "Algunos encabezados están escritos con una capitalización anormal (« from: », « Content-type: »). Los programas de spam tienen costumbres de escritura reconocibles. Puntuación simbólica."
+  fix:
+    - "Usa la capitalización estándar: From, To, Subject, Message-ID, Content-Type."
+sa.t_many_hdrs_lcase:
+  title: "Varios encabezados con capitalización inusual"
+  why: "Varios encabezados tienen una capitalización inusual. Regla de prueba sin peso."
+  fix:
+    - "Usa la capitalización estándar de los nombres de encabezado."
+sa.unclosed_bracket:
+  title: "Un encabezado contiene un corchete sin cerrar"
+  why: "Un encabezado contiene « [123 » sin corchete de cierre, a menudo una variable de plantilla mal rellenada o un encabezado truncado. Casi 1,5 puntos."
+  fix:
+    - "Revisa los encabezados generados (asunto, From, encabezados X-) y corrige la variable que produce ese corchete."
+sa.unresolved_template:
+  title: "Un encabezado contiene una variable de plantilla sin sustituir"
+  why: "Un encabezado contiene una marca del tipo %NOM o %EMAIL que quedó tal cual: el software de envío no sustituyó su variable. Es la firma de los programas de spam mal configurados."
+  fix:
+    - "Localiza el encabezado que contiene el % y corrige la variable en la plantilla o en el script."
+sa.pling_query:
+  title: "Asunto con signo de exclamación e interrogación"
+  why: "El asunto contiene a la vez « ! » y « ? ». Penalización leve, pero es una muletilla de asunto llamativo."
+  fix:
+    - "Usa un solo signo de puntuación fuerte en el asunto, o ninguno."
+sa.gappy_subject:
+  title: "Asunto escrito con letras separadas"
+  why: "El asunto contiene una palabra escrita letra a letra con separadores, técnica para eludir los filtros de palabras clave. Penalización leve."
+  fix:
+    - "Escribe las palabras con normalidad en el asunto."
+sa.subj_dollars:
+  title: "Asunto que empieza por un importe en dólares"
+  why: "El asunto empieza por un importe en dólares. Penalización leve."
+  fix:
+    - "Empieza el asunto por una palabra que describa el contenido en lugar de por un precio."
+sa.subj_buy:
+  title: "Asunto que empieza por « Buy »"
+  why: "El asunto empieza por « Buy » o « Buying ». La regla solo se refiere al inglés."
+  fix:
+    - "Reformula el asunto para describir la oferta en lugar de una orden de compra."
+sa.xprio:
+  title: "Encabezado X-Priority en un mensaje no autenticado"
+  why: "El mensaje lleva un encabezado de prioridad y no está autenticado. Puntuación simbólica, pero sirve de condición a otras reglas más pesadas."
+  fix:
+    - "Elimina el encabezado X-Priority: no mejora la entregabilidad."
+    - "Firma el mensaje con DKIM."
+sa.xprio_short_subj:
+  title: "Prioridad alta y asunto muy corto"
+  why: "El mensaje pide prioridad y su asunto tiene menos de 9 caracteres (« Urgente », « Factura »). Es una combinación frecuente en los fraudes."
+  fix:
+    - "Elimina X-Priority y escribe un asunto descriptivo."
+sa.x_ip:
+  title: "Encabezado X-IP presente"
+  why: "El mensaje contiene un encabezado X-IP, añadido por algunos webmails y scripts. Puntuación simbólica."
+  fix:
+    - "Nada urgente. Si tu script lo añade, puedes quitarlo."
+sa.spammy_xmailer:
+  title: "Software de envío conocido por el spam"
+  why: "El encabezado X-Mailer declara una versión antigua concreta de Outlook u Outlook Express que los programas de spam imitan desde hace años. Casi 2,5 puntos."
+  fix:
+    - "Elimina o corrige el encabezado X-Mailer de tu script: no imites un software que no usas."
+sa.php_script:
+  title: "Mensaje enviado por un script PHP"
+  why: "El encabezado X-PHP-Script indica un envío mediante la función mail() de PHP en un alojamiento compartido. Los sitios pirateados envían spam por esta vía."
+  fix:
+    - "Envía los correos del sitio por SMTP autenticado a tu correo en lugar de mail()."
+  fix_by_provider:
+    wordpress: "Instala una extensión SMTP (WP Mail SMTP, FluentSMTP, Post SMTP) y configura el servidor de tu correo."
+    cpanel: "Crea una dirección de correo en cPanel y usa su servidor SMTP con autenticación en la aplicación."
+sa.php_script_mua:
+  title: "Mensaje enviado por un script PHP sin versión"
+  why: "El mensaje viene de mail() de PHP y declara « X-Mailer: PHP » sin versión. Es la firma de un script escrito a toda prisa."
+  fix:
+    - "Pasa por una biblioteca (PHPMailer, Symfony Mailer) con SMTP autenticado."
+sa.php_nover_mua:
+  title: "Software de envío declarado « PHP » sin versión"
+  why: "El encabezado X-Mailer vale simplemente « PHP ». Los programas de correo reales indican su nombre y su versión."
+  fix:
+    - "Elimina el encabezado X-Mailer del script o usa una biblioteca de envío."
+    - "Firma el mensaje con DKIM: la regla deja de aplicarse."
+sa.php_orig_script:
+  title: "Script PHP de origen indicado y otras señales de robot"
+  why: "El encabezado X-PHP-Originating-Script nombra el script PHP que envió el mensaje, y el contenido tiene rasgos de spam automático. En un sitio, esto puede indicar un formulario desviado."
+  fix:
+    - "Comprueba en el encabezado qué archivo PHP envió el mensaje; si no te resulta conocido, el sitio probablemente está comprometido."
+    - "Haz que los envíos legítimos pasen por SMTP autenticado."
+sa.xm_phpmailer_forged:
+  title: "Encabezado X-Mailer de PHPMailer incompleto"
+  why: "El encabezado X-Mailer cita PHPMailer con la palabra « version » pero sin número. Los encabezados reales de PHPMailer indican la versión: este está fabricado o modificado."
+  fix:
+    - "Deja que PHPMailer escriba su X-Mailer por defecto, o ajusta su propiedad XMailer a un espacio para no enviar este encabezado."
+sa.mailing_list_multi:
+  title: "Encabezados de un gestor de lista de distribución"
+  why: "El mensaje lleva varios encabezados de lista de distribución. SpamAssassin lo reconoce como envío de lista y relaja otras reglas. Puntuación positiva de un punto de todos modos."
+  fix:
+    - "Nada que corregir: estos encabezados son útiles. Conserva List-Unsubscribe y List-Id."
+sa.list_prtl_same_user:
+  title: "Encabezados de lista incompletos y remitente igual al destinatario"
+  why: "El mensaje tiene List-Unsubscribe pero no List-Id, y el remitente lleva el mismo identificador que el destinatario. Es una combinación de falso envío de lista."
+  fix:
+    - "Añade un encabezado List-Id coherente si envías una lista de distribución."
+    - "Usa una dirección de envío distinta y firma con DKIM."
+sa.header_spam:
+  title: "Encabezado típico de software de envío de spam"
+  why: "El mensaje contiene un encabezado que casi solo se encuentra en programas de spam (Newsletter-ID, UID, X-Company-Address, Antivirus...). Algunas herramientas caseras los añaden sin motivo."
+  fix:
+    - "Localiza el encabezado responsable en el mensaje en bruto y elimínalo de tu herramienta o script."
+sa.ratware_zero_tz:
+  title: "Fecha en +0000 y remitente con formato de software de spam"
+  why: "La fecha está en tiempo universal, el mensaje es HTML y la dirección se deriva del nombre según un patrón detectado en un programa de spam."
+  fix:
+    - "Genera la Date con tu zona horaria real y añade una parte de texto al mensaje."
+sa.forged_mua_outlook:
+  title: "El mensaje dice venir de Outlook pero no tiene sus características"
+  why: "El encabezado X-Mailer anuncia Outlook, pero el Message-ID no corresponde a lo que genera Outlook. Un script que imita a Outlook para parecer legítimo obtiene el efecto contrario."
+  fix:
+    - "Elimina el encabezado X-Mailer que imita a Outlook en tu script o herramienta."
+sa.forged_outlook_html:
+  title: "Mensaje « Outlook » sin parte de texto"
+  why: "Outlook siempre envía una versión de texto junto con el HTML. Un mensaje que dice ser de Outlook pero solo tiene HTML está imitado. Puntuación baja."
+  fix:
+    - "Añade una parte de texto y elimina el X-Mailer de Outlook si no envías desde Outlook."
+sa.forged_outlook_tags:
+  title: "HTML « Outlook » sin la estructura que produce Outlook"
+  why: "Outlook siempre produce un HTML completo. Un mensaje « Outlook » sin estas etiquetas se fabricó en otro sitio. Puntuación baja."
+  fix:
+    - "Genera un documento HTML completo (html, head, meta charset, body) y no imites el X-Mailer de Outlook."
+sa.dos_outlook_to_mx:
+  title: "Mensaje « Outlook » entregado directamente al servidor del destinatario"
+  why: "El mensaje dice venir de Outlook pero se entregó directamente al servidor de recepción, sin pasar por un servidor de envío. Outlook siempre pasa por un servidor: es la marca de un robot. Casi 3 puntos."
+  fix:
+    - "Envía a través del servidor SMTP de tu correo y elimina el encabezado X-Mailer que imita a Outlook."
+sa.mimeole_direct_to_mx:
+  title: "Encabezado X-MimeOLE y entrega directa al servidor"
+  why: "El mensaje lleva el encabezado X-MimeOLE de los programas de Microsoft y llega directamente al servidor de recepción. Es una combinación típica de máquinas infectadas."
+  fix:
+    - "Pasa por el servidor SMTP de tu correo, o firma los mensajes con DKIM."
+sa.dos_body_high_no_mid:
+  title: "Cuerpo con caracteres de 8 bits y sin Message-ID"
+  why: "El mensaje no tiene Message-ID y su texto contiene caracteres acentuados. Para un mensaje en español enviado por un script sin Message-ID, esto cuesta casi 4 puntos."
+  fix:
+    - "Añade un Message-ID (ver MISSING_MID): basta para eliminar esta regla."
+sa.cte_8bit_mismatch:
+  title: "Texto declarado de 7 bits pero con acentos"
+  why: "La parte de texto se declara de 7 bits (ASCII puro) cuando contiene caracteres acentuados. El texto puede mostrarse corrupto en el destinatario."
+  fix:
+    - "Declara Content-Transfer-Encoding: quoted-printable (o 8bit) y charset=UTF-8 para la parte de texto."
+sa.has_x_outgoing_spam_stat:
+  title: "Encabezado X-OutGoing-Spam-Status presente"
+  why: "El servidor de envío añadió el encabezado X-OutGoing-Spam-Status (cPanel lo hace con su filtro saliente). SpamAssassin considera que no se puede fiar de un encabezado así y suma un punto."
+  fix:
+    - "Si administras el servidor cPanel, desactiva la adición de este encabezado en los mensajes salientes, o envía por un retransmisor que no lo añada."
+  fix_by_provider:
+    cpanel: "El encabezado procede del filtrado saliente de Exim en cPanel; solo el administrador del servidor (WHM) puede desactivarlo."
+sa.rand_mktg_header:
+  title: "Encabezado de seguimiento de marketing con nombre parcialmente aleatorio"
+  why: "El mensaje contiene un encabezado de seguimiento de campaña cuyo nombre cambia de un envío a otro, patrón detectado en programas de spam."
+  fix:
+    - "Usa nombres de encabezado de seguimiento fijos, o elimínalos."
+sa.jh_spammy_headers:
+  title: "Encabezado poco frecuente que se ve sobre todo en el spam"
+  why: "El mensaje contiene un encabezado como Complaint-To, Tracking-Code o List-Open, que casi solo se encuentra en spam."
+  fix:
+    - "Elimina este encabezado de tu software de envío."
+sa.no_dns_for_from:
+  title: "El dominio de sobre no tiene MX ni dirección IP"
+  why: "{envelope_domain}, el dominio que recibe las devoluciones, no existe en el DNS o no tiene MX ni A. Las devoluciones de error se pierden y muchos servidores rechazan a un remitente inalcanzable."
+  fix:
+    - "Usa un Return-Path bajo un dominio que reciba correo (registro MX)."
+    - "Si {envelope_domain} es un subdominio técnico de la herramienta de envío, publica el MX o el registro que pida la herramienta."

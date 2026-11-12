@@ -1,0 +1,160 @@
+sa.uribl_black:
+  title: "Un enlace apunta a un dominio de la lista negra URIBL"
+  why: "Un dominio presente en los enlaces del mensaje figura en la lista negra URIBL, reservada a los dominios vistos en spam. Basta para subir notablemente la puntuación, aunque tu propio dominio esté limpio."
+  fix:
+    - "Localiza el enlace en cuestión ({url}): a veces es un dominio de terceros (acortador, imagen, red social) y no el tuyo."
+    - "Quita o sustituye este enlace, y luego vuelve a lanzar la prueba."
+    - "Si el dominio listado es el tuyo, busca la causa (sitio hackeado, campaña no solicitada) antes de pedir la retirada en {delist_url}."
+sa.uribl_grey:
+  title: "Un enlace apunta a un dominio de la lista gris URIBL"
+  why: "La lista gris URIBL agrupa dominios de envío que reciben muchas quejas, sin ser spammers probados. Los dominios de seguimiento de clics de las herramientas de boletines figuran a veces en ella."
+  fix:
+    - "Identifica el dominio listado ({url}). Si es el dominio de seguimiento de tu herramienta de envío, configura un dominio de seguimiento personalizado bajo tu propio dominio."
+    - "Si es tu dominio, reduce las quejas (baja visible, envíos solicitados) y luego pide la retirada en {delist_url}."
+sa.uribl_red:
+  title: "Un enlace apunta a un dominio de la lista roja URIBL"
+  why: "La lista roja URIBL señala dominios vigilados por URIBL sin estar lo bastante probados para la lista negra. SpamAssassin apenas la puntúa, pero es una advertencia."
+  fix:
+    - "Verifica el dominio señalado ({url}) y quita el enlace si no te pertenece."
+sa.uribl_blocked:
+  title: "Consulta URIBL rechazada por el servidor de pruebas"
+  why: "Aviso administrativo: URIBL no respondió al servidor de análisis. Los enlaces no se han comprobado en esta lista, pero tu mensaje no es la causa."
+  fix:
+    - "Ninguna acción por tu parte."
+sa.uribl_dbl_spam:
+  title: "Un enlace apunta a un dominio Spamhaus DBL (spam)"
+  why: "Un dominio citado en el mensaje figura en la Spamhaus DBL como dominio de spam. Es una de las señales de enlace más pesadas, y muchas pasarelas de correo bloquean con esta lista."
+  fix:
+    - "Localiza el enlace en cuestión ({url}): a veces es un dominio de terceros (acortador, imagen, red social) y no el tuyo."
+    - "Quita o sustituye este enlace, y luego vuelve a lanzar la prueba."
+    - "Si el dominio listado es el tuyo, busca la causa (sitio hackeado, campaña no solicitada) antes de pedir la retirada en {delist_url}."
+sa.uribl_dbl_phish:
+  title: "Un enlace apunta a un dominio Spamhaus DBL (phishing)"
+  why: "Un enlace lleva a un dominio que Spamhaus clasifica como sitio de phishing. Si es tu dominio, probablemente alguien lo haya hackeado para alojar una falsa página de inicio de sesión."
+  fix:
+    - "Localiza el enlace en cuestión ({url}): a veces es un dominio de terceros (acortador, imagen, red social) y no el tuyo."
+    - "Quita o sustituye este enlace, y luego vuelve a lanzar la prueba."
+    - "Si el dominio listado es el tuyo, busca la causa (sitio hackeado, campaña no solicitada) antes de pedir la retirada en {delist_url}."
+sa.uribl_dbl_malware:
+  title: "Un enlace apunta a un dominio Spamhaus DBL (malware)"
+  why: "Un enlace lleva a un dominio que, según Spamhaus, distribuye malware. En un sitio WordPress, suele ser señal de un archivo inyectado en wp-content."
+  fix:
+    - "Localiza el enlace en cuestión ({url}): a veces es un dominio de terceros (acortador, imagen, red social) y no el tuyo."
+    - "Quita o sustituye este enlace, y luego vuelve a lanzar la prueba."
+    - "Si el dominio listado es el tuyo, busca la causa (sitio hackeado, campaña no solicitada) antes de pedir la retirada en {delist_url}."
+sa.uribl_dbl_abuse_spam:
+  title: "Un enlace apunta a un dominio legítimo desviado para spam"
+  why: "Spamhaus señala un dominio legítimo cuyas páginas usan los spammers (servicio de alojamiento, de formularios o de compartición). El enlace te penaliza por asociación."
+  fix:
+    - "Sustituye el enlace a este servicio compartido por un enlace a una página de tu propio dominio."
+sa.uribl_dbl_abuse_redir:
+  title: "Un enlace pasa por un redirector desviado por spammers"
+  why: "El enlace pasa por un servicio de redirección o de acortamiento que también usan los spammers. SpamAssassin apenas lo puntúa, pero otros filtros sí lo hacen."
+  fix:
+    - "Pon la dirección final en texto claro en lugar de un enlace acortado o redirigido."
+sa.uribl_dbl_abuse_phish:
+  title: "Un enlace apunta a un dominio legítimo desviado para phishing"
+  why: "Un dominio legítimo presente en los enlaces también sirve para alojar páginas de phishing. Los filtros penalizan con fuerza estos enlaces."
+  fix:
+    - "Aloja el contenido afectado (formulario, documento) en tu propio dominio en lugar de en este servicio."
+sa.uribl_dbl_abuse_malw:
+  title: "Un enlace apunta a un dominio legítimo desviado para distribuir malware"
+  why: "El dominio del enlace es un servicio legítimo cuyas direcciones distribuyen malware a veces (almacenamiento de archivos, compartición). El enlace te penaliza gravemente."
+  fix:
+    - "Adjunta el archivo o aloja en tu sitio en lugar de usar este servicio de compartición."
+sa.uribl_dbl_blocked:
+  title: "Consulta Spamhaus DBL rechazada por el servidor de pruebas"
+  why: "Aviso administrativo: la DBL no respondió al servidor de análisis. No tiene relación con tus enlaces."
+  fix:
+    - "Ninguna acción por tu parte."
+sa.uribl_dbl_blocked_opendns:
+  title: "Consulta Spamhaus DBL rechazada: resolutor público"
+  why: "Aviso administrativo: el servidor de análisis usa un resolutor DNS público rechazado por Spamhaus. No tiene relación con tus enlaces."
+  fix:
+    - "Ninguna acción por tu parte."
+sa.uribl_dbl_error:
+  title: "Error de consulta Spamhaus DBL"
+  why: "Aviso técnico: un enlace contiene una dirección IP en lugar de un nombre de dominio y se envió a la DBL, que solo trata dominios. El resultado no es utilizable."
+  fix:
+    - "Sustituye los enlaces con direcciones IP por enlaces con un nombre de dominio (ver también NUMERIC_HTTP_ADDR)."
+sa.uribl_abuse_surbl:
+  title: "Un enlace apunta a un dominio de la lista ABUSE de SURBL"
+  why: "El dominio del enlace figura en la categoría ABUSE de SURBL: dominios vistos en spam o en envíos abusivos."
+  fix:
+    - "Localiza el enlace en cuestión ({url}): a veces es un dominio de terceros (acortador, imagen, red social) y no el tuyo."
+    - "Quita o sustituye este enlace, y luego vuelve a lanzar la prueba."
+    - "Si el dominio listado es el tuyo, busca la causa (sitio hackeado, campaña no solicitada) antes de pedir la retirada en {delist_url}."
+sa.uribl_cr_surbl:
+  title: "Un enlace apunta a un sitio hackeado según SURBL"
+  why: "SURBL clasifica el dominio del enlace como sitio legítimo comprometido. Si es tu sitio, probablemente aloja páginas añadidas por un atacante."
+  fix:
+    - "Analiza el sitio enlazado ({url}): extensiones y temas sin actualizar, archivos PHP desconocidos, cuentas de administrador añadidas."
+    - "Tras la limpieza, pide la retirada en {delist_url}."
+sa.uribl_ct_surbl:
+  title: "Un enlace pasa por un dominio de seguimiento listado por SURBL"
+  why: "El enlace pasa por un dominio de seguimiento de clics que SURBL lista porque sirve para envíos sin consentimiento confirmado, incluidas direcciones trampa. Es el caso típico de una herramienta de envío cuyo dominio de seguimiento compartido también usan malos remitentes."
+  fix:
+    - "Configura un dominio de seguimiento personalizado (subdominio de {domain}) en tu herramienta de envío."
+    - "O desactiva el seguimiento de clics para este mensaje y vuelve a probar."
+sa.uribl_dm_surbl:
+  title: "El mensaje cita un dominio de direcciones desechables (SURBL DM)"
+  why: "Un dominio presente en el mensaje pertenece a un servicio de direcciones de correo desechables. SpamAssassin apenas lo puntúa: es una información."
+  fix:
+    - "Si una dirección desechable aparece en el mensaje (contacto, firma), sustitúyela por una dirección de tu dominio."
+sa.uribl_mw_surbl:
+  title: "Un enlace apunta a un dominio de malware según SURBL"
+  why: "SURBL asocia el dominio del enlace a la distribución de malware. Es grave si el dominio es el tuyo: tu sitio probablemente sirve de punto de retransmisión para un ataque."
+  fix:
+    - "Localiza el enlace en cuestión ({url}): a veces es un dominio de terceros (acortador, imagen, red social) y no el tuyo."
+    - "Quita o sustituye este enlace, y luego vuelve a lanzar la prueba."
+    - "Si el dominio listado es el tuyo, busca la causa (sitio hackeado, campaña no solicitada) antes de pedir la retirada en {delist_url}."
+sa.uribl_ph_surbl:
+  title: "Un enlace apunta a un dominio de phishing según SURBL"
+  why: "SURBL clasifica el dominio del enlace como alojamiento de páginas de phishing."
+  fix:
+    - "Localiza el enlace en cuestión ({url}): a veces es un dominio de terceros (acortador, imagen, red social) y no el tuyo."
+    - "Quita o sustituye este enlace, y luego vuelve a lanzar la prueba."
+    - "Si el dominio listado es el tuyo, busca la causa (sitio hackeado, campaña no solicitada) antes de pedir la retirada en {delist_url}."
+sa.uribl_multi_surbl_headers:
+  title: "El dominio del remitente o del Reply-To está listado por SURBL"
+  why: "Ya no se trata de un enlace, sino de la dirección de envío o de respuesta, cuyo dominio figura en SURBL. El dominio {domain} tiene, pues, mala reputación por sí mismo."
+  fix:
+    - "Verifica en {delist_url} la categoría y la fecha de inscripción de {domain}."
+    - "Trata la causa (sitio hackeado, envíos no solicitados) antes de cualquier petición de retirada."
+sa.surbl_blocked:
+  title: "Consulta SURBL rechazada por el servidor de pruebas"
+  why: "Aviso administrativo: SURBL no respondió al servidor de análisis. No tiene relación con tus enlaces."
+  fix:
+    - "Ninguna acción por tu parte."
+sa.uribl_rhs_dob:
+  title: "Un enlace apunta a un dominio recién creado"
+  why: "Un dominio citado en el mensaje se registró hace muy poco. Los spammers cambian de dominio constantemente: un enlace a un dominio nuevo es sospechoso, aunque sea el sitio de una empresa que acaba de empezar."
+  fix:
+    - "Si el dominio nuevo es el tuyo, espera unos días antes de usarlo en envíos masivos."
+    - "Mientras tanto, haz que los enlaces apunten a un dominio más antiguo que poseas."
+sa.uribl_sbl:
+  title: "El servidor DNS de un dominio enlazado está en la Spamhaus SBL"
+  why: "El dominio del enlace usa servidores DNS alojados en una IP que Spamhaus conoce por albergar spam. El enlace se penaliza por su alojamiento."
+  fix:
+    - "Identifica el dominio afectado ({url}) y su proveedor de DNS."
+    - "Si es tu dominio, traslada su zona DNS a un proveedor con buena reputación."
+sa.uribl_sbl_a:
+  title: "El servidor web de un dominio enlazado está en la Spamhaus SBL"
+  why: "El sitio al que apunta un enlace está alojado en una IP listada por Spamhaus. Penalización leve, pero reveladora de un alojamiento de mala reputación."
+  fix:
+    - "Si el sitio es tuyo, pide a tu proveedor de alojamiento por qué su IP está listada, o cambia de alojamiento."
+sa.uribl_css:
+  title: "El servidor DNS de un dominio enlazado está en la Spamhaus CSS"
+  why: "Los servidores DNS del dominio enlazado están en una IP detectada automáticamente por envío de spam. Penalización leve."
+  fix:
+    - "Si el dominio es tuyo, notifícalo a tu proveedor de DNS."
+sa.uribl_zen_blocked:
+  title: "Consulta Spamhaus ZEN sobre los enlaces rechazada por el servidor de pruebas"
+  why: "Aviso administrativo: Spamhaus rechazó la consulta del servidor de análisis. No tiene relación con tus enlaces."
+  fix:
+    - "Ninguna acción por tu parte."
+sa.uribl_zen_blocked_opendns:
+  title: "Consulta Spamhaus ZEN sobre los enlaces rechazada: resolutor público"
+  why: "Aviso administrativo: el servidor de análisis consulta a Spamhaus a través de un resolutor público."
+  fix:
+    - "Ninguna acción por tu parte."

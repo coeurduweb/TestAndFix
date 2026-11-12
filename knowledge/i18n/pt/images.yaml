@@ -1,0 +1,83 @@
+images.missing_alt:
+  title: "Algumas imagens não têm texto alternativo"
+  why: "Essas imagens não têm o atributo alt (a lista delas aparece na anomalia). Quando as imagens são bloqueadas, o que continua sendo o padrão em vários clientes de e-mail, o leitor vê apenas um quadro vazio no lugar delas."
+  fix:
+    - "Adicione a cada imagem um atributo alt que diga o que ela mostra ou o que ela faz (por exemplo “Ver a coleção de inverno”)."
+    - "Para uma imagem puramente decorativa, use alt=\"\"."
+  fix_by_provider:
+    mailchimp: "Clique na imagem, depois em Edit e preencha o campo Alt text."
+    brevo: "Selecione a imagem no editor e preencha o campo Texto alternativo no painel da direita."
+images.http_insecure:
+  title: "Algumas imagens são carregadas via http, sem criptografia"
+  why: "A imagem {url} é carregada sem criptografia. Alguns clientes não a exibem ou mostram um aviso, e os filtros da Microsoft podem aumentar a pontuação de spam."
+  fix:
+    - "Substitua http:// por https:// no endereço de cada imagem."
+    - "Verifique se o servidor que hospeda as imagens tem um certificado válido."
+images.third_party_host:
+  title: "Algumas imagens são hospedadas no site de um terceiro"
+  why: "A imagem {url} é carregada de um site que não é {domain} nem a sua ferramenta de envio. Se esse site a remover ou tiver má reputação, a imagem desaparece ou arrasta sua mensagem junto."
+  fix:
+    - "Baixe a imagem e hospede-a em {domain} ou na biblioteca de imagens da sua ferramenta de envio."
+    - "Verifique se você tem o direito de usar essa imagem."
+images.ip_host:
+  title: "Uma imagem é carregada a partir de um endereço IP"
+  why: "A imagem {url} é carregada de um endereço IP em vez de um nome de domínio. É um indício de servidor improvisado, que os filtros, inclusive os da Microsoft, contam contra a mensagem."
+  fix:
+    - "Hospede a imagem em um nome de domínio, por exemplo https://{domain}/img/."
+images.unreachable:
+  title: "Uma imagem da mensagem não carrega"
+  why: "A imagem {url} retorna {status}. O leitor vê um quadro vazio ou um ícone quebrado, e uma mensagem meio vazia parece suspeita."
+  fix:
+    - "Abra o endereço da imagem em um navegador para confirmar o erro."
+    - "Corrija o caminho no modelo ou publique a imagem de novo."
+    - "Se o seu provedor de hospedagem bloquear requisições sem referer, autorize o carregamento direto das imagens da pasta em questão."
+images.wrong_content_type:
+  title: "O endereço de uma imagem retorna algo diferente de uma imagem"
+  why: "O endereço {url} retorna um conteúdo do tipo {value} em vez de uma imagem: geralmente uma página de login ou de erro. A imagem não será exibida."
+  fix:
+    - "Verifique se a imagem é pública e não exige login."
+    - "Use o link direto para o arquivo de imagem, e não o da página de compartilhamento."
+images.too_heavy:
+  title: "Uma imagem é muito pesada"
+  why: "A imagem {url} pesa {value}. No celular, ela demora para aparecer e consome dados: o leitor costuma fechar a mensagem antes de vê-la."
+  fix:
+    - "Redimensione a imagem para as dimensões em que ela aparece na mensagem, com margem apenas para telas de alta densidade."
+    - "Comprima-a em JPEG para fotos e em PNG para logos e áreas de cor chapada."
+images.image_heavy:
+  title: "As imagens predominam amplamente sobre o texto"
+  why: "A maior parte da mensagem é feita de imagens. Quando elas são bloqueadas, o leitor não vê quase nada, e os filtros têm pouco texto para avaliar a mensagem."
+  fix:
+    - "Tire das imagens as informações principais (oferta, data, preço, botão) e escreva-as em texto HTML."
+    - "Use as imagens para ilustrar, e não para carregar a mensagem."
+images.inline_cid_many:
+  title: "A mensagem incorpora muitas imagens como anexos embutidos"
+  why: "A mensagem carrega {value} imagens incorporadas por cid:. Cada uma pesa na mensagem, e alguns clientes também as exibem como anexos, o que parece um envio suspeito."
+  fix:
+    - "Hospede as imagens em {domain} ou na sua ferramenta de envio e referencie-as por um endereço https."
+    - "Mantenha, no máximo, o logo como imagem incorporada, se quiser que ele apareça sem download."
+  fix_by_provider:
+    microsoft_365: "No Outlook, uma imagem colada no corpo vira uma imagem incorporada. Para uma newsletter, use uma ferramenta de envio em vez do cliente de e-mail."
+    wordpress: "Se um plugin de notificação incluir as imagens como anexos embutidos, desative essa opção e use imagens hospedadas no site."
+images.tracking_pixel:
+  title: "A mensagem contém um pixel de medição de abertura"
+  why: "A mensagem contém uma imagem invisível que mede a abertura. É comum em newsletters, mas as organizações que ativaram a opção Web bugs do Microsoft Defender classificam essas mensagens como spam com alta confiança."
+  fix:
+    - "Para mensagens transacionais e trocas pessoais, desative a medição de abertura na sua ferramenta."
+    - "Para newsletters enviadas a empresas que usam o Microsoft 365, compare as taxas de entrega com e sem o pixel."
+images.tracking_pixel_without_content:
+  title: "A mensagem contém só um pixel de rastreamento e quase nada mais"
+  why: "Uma mensagem quase vazia com um pixel de rastreamento serve principalmente para verificar se o endereço está ativo. É uma prática de spammer, e os filtros a reconhecem."
+  fix:
+    - "Verifique se o conteúdo do modelo é realmente transmitido no envio."
+    - "Se a mensagem for um teste técnico, remova o pixel de rastreamento."
+images.missing_dimensions:
+  title: "Algumas imagens não têm largura declarada"
+  why: "Sem largura declarada, uma imagem grande pode transbordar no Outlook para Windows, e o layout se desloca quando as imagens são bloqueadas."
+  fix:
+    - "Adicione o atributo width (em pixels, sem unidade) a cada imagem, e height se a proporção largura/altura for fixa."
+    - "Complete com style='max-width:100%;height:auto' para a exibição no celular."
+images.redirecting_src:
+  title: "O endereço de uma imagem passa por um redirecionamento"
+  why: "A imagem {url} é servida após um redirecionamento. A exibição fica mais lenta, e alguns proxies de imagens não seguem todos os redirecionamentos."
+  fix:
+    - "Coloque na mensagem o endereço final do arquivo de imagem."

@@ -1,0 +1,106 @@
+mta-sts.missing:
+  title: "{domain} veröffentlicht keine MTA-STS-Richtlinie"
+  why: Ohne MTA-STS kann ein Angreifer im Netz Absender zwingen, die Post für {domain} unverschlüsselt zuzustellen. Das ist kein Kriterium für die Zustellbarkeit Ihrer Versände, sondern ein Schutz Ihres Posteingangs.
+  fix:
+    - Richten Sie die Subdomain mta-sts.{domain} ein, die über HTTPS mit einem gültigen Zertifikat ausgeliefert wird.
+    - "Veröffentlichen Sie unter https://mta-sts.{domain}/.well-known/mta-sts.txt eine Textdatei im Modus testing mit Ihren MX-Servern."
+    - Legen Sie den TXT-Eintrag _mta-sts.{domain} mit v=STSv1 und einer id= an.
+    - Veröffentlichen Sie außerdem einen TLS-RPT-Eintrag, um Berichte zu erhalten, und wechseln Sie nach einigen Wochen ohne Fehler in den Modus enforce.
+mta-sts.policy_unreachable:
+  title: "Die MTA-STS-Richtliniendatei von {domain} ist nicht erreichbar"
+  why: Der DNS-Eintrag kündigt eine MTA-STS-Richtlinie an, doch die Datei wird nicht ausgeliefert. Absender können sie nicht anwenden, und wenn bei ihnen eine alte Richtlinie im Cache liegt, wenden sie weiterhin eine veraltete Version an.
+  fix:
+    - Legen Sie den A- oder CNAME-Eintrag von mta-sts.{domain} auf einen Webserver an.
+    - Legen Sie die Datei genau unter /.well-known/mta-sts.txt ab, ohne Weiterleitung.
+    - "Prüfen Sie, dass die Adresse https://mta-sts.{domain}/.well-known/mta-sts.txt im Browser mit 200 antwortet."
+  fix_by_provider:
+    cloudflare_dns: Sie können die Datei über einen Cloudflare Worker oder eine statische Seite auf mta-sts.{domain} ausliefern; der Proxy kann für diese Web-Subdomain aktiv bleiben.
+mta-sts.policy_redirect:
+  title: "Die MTA-STS-Richtlinie von {domain} wird über eine Weiterleitung ausgeliefert"
+  why: Absender folgen Weiterleitungen nicht, um eine MTA-STS-Richtlinie zu lesen. Für sie existiert Ihre Richtlinie nicht, selbst wenn ein Browser sie anzeigt.
+  fix:
+    - Deaktivieren Sie für die einzelne Subdomain mta-sts.{domain} die Weiterleitung auf www oder auf eine andere Website.
+    - "Liefern Sie die Datei direkt über HTTPS unter https://mta-sts.{domain}/.well-known/mta-sts.txt aus."
+mta-sts.policy_cert_invalid:
+  title: "Das HTTPS-Zertifikat von mta-sts.{domain} ist ungültig"
+  why: Absender verweigern das Lesen einer MTA-STS-Richtlinie, die mit einem abgelaufenen, selbstsignierten oder für einen anderen Namen ausgestellten Zertifikat ausgeliefert wird. Ihre Richtlinie wird daher ignoriert.
+  fix:
+    - Stellen Sie ein Zertifikat aus, das genau mta-sts.{domain} abdeckt (Let's Encrypt eignet sich).
+    - Installieren Sie es auf dem Server, der diese Subdomain ausliefert, und automatisieren Sie die Erneuerung.
+mta-sts.policy_malformed:
+  title: "Die MTA-STS-Richtliniendatei von {domain} ist fehlerhaft"
+  why: Eine unlesbare Richtlinie wird von Absendern ignoriert. Hat bei ihnen eine korrekte Version im Cache gelegen, behalten sie diese bis zu ihrem Ablauf, was einen MX-Wechsel blockieren kann.
+  fix:
+    - "Schreiben Sie pro Zeile einen Schlüssel in der Form Schlüssel: Wert, ohne Anführungszeichen."
+    - "Geben Sie version: STSv1 an, danach mode, eine Zeile mx: pro MX-Server und max_age in Sekunden."
+    - Ändern Sie danach den Wert id= des Eintrags _mta-sts.{domain}, um die neue Version zu kennzeichnen.
+mta-sts.wrong_content_type:
+  title: "Die MTA-STS-Richtlinie von {domain} wird nicht als text/plain ausgeliefert"
+  why: Ein Teil der Absender prüft den Dateityp und weist eine als HTML oder mit unbekanntem Typ ausgelieferte Richtlinie ab.
+  fix:
+    - "Konfigurieren Sie den Webserver so, dass mta-sts.txt mit dem Header Content-Type: text/plain ausgeliefert wird."
+  fix_by_provider:
+    cpanel: "Fügen Sie in der .htaccess der Subdomain hinzu: AddType text/plain .txt"
+mta-sts.testing_mode:
+  title: "Die MTA-STS-Richtlinie von {domain} ist im Testmodus"
+  why: "Der Modus testing schützt nichts: Er dient dazu, Berichte zu sammeln, bevor die Richtlinie angewendet wird. Zeigen die Berichte keine Fehler mehr, ist es Zeit für enforce."
+  fix:
+    - Lesen Sie die seit der Einrichtung eingegangenen TLS-RPT-Berichte und prüfen Sie, dass kein MX fehlschlägt.
+    - "Ersetzen Sie mode: testing durch mode: enforce in der Richtliniendatei."
+    - Ändern Sie den Wert id= des Eintrags _mta-sts.{domain}.
+mta-sts.mode_none:
+  title: "Die MTA-STS-Richtlinie von {domain} ist deaktiviert (Modus none)"
+  why: Der Modus none hebt eine vorherige Richtlinie auf. Das ist während eines Rückzugs normal; andernfalls genießt {domain} keinen MTA-STS-Schutz.
+  fix:
+    - Ist der Rückzug abgeschlossen und max_age abgelaufen, entfernen Sie den Eintrag _mta-sts.{domain} und die Datei.
+    - Andernfalls wechseln Sie zurück in den Modus testing, dann enforce, und ändern Sie den Wert id=.
+mta-sts.mx_not_covered:
+  title: "Ein MX von {domain} ist durch die MTA-STS-Richtlinie nicht zugelassen"
+  why: Im Modus enforce liefern Absender, die MTA-STS anwenden, nicht an einen MX, der nicht in der Richtlinie steht. Ein Teil der Post für {domain} kann dann blockiert werden und mit einem Fehler zurückkommen.
+  fix:
+    - "Fügen Sie für jeden aktuellen MX-Server eine Zeile mx: hinzu (ein Platzhalter wie *.{domain} deckt nur eine Subdomain-Ebene ab)."
+    - Ändern Sie sofort den Wert id= des Eintrags _mta-sts.{domain}, damit die Absender die Datei neu einlesen.
+    - Wechseln Sie bei einem Anbieterwechsel zuerst für die gesamte Dauer von max_age zurück in den Modus testing.
+mta-sts.enforce_tls_broken:
+  title: "Die MTA-STS-Richtlinie von {domain} blockiert einen MX mit ungültigem Zertifikat"
+  why: "Ihre Richtlinie verlangt ein gültiges TLS, doch einer Ihrer MX liefert keines. Absender, die MTA-STS anwenden, verweigern die Zustellung an diesen Server: Sie verlieren eingehende Post."
+  fix:
+    - Korrigieren Sie das Zertifikat des betroffenen MX (siehe die für diesen Server gemeldete TLS-Auffälligkeit).
+    - Bis dahin setzen Sie die Richtlinie zurück in den Modus testing und ändern den Wert id=.
+mta-sts.id_unchanged:
+  title: "Die MTA-STS-Richtlinie von {domain} wurde ohne Änderung der Kennung geändert"
+  why: Absender behalten die alte Richtlinie im Cache, solange sich der Wert id= nicht ändert, bis max_age abgelaufen ist. Ihre Änderung wird daher lange nicht gesehen, was einen neuen MX blockieren kann.
+  fix:
+    - "Ändern Sie den Wert id= des Eintrags _mta-sts.{domain}, zum Beispiel mit Datum und Uhrzeit der Änderung."
+    - Tun Sie dies bei jeder Änderung der Datei, ohne Ausnahme.
+mta-sts.txt_malformed:
+  title: "Der Eintrag _mta-sts von {domain} ist ungültig"
+  why: Eine Kennung mit Bindestrichen oder Punkten oder zwei konkurrierende Einträge machen die Richtlinie in den Augen der Absender unwirksam.
+  fix:
+    - Behalten Sie nur einen TXT-Eintrag, der mit v=STSv1 beginnt, auf _mta-sts.{domain}.
+    - Verwenden Sie eine id= mit höchstens 32 Zeichen, nur aus Buchstaben und Ziffern.
+mta-sts.max_age_short:
+  title: "Das max_age der MTA-STS-Richtlinie von {domain} ist sehr kurz"
+  why: Bei einer kurzen Laufzeit genügt es einem Angreifer, den Zugriff auf Ihre Richtlinie für einige Stunden zu blockieren, damit Absender wieder auf optionales TLS zurückfallen.
+  fix:
+    - Sobald die Richtlinie im Modus enforce stabil läuft, setzen Sie max_age auf mindestens 604800 (eine Woche), besser 1209600 oder mehr.
+    - Überschreiten Sie nicht 31557600, den Höchstwert.
+    - Ändern Sie den Wert id= nach der Änderung.
+mta-sts.max_age_too_long:
+  title: "Das max_age der MTA-STS-Richtlinie von {domain} überschreitet das Maximum"
+  why: "Der Wert überschreitet die vom Standard festgelegte Grenze: Manche Absender verwerfen die gesamte Richtlinie."
+  fix:
+    - Setzen Sie max_age auf höchstens 31557600 zurück (ein Wert zwischen 604800 und 31557600 passt).
+    - Ändern Sie den Wert id= nach der Änderung.
+mta-sts.tlsrpt_missing:
+  title: "{domain} veröffentlicht MTA-STS ohne Adresse für TLS-RPT-Berichte"
+  why: Sie wenden eine Verschlüsselungsrichtlinie an, erhalten aber keine Fehlerberichte. Wenn ein MX oder ein Zertifikat Probleme macht, werden Absender ohne Ihr Wissen aufhören, Ihnen zuzustellen.
+  fix:
+    - "Richten Sie eine eigene Adresse für die Berichte ein, zum Beispiel tlsrpt@{domain}."
+    - "Veröffentlichen Sie den TXT-Eintrag _smtp._tls.{domain} mit v=TLSRPTv1 und rua=mailto: gefolgt von dieser Adresse."
+mta-sts.tlsrpt_malformed:
+  title: "Der TLS-RPT-Eintrag von {domain} ist ungültig"
+  why: "Absender ignorieren einen fehlerhaften TLS-RPT-Eintrag: Sie erhalten keinen Bericht über Verschlüsselungsfehler."
+  fix:
+    - Beginnen Sie den Eintrag mit v=TLSRPTv1.
+    - "Geben Sie rua= gefolgt von einer Adresse mit dem Präfix mailto: an (oder einer https:-URL)."

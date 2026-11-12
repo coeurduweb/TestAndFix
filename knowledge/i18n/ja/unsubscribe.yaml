@@ -1,0 +1,105 @@
+unsubscribe.list_unsubscribe_missing:
+  title: "このマーケティングメールに List-Unsubscribe ヘッダーがありません"
+  why: "Gmail と Yahoo は、大手送信者のマーケティングメールにこのヘッダーを要求しています。これがないと、Web メールは配信停止ボタンを表示しません。読者は代わりに「迷惑メール」をクリックします。これは {domain} の評判を下げます。"
+  fix:
+    - "受信者ごとに固有の https の配信停止アドレスを使って、List-Unsubscribe ヘッダーを追加してください。"
+    - "同時に、ワンクリックで配信停止するため、List-Unsubscribe-Post: List-Unsubscribe=One-Click を追加してください。"
+    - "この 2 つのヘッダーを DKIM で署名してください。"
+  fix_by_provider:
+    mailchimp: "Mailchimp は、キャンペーンに List-Unsubscribe を追加します。ない場合は、API のトランザクションメール（Mandrill）ではなく、実際にキャンペーンを送信しているか確認してください。Mandrill の場合は、自分で追加する必要があります。"
+    sendgrid: "Settings > Tracking > Subscription Tracking を有効にするか、API 呼び出しで Unsubscribe Groups（配信停止グループ）を使ってください。その場合、SendGrid がヘッダーを追加します。"
+    amazon_ses: "メールに List-Unsubscribe と List-Unsubscribe-Post のヘッダーを追加するか、ヘッダーを追加する SES の購読管理（コンタクトリスト）を使ってください。"
+    wordpress: "ニュースレターの拡張機能（MailPoet、The Newsletter Plugin、FluentCRM）がヘッダーを管理します。拡張機能なしで wp_mail() によりニュースレターを送るのは避けてください。"
+    postfix: "Postfix はこのヘッダーを追加しません。メールを生成するアプリケーションが、DKIM 署名の前に書き込む必要があります。"
+unsubscribe.one_click_post_missing:
+  title: "ワンクリックの配信停止（List-Unsubscribe-Post）が有効になっていません"
+  why: "メールには List-Unsubscribe がありますが、List-Unsubscribe-Post ヘッダーがありません。Gmail は、大量のマーケティング送信について両方を要求します。これがないと、Gmail はワンクリックの配信停止を提供していないと見なします。"
+  fix:
+    - "List-Unsubscribe-Post: List-Unsubscribe=One-Click の行を追加してください。"
+    - "List-Unsubscribe に https のアドレスが含まれていることを確認してください。そのアドレスは POST リクエストを受け付け、確認を求めずに配信停止する必要があります。"
+    - "両方のヘッダーを DKIM 署名に含めてください（h= パラメーター）。"
+unsubscribe.mailto_only:
+  title: "配信停止の手段が、メールアドレス（mailto）しかありません"
+  why: "Yahoo は mailto を受け付けますが、Gmail は RFC 8058 によるワンクリックの配信停止を求めており、これには https のアドレスが必要です。そのため、Gmail に対してはこのメールは準拠していません。"
+  fix:
+    - "List-Unsubscribe の先頭に https の配信停止アドレスを追加し、mailto は 2 番目に残してください。"
+    - "List-Unsubscribe-Post: List-Unsubscribe=One-Click を追加してください。"
+unsubscribe.http_not_https:
+  title: "配信停止のアドレスが https ではなく http です"
+  why: "RFC 8058 は、ワンクリックの配信停止に https のアドレスを要求しています。http では、Gmail やほかの Web メールは配信停止ボタンを表示しません。"
+  fix:
+    - "List-Unsubscribe の http:// を https:// に置き換えてください。"
+    - "配信停止のドメインの証明書が有効であることを確認してください。"
+unsubscribe.not_dkim_signed:
+  title: "配信停止ヘッダーが DKIM によって保護されていません"
+  why: "有効な DKIM 署名は、List-Unsubscribe と List-Unsubscribe-Post のどちらも対象にしていません。RFC 8058 により、Web メールはワンクリックの配信停止を提供しないことになっています。その場合、お客様の設定は意味を持ちません。"
+  fix:
+    - "list-unsubscribe と list-unsubscribe-post を、署名対象ヘッダーの一覧（DKIM の h= パラメーター）に追加してください。"
+    - "ヘッダーは、署名の後ではなく、署名の手順の前に追加してください。"
+    - "中継サーバーが署名の後でこれらのヘッダーを追加する場合は、アプリケーション側で追加させてください。"
+  fix_by_provider:
+    postfix: "OpenDKIM の場合は、opendkim.conf の SignHeaders に List-Unsubscribe と List-Unsubscribe-Post を追加し、OpenDKIM を再起動してください。rspamd の場合は、dkim_signing.conf の sign_headers に追加してください。"
+unsubscribe.post_value_invalid:
+  title: "List-Unsubscribe-Post の値が正しくありません"
+  why: "ヘッダーの値は「{value}」です。正しくは List-Unsubscribe=One-Click です。Web メールはワンクリックの配信停止を認識しません。"
+  fix:
+    - "正確に次のように書いてください：List-Unsubscribe-Post: List-Unsubscribe=One-Click。"
+    - "引用符、セミコロン、ほかのパラメーターは追加しないでください。"
+unsubscribe.syntax_invalid:
+  title: "List-Unsubscribe ヘッダーの書式が誤っています"
+  why: "List-Unsubscribe のアドレスが山かっこで囲まれていないか、区切りが正しくありません。Web メールはこのヘッダーを無視し、配信停止ボタンを表示しません。"
+  fix:
+    - "各アドレスを山かっこ < > で囲んでください。"
+    - "アドレスはカンマで区切り、https のアドレスを先頭にしてください。"
+unsubscribe.multiple_https:
+  title: "List-Unsubscribe に https のアドレスが複数あります"
+  why: "RFC 8058 が想定しているのは、https のアドレスが 1 つだけです。複数ある場合、Web メールはワンクリックで処理されないものを選ぶおそれがあります。"
+  fix:
+    - "https のアドレスは 1 つだけ残してください。ワンクリックの POST リクエストを受け付けるものにしてください。"
+    - "必要であれば、2 番目に mailto を残しても構いません。"
+unsubscribe.endpoint_not_working:
+  title: "ワンクリックの配信停止アドレスが正しく応答しません"
+  why: "{url} への配信停止リクエストは、応答 {value} を受け取りました。Web メールは、このリクエストを Cookie なしで送り、リダイレクトをたどりません。失敗すると、受信者は登録されたままになり、最終的にお客様のメールをスパムとして報告します。"
+  fix:
+    - "Cookie もセッションもなしの POST リクエストを、配信停止アドレスで受け付け、200 のコードで応答してください。"
+    - "リダイレクトで応答しないでください。配信停止は、そのアドレスで直接処理してください。"
+    - "連絡先は、アドレス自体に含まれるトークンで特定してください。"
+unsubscribe.body_link_missing:
+  title: "メール本文に配信停止のリンクがありません"
+  why: "Gmail と Yahoo は、マーケティングメールの本文に、目立つ配信停止リンクを求めています。またフランスの法律では、以降の送信を拒否する簡単な手段を提供することが義務づけられています。このリンクがないと、受信を止める唯一の方法は「迷惑メール」ボタンになります。"
+  fix:
+    - "フッターに「配信停止」のリンクを追加してください。リンク先は {domain} の配信停止ページです。"
+    - "ページは、パスワードもログインも求めずに配信停止させる必要があります。"
+  fix_by_provider:
+    mailchimp: "キャンペーンの Footer ブロックに、*|UNSUB|* タグを残してください。"
+    brevo: "Brevo のエディターが挿入した配信停止リンクを含むフッターブロックを残してください。"
+    wordpress: "MailPoet では、既定のフッターに [link:subscription_unsubscribe_url] のリンクが含まれています。削除しないでください。"
+unsubscribe.body_link_hidden:
+  title: "配信停止リンクが見つけにくくなっています"
+  why: "配信停止リンクが非常に小さく、背景色とほぼ同じ色です。Gmail と Yahoo は、リンクが明確に見えることを求めています。隠れたリンクは、読者に「迷惑メール」をクリックさせます。"
+  fix:
+    - "リンクは読める大きさで、背景と対照的な色で表示してください。"
+    - "法的な注記の複数の行の後ではなく、フッターの冒頭に配置してください。"
+unsubscribe.requires_login:
+  title: "配信停止にログインが必要です"
+  why: "配信停止リンクがログインページに続いています。Yahoo はログインなしでの配信停止を求めており、ほとんどの読者は途中で諦めて、メールをスパムとして報告します。"
+  fix:
+    - "連絡先を特定する固有のトークンをリンクに含め、パスワードなしで配信停止させてください。"
+    - "同じページで、詳細な設定の管理も提供してください。ただし、それを強制しないでください。"
+unsubscribe.mailto_domain_unreachable:
+  title: "配信停止のメールアドレスがメールを受信できません"
+  why: "配信停止のアドレス {value} は、メールを受信しないドメインにあります。Web メールが送る配信停止の要求は失われます。"
+  fix:
+    - "MX レコードのあるドメインの配信停止アドレスを使ってください（例：unsubscribe@{domain}）。"
+    - "そのアドレスに届いたメッセージは、お使いの送信ツールが自動的に処理するようにしてください。"
+unsubscribe.on_transactional:
+  title: "取引メールに配信停止ヘッダーがないのは許容されます"
+  why: "Gmail は、取引メールに対してワンクリックの配信停止を求めていません。このメールにプロモーションの内容も含まれている場合は、受信者がそれをプロモーションと判断し、スパムとして報告することがあります。"
+  fix:
+    - "取引メールにはプロモーションの内容を含めないでください。"
+    - "プロモーションは別のメールで送り、List-Unsubscribe を付けてください。"
+unsubscribe.list_id_missing:
+  title: "メールがどのリストから送られたか示されていません（List-Id）"
+  why: "List-Id は、受信者や Web メールが、リストごとに送信を振り分けるために使います。ないことで減点されるわけではありませんが、お客様の複数のニュースレターを区別する助けになります。"
+  fix:
+    - "リストごとに安定した識別子を持つ List-Id ヘッダーを追加してください。"

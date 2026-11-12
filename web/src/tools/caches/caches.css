@@ -1,0 +1,54 @@
+/* Cache flush page (Signal). Tokens only. Blocks, checks and segmented control come from gen.css. */
+.ca {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+}
+.ca .page-head {
+  /* components.css still draws the v2 rule under the head (border-bottom 2px ink): cancelled here */
+  display: grid;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+.ca-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+}
+.ca-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4);
+  align-items: start;
+}
+@media (max-width: 64rem) {
+  .ca-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ca-grid > .gen-card {
+  align-content: start;
+}
+.ca-block {
+  display: grid;
+  gap: var(--s4);
+  min-width: 0;
+}
+.ca-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+@media (max-width: 40rem) {
+  .ca-actions .btn--primary {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+.ca-detail {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}

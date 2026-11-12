@@ -1,0 +1,149 @@
+# Famille dmarc-report : sources d'envoi lues dans les rapports agrégés DMARC déposés par
+# l'utilisateur (RFC 9990). Chaque fiche décrit une source (une IP) classée par l'analyseur :
+# envoi légitime non aligné, transfert, usurpation probable. Variables : {domain} (domaine
+# des rapports), {ip}, {ptr} (« aucun » quand l'IP n'a pas de nom inverse), {provider} (nom
+# lisible du service reconnu, ou « l'outil qui envoie depuis cette adresse »), {value}
+# (nombre de messages de la source, ou de sources masquées pour more_sources).
+# Procédures des fournisseurs reprises des fiches dkim.missing et alignment.none_aligned,
+# relevées sur leur documentation officielle le 2026-11-10.
+
+- id: dmarc-report.forwarding
+  family: dmarc-report
+  severity: info
+  penalty: 0
+  detect:
+    signal: "report.source(ip).verdict == forwarding"
+    notes: "Source reconnue comme un relais de transfert (nom inverse d'un service de redirection ou de liste) : le SPF échoue parce que le relais réexpédie avec sa propre IP, tandis que la signature DKIM d'origine reste valide."
+  sa_rules: []
+  title: "Transfert probable par {ip} (nom inverse : {ptr})"
+  why: >
+    {value} message(s) de {domain} arrivent par un serveur qui relaie le courrier (redirection
+    d'adresse, liste de diffusion). Le SPF échoue alors par construction : c'est normal, et
+    seul le DKIM garde ces messages authentifiés.
+  fix:
+    - "N'ajoutez pas {ip} à votre SPF : vous autoriseriez un serveur que vous ne maîtrisez pas à envoyer au nom de {domain}."
+    - "Vérifiez que tous vos envois sont signés en DKIM avec d={domain} : c'est la seule authentification qui survit au transfert."
+    - "Rien d'autre à faire. Avant de passer à p=reject, sachez qu'un message transféré dont la signature DKIM a été cassée en chemin (liste qui modifie le sujet ou le corps) échoue à DMARC et risque d'être refusé."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-7.4
+    - https://www.rfc-editor.org/rfc/rfc7960
+
+- id: dmarc-report.more_sources
+  family: dmarc-report
+  severity: info
+  penalty: 0
+  detect:
+    signal: "sum(max(0, count(verdict) - 10) for verdict in [legit_unaligned, forwarding, spoofing]) > 0"
+    notes: "Au-delà de dix sources par catégorie, l'analyseur ne détaille pas les suivantes : {value} est le nombre de sources masquées."
+  sa_rules: []
+  title: "{value} autre(s) source(s) non alignée(s) ne sont pas détaillées"
+  why: >
+    Seules les dix sources les plus volumineuses de chaque catégorie ont une fiche. Les
+    autres figurent dans le tableau des sources, avec leur volume et leur alignement.
+  fix:
+    - "Ouvrez le tableau des sources et triez-le par nombre de messages."
+    - "Traitez d'abord les sources détaillées ici : corriger un service d'envoi règle souvent plusieurs IP à la fois."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9990
+
+- id: dmarc-report.low_volume
+  family: dmarc-report
+  severity: info
+  penalty: 0
+  detect:
+    signal: "0 < report.messages < 100"
+    notes: "Seuil interne de l'outil : en dessous de 100 messages (ou de 7 jours de rapports), la recommandation de politique reste prudente."
+  sa_rules: []
+  title: "Volume de rapports encore faible ({value} messages)"
+  why: >
+    Les rapports déposés ne couvrent que {value} message(s) : un envoi mensuel ou un outil
+    peu utilisé peut ne pas encore y figurer. Les taux d'alignement ne sont pas encore
+    représentatifs.
+  fix:
+    - "Déposez les rapports des prochaines semaines, de tous les destinataires qui vous en envoient."
+    - "Ne durcissez pas votre politique DMARC sur la seule base de ces rapports."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9989#section-5.1.5
+
+# Fiches PRÊTES MAIS DÉSACTIVÉES (2026-11-10) : dmarc-report.legit_unaligned et
+# dmarc-report.spoofing. Une fiche présente dans la base remplace le texte calculé par
+# tools/dmarc-reports/analyze.ts, et explain() ne sait pas garder ce calcul :
+# - legit_unaligned : le code construit une correction propre à chaque source (DKIM ou SPF
+#   manquant, include du fournisseur) ; la fiche la remplacerait par un texte générique, et
+#   le test dmarc-reports.test.ts (« include:spf.brevo.com » attendu dans fix) échoue ;
+# - spoofing : le code choisit la gravité selon la politique (medium 0,5 si p=none, low 0
+#   sinon) mais ne la passe qu'au texte de repli ; une fiche imposerait une valeur unique.
+# À activer (retirer les dièses) une fois que le code passe severity et penalty hors du
+# repli, et sait conserver sa correction calculée. Ne pas les activer avant.
+#
+# - id: dmarc-report.legit_unaligned
+#   family: dmarc-report
+#   severity: high
+#   penalty: 1.0
+#   detect:
+#     signal: "report.source(ip).verdict == legit_unaligned"
+#     notes: "Source reconnue comme un service d'envoi (nom inverse ou domaine DKIM d'un fournisseur connu) dont les messages au nom de {domain} n'ont ni SPF aligné ni DKIM aligné. Une fiche par source, dix au plus par catégorie."
+#   sa_rules: []
+#   title: "Un envoi légitime de {provider} n'est pas aligné DMARC ({ip})"
+#   why: >
+#     {value} message(s) envoyés au nom de {domain} par {provider} depuis {ip} échouent à
+#     l'alignement DMARC. Tant que votre politique est p=none, ils passent ; avec quarantine ou
+#     reject, ils iraient en spam ou seraient refusés.
+#   fix:
+#     - "Regardez le détail de la source sous ce constat : il indique la part de messages alignés en SPF et en DKIM."
+#     - "Activez chez {provider} la signature DKIM avec {domain} comme domaine de signature (d={domain}), puis publiez dans le DNS l'enregistrement TXT ou CNAME fourni. C'est l'alignement le plus solide, il résiste au transfert."
+#     - "Si {provider} le permet, configurez aussi un domaine d'enveloppe (Return-Path) sur un sous-domaine de {domain} : le SPF n'est aligné que dans ce cas."
+#     - "N'ajoutez son include: qu'à votre enregistrement SPF existant, sans en créer un second."
+#     - "Déposez les rapports des jours suivants : la source doit passer en « alignée » avant tout durcissement de la politique."
+#   fix_by_provider:
+#     google_workspace: "Console d'administration Google, Menu > Apps > Google Workspace > Gmail > Authenticate email : générez la clé, publiez le TXT google._domainkey.{domain}, puis cliquez sur Start authentication."
+#     microsoft_365: "Portail Microsoft Defender, Email & collaboration, Policies & rules, Threat policies, Email authentication settings, onglet DKIM : sélectionnez {domain}, publiez les deux CNAME selector1._domainkey et selector2._domainkey affichés, puis activez la signature."
+#     brevo: "Settings, Senders, Domains, IPs, Domains, Authenticate : les CNAME brevo1/brevo2._domainkey alignent DKIM ; le CNAME « Branded » aligne le Return-Path."
+#     mailchimp: "Account & billing, Domains, Start authentication : publiez les deux CNAME affichés. Mailchimp garde son propre domaine de retour : l'alignement passe par DKIM."
+#     sendgrid: "Settings, Sender Authentication, Domain Authentication : le CNAME em… aligne le Return-Path, s1 et s2._domainkey alignent DKIM."
+#     amazon_ses: "Vérifiez {domain} avec Easy DKIM pour aligner DKIM ; pour aligner SPF, configurez un MAIL FROM personnalisé sur un sous-domaine de {domain}."
+#     mailjet: "Account, Domains & Sender addresses, SPF/DKIM Authentication : publiez le TXT mailjet._domainkey.{domain}. Le Return-Path personnalisé est réservé aux comptes payants, sur demande au support."
+#     mailgun: "Sending, Domains : publiez le TXT de la clé DKIM indiqué (ou les CNAME pdk1 et pdk2._domainkey avec Automatic Sender Security). Envoyez depuis un domaine déclaré dans Mailgun qui soit {domain} ou un de ses sous-domaines."
+#     postmark: "Publiez la clé DKIM du domaine (TXT se terminant par pm._domainkey.{domain}) et le CNAME de Return-Path personnalisé vers pm.mtasv.net ; Postmark précise que DMARC passe par DKIM même si le SPF n'est pas aligné."
+#     ovh: "MX Plan : onglet Informations générales du domaine, badge DKIM, Activer. Email Pro et Exchange : onglet Domaines associés, badge DKIM, Activer. Si la zone DNS est ailleurs, publiez d'abord les deux CNAME affichés."
+#     o2switch: "DKIM est activé par défaut chez o2switch ; vérifiez dans cPanel, Email, Email Deliverability (ou Authentification), Gérer. Si votre DNS est ailleurs, recopiez le TXT default._domainkey.{domain} affiché."
+#   references:
+#     - https://www.rfc-editor.org/rfc/rfc9989#section-4.4
+#     - https://www.rfc-editor.org/rfc/rfc9989#section-5.1.6
+#     - https://www.rfc-editor.org/rfc/rfc9990
+#     - https://knowledge.workspace.google.com/admin/security/set-up-dkim
+#     - https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dkim-configure
+#     - https://help.brevo.com/hc/en-us/articles/35337929909778-Set-up-your-domain-in-Brevo
+#     - https://mailchimp.com/help/set-up-email-domain-authentication/
+#     - https://www.twilio.com/docs/sendgrid/ui/account-and-settings/how-to-set-up-domain-authentication
+#     - https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dmarc.html
+#     - https://documentation.mailjet.com/hc/en-us/articles/360047253194
+#     - https://documentation.mailgun.com/docs/mailgun/user-manual/domains/dkim_security
+#     - https://postmarkapp.com/support/article/1093-why-do-emails-sent-through-postmark-fail-spf-alignment
+#     - https://docs.ovhcloud.com/fr/guides/web-cloud/domains/dns-zone-dkim
+#     - https://faq.o2switch.fr/cpanel/emails/delivrabilite-spf-dkim/
+#
+# - id: dmarc-report.spoofing
+#   family: dmarc-report
+#   severity: low
+#   penalty: 0
+#   detect:
+#     signal: "report.source(ip).verdict == spoofing"
+#     notes: "Source inconnue (ni fournisseur reconnu, ni relais) dont les messages au nom de {domain} n'ont ni SPF ni DKIM alignés. Le code donne au repli medium 0,5 si la politique est p=none et low 0 sinon ; la fiche ne peut pas dépendre de la politique : pénalité nulle pour ne pas sanctionner un domaine déjà en quarantine ou reject."
+#   sa_rules: []
+#   title: "Usurpation probable de {domain} depuis {ip}"
+#   why: >
+#     {value} message(s) prétendent venir de {domain} depuis {ip} (nom inverse : {ptr}), une
+#     source que vous n'avez pas autorisée : ni le SPF ni le DKIM ne sont alignés. Seule votre
+#     politique DMARC décide si ces messages sont bloqués.
+#   fix:
+#     - "Vérifiez d'abord que vous ne reconnaissez pas cet envoi : un logiciel de facturation, un site web ou un prestataire oublié apparaît aussi de cette façon."
+#     - "Si c'est un de vos outils, configurez son SPF et son DKIM pour {domain}, comme pour un envoi légitime."
+#     - "Sinon, et si votre politique est p=none, passez à p=quarantine puis p=reject dès que vos envois légitimes sont tous alignés : ces messages seront alors bloqués."
+#     - "Si votre politique est déjà quarantine ou reject, ces messages sont déjà traités par les destinataires : rien à faire."
+#   example_bad: "v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+#   example_good: "v=DMARC1; p=reject; rua=mailto:dmarc@{domain}"
+#   references:
+#     - https://www.rfc-editor.org/rfc/rfc9989#section-5.1.7
+#     - https://www.rfc-editor.org/rfc/rfc9989#section-4.7
+#

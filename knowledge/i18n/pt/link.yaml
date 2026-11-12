@@ -1,0 +1,46 @@
+link.shortener:
+  title: O link passa por um encurtador de endereços
+  why: "{url} é um endereço encurtado: ele não diz nada sobre o destino. Encurtadores públicos também servem para esconder páginas de phishing. O destino real, lido pela ferramenta, aparece na cadeia de redirecionamentos ({domain})."
+  fix:
+    - Julgue o link pelo destino final, exibido na cadeia, e não pelo endereço curto.
+    - Se você mesmo divulga este link, prefira dar o endereço completo da página em {domain}.
+link.nonstandard_port:
+  title: O link aponta para uma porta incomum ({value})
+  why: "Os sites públicos respondem nas portas 80 (http) e 443 (https). {url} pede a porta {value}: é o caso de um servidor de testes, de um equipamento exposto ou de um servidor montado às pressas, raramente do site de uma empresa."
+  fix:
+    - Verifique se você esperava mesmo esse servidor antes de digitar qualquer coisa nele.
+link.domain_listed:
+  title: O domínio {domain} está registrado em {list_name}
+  why: "{list_name} lista domínios usados para spam, phishing ou malware. Os filtros de e-mail e várias ferramentas de segurança consultam essa lista: um link para {domain} é tratado como perigoso."
+  fix:
+    - "Não abra este link: este relatório já descreve a página, não é preciso ir até ela."
+    - Se o domínio for seu, procure a causa (site invadido, envios não solicitados), corrija-a e depois peça a remoção em {delist_url}.
+link.domain_recent:
+  title: O domínio {domain} foi criado há {value}
+  why: As campanhas de phishing usam domínios de poucos dias ou de algumas semanas, abandonados assim que são localizados. Um domínio recente não é malicioso por isso, mas ainda não tem histórico que permita confiar nele.
+  fix:
+    - Se o link se apresentar como o de um serviço que você conhece, compare {domain} com o domínio oficial desse serviço.
+    - Na dúvida, digite você mesmo o endereço oficial no navegador.
+link.unreachable:
+  title: A página final não pôde ser consultada ({value})
+  why: O destino {url} responde com um erro ou não responde. Uma página de phishing já removida pelo hospedeiro produz esse resultado; o veredito então se apoia nas fontes de reputação, no próprio endereço e no que a página de erro contém.
+  fix:
+    - "Execute a verificação de novo em alguns minutos: uma falha passageira do servidor dá o mesmo resultado."
+    - "Para conferir a resposta sem exibir a página, execute curl -I seguido do endereço a partir de uma máquina isolada (máquina virtual ou servidor de teste) : o comando só lê os cabeçalhos da resposta."
+    - Se você esperava uma página específica, confirme o endereço com a pessoa que o passou, por outro meio.
+link.redirect_chain:
+  title: O link passa por {value} redirecionamentos
+  why: Antes da página final, {url} redireciona várias vezes para outros endereços. Os links de rastreamento publicitário acrescentam um ou dois; uma cadeia longa entre vários domínios também serve para esconder o destino real das ferramentas de filtragem.
+  fix:
+    - "Olhe o domínio da página final na cadeia: é ele que importa."
+link.punycode_lookalike:
+  title: O domínio do link é escrito com caracteres que imitam outro nome
+  why: "{url} contém letras de outros alfabetos (cirílico, grego) ou números que se parecem com letras latinas. Na tela, o nome é lido como o de um domínio conhecido, embora pertença a outra pessoa."
+  fix:
+    - "Não use este link: digite você mesmo o endereço do serviço no navegador."
+    - Se você digitou um identificador nesta página, troque a senha no site oficial.
+link.private_target:
+  title: O link aponta para um endereço de rede privada
+  why: "Uma etapa da cadeia leva a {domain}, um endereço que existe apenas dentro de uma rede local. Um site público não tem motivo para fazer isso: a ferramenta não seguiu essa etapa."
+  fix:
+    - Se o link vier do seu próprio site, procure o redirecionamento mal configurado (endereço de teste esquecido em produção).

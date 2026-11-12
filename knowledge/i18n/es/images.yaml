@@ -1,0 +1,83 @@
+images.missing_alt:
+  title: Algunas imágenes no tienen texto alternativo
+  why: Estas imágenes no tienen atributo alt (su lista aparece bajo la anomalía). Cuando las imágenes están bloqueadas, algo que sigue siendo el ajuste por defecto en varios clientes, el lector solo ve un marco vacío en su lugar.
+  fix:
+    - Añade a cada imagen un atributo alt que diga qué muestra o qué hace (por ejemplo «Ver la colección de invierno»).
+    - Para una imagen puramente decorativa, pon alt="".
+  fix_by_provider:
+    mailchimp: Haz clic en la imagen, después en Edit y rellena el campo Alt text.
+    brevo: Selecciona la imagen en el editor y rellena el campo Texto alternativo en el panel de la derecha.
+images.http_insecure:
+  title: Algunas imágenes se cargan por http sin cifrar
+  why: La imagen {url} se carga sin cifrado. Algunos clientes no la muestran o muestran una advertencia, y los filtros de Microsoft pueden aumentar la puntuación de spam.
+  fix:
+    - Sustituye http:// por https:// en la dirección de cada imagen.
+    - Comprueba que el servidor que aloja las imágenes tiene un certificado válido.
+images.third_party_host:
+  title: Algunas imágenes están alojadas en el sitio de un tercero
+  why: La imagen {url} se carga desde un sitio que no es ni {domain} ni tu herramienta de envío. Si ese sitio la retira o tiene mala reputación, la imagen desaparece o arrastra tu mensaje con ella.
+  fix:
+    - Descarga la imagen y aloja en {domain} o en la biblioteca de imágenes de tu herramienta de envío.
+    - Comprueba que tienes derecho a usar esta imagen.
+images.ip_host:
+  title: Una imagen se carga desde una dirección IP
+  why: La imagen {url} se carga desde una dirección IP en lugar de un nombre de dominio. Es una señal de servidor improvisado que los filtros, incluidos los de Microsoft, cuentan en contra del mensaje.
+  fix:
+    - Aloja la imagen en un nombre de dominio, por ejemplo https://{domain}/img/.
+images.unreachable:
+  title: Una imagen del mensaje no se carga
+  why: La imagen {url} responde {status}. El lector ve un marco vacío o un icono roto, y un mensaje a medio llenar parece sospechoso.
+  fix:
+    - Abre la dirección de la imagen en un navegador para confirmar el error.
+    - Corrige la ruta en la plantilla o vuelve a poner la imagen en línea.
+    - Si tu alojamiento bloquea las peticiones sin referente, autoriza la carga directa de las imágenes de la carpeta correspondiente.
+images.wrong_content_type:
+  title: La dirección de una imagen devuelve algo que no es una imagen
+  why: "La dirección {url} devuelve un contenido de tipo {value} en lugar de una imagen: a menudo, una página de inicio de sesión o de error. La imagen no se mostrará."
+  fix:
+    - Comprueba que la imagen es pública y no pide iniciar sesión.
+    - Usa el enlace directo al archivo de imagen, no el de la página de compartir.
+images.too_heavy:
+  title: Una imagen es muy pesada
+  why: "La imagen {url} pesa {value}. En el móvil tarda en mostrarse y consume datos: el lector suele cerrar el mensaje antes de haberla visto."
+  fix:
+    - Redimensiona la imagen a las dimensiones en las que se muestra en el mensaje, con un margen solo para pantallas de alta densidad.
+    - Comprímela en JPEG para las fotos, y en PNG para los logotipos y las superficies de color plano.
+images.image_heavy:
+  title: Las imágenes superan ampliamente al texto
+  why: La mayor parte del mensaje son imágenes. Cuando están bloqueadas, el lector apenas ve nada, y los filtros tienen poco texto para juzgar el mensaje.
+  fix:
+    - Saca de las imágenes la información clave (oferta, fecha, precio, botón) y escríbela como texto HTML.
+    - Reserva las imágenes para ilustrar, no para transmitir el mensaje.
+images.inline_cid_many:
+  title: El mensaje incluye muchas imágenes como adjuntos incrustados
+  why: "El mensaje transporta {value} imágenes incrustadas mediante cid:. Cada una aumenta el peso del mensaje, y algunos clientes también las muestran como adjuntos, lo que parece un envío sospechoso."
+  fix:
+    - Aloja las imágenes en {domain} o en tu herramienta de envío y llámalas mediante una dirección https.
+    - Conserva como máximo el logotipo como imagen incrustada si quieres que se muestre sin descargarlo.
+  fix_by_provider:
+    microsoft_365: En Outlook, una imagen pegada en el cuerpo se convierte en una imagen incrustada. Para un boletín, usa una herramienta de envío en lugar del correo.
+    wordpress: Si una extensión de notificaciones añade las imágenes como adjuntos incrustados, desactiva esta opción y usa imágenes alojadas en el sitio.
+images.tracking_pixel:
+  title: El mensaje contiene un píxel de medición de apertura
+  why: El mensaje contiene una imagen invisible que mide la apertura. Es habitual en los boletines, pero las organizaciones que han activado la opción Web bugs de Microsoft Defender clasifican estos mensajes como spam con alta confianza.
+  fix:
+    - En los mensajes transaccionales y los intercambios personales, desactiva la medición de apertura en tu herramienta.
+    - En los boletines a empresas con Microsoft 365, compara las tasas de entrega con y sin píxel.
+images.tracking_pixel_without_content:
+  title: El mensaje solo contiene un píxel de seguimiento y casi nada más
+  why: Un mensaje casi vacío con un píxel de seguimiento sirve sobre todo para comprobar que la dirección está activa. Es una práctica de spammers, y los filtros la reconocen.
+  fix:
+    - Comprueba que el contenido de la plantilla se transmite en el envío.
+    - Si el mensaje es una prueba técnica, elimina el píxel de seguimiento.
+images.missing_dimensions:
+  title: Algunas imágenes no tienen anchura declarada
+  why: Sin anchura declarada, una imagen grande puede desbordarse en Outlook para Windows, y el diseño se desplaza cuando las imágenes están bloqueadas.
+  fix:
+    - Añade el atributo width (en píxeles, sin unidad) a cada imagen, y height si la relación entre anchura y altura es fija.
+    - Complétalo con style='max-width:100%;height:auto' para la visualización en móviles.
+images.redirecting_src:
+  title: La dirección de una imagen pasa por una redirección
+  why: La imagen {url} se sirve tras una redirección. La visualización es más lenta, y algunos proxies de imágenes no siguen todas las redirecciones.
+  fix:
+    - Pon en el mensaje la dirección final del archivo de imagen.

@@ -1,0 +1,20 @@
+Return-Path: <bounce@atelier-exemple.fr>
+Delivered-To: t-abcd2345@check.localhost
+Received: from mx1.mailhost.net (mx1.mailhost.net [10.0.0.5])
+	by imap.mailhost.net (Postfix) with ESMTP id 4AA; Tue, 10 Nov 2026 16:00:05 +0100 (CET)
+Received: from mail.atelier-exemple.fr (mail.atelier-exemple.fr [93.184.215.14])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
+	by mx1.mailhost.net (Postfix) with ESMTPS id 4AB
+	for <t-abcd2345@check.localhost>; Tue, 10 Nov 2026 16:00:02 +0100 (CET)
+Received: from [192.168.1.20] (unknown [192.168.1.20])
+	by mail.atelier-exemple.fr (Postfix) with ESMTPSA id 77; Tue, 10 Nov 2026 15:59:58 +0100 (CET)
+X-Spam-Status: No, score=0.1
+From: Paul <paul@atelier-exemple.fr>
+To: t-abcd2345@check.localhost
+Subject: Test via la boite
+Date: Tue, 10 Nov 2026 15:59:57 +0100
+Message-ID: <imap-1@atelier-exemple.fr>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Bonjour, ceci est un message de test envoye depuis le serveur de atelier-exemple.fr pour verifier la reception.

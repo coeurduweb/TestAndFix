@@ -1,0 +1,194 @@
+sa.uri_try_3ld:
+  title: "Link para um subdomínio de chamada para ação (try., get., check., join., my.…)"
+  why: "Um link aponta para um host em .com ou .net cujo nome começa com try, start, get, save, check, act, compare, join, learn, request, visit ou my (get.oferta-exemplo.com.br, check.seuservico.com.br). Os spammers criam esses subdomínios de chamada para ação; um serviço legítimo que use um deles também é penalizado."
+  fix:
+    - "Faça os links apontarem para o seu domínio principal (www.{domain}) ou para um caminho (/teste), em vez de um subdomínio que começa com uma dessas palavras."
+sa.uri_try_usme:
+  title: "Link “try” ou “get” para uma extensão .us, .me, .mobi ou .club"
+  why: "Um link de chamada para ação aponta para um domínio em .us, .me, .mobi ou .club, extensões muito usadas por spammers."
+  fix:
+    - "Use links para o seu domínio principal e assine a mensagem com DKIM (a regra não se aplica a mensagens assinadas)."
+sa.uri_optout_3ld:
+  title: "Link de cancelamento de inscrição em um subdomínio do tipo “remove” ou “stop”"
+  why: "O link de cancelamento aponta para um host como remove.seu-dominio.com.br ou stop.seu-dominio.com.br. Padrão observado em spammers que trocam de domínio a cada campanha."
+  fix:
+    - "Hospede a página de cancelamento de inscrição no seu domínio ou no da sua ferramenta de envio, com um caminho (/descadastro)."
+sa.uri_optout_usme:
+  title: "Link de cancelamento “remove” ou “stop” em .us, .me, .mobi ou .club"
+  why: "O link de cancelamento aponta para um subdomínio de parada em uma extensão frequentemente abusada."
+  fix:
+    - "Use o link de cancelamento nativo da sua ferramenta de envio."
+sa.uri_novowel:
+  title: "Link para um nome de host com uma longa sequência de consoantes"
+  why: "Um link aponta para um host que contém sete consoantes seguidas, como os domínios gerados aleatoriamente. Os domínios de rastreamento das ferramentas de envio (identificadores codificados) às vezes disparam a regra."
+  fix:
+    - "Configure um domínio de rastreamento personalizado e legível (rastreio.{domain}) na sua ferramenta de envio."
+sa.uri_hex:
+  title: "Link para um nome de host com uma longa sequência hexadecimal"
+  why: "O nome de host de um link contém pelo menos seis caracteres hexadecimais (a1b2c3), típico de subdomínios gerados. Penalidade pequena."
+  fix:
+    - "Use nomes de host legíveis nos links, especialmente para o rastreamento dos cliques."
+sa.numeric_http_addr:
+  title: "Link para um endereço IP em vez de um nome de domínio"
+  why: "Um link aponta para um endereço IP (http://203.0.113.10/...). Nenhum site sério faz isso em um e-mail, e os filtros de links não conseguem verificar nada. Mais de um ponto."
+  fix:
+    - "Substitua o IP pelo nome de domínio do site."
+    - "Para um link de teste ou de homologação deixado em um modelo, substitua-o pelo endereço de produção."
+sa.normal_http_to_ip:
+  title: "Link para um endereço IPv4 público"
+  why: "Um link aponta para um endereço IP público. Pontuação simbólica, mas NUMERIC_HTTP_ADDR costuma disparar ao mesmo tempo."
+  fix:
+    - "Use um nome de domínio nos links."
+sa.https_http_mismatch:
+  title: "O texto de um link mostra um domínio diferente do seu destino"
+  why: "Um link mostra https://www.seu-dominio.com.br, mas na verdade leva a outro domínio. É a técnica básica do phishing. Uma newsletter cujos links passam por um domínio de rastreamento, mas exibe o endereço final em texto puro, também dispara a regra."
+  fix:
+    - "Não escreva um endereço https:// como texto do link: use um rótulo (“Ver a loja”)."
+    - "Ou configure o rastreamento dos cliques em um subdomínio de {domain}, para que o domínio exibido e o domínio real coincidam."
+sa.http_escaped_host:
+  title: "Nome de host de um link codificado com %"
+  why: "O nome de host de um link contém caracteres codificados (%2E em vez de um ponto), técnica usada para ocultar o destino real. Penalidade pequena."
+  fix:
+    - "Escreva o nome de host em texto claro; somente os parâmetros depois de ? podem ser codificados."
+sa.http_excessive_escapes:
+  title: "Link com codificações % desnecessárias"
+  why: "Um link codifica letras ou números comuns (%61 para a). Pontuação simbólica."
+  fix:
+    - "Codifique nos links apenas os caracteres que exigem isso (espaços, acentos, &)."
+sa.weird_port:
+  title: "Link com uma porta incomum"
+  why: "Um link especifica uma porta de rede incomum (https://seu-dominio.com.br:8443/). Costuma ser um link de pré-produção ou de administração esquecido. Pontuação simbólica."
+  fix:
+    - "Use o endereço público do site, sem número de porta."
+sa.uri_truncated:
+  title: "Um link foi truncado durante a análise"
+  why: "Um link ultrapassa 8.192 caracteres, ou a mensagem contém links demais: o SpamAssassin não analisou tudo. Pontuação simbólica, mas um link desse tamanho é anormal."
+  fix:
+    - "Encurte os links longos demais (parâmetros de rastreamento em excesso) e limite a quantidade de links."
+sa.uri_data:
+  title: "Link data: (conteúdo embutido no endereço)"
+  why: "Um link usa o esquema data: para embutir um documento (em geral HTML) no próprio endereço. É uma técnica de phishing para exibir uma página falsa sem servidor."
+  fix:
+    - "Substitua esse link por um link para uma página hospedada no seu site."
+sa.uri_wpadmin:
+  title: "Link para a administração de um WordPress"
+  why: "Um link aponta para /wp-admin/ de um site WordPress. Os phishings hospedam suas páginas falsas em WordPress invadidos, e um link de administração em uma newsletter também é um erro."
+  fix:
+    - "Substitua o link pelo endereço público da página (sem /wp-admin/)."
+  fix_by_provider:
+    wordpress: "Copie o link pelo botão “Ver” do artigo, e não pela tela de edição."
+sa.uri_wp_hacked:
+  title: "Link para um arquivo PHP ou HTML em wp-content ou wp-includes"
+  why: "Um link aponta para um arquivo .php ou .html em wp-content ou wp-includes. Esses diretórios normalmente só contêm imagens e scripts internos: é o caminho típico de uma página depositada por um invasor. Mais de 2,5 pontos."
+  fix:
+    - "Se o link for seu, verifique esse arquivo: se ele não tiver nada a fazer ali, o site está comprometido."
+    - "Para um link legítimo para um documento, use o endereço da página pública ou de um PDF em uploads."
+    - "Autentique a mensagem (SPF ou DKIM): a regra não se aplica a mensagens autenticadas."
+sa.uri_php_redir:
+  title: "Link que passa por redirect.php"
+  why: "Um link passa por um script redirect.php que envia para outro endereço. Redirecionamentos abertos de sites de terceiros servem para ocultar destinos maliciosos."
+  fix:
+    - "Coloque o endereço de destino diretamente no link."
+sa.url_shortener_disabled:
+  title: "Link encurtado desativado por abuso"
+  why: "Um link encurtado foi suspenso pelo serviço de encurtamento por abuso. O leitor cairá em uma página de aviso, e o SpamAssassin soma 2 pontos."
+  fix:
+    - "Substitua o link encurtado pelo endereço completo da página."
+    - "Não use encurtador público em um e-mail: ele é compartilhado com spammers."
+sa.url_shortener_chained:
+  title: "Link encurtado que aponta para outro encurtador"
+  why: "Um link encurtado leva a outro link encurtado. A cadeia serve para ocultar o destino final. Pontuação simbólica, mas os filtros de links a registram."
+  fix:
+    - "Use o endereço final diretamente, sem encurtador."
+sa.t_short_shortner:
+  title: "Mensagem curta com um link encurtado como conteúdo principal"
+  why: "A mensagem tem poucas palavras e um link encurtado. A lista do SpamAssassin também considera youtu.be, amzn.to, wp.me ou eepurl.com (Mailchimp). Perfil típico de spam ou de mensagem de conta invadida. Regra de teste sem peso."
+  fix:
+    - "Adicione contexto à mensagem e use o endereço completo da página."
+sa.redir_url_chained:
+  title: "Link redirecionado para outros redirecionadores"
+  why: "Um link passa por vários serviços de redirecionamento sucessivos. Pontuação simbólica, mas é um meio clássico de ocultar um destino."
+  fix:
+    - "Limite a cadeia a uma única passagem (o rastreamento da sua ferramenta de envio) e depois o endereço final."
+sa.redir_url_loop:
+  title: "Link redirecionado que entra em loop"
+  why: "Um link de redirecionamento volta para ele mesmo. O leitor nunca chegará à página."
+  fix:
+    - "Teste o link em um navegador e corrija o redirecionamento."
+sa.redir_url_maxchain:
+  title: "Link com redirecionamentos demais"
+  why: "O link passa por tantos redirecionamentos que a análise parou. Os navegadores também podem desistir."
+  fix:
+    - "Reduza o número de redirecionamentos entre o link da mensagem e a página final."
+sa.gb_google_obfur:
+  title: "Link oculto atrás de um redirecionamento do Google"
+  why: "O link é um endereço google.com/url?...&url=... copiado de uma página de resultados do Google. Ele oculta o destino real, e os spammers o usam para contornar as listas negras."
+  fix:
+    - "Abra o link e depois copie o endereço real da página na barra do navegador."
+sa.uri_google_proxy:
+  title: "Link que passa pelo proxy de imagens do Google"
+  why: "Um link ou uma imagem passa por googleusercontent.com/proxy/, o endereço que o Gmail atribui às imagens que armazena em cache. Ele aparece quando se copia uma imagem de uma mensagem recebida no Gmail."
+  fix:
+    - "Reinsira as imagens a partir do arquivo original ou do endereço delas no seu site."
+sa.uri_dq_unsub:
+  title: "Link de cancelamento de inscrição para um endereço IP"
+  why: "O link de cancelamento aponta para um endereço IP. Os destinatários e os filtros não têm como identificar o remetente."
+  fix:
+    - "Hospede o cancelamento de inscrição sob um nome de domínio (o seu ou o da ferramenta de envio)."
+sa.spoof_com2com:
+  title: "Link com .com no meio e no fim do nome de host"
+  why: "O nome de host do tipo banco.com.outro-site.com imita um domínio conhecido. Pontuação simbólica, mas é um padrão de falsificação."
+  fix:
+    - "Evite subdomínios que contenham “.com”: use o domínio real."
+sa.spoof_com2oth:
+  title: "Link com .com no meio do nome de host"
+  why: "O nome de host contém “.com.” no meio (exemplo.com.site.com.br). Pontuação simbólica."
+  fix:
+    - "Use um nome de host sem “.com” intermediário."
+sa.long_hex_uri:
+  title: "Link com uma sequência hexadecimal muito longa"
+  why: "Um link contém um identificador hexadecimal de 128 caracteres. Os links de rastreamento personalizados por destinatário às vezes geram isso. 1 ponto."
+  fix:
+    - "Se for o link de rastreamento da sua ferramenta, use um identificador mais curto ou um domínio de rastreamento personalizado."
+sa.uppercase_uri:
+  title: "Protocolo de link escrito com capitalização incomum"
+  why: "O início de um link mistura maiúsculas e minúsculas (hTTps://). Técnica para contornar filtros ingênuos. Quase 3 pontos."
+  fix:
+    - "Escreva https:// em minúsculas em todos os links."
+sa.uri_excess_slashes:
+  title: "Link com barras demais depois do protocolo"
+  why: "Um link começa com https:/// (três barras ou mais). Os navegadores corrigem isso, mas os filtros veem nisso uma tentativa de contornar a análise. 2,5 pontos."
+  fix:
+    - "Corrija o link: https:// seguido diretamente do domínio."
+    - "Verifique a variável do modelo que monta o link (domínio vazio, barra a mais)."
+sa.body_uri_only:
+  title: "O corpo da mensagem é somente um link"
+  why: "A mensagem se reduz a um link ou a uma imagem clicável. Pontuação simbólica, mas esse é o perfil das mensagens enviadas a partir de contas invadidas."
+  fix:
+    - "Adicione uma ou duas frases que expliquem o link e assine a mensagem com DKIM."
+sa.mxg_email_frag:
+  title: "Link contendo um endereço de e-mail depois de #"
+  why: "Um link contém um endereço de e-mail depois do #. Os phishings usam isso para preencher previamente uma página de login falsa. Penalidade pequena."
+  fix:
+    - "Passe o identificador do destinatário por um parâmetro opaco, e não pelo endereço de e-mail em texto claro."
+sa.tracker_id:
+  title: "Parágrafo reduzido a um identificador de rastreamento"
+  why: "Um parágrafo da mensagem é apenas um código aleatório, como os que os spammers adicionam para tornar cada mensagem única. Penalidade pequena."
+  fix:
+    - "Retire os identificadores técnicos visíveis no texto; coloque-os nos links ou nos cabeçalhos."
+sa.uri_firebaseapp:
+  title: "Link para um aplicativo hospedado em firebaseapp.com ou web.app"
+  why: "Um link leva a um aplicativo hospedado no Firebase. Essas hospedagens gratuitas são muito usadas para páginas de phishing, por isso chega a quase 3 pontos mesmo para um aplicativo legítimo."
+  fix:
+    - "Associe um domínio personalizado ao aplicativo Firebase e use-o nos links."
+sa.t_pds_other_bad_tld:
+  title: "Link para uma extensão de domínio pouco confiável"
+  why: "Um link aponta para uma extensão que as regras classificam como pouco confiável. Regra de teste sem peso, mas outros filtros penalizam essas extensões."
+  fix:
+    - "Se for o seu domínio, considere uma extensão mais comum para os links das campanhas."
+sa.shortener_short_img:
+  title: "HTML curto com imagem clicável e link encurtado"
+  why: "A mensagem é um HTML minúsculo com uma imagem clicável apontando para um link encurtado. Combinação típica de spam. Mais de 2 pontos."
+  fix:
+    - "Substitua o link encurtado pelo endereço completo e adicione texto à mensagem."
+    - "Atenção: youtu.be, amzn.to, wp.me e eepurl.com contam como encurtadores; use os endereços longos."

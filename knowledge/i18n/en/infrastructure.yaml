@@ -1,0 +1,170 @@
+infrastructure.shared_ip:
+  title: The message is sent from a shared IP of {provider}
+  why: Your IP reputation is shared with the other customers of {provider}. This is an advantage for a low or irregular volume. It is a risk if a neighbor sends badly. Your domain reputation, however, stays yours.
+  fix:
+    - "For a modest volume, keep the shared IP: a dedicated IP without regular volume has a reputation that is harder to build."
+    - If you send a lot and regularly, look into the dedicated IP offer of {provider}.
+    - In any case, authenticate {domain} (aligned DKIM) so that your domain reputation does not depend on the IP.
+  fix_by_provider:
+    postmark: Postmark reserves dedicated IPs for accounts sending at least 300,000 messages per month.
+    sendgrid: SendGrid assigns a dedicated IP starting with the Pro (Email API) and Advanced (Marketing Campaigns) plans.
+    brevo: Brevo's Enterprise plan includes a dedicated IP. Others can be added as an option.
+    amazon_ses: SES offers standard or managed dedicated IPs, billed in addition.
+    mailchimp: A dedicated IP is a paid option, granted at Mailchimp's discretion.
+    hubspot: Without the Dedicated IP or Transactional Email module, marketing emails go through HubSpot's shared IPs.
+infrastructure.ipv6_not_in_spf:
+  title: "The server sent over IPv6 ({ip}), an address missing from the SPF record"
+  why: Your SPF authorizes the server's IPv4, but this message was sent over its IPv6. Depending on the network path, your messages pass or fail SPF, which makes the problem hard to understand.
+  fix:
+    - Add ip6:{ip} (or the server's /64 prefix) to your SPF.
+    - Check that this IPv6 also has a reverse DNS and a matching AAAA record.
+    - Otherwise, configure the server to send over IPv4 only.
+  fix_by_provider:
+    postfix: "To force IPv4: smtp_address_preference = ipv4 or inet_protocols = ipv4 in main.cf, then run postfix reload."
+infrastructure.web_server_mail:
+  title: The message was sent by the web server, without going through your mail service
+  why: "Your site sends directly with the server's mail() function. The return address is that of the server ({envelope_domain}), with neither aligned SPF nor DKIM for {domain}: these messages (forms, orders, password emails) often end up in spam."
+  fix:
+    - Have the site send through the authenticated SMTP server of your mail service, or through a transactional sending service.
+    - Use as sender an address on {domain} that really exists.
+    - "Run the test again: SPF and DKIM must pass for {domain}."
+  fix_by_provider:
+    wordpress: "Install an SMTP plugin, enter the SMTP server of your mail service (port 587 with TLS or 465 with SSL) with an account on {domain}, then send a test message from the plugin."
+    cpanel: "If you stay with this host, create a mailbox on {domain} in cPanel and have the site send through its authenticated SMTP. cPanel notes that DKIM may not sign PHP mail in some configurations."
+    o2switch: "Create an address on {domain} in cPanel and use it for authenticated SMTP in your website. o2switch states include:spf.jabatus.fr as the only SPF for its services."
+infrastructure.dns_inconsistent:
+  title: The DNS servers of {domain} do not all give the same answer
+  why: Depending on which DNS server is queried, recipients see your new configuration or the old one. Your SPF, DKIM or DMARC results change from one message to the next for no apparent reason.
+  fix:
+    - Compare the list of name servers declared at your registrar with that of your current DNS host, and remove those of the former host.
+    - If you manage secondary servers, increment the zone's serial number and check that zone transfer works.
+    - "Run the test again: all servers must return the same record."
+infrastructure.dns_lame_server:
+  title: A DNS server declared for {domain} does not respond correctly
+  why: Part of the queries for {domain} reach a server that does not respond. Recipients then get temporary errors and delay or misjudge your messages.
+  fix:
+    - Identify the faulty server reported by the test.
+    - Remove it from the list of name servers at your registrar, or have it configured to serve the zone of {domain}.
+infrastructure.cname_at_apex:
+  title: The root of {domain} is a CNAME alias
+  why: "A CNAME at the root prevents publishing an MX or SPF record there. Depending on the DNS server, these records are ignored or the CNAME itself is ignored: your mail works unpredictably."
+  fix:
+    - Replace the root CNAME with A and AAAA records, or use your DNS host's flattening feature (ALIAS, ANAME, CNAME flattening).
+    - Then publish the MX and TXT (SPF) records at the root as usual.
+  fix_by_provider:
+    cloudflare_dns: "Cloudflare resolves a CNAME placed at the root into addresses (CNAME flattening). Then check that MX and TXT are published and served at the root."
+infrastructure.mail_host_proxied:
+  title: The mail server of {domain} is hidden behind the Cloudflare proxy
+  why: The address of your MX is that of Cloudflare's web proxy, which does not carry mail. Messages to {domain}, including replies and bounces, cannot be delivered.
+  fix:
+    - In Cloudflare, open the A or AAAA record of the name given in the MX.
+    - Switch it to DNS only (grey cloud) and check that it points to the real IP address of the mail server.
+  fix_by_provider:
+    cloudflare_dns: "DNS, Records: click the record, turn off Proxy status (DNS only), then save."
+infrastructure.domain_expiring:
+  title: The domain {domain} expires in less than 30 days
+  why: "At expiry, the domain stops working: mail, website and authentication go down at the same time, and a third party can buy the domain."
+  fix:
+    - Renew the domain with your registrar.
+    - Turn on automatic renewal and check that the payment method on file is valid.
+infrastructure.open_relay:
+  title: The server {value} of {domain} is an open relay
+  why: Anyone can send spam through your server. It will be listed on blocklists within hours, and all your legitimate mail will be refused.
+  fix:
+    - Restrict relaying immediately to trusted networks and authenticated users.
+    - Check the queue and delete the pending spam messages.
+    - Then check the blocklists and request the necessary removals.
+  fix_by_provider:
+    postfix: "In main.cf: smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination, and mynetworks limited to 127.0.0.0/8 [::1]/128, then run postfix reload."
+    exim: Check that the hostlist relay_from_hosts contains only localhost, and that the RCPT ACL refuses non-local recipients without authentication.
+infrastructure.smtp_banner_mismatch:
+  title: The MX server of {domain} announces itself under another name ({value})
+  why: The server presents itself under a name different from its MX and its reverse DNS. This is not blocking, but it is often the same name it uses as HELO when sending, where it weighs on your messages.
+  fix:
+    - "Give the server a single name used everywhere: banner, HELO, reverse DNS and A record."
+  fix_by_provider:
+    postfix: "The banner uses $myhostname (smtpd_banner): set myhostname to the MX name."
+infrastructure.ns_single:
+  title: "{domain} has only one name server"
+  why: "If this server goes down, no name of {domain} responds anymore: website, MX, SPF, DKIM and DMARC disappear together, and mail sent to you eventually bounces."
+  fix:
+    - "Ask your DNS host for its list of name servers: most provide at least two."
+    - At your registrar, declare at least two name servers for {domain}.
+    - "If you run your own DNS server, add a secondary server with another provider, fed by zone transfer."
+infrastructure.ns_unresolvable:
+  title: A name server of {domain} has no address
+  why: "The server {value} is declared for {domain}, but its name gives no IP address: resolvers cannot query it. They waste time trying, and if it is the only valid one, the whole domain stops responding."
+  fix:
+    - At your registrar, compare the list of name servers of {domain} with the one given by your DNS host, and correct the name of {value}.
+    - "If {value} is a name in your own domain (ns1.{domain}), declare its IP address at the registrar (glue record)."
+    - If this server no longer exists, remove it from the delegation.
+infrastructure.ns_same_network:
+  title: All name servers of {domain} are on the same network
+  why: "The servers share the network {value}: an outage or attack on this network takes them all down at once, and {domain} no longer responds anywhere. RFC 2182 calls for secondary servers spread across different networks."
+  fix:
+    - If your DNS host advertises a distributed anycast service, this check can be ignored.
+    - Otherwise, add a name server with another provider (secondary DNS service fed by zone transfer).
+    - Declare this server at your registrar and in the zone of {domain}.
+infrastructure.ns_parent_child_mismatch:
+  title: The name servers declared at the registry and in the {domain} zone differ
+  why: "The registry and the {domain} zone do not list the same servers. Depending on the resolver, answers come from one list or the other: a change made at a single host is only seen by some recipients."
+  fix:
+    - "Note the two lists shown in the details: the one at the registry (parent) and the one in the zone."
+    - Decide which DNS host is authoritative, then align the list at your registrar and the NS records of the zone with its servers.
+    - If you have just changed host, remove the old host's servers from both sides, and keep the old zone up to date until the NS TTL expires.
+infrastructure.soa_missing:
+  title: No readable SOA for the zone {domain}
+  why: "No name server returned the SOA record of {domain}. The declared servers probably do not serve the zone: the domain's DNS answers (MX, SPF, DKIM) become unreliable or absent."
+  fix:
+    - At your DNS host, check that the {domain} zone exists and is active.
+    - Compare the name servers declared at your registrar with those your host assigned to you.
+    - "On your own server, check that the zone loads without errors (DNS server log), then reload it."
+infrastructure.soa_serial_mismatch:
+  title: The servers of {domain} do not have the same version of the zone
+  why: "The SOA serial numbers differ ({value}): one server has not received the latest change. Depending on the server queried, recipients see the old or new version of your records."
+  fix:
+    - If the zone has just been changed, run the check again in a few minutes.
+    - If the gap persists, check that the serial was increased on the primary server at the last change.
+    - Check that zone transfer to the secondaries is allowed and works (server log, NOTIFY), or ask your DNS host to synchronize.
+infrastructure.caa_missing:
+  title: No CAA record for {domain}
+  why: Without CAA, any certificate authority can issue a certificate for {domain}. This is not an error, but it is one protection fewer against a fraudulently obtained certificate for your website or your mail server.
+  fix:
+    - "List the authorities that actually issue your certificates (website, MX, MTA-STS policy): the issuer appears on each certificate."
+    - Publish a CAA record issue per authority, at the root of {domain}.
+    - Optionally, add an iodef to be notified of a refused request.
+infrastructure.caa_unknown_critical:
+  title: An unknown critical CAA record blocks certificates for {domain}
+  why: "The tag {value} is marked critical (flag 128) and is not a recognized tag: certificate authorities must then refuse any issuance. Renewal of your certificates (website, MX, MTA-STS) will fail."
+  fix:
+    - In the DNS zone of {domain}, find the CAA record whose tag is {value}.
+    - Fix the typo if it is issue, issuewild or iodef, or set the flag back to 0.
+    - Delete the record if it serves no purpose.
+infrastructure.domain_expired:
+  title: The domain {domain} has expired
+  why: "The expiry date ({value}) has passed. The registrar can cut off the domain at any time: website, mail and authentication then go down together, and the domain eventually gets deleted and open for purchase by a third party."
+  fix:
+    - "Renew {domain} with your registrar immediately: renewal is generally still possible for some time after expiry."
+    - Check that the registered holder's email address and payment method are valid, so you receive the next notices.
+    - Turn on automatic renewal.
+infrastructure.domain_hold:
+  title: The domain {domain} is suspended (hold)
+  why: "The status {value} removes {domain} from DNS: no name in the domain responds, not the website, the MX records or the SPF. Mail sent to you bounces, and your sending fails authentication."
+  fix:
+    - "Contact your registrar: it knows the reason for the status (unpaid, dispute, deletion requested)."
+    - Look in your mailbox for a message from the registrar, often a request to verify the holder's details, and follow the link.
+    - "For serverHold, set by the registry, also go through your registrar: it is the one that deals with the registry."
+infrastructure.domain_pending_delete:
+  title: The domain {domain} is being deleted
+  why: "The status {value} indicates that {domain} will be deleted and then put back on sale. The domain already no longer works, and once purged, anyone will be able to register it, receive your mail and send in your name."
+  fix:
+    - "Contact your registrar without delay: under redemptionPeriod, restoration is possible, generally for a fee."
+    - "With pendingDelete alone, restoration is no longer possible: be ready to re-register the domain as soon as it is released, or to migrate your addresses."
+    - Once the domain is recovered, turn on automatic renewal.
+infrastructure.domain_not_registered:
+  title: The domain {domain} is not registered
+  why: "The registry has no record of {domain}: it does not exist, or it has been deleted. No address on this domain can receive mail or be authenticated, and anyone can register it."
+  fix:
+    - Check the spelling of the domain you entered.
+    - If the domain used to belong to you, contact your registrar and re-register it as quickly as possible if it is available.
+    - "If this is a link received by message, do not follow it: anyone can register this domain and publish the page of their choice on it."

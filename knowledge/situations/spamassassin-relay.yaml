@@ -1,0 +1,403 @@
+# Famille spamassassin, groupe relay. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/relay.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.rdns_none
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(RDNS_NONE)
+    notes: 'score SA 4.0.x : 0.793 (sa-update r1939780, jeu réseau + Bayes). Teste : meta __RDNS_NONE
+      : le dernier relais externe (X-Spam-Relays-External) n''a pas de nom rDNS, hors CommuniGate et Lotus
+      Domino.'
+  sa_rules:
+  - RDNS_NONE
+  title: L'IP d'envoi n'a pas de reverse DNS
+  why: 'L''IP {ip} qui a remis le message ne renvoie aucun nom quand on l''interroge en DNS inverse. Les
+    serveurs de messagerie sérieux en ont toujours un : son absence évoque une machine infectée ou un
+    serveur monté à la hâte, et plusieurs fournisseurs refusent ces connexions.'
+  fix:
+  - Demandez à l'hébergeur ou au fournisseur de l'IP {ip} de créer un enregistrement PTR, par exemple
+    mail.{domain}.
+  - Faites pointer ce nom vers {ip} en DNS direct (enregistrement A), pour que les deux sens concordent.
+  - Annoncez ce même nom en HELO.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dynrdns.cf
+  - https://support.google.com/a/answer/81126
+- id: sa.rdns_dynamic
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(RDNS_DYNAMIC)
+    notes: 'score SA 4.0.x : 0.982 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : le rDNS du
+      dernier relais externe non authentifié contient une IP, ou des mots comme dsl, cable, dhcp, dyn,
+      cpe, client, et pas de mot comme mail, smtp, static.'
+  sa_rules:
+  - RDNS_DYNAMIC
+  title: Le reverse DNS de l'IP d'envoi ressemble à une connexion grand public
+  why: Le nom {ptr} de l'IP d'envoi contient l'adresse IP ou des mots typiques des box et connexions résidentielles.
+    SpamAssassin en déduit un ordinateur ou un objet connecté qui envoie directement, comportement typique
+    des machines infectées.
+  fix:
+  - 'Ne livrez pas directement depuis une connexion internet de bureau ou de domicile : passez par le
+    SMTP authentifié de votre messagerie.'
+  - Pour un serveur dédié, demandez un reverse DNS explicite du type mail.{domain} au lieu du nom générique
+    de l'hébergeur.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_dynrdns.cf
+- id: sa.rdns_localhost
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(RDNS_LOCALHOST)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : header X-Spam-Relays-External
+      =~ rdns=localhost(.localdomain) pour une IP publique.'
+  sa_rules:
+  - RDNS_LOCALHOST
+  title: Le reverse DNS public de l'IP d'envoi est localhost
+  why: L'IP publique {ip} se présente en DNS inverse comme « localhost ». C'est une erreur de configuration
+    que les filtres associent à des serveurs abandonnés ou détournés.
+  fix:
+  - Faites remplacer le PTR de {ip} par un nom réel (mail.{domain}) chez le fournisseur de l'IP.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.helo_dynamic_ipaddr
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(HELO_DYNAMIC_IPADDR)
+    notes: 'score SA 4.0.x : 1.951 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : le HELO du
+      dernier relais externe ressemble à un nom généré à partir d''une IP (chiffres séparés), sans mot
+      static.'
+  sa_rules:
+  - HELO_DYNAMIC_IPADDR
+  title: Le serveur s'annonce avec un nom qui contient son IP
+  why: Le nom annoncé en HELO ({helo}) est construit à partir de l'adresse IP, comme les noms automatiques
+    des fournisseurs d'accès. Un serveur de messagerie s'annonce normalement avec son propre nom.
+  fix:
+  - Configurez le nom HELO du serveur avec un nom choisi, par exemple mail.{domain}, qui pointe vers {ip}.
+  - Alignez le reverse DNS de {ip} sur ce même nom.
+  fix_by_provider:
+    postfix: Réglez myhostname = mail.example.fr dans main.cf (ou smtp_helo_name pour le seul HELO sortant).
+    exim: Réglez primary_hostname dans la configuration principale, ou helo_data dans le transport remote_smtp.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_fake_helo_tests.cf
+- id: sa.helo_dynamic_ipaddr2
+  family: spamassassin
+  severity: high
+  penalty: 1.8
+  detect:
+    signal: spamassassin.hit(HELO_DYNAMIC_IPADDR2)
+    notes: 'score SA 4.0.x : 3.607 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : HELO du type
+      1-2-3-4.fai.example (IP en tête du nom), sans mot static, mail, smtp ou mx.'
+  sa_rules:
+  - HELO_DYNAMIC_IPADDR2
+  title: Le serveur s'annonce avec un nom qui commence par son IP
+  why: Le nom HELO ({helo}) commence par les quatre nombres d'une adresse IP. C'est le schéma des noms
+    de connexions dynamiques, l'un des plus pénalisés par SpamAssassin parmi les règles de HELO.
+  fix:
+  - Donnez au serveur un nom propre (mail.{domain}) et utilisez-le en HELO.
+  - Si vous ne pouvez pas changer le nom, envoyez via un relais SMTP authentifié.
+  fix_by_provider:
+    postfix: Réglez smtp_helo_name = mail.example.fr dans main.cf puis rechargez Postfix.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_fake_helo_tests.cf
+- id: sa.helo_dynamic_split_ip
+  family: spamassassin
+  severity: high
+  penalty: 1.7
+  detect:
+    signal: spamassassin.hit(HELO_DYNAMIC_SPLIT_IP)
+    notes: 'score SA 4.0.x : 3.482 (sa-update r1939780, jeu réseau + Bayes). Teste : header X-Spam-Relays-External
+      =~ helo=\d+\.\S+\d+[^\d\s]\d+[^\d\s]\d+ : IP éclatée dans le nom HELO.'
+  sa_rules:
+  - HELO_DYNAMIC_SPLIT_IP
+  title: Le nom HELO découpe une adresse IP
+  why: Le nom HELO ({helo}) contient une adresse IP coupée en morceaux, motif des noms dynamiques générés
+    par les fournisseurs. Forte pénalité.
+  fix:
+  - Configurez un nom HELO explicite (mail.{domain}) qui résout vers {ip}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_fake_helo_tests.cf
+- id: sa.helo_dynamic_dhcp
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(HELO_DYNAMIC_DHCP)
+    notes: 'score SA 4.0.x : 0.206 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : HELO contenant
+      cm, catv, docsis, cable, dsl, dhcp, cpe ou node suivi de chiffres.'
+  sa_rules:
+  - HELO_DYNAMIC_DHCP
+  title: Le nom HELO évoque une connexion DHCP ou câble
+  why: Le nom HELO ({helo}) contient un mot propre aux connexions grand public (dsl, cable, dhcp). Le
+    serveur paraît être une machine de particulier.
+  fix:
+  - Envoyez par le relais SMTP de votre messagerie au lieu de livrer depuis cette connexion.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_fake_helo_tests.cf
+- id: sa.helo_localhost
+  family: spamassassin
+  severity: high
+  penalty: 1.9
+  detect:
+    signal: spamassassin.hit(HELO_LOCALHOST)
+    notes: 'score SA 4.0.x : 3.828 (sa-update r1939780, jeu réseau + Bayes). Teste : header X-Spam-Relays-External
+      =~ helo=localhost : le relais externe s''annonce localhost.'
+  sa_rules:
+  - HELO_LOCALHOST
+  title: Le serveur s'annonce comme localhost
+  why: 'Le serveur qui a remis le message s''est présenté sous le nom « localhost ». Aucun serveur de
+    messagerie correct ne fait cela : c''est typique d''un script PHP ou d''un serveur installé sans configuration.
+    C''est l''une des pénalités de HELO les plus fortes.'
+  fix:
+  - Configurez le nom d'hôte complet du serveur (mail.{domain}) et utilisez-le en HELO.
+  - Pour un site web qui envoie lui-même, passez par une extension SMTP vers votre messagerie.
+  fix_by_provider:
+    postfix: Réglez myhostname avec un nom complet dans main.cf ; vérifiez aussi /etc/hostname.
+    wordpress: Installez une extension SMTP et envoyez via le serveur de votre messagerie au lieu de mail().
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jm/20_basic.cf
+- id: sa.helo_no_domain
+  family: spamassassin
+  severity: high
+  penalty: 1.8
+  detect:
+    signal: spamassassin.hit(HELO_NO_DOMAIN)
+    notes: 'score SA 4.0.x : 3.622 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : HELO sans
+      aucun point (par exemple « serveur01 » ou « WIN-ABC123 »), hors localhost.'
+  sa_rules:
+  - HELO_NO_DOMAIN
+  title: Le nom HELO n'est pas un nom de domaine complet
+  why: 'Le serveur s''annonce avec un nom court, sans domaine ({helo}). La norme demande un nom complet.
+    Cas fréquent : un serveur Windows, un NAS ou un script qui utilise le nom de la machine.'
+  fix:
+  - Remplacez le nom HELO par un nom complet du type mail.{domain}, qui résout vers {ip}.
+  - Sur Exchange ou un serveur Windows, réglez le FQDN du connecteur d'envoi.
+  fix_by_provider:
+    postfix: Réglez myhostname avec un nom qualifié (au moins un point) dans main.cf.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/khopesh/20_khop_experimental.cf
+  - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.1.1
+- id: sa.helo_misc_ip
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(HELO_MISC_IP)
+    notes: 'score SA 4.0.x : 0.249 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : HELO commençant
+      par un caractère non alphabétique et contenant 4 groupes de chiffres, non couvert par les autres
+      règles HELO_DYNAMIC.'
+  sa_rules:
+  - HELO_MISC_IP
+  title: Le nom HELO ressemble à une adresse IP dynamique
+  why: Le nom HELO ({helo}) contient une suite de nombres qui ressemble à une adresse IP. Pénalité légère,
+    signe d'un nom d'hôte générique.
+  fix:
+  - Utilisez un nom HELO choisi, sans adresse IP dedans.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kmcgrail/20_fake_helo_tests.cf
+- id: sa.helo_static_host
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(HELO_STATIC_HOST)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : HELO correspondant
+      à des motifs connus de Sendgrid, Salesforce, Mailgun, QQ, Comcast business ou Rogers.'
+  sa_rules:
+  - HELO_STATIC_HOST
+  title: Nom HELO statique reconnu d'un grand service d'envoi
+  why: Le nom HELO contient une IP, mais SpamAssassin reconnaît le format d'un grand service d'envoi et
+    annule les pénalités HELO dynamiques.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_fake_helo_tests.cf
+- id: sa.khop_helo_fcrdns
+  family: spamassassin
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: spamassassin.hit(KHOP_HELO_FCRDNS)
+    notes: 'score SA 4.0.x : 0.399 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : rDNS du relais
+      externe différent du HELO, sauf liste de diffusion, messagerie gratuite sûre, IP dans DNSWL, message
+      authentifié par SPF ou DKIM, ou rDNS court.'
+  sa_rules:
+  - KHOP_HELO_FCRDNS
+  title: Le nom HELO ne correspond pas au reverse DNS
+  why: Le serveur s'annonce comme {helo} alors que son IP {ip} se nomme {ptr}. Sur un message par ailleurs
+    non authentifié, SpamAssassin y voit un serveur qui ment sur son identité.
+  fix:
+  - 'Faites concorder trois éléments : nom HELO, reverse DNS de {ip} et enregistrement A de ce nom.'
+  - 'Authentifiez aussi le message par SPF ou DKIM : la règle ne s''applique plus si l''un des deux passe.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/khopesh/20_khop_experimental.cf
+- id: sa.may_be_forged
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(MAY_BE_FORGED)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : un en-tête Received
+      contient « (may be forged) », message non authentifié et hors liste de diffusion. Pas de ligne score
+      : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - MAY_BE_FORGED
+  title: Le reverse DNS de l'IP d'envoi ne renvoie pas vers cette IP
+  why: Le nom {ptr} de l'IP {ip} ne pointe pas en retour vers {ip}. Le serveur de réception l'a noté «
+    may be forged ». Sans SPF ni DKIM valide, cela suffit à rendre l'expéditeur douteux.
+  fix:
+  - Créez l'enregistrement A qui fait pointer {ptr} vers {ip}, ou faites changer le PTR pour un nom qui
+    y pointe déjà.
+  - 'Authentifiez le message (SPF ou DKIM valide) : la règle s''efface alors.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/khopesh/20_khop_general.cf
+- id: sa.ck_helo_generic
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(CK_HELO_GENERIC)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : header X-Spam-Relays-Untrusted
+      : HELO contenant pool, dyna, lease, dial, dip ou static suivi de chiffres.'
+  sa_rules:
+  - CK_HELO_GENERIC
+  title: Le nom HELO évoque un pool d'adresses générique
+  why: Le nom HELO ({helo}) ressemble aux noms génériques des plages d'adresses des fournisseurs. Effet
+    presque nul sur le score, mais d'autres filtres sont plus sévères.
+  fix:
+  - Utilisez un nom HELO dédié (mail.{domain}).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/kmcgrail/20_fake_helo_tests.cf
+- id: sa.fsl_helo_bare_ip_1
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(FSL_HELO_BARE_IP_1)
+    notes: 'score SA 4.0.x : 2.347 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : HELO du relais
+      externe égal à une IPv4 sans crochets, hors réseau de confiance.'
+  sa_rules:
+  - FSL_HELO_BARE_IP_1
+  title: Le serveur s'annonce avec une adresse IP nue
+  why: Le serveur a dit « HELO {helo} » avec une simple adresse IP au lieu d'un nom. La norme impose un
+    nom de domaine, ou une IP entre crochets en dernier recours. Les scripts d'envoi mal configurés font
+    souvent cela.
+  fix:
+  - Configurez le logiciel d'envoi pour qu'il annonce un nom complet (mail.{domain}).
+  - Dans PHPMailer ou une bibliothèque SMTP, renseignez l'option Hostname ou Helo.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/maddoc/99_doc_test.cf
+  - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.1.1
+- id: sa.fsl_helo_non_fqdn_1
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FSL_HELO_NON_FQDN_1)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : header X-Spam-Relays-External
+      =~ helo=[a-zA-Z0-9-_]+ : HELO d''un seul mot.'
+  sa_rules:
+  - FSL_HELO_NON_FQDN_1
+  title: Nom HELO sans domaine
+  why: Le nom HELO ({helo}) tient en un mot, sans domaine. Score quasi nul ici, mais la même erreur déclenche
+    HELO_NO_DOMAIN, bien plus lourde.
+  fix:
+  - Annoncez un nom complet du type mail.{domain}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/maddoc/99_doc_test.cf
+  - https://www.rfc-editor.org/rfc/rfc5321#section-4.1.1.1
+- id: sa.rcvd_helo_ip_mismatch
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(RCVD_HELO_IP_MISMATCH)
+    notes: 'score SA 4.0.x : 2.368 (sa-update r1939780, jeu réseau + Bayes). Teste : helo_ip_mismatch()
+      : un relais non fiable annonce en HELO une IPv4 publique différente de son IP de connexion, hors
+      même /24.'
+  sa_rules:
+  - RCVD_HELO_IP_MISMATCH
+  title: Le HELO annonce une IP différente de l'IP réelle
+  why: Le serveur s'est annoncé avec l'IP {helo} alors qu'il se connectait depuis {ip}. Cela arrive avec
+    un serveur derrière une redirection de port ou un logiciel qui annonce une ancienne IP.
+  fix:
+  - Remplacez l'IP annoncée en HELO par un nom d'hôte complet qui résout vers {ip}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.rcvd_illegal_ip
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(RCVD_ILLEGAL_IP)
+    notes: 'score SA 4.0.x : 1.3 (sa-update r1939780, jeu réseau + Bayes). Teste : header X-Spam-Relays-Untrusted
+      : IP commençant par 0, multicast ou réservée (224 à 255), plages de documentation 192.0.2, 198.51.100,
+      203.0.113, ou octet supérieur à 255.'
+  sa_rules:
+  - RCVD_ILLEGAL_IP
+  title: Un en-tête Received contient une IP impossible
+  why: Une ligne Received cite une adresse IP qui ne peut pas exister sur internet. C'est soit un en-tête
+    fabriqué, soit un équipement mal configuré qui écrit une IP de documentation ou de test.
+  fix:
+  - Si la ligne vient de votre serveur ou de votre application, corrigez l'IP qu'elle inscrit.
+  - N'insérez jamais d'en-tête Received à la main dans un script d'envoi.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+  - https://www.iana.org/assignments/ipv4-address-space/
+- id: sa.no_rdns_dotcom_helo
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(NO_RDNS_DOTCOM_HELO)
+    notes: 'score SA 4.0.x : 0.823 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_no_rdns_dotcom_helo()
+      : HELO au nom d''un grand fournisseur (hotmail, yahoo, msn...) depuis une IP sans rDNS.'
+  sa_rules:
+  - NO_RDNS_DOTCOM_HELO
+  title: Le serveur se présente comme un grand fournisseur mais n'a pas de reverse DNS
+  why: 'Le serveur annonce en HELO le nom d''un grand fournisseur de messagerie, mais son IP {ip} n''a
+    aucun reverse DNS. Les vrais serveurs de ces fournisseurs en ont toujours un : c''est une usurpation.'
+  fix:
+  - Configurez votre serveur pour qu'il annonce son propre nom, pas celui d'un fournisseur.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.rcvd_fake_helo_dotcom
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(RCVD_FAKE_HELO_DOTCOM)
+    notes: 'score SA 4.0.x : 1.189 (sa-update r1939780, jeu réseau + Bayes). Teste : header Received =~
+      /^from (?:msn|yahoo|yourwebsite|lycos|excite|aol|localhost|mydomain|...)\.com \(/m.'
+  sa_rules:
+  - RCVD_FAKE_HELO_DOTCOM
+  title: Le nom HELO imite un nom de domaine connu
+  why: Le serveur s'annonce avec un nom générique ou usurpé du type yahoo.com, localhost.com ou mydomain.com.
+    Les valeurs d'exemple laissées dans une configuration produisent exactement cela.
+  fix:
+  - Remplacez la valeur d'exemple du nom d'hôte par mail.{domain}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.tvd_rcvd_ip
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(TVD_RCVD_IP)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : header Received =~
+      /^from\s+(?:\d+[^0-9a-zA-Z\s]){3}\d+[.\s]/ : la ligne Received commence par une IP au lieu d''un
+      nom.'
+  sa_rules:
+  - TVD_RCVD_IP
+  title: Le serveur d'envoi s'est annoncé par une adresse IP
+  why: 'Information : une ligne Received indique que l''expéditeur s''est présenté par une adresse IP.
+    Sans poids ici, mais cela renforce d''autres règles sur le HELO.'
+  fix:
+  - Configurez un nom HELO complet sur le serveur d'envoi.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/felicity/70_other.cf

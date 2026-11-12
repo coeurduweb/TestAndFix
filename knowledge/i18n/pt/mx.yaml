@@ -1,0 +1,95 @@
+mx.domain_nxdomain:
+  title: "O domínio remetente {domain} não existe"
+  why: "O DNS responde que {domain} não existe. Os destinatários não conseguem verificar o remetente nem responder a ele: a maioria rejeita a mensagem, e as demais a classificam como spam."
+  fix:
+    - "Verifique a grafia do domínio no endereço de envio configurado no seu software ou serviço de envio."
+    - "Se o domínio estiver correto, verifique no seu registrador se ele não expirou e se os servidores de nomes (NS) estão declarados corretamente."
+    - "Depois que o domínio for resolvido, publique no mínimo um MX, um SPF e um DMARC."
+mx.missing:
+  title: "O domínio {domain} não tem registro MX"
+  why: "Sem MX, as respostas e as rejeições endereçadas a {domain} são enviadas ao servidor web do domínio, que em geral não as aceita. Alguns filtros também penalizam um remetente cujo domínio não recebe e-mails."
+  fix:
+    - "Se {domain} deve receber e-mails, adicione os MX fornecidos pelo seu provedor de e-mail."
+    - "Se {domain} nunca deve receber, publique um Null MX (0 .) e envie as suas mensagens com um endereço Reply-To e um Return-Path em um domínio que recebe."
+  fix_by_provider:
+    google_workspace: "No console de administração do Google, siga o assistente de configuração de MX e copie exatamente o valor sugerido para o seu domínio."
+    microsoft_365: "No centro de administração do Microsoft 365, Configurações, Domínios, selecione {domain} e adicione o registro MX indicado na aba Registros DNS."
+    cloudflare_dns: "Em DNS, Records, adicione um registro do tipo MX: nome @, servidor de e-mail e prioridade fornecidos pelo seu provedor."
+mx.cname_target:
+  title: "Um MX de {domain} aponta para um alias CNAME"
+  why: "O destino de um MX deve ser um nome que tenha diretamente um endereço. Com um CNAME, alguns servidores recusam entregar ou verificar o seu domínio, e mensagens para {domain} podem se perder."
+  fix:
+    - "Identifique o destino final do CNAME (o nome que tem o registro A)."
+    - "Substitua no MX o nome de alias por esse nome final, ou crie para esse nome um registro A no lugar do CNAME."
+    - "Mantenha a mesma prioridade e remova o MX antigo."
+mx.ip_literal:
+  title: "Um MX de {domain} contém um endereço IP em vez de um nome"
+  why: "Um MX não pode conter um endereço IP. O valor é entendido como um nome que não existe: o e-mail para {domain} falha ou passa para o MX seguinte, e as verificações do domínio remetente falham."
+  fix:
+    - "Crie um nome para o servidor, por exemplo mx.{domain}, com um registro A apontando para o endereço IP em questão."
+    - "Substitua o IP pelo nome no registro MX."
+mx.target_nxdomain:
+  title: "Os MX de {domain} apontam para nomes que não existem"
+  why: "Os servidores anunciados nos MX de {domain} não têm nenhum endereço. Nenhum e-mail pode mais ser entregue a esse domínio, e alguns destinatários recusam os seus envios porque o endereço de envio parece inválido."
+  fix:
+    - "Compare os MX publicados com os que o seu provedor de e-mail indica hoje: eles às vezes mudam durante uma migração."
+    - "Corrija os nomes errados ou crie o registro A que falta do servidor de destino."
+    - "Remova os MX de um antigo provedor que não existem mais."
+mx.private_address:
+  title: "Um MX de {domain} aponta para um endereço privado"
+  why: "O servidor de e-mail de {domain} está anunciado em um endereço interno, inacessível pela Internet. As mensagens para esse domínio ficam na fila e depois voltam com erro."
+  fix:
+    - "Substitua o endereço interno pelo endereço público do servidor no registro A do MX."
+    - "Se esse endereço privado for usado por um DNS interno, separe a visão interna da zona pública."
+mx.unreachable:
+  title: "Nenhum servidor MX de {domain} responde na porta 25"
+  why: "Os servidores de recebimento de {domain} não respondem. As respostas e as rejeições endereçadas a esse domínio se acumulam e depois voltam com erro, e as verificações por callback de alguns destinatários falham."
+  fix:
+    - "Verifique se o serviço SMTP está em execução no servidor indicado pelo MX e se ele escuta na porta 25."
+    - "Verifique o firewall do servidor e o do provedor de hospedagem: a porta 25 de entrada deve estar aberta."
+    - "Se o MX apontar para um servidor antigo, substitua-o pelo do seu provedor atual."
+mx.null_mx_on_sending_domain:
+  title: "{domain} declara não receber nenhum e-mail (Null MX), mas envia"
+  why: "O Null MX anuncia publicamente que {domain} não recebe e-mails. Um destinatário pode então recusar os seus envios, e ninguém pode responder a você nem devolver uma rejeição."
+  fix:
+    - "Se {domain} deve enviar, remova o MX “0 .” e publique os MX do seu provedor de e-mail."
+    - "Se {domain} realmente não deve receber, use no envelope (Return-Path) um domínio que recebe, por exemplo o do seu serviço de envio, e adicione um Reply-To válido."
+mx.null_mx_mixed:
+  title: "{domain} mistura um Null MX com outros MX"
+  why: "O Null MX diz “este domínio não recebe”, e os outros MX dizem o contrário. Conforme o software do destinatário, as suas mensagens ou as respostas a {domain} serão tratadas de forma imprevisível."
+  fix:
+    - "Decida se {domain} recebe e-mails."
+    - "Se receber, remova o registro MX “0 .”; caso contrário, remova todos os outros MX."
+mx.envelope_domain_cannot_receive:
+  title: "O domínio de retorno {envelope_domain} não pode receber as rejeições"
+  why: "Os avisos de não entrega são enviados ao endereço de retorno (Return-Path). Se {envelope_domain} não tiver MX nem endereço, você nunca verá os endereços inválidos da sua lista, e vários servidores recusam a mensagem diretamente."
+  fix:
+    - "Adicione a {envelope_domain} os MX do seu serviço de envio, ou o registro que ele indica para o seu domínio de retorno personalizado."
+    - "Caso contrário, use como Return-Path um endereço de um domínio que recebe e-mails."
+  fix_by_provider:
+    postfix: "O Return-Path segue o endereço de envelope: verifique sender_canonical_maps e a opção -f do sendmail na sua aplicação."
+mx.postmaster_rejected:
+  title: "O endereço postmaster@{domain} é recusado"
+  why: "Os operadores de e-mail e as listas negras entram em contato com postmaster@{domain} em caso de problema. Se esse endereço não existir, você não será avisado, e vários procedimentos de delistagem exigem que ele funcione."
+  fix:
+    - "Crie o alias postmaster@{domain} (e abuse@{domain}) no seu e-mail."
+    - "Faça-o apontar para uma caixa realmente lida."
+  fix_by_provider:
+    google_workspace: "No console de administração, adicione postmaster como endereço alternativo (alias) de um usuário ou de um grupo."
+    microsoft_365: "No centro de administração do Exchange, adicione postmaster@{domain} como endereço extra de uma caixa ou de um grupo."
+    cpanel: "Em Email, Redirecionadores, adicione postmaster@{domain} apontando para a sua caixa principal."
+    postfix: "Adicione postmaster: sua-conta em /etc/aliases e depois execute newaliases, ou uma linha em virtual_alias_maps."
+mx.some_target_without_address:
+  title: "Um MX de {domain} não tem endereço IP"
+  why: "O servidor {value} está anunciado como MX, mas o seu nome não fornece nenhum endereço. Os remetentes o ignoram depois de uma consulta inútil; se ele tiver a prioridade mais alta, o e-mail passa a depender apenas dos outros MX."
+  fix:
+    - "Na zona DNS de {domain}, localize o MX que aponta para {value}."
+    - "Se esse servidor não existir mais, remova esse MX."
+    - "Se ele existir, crie o registro A (e AAAA se ele tiver um endereço IPv6) de {value}, ou corrija o erro de digitação no MX."
+mx.host_unreachable:
+  title: "O MX {value} não responde na porta 25"
+  why: "Os outros MX de {domain} respondem, mas {value} ({ip}) não. Os remetentes que caem nele esperam e depois tentam o MX seguinte: o e-mail chega, mas com atraso."
+  fix:
+    - "Refaça o teste para descartar uma interrupção passageira."
+    - "Se a falha for confirmada, verifique se o serviço SMTP de {value} funciona e se a porta 25 de entrada está aberta no firewall dele e no provedor de hospedagem."
+    - "Se esse servidor não estiver mais em uso, remova o MX dele da zona de {domain}."

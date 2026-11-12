@@ -1,0 +1,118 @@
+html.invalid_structure:
+  title: "El HTML contiene errores de estructura"
+  why: "El análisis detecta {value} errores de estructura. Google pide un HTML conforme a los estándares: un código roto se muestra de forma distinta según el cliente y se parece a las plantillas chapuceras del spam."
+  fix:
+    - "Pasa el HTML por un validador (validator.w3.org, pestaña Validate by Direct Input) y corrige las etiquetas sin cerrar."
+    - "Si pegas HTML exportado de un procesador de texto, parte de una plantilla de correo limpia."
+html.no_doctype:
+  title: "El HTML no tiene declaración doctype"
+  why: "Sin doctype, los webmails y las aplicaciones muestran el mensaje en modo de compatibilidad: los márgenes, los tamaños y las alineaciones cambian de un cliente a otro."
+  fix:
+    - "Añade <!DOCTYPE html> en la primera línea de la parte HTML."
+    - "Envuelve el contenido con html, head (con meta charset) y body."
+html.script_tag:
+  title: "El HTML contiene JavaScript"
+  why: "Ningún cliente de correo ejecuta scripts, pero su presencia es un indicio fuerte de mensaje malicioso. Microsoft propone clasificar estos mensajes como spam con alta confianza."
+  fix:
+    - "Elimina todas las etiquetas script del mensaje."
+    - "Sustituye las interacciones (contador, formulario, carrusel) por un enlace a una página de {domain}."
+html.event_handlers:
+  title: "El HTML contiene atributos JavaScript (onclick, onload...)"
+  why: "El atributo {value} es JavaScript. No funciona en ningún cliente de correo y los filtros lo tratan como un script."
+  fix:
+    - "Elimina todos los atributos que empiezan por on (onclick, onload, onmouseover)."
+    - "Para un efecto al pasar el ratón, usa la pseudoclase CSS :hover en el bloque style."
+html.iframe:
+  title: "El HTML contiene un iframe"
+  why: "Los iframes no se muestran en la mayoría de los clientes y sirven para cargar contenido externo oculto. Microsoft propone clasificar estos mensajes como spam con alta confianza."
+  fix:
+    - "Elimina el iframe."
+    - "Para un vídeo o un mapa, pon una imagen en la que se pueda hacer clic y que enlace a la página de {domain} donde está integrado."
+html.form:
+  title: "El HTML contiene un formulario"
+  why: "Un formulario en un correo sirve, en la mayoría de los casos, para robar credenciales. Microsoft propone clasificar estos mensajes como spam con alta confianza, y muchos clientes desactivan el formulario."
+  fix:
+    - "Elimina el formulario del mensaje."
+    - "Pon un botón que enlace a un formulario alojado en {domain}, con HTTPS."
+html.object_embed:
+  title: "El HTML contiene etiquetas object o embed"
+  why: "Estas etiquetas sirven para cargar módulos o documentos en la página. No funcionan en los clientes de correo y Microsoft propone clasificar estos mensajes como spam."
+  fix:
+    - "Elimina las etiquetas object, embed y applet."
+    - "Sustituye el contenido incrustado por una imagen y un enlace a {domain}."
+html.meta_refresh:
+  title: "El HTML contiene una redirección automática (meta refresh)"
+  why: "Una etiqueta meta refresh intenta llevar al lector a otra página sin hacer clic. Es una técnica de phishing: los filtros la penalizan y los clientes la ignoran."
+  fix:
+    - "Elimina la etiqueta meta http-equiv='refresh'."
+    - "Si el HTML viene de una página web, parte de una plantilla diseñada para correo."
+html.base_href:
+  title: "El HTML contiene una etiqueta base"
+  why: "La etiqueta base cambia el destino de todos los enlaces relativos. No todos los clientes la tratan igual: tus enlaces pueden apuntar a otro lugar, y los filtros desconfían de ella."
+  fix:
+    - "Elimina la etiqueta base."
+    - "Escribe todos los enlaces y todas las imágenes con dirección completa, por ejemplo https://{domain}/page."
+html.external_stylesheet:
+  title: "El estilo depende de una hoja de estilos externa"
+  why: "El mensaje carga su hoja de estilos desde {url}. La mayoría de los clientes no la cargan: el destinatario ve un mensaje sin estilo."
+  fix:
+    - "Copia las reglas CSS necesarias en un bloque style colocado en el head del mensaje."
+    - "Para las reglas esenciales (colores, tamaños, anchos), pásalas también como atributo style en los elementos."
+    - "Elimina la etiqueta link rel='stylesheet' y los @import."
+html.external_fonts:
+  title: "El mensaje carga tipografías externas"
+  why: "Las tipografías externas no se muestran en todos los clientes y añaden una petición a un servidor de terceros. Sin una fuente de reserva, el texto puede mostrarse con una tipografía inesperada."
+  fix:
+    - "Declara siempre una lista de fuentes de reserva: font-family: 'Tu tipografía', Arial, Helvetica, sans-serif."
+    - "Comprueba la visualización del mensaje usando solo la fuente de reserva."
+html.base64_inline_heavy:
+  title: "El HTML contiene imágenes codificadas en base64"
+  why: "Las imágenes incrustadas en base64 aumentan el peso del HTML en {value}. Varios clientes no las muestran, y el mensaje se vuelve tan pesado que Gmail lo trunca."
+  fix:
+    - "Aloja las imágenes en {domain} o en tu herramienta de envío, y luego sustituye cada src='data:...' por la dirección https de la imagen."
+    - "Conserva solo los iconos muy pequeños en línea si te importan o, mejor, aloja también esos."
+html.hidden_text_color:
+  title: "Hay texto oculto por su color (texto blanco sobre fondo blanco)"
+  why: "Parte del texto tiene el mismo color que el fondo. Google pide no ocultar contenido con HTML y CSS: es una técnica de spam conocida y penalizada."
+  fix:
+    - "Elimina el texto invisible."
+    - "Si es un texto de vista previa (preheader), usa el campo previsto por tu herramienta de envío."
+    - "Si está pensado para un fondo en imagen, añade un color de fondo de respaldo en el mismo elemento."
+html.hidden_text_size:
+  title: "Hay texto oculto por su tamaño o por display:none"
+  why: "El mensaje contiene {value} palabras invisibles. Google pide no ocultar contenido con HTML y CSS: los filtros ven ahí un relleno de texto para engañar al análisis."
+  fix:
+    - "Elimina los bloques de texto invisibles."
+    - "Conserva solo un texto de vista previa corto, y configúralo en el campo previsto por tu herramienta."
+  fix_by_provider:
+    mailchimp: "Indica el texto de vista previa en el campo Preview text de la campaña, en lugar de un bloque oculto."
+    brevo: "Indica el texto de vista previa en el campo previsto en el paso Asunto de la campaña."
+html.obfuscated_entities:
+  title: "Algunas palabras están escritas con códigos HTML para ocultarlas"
+  why: "Letras normales se escriben como códigos numéricos HTML. Esta técnica sirve para ocultar palabras a los filtros, que la detectan y la penalizan."
+  fix:
+    - "Escribe el texto con caracteres normales en la plantilla."
+    - "Si tu editor genera estos códigos, desactiva la opción de codificación de caracteres o cambia de editor."
+html.fixed_width_wide:
+  title: "El mensaje tiene un ancho fijo demasiado grande"
+  why: "Un bloque mide {value} píxeles de ancho. En el móvil, el mensaje obliga a desplazarse hacia los lados o se muestra muy pequeño, lo que aumenta los borrados sin leer."
+  fix:
+    - "Asigna al contenedor principal un ancho máximo adecuado para la lectura, por ejemplo width='600' con style='max-width:600px;width:100%'."
+    - "Añade una regla @media (max-width: 600px) que pase las columnas a un ancho del 100 %."
+html.style_head_only:
+  title: "Todo el formato está en el bloque style del head"
+  why: "Ningún elemento tiene estilo en línea. Los clientes que eliminan el bloque style mostrarán el mensaje sin colores ni maquetación."
+  fix:
+    - "Pasa los estilos esenciales como atributo style en cada elemento con una herramienta de inlining de CSS."
+    - "Conserva el bloque style para las reglas @media y los estados :hover."
+html.conditional_comments:
+  title: "El HTML contiene comentarios condicionales para Outlook"
+  why: "Estos comentarios sirven para corregir la visualización en Outlook para Windows. Son normales. Solo se convierten en un problema si ocultan un contenido distinto del que se ve en otros clientes."
+  fix:
+    - "Verifica que el texto dentro de los bloques [if mso] y [if !mso] diga lo mismo en ambas versiones."
+    - "Prueba la visualización en Outlook para Windows antes de un envío importante."
+html.lang_missing:
+  title: "No se ha declarado el idioma del mensaje"
+  why: "Sin atributo lang, un lector de pantalla puede leer tu texto en francés con una pronunciación inglesa. Esto no cambia el filtrado, pero dificulta la lectura a parte de tus lectores."
+  fix:
+    - "Añade lang='fr' en la etiqueta html, y dir='ltr'."

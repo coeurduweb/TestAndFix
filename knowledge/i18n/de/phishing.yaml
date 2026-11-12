@@ -1,0 +1,89 @@
+phishing.safe_browsing:
+  title: "Google Safe Browsing stuft diesen Link als gefährlich ein ({value})"
+  why: "Google hat {url} in seine Listen gefährlicher Websites aufgenommen ({value}). Browser, die Safe Browsing nutzen, darunter Chrome, zeigen für diese Adresse eine rote Warnseite, und eine Nachricht mit diesem Link gilt als Bedrohung."
+  fix:
+    - Öffnen Sie den Link nicht und geben Sie auf der Seite keine Daten ein.
+    - Haben Sie es bereits getan, ändern Sie sofort das betroffene Passwort überall, wo Sie es verwenden, und lassen Sie bei Ihrer Bank die Karte sperren, falls Sie Kartendaten angegeben haben.
+    - Melden Sie die Nachricht bei Signal Spam (https://www.signal-spam.fr/).
+    - "Gehört Ihnen die Website, wurde sie wahrscheinlich gehackt: Bereinigen Sie alle betroffenen Seiten und öffnen Sie danach in der Google Search Console den Bericht Sicherheitsprobleme und klicken Sie auf Prüfung anfordern."
+phishing.virustotal:
+  title: "{value} Engine(s) von VirusTotal melden diesen Link als schädlich"
+  why: Mehrere unabhängige Sicherheits-Engines stufen {url} als gefährlich ein. Eine einzelne Engine irrt sich manchmal; wenn mehrere übereinstimmen, handelt es sich selten um einen Irrtum.
+  fix:
+    - Öffnen Sie den Link nicht.
+    - Haben Sie ihn geöffnet und Daten eingegeben, ändern Sie das betroffene Passwort und informieren Sie Ihre Bank, falls Sie Kartendaten angegeben haben.
+    - Gehört Ihnen die Website, öffnen Sie den VirusTotal-Bericht, um die Engines zu sehen, bereinigen Sie die Website und starten Sie die Analyse erneut.
+    - "Irrt sich eine Engine, schreiben Sie an ihren Hersteller mit dem Link zum VirusTotal-Bericht: VirusTotal ändert die Urteile nicht selbst."
+phishing.virustotal_single:
+  title: Nur eine VirusTotal-Engine meldet diesen Link
+  why: Eine einzelne Engine irrt sich oft. Dieses Signal reicht nicht aus, um {url} zu beurteilen, es ergänzt aber die übrigen Hinweise dieses Berichts.
+  fix:
+    - Öffnen Sie den VirusTotal-Bericht und prüfen Sie, welche Engine den Link meldet und mit welchem Urteil.
+    - Sind die übrigen Prüfungen in diesem Bericht gut und die Website alt und bekannt, handelt es sich in der Regel um einen Fehlalarm.
+    - Gehört Ihnen die Website, melden Sie den Fehlalarm dem Hersteller der betreffenden Engine mit dem Link zum VirusTotal-Bericht.
+phishing.urlhaus:
+  title: Dieser Link ist bei URLhaus als Verbreiter von Schadsoftware erfasst
+  why: "URLhaus, betrieben von abuse.ch und Spamhaus, erfasst Adressen, die Schadsoftware verbreiten. {url} ist dort aufgeführt ({value}). Die Datenbank wird mit Herstellern von Antivirensoftware und Sperrlisten geteilt."
+  fix:
+    - Öffnen Sie den Link nicht und laden Sie nichts herunter.
+    - Wurde bereits eine Datei geöffnet, trennen Sie den Rechner vom Netz und führen Sie einen vollständigen Virenscan durch.
+    - "Gehört Ihnen die Website, entfernen Sie die schädliche Datei, klären Sie, wie sie abgelegt wurde (verwundbare Erweiterung, gestohlenes FTP-Passwort), und wenden Sie sich dann an abuse.ch über https://contact.abuse.ch/."
+phishing.urlhaus_host:
+  title: "Die Website {domain} verbreitet weitere bei URLhaus erfasste Schadsoftware"
+  why: "Dieser genaue Link ist nicht erfasst, aber {value} weitere Adresse(n) von {domain} verbreiten derzeit Schadsoftware. Das deutet auf eine gehackte Website oder eine für eine Kampagne eingerichtete Website hin."
+  fix:
+    - Meiden Sie diese Website, bis sie bereinigt ist, und laden Sie nichts von ihr herunter.
+    - "Gehört die Website Ihnen, prüfen Sie die Liste der bei URLhaus erfassten Adressen, entfernen Sie die Dateien, schließen Sie die Sicherheitslücke und wenden Sie sich dann an abuse.ch über https://contact.abuse.ch/."
+phishing.openphish:
+  title: Dieser Link steht in der Phishing-Liste von OpenPhish
+  why: "OpenPhish veröffentlicht die Phishing-Seiten, die es erkannt hat. {url} gehört dazu: Die Seite imitiert einen bekannten Dienst, um Zugangsdaten oder Zahlungsdaten zu stehlen."
+  fix:
+    - Öffnen Sie den Link nicht und geben Sie keine Daten ein.
+    - Haben Sie ein Passwort eingegeben, ändern Sie es sofort auf der offiziellen Website, überall wo Sie es verwenden, und aktivieren Sie die Zwei-Faktor-Authentifizierung.
+    - Haben Sie Kartendaten angegeben, lassen Sie die Karte bei Ihrer Bank sperren.
+    - "Melden Sie die Seite bei Phishing Initiative (https://phishing-initiative.fr/contrib/) und die Nachricht bei Signal Spam (https://www.signal-spam.fr/)."
+phishing.openphish_host:
+  title: "Weitere Seiten der Website {domain} stehen in der OpenPhish-Liste"
+  why: Diese genaue Adresse steht nicht auf der Liste, aber andere Seiten von {domain} schon. Das passiert, wenn eine Website als Basis für eine Phishing-Kampagne dient oder gehackt wurde.
+  fix:
+    - Misstrauen Sie jeder Seite dieser Website, die ein Passwort, einen Code oder eine Zahlung verlangt.
+    - Um sich bei einem Dienst anzumelden, geben Sie seine offizielle Adresse selbst im Browser ein.
+    - Gehört die Website Ihnen, suchen Sie nach Seiten, die ohne Ihr Wissen hinzugefügt wurden (oft in einem versteckten Ordner oder einem ungewöhnlichen Unterordner), entfernen Sie sie und ändern Sie die Zugangspasswörter des Hostings.
+phishing.brand_lookalike:
+  title: "Die Domain {url} imitiert die von {value}"
+  why: "Der Name ähnelt dem von {value}, gehört aber nicht dazu: Das ist der häufigste Trick des Phishings, der auf das flüchtige Lesen der Adresse setzt. Die offizielle Website ist {domain}."
+  fix:
+    - "Verwenden Sie diesen Link nicht: Geben Sie die offizielle Adresse {domain} selbst im Browser ein oder öffnen Sie die App."
+    - Haben Sie auf dieser Seite eine Kennung oder Kartendaten eingegeben, ändern Sie das Passwort auf {domain} und informieren Sie die betroffene Stelle und Ihre Bank.
+    - "Melden Sie die Adresse bei Phishing Initiative (https://phishing-initiative.fr/contrib/)."
+phishing.deep_subdomains:
+  title: "Die Adresse {url} schachtelt {value} Subdomain-Ebenen"
+  why: "Ein Name mit vielen Subdomains dient oft dazu, einen bekannten Namen an den Anfang der Adresse zu setzen, wo man ihn zuerst liest, während der wahre Eigentümer am Ende steht: {domain}."
+  fix:
+    - "Lesen Sie die Adresse von rechts nach links: Der wahre Eigentümer ist {domain}, welcher Name auch immer vorne steht."
+    - Ist {domain} nicht der Dienst, den Sie erwarten, geben Sie auf der Seite nichts ein.
+phishing.js_redirect:
+  title: Der Link leitet über ein Skript der Seite weiter
+  why: "Die Seite {url} schickt den Besucher per JavaScript weiter statt über eine normale Weiterleitung. Filter, die keine Skripte lesen, sehen das wahre Ziel nicht: Die Technik dient oft dazu, eine Phishing-Seite zu verbergen."
+  fix:
+    - Prüfen Sie das in diesem Bericht angezeigte Endziel der Kette, bevor Sie dem Link vertrauen.
+    - Gehört die Website Ihnen, ersetzen Sie die Weiterleitung per Skript durch eine HTTP-Weiterleitung 301 oder 302, die auf dem Server konfiguriert ist.
+phishing.credential_form:
+  title: "Die Seite verlangt {value} auf einer Website, die sich als eine andere ausgibt"
+  why: "Die Zielseite enthält ein Formular, das {value} verlangt, und die Website zeigt Anzeichen einer Identitätsfälschung. Das ist genau das Muster einer Phishing-Seite: Was dort eingegeben wird, geht an den Urheber der Seite."
+  fix:
+    - Geben Sie auf dieser Seite nichts ein.
+    - "Ist es schon geschehen: Ändern Sie das Passwort auf der offiziellen Website und überall, wo Sie es verwenden, aktivieren Sie die Zwei-Faktor-Authentifizierung und lassen Sie bei Ihrer Bank die Karte sperren, falls Sie Kartendaten angegeben haben."
+    - "Melden Sie die Seite bei Phishing Initiative (https://phishing-initiative.fr/contrib/) und die Nachricht bei Signal Spam (https://www.signal-spam.fr/)."
+phishing.form_on_page:
+  title: "Die Zielseite verlangt {value}"
+  why: "Es wurde kein anderes Zeichen einer Identitätsfälschung festgestellt, und viele seriöse Websites haben eine Anmelde- oder Zahlungsseite. Nur die Adresse zeigt, ob es der erwartete Dienst ist: hier {domain}."
+  fix:
+    - Prüfen Sie vor jeder Eingabe, dass der Domainname in der Adresszeile der des erwarteten Dienstes entspricht.
+    - Im Zweifel öffnen Sie den Dienst, indem Sie seine Adresse selbst eingeben, statt dem Link zu folgen.
+phishing.title_brand_mismatch:
+  title: "Der Seitentitel nennt {value}, die Website gehört aber {domain}"
+  why: "Der Titel der Seite nennt eine Marke, der die Domain nicht gehört. Das ist bei einem Artikel oder einem Vergleich normal; bei einer Seite, die sich als die von {value} ausgibt, ist es ein Zeichen von Identitätsfälschung."
+  fix:
+    - Gibt sich die Seite als die von {value} aus, geben Sie dort nichts ein und gehen Sie über die offizielle Website der Marke.
+    - Leitet Sie die Seite danach zu einem Formular weiter, prüfen Sie diese neue Adresse erneut.

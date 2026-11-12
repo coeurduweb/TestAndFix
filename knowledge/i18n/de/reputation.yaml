@@ -1,0 +1,118 @@
+reputation.freemail_from_via_third_party:
+  title: "Sie senden mit einer Adresse von {domain} über einen Dienst, der nicht zu {domain} gehört"
+  why: "Die Nachricht trägt eine Adresse von {domain}, wird aber von {provider} versendet, das weder für {domain} signieren noch in seinem SPF stehen kann. DMARC scheitert immer: Bei der aktuellen Richtlinie von {domain} ({value}) landet die Nachricht im Spam oder wird abgelehnt."
+  fix:
+    - "Kaufen Sie einen Domainnamen auf Ihren Namen (zum Beispiel ihr-unternehmen.de) und legen Sie darauf eine Adresse an."
+    - "Melden Sie diese Domain in Ihrem Versandtool an und konfigurieren Sie SPF, DKIM und DMARC."
+    - "Behalten Sie während der Umstellung gegebenenfalls Ihre kostenlose Adresse als Reply-To."
+    - "Für eine einzelne Nachricht von einer kostenlosen Adresse senden Sie über das Webmail oder die SMTP-Server dieses Anbieters, niemals über ein Drittanbieter-Tool."
+  fix_by_provider:
+    wordpress: "Tragen Sie in WP Mail SMTP bei From Email keine Adresse von gmail.com oder orange.fr ein: Verwenden Sie eine Adresse der Domain der Website oder den Gmail-Mailer des Plugins, wenn Ihnen die Gmail-Adresse wichtig ist."
+    mailchimp: "Mailchimp ersetzt eine riskante kostenlose Mailadresse automatisch durch eine Adresse auf seiner eigenen Subdomain (send.mailchimpapp.com oder mail.mailchimpapp.com); Antworten gehen immer an Ihre Adresse. Um in Ihrem Namen zu senden, authentifizieren Sie Ihre eigene Domain unter Website > Domains."
+reputation.domain_very_new:
+  title: "Die Versanddomain wurde gerade erst erstellt"
+  why: "{domain} wurde vor {value} registriert. Neue Domains werden häufig von Spammern genutzt, die sie oft wechseln: Filter schenken ihnen wenig Vertrauen, solange sie keine Versandhistorie haben."
+  fix:
+    - "Beginnen Sie mit Ihren aktivsten Kontakten in kleinen Mengen und steigern Sie das Volumen schrittweise."
+    - "Richten Sie auf {domain} eine Website mit der Identität des Unternehmens und dem Impressum ein."
+    - "Konfigurieren Sie SPF, DKIM und DMARC schon beim ersten Versand."
+    - "Registrieren Sie {domain} in Gmail Postmaster Tools, um den Ruf der Domain zu verfolgen."
+reputation.from_domain_not_resolvable:
+  title: "Die Domain des Absenders kann keine E-Mails empfangen"
+  why: "{domain} existiert nicht im DNS oder hat keinen Empfangsserver. Antworten und Unzustellbarkeitsmeldungen gehen verloren, und viele Server lehnen einen Absender ab, den sie nicht erreichen können."
+  fix:
+    - "Prüfen Sie die Schreibweise der Domain im Absenderfeld."
+    - "Ist die Domain die richtige, ergänzen Sie einen MX-Eintrag, der auf Ihren Mail-Dienst zeigt."
+    - "Ist die Domain abgelaufen, verlängern Sie sie bei Ihrem Registrar, bevor Sie erneut senden."
+reputation.no_website:
+  title: "Auf der Domain des Absenders antwortet keine Website"
+  why: "https://{domain} antwortet nicht. Orange verlangt von großen Absendern eine Website auf der Domain des From mit der Identität des Unternehmens, und Empfänger, die prüfen wollen, wer Sie sind, finden nichts."
+  fix:
+    - "Veröffentlichen Sie mindestens eine Seite auf {domain} mit dem Namen des Unternehmens, der Anschrift, dem Impressum und der Datenschutzerklärung."
+    - "Liegt Ihre Website auf einer anderen Domain, leiten Sie https://{domain} auf sie weiter."
+reputation.from_domain_differs_from_links:
+  title: "Die Versanddomain ist nicht die der beworbenen Website"
+  why: "Die Nachricht wird von {domain} gesendet, verweist aber vor allem auf {value}. Filter und Leser stellen keine Verbindung zwischen beiden her, und der Ruf Ihrer Website kommt Ihren Versänden nicht zugute."
+  fix:
+    - "Senden Sie von der Domain Ihrer Website oder einer ihrer Subdomains, zum Beispiel news.{value}."
+    - "Behalten Sie eine eigene Domain, leiten Sie sie auf Ihre Website weiter und nennen Sie sie in der Fußzeile."
+reputation.lookalike_domain:
+  title: "Die Versanddomain ähnelt der einer bekannten Marke"
+  why: "{domain} ähnelt stark {value}. Anti-Phishing-Filter überwachen solche Domains in der Nähe großer Marken und bestrafen deren Versände stark."
+  fix:
+    - "Wenn diese Domain seit Langem Ihnen gehört, veröffentlichen Sie DMARC mit p=reject und einen BIMI-Eintrag, um ihre Identität zu stärken."
+    - "Haben Sie sie kürzlich gekauft, senden Sie besser von einer Domain, die nicht zu Verwechslungen führt."
+reputation.noreply_sender:
+  title: "Der Absender ist eine Adresse „Nicht antworten“"
+  why: "Die Empfänger können nicht antworten. Microsoft empfiehlt eine Adresse, die Antworten empfängt, und ein Leser, der nicht antworten kann, nutzt eher die Schaltfläche „Spam“."
+  fix:
+    - "Verwenden Sie eine Adresse, die Antworten wirklich empfängt, zum Beispiel contact@{domain}."
+    - "Wenn Sie noreply beibehalten, ergänzen Sie ein Reply-To auf ein Postfach, das gelesen wird."
+reputation.ip_new_no_history:
+  title: "Die Versand-IP hat noch keine Historie"
+  why: "Die IP {ip} ist neu oder hat kaum gesendet. Große Mail-Dienste beurteilen eine IP anhand ihrer Historie: Ein großes Volumen von einer unbekannten IP wird sofort wie Spam behandelt."
+  fix:
+    - "Erhöhen Sie das Volumen über mehrere Wochen schrittweise und beginnen Sie mit Ihren aktivsten Kontakten."
+    - "Beobachten Sie vorübergehende Ablehnungen (Codes 4xx) und verlangsamen Sie den Versand, sobald sie auftreten."
+    - "Bei geringem Volumen bevorzugen Sie eine geteilte IP Ihres Versandtools, die bereits einen Ruf hat."
+  fix_by_provider:
+    sendgrid: "Aktivieren Sie IP Warmup auf der dedizierten IP unter Settings > IP Addresses: SendGrid verteilt das Volumen automatisch."
+    amazon_ses: "Aktivieren Sie das automatische Aufwärmen (standard auto warm-up) im Pool der dedizierten IPs oder verwenden Sie die verwalteten dedizierten IPs."
+reputation.shared_esp_identity:
+  title: "Ihre Versände tragen die Signatur von {provider}, nicht Ihre eigene"
+  why: "DKIM signiert für {dkim_domain}, und Rücksendungen gehen an {envelope_domain}, zwei Domains von {provider}. Ihr Ruf hängt dann von allen Kunden dieses Dienstes ab, und DMARC kann sich nicht auf {domain} ausrichten."
+  fix:
+    - "Authentifizieren Sie {domain} in {provider}: DKIM mit d={domain} und Return-Path auf einer Subdomain von {domain}."
+    - "Veröffentlichen Sie die DNS-Einträge, die das Tool Ihnen liefert, und senden Sie dann einen neuen Test."
+  fix_by_provider:
+    brevo: "Einstellungen > Absender, Domains und dedizierte IPs > Domains > Domain hinzufügen, dann veröffentlichen Sie die angegebenen Brevo-Einträge."
+    mailchimp: "Website > Domains > Authenticate: Veröffentlichen Sie die von Mailchimp gelieferten DKIM-CNAME-Einträge."
+    sendgrid: "Settings > Sender Authentication > Authenticate Your Domain."
+    mailjet: "In den Kontoeinstellungen von Mailjet, im Bereich der Domains und Absenderadressen: Fügen Sie {domain} hinzu und veröffentlichen Sie dann die gelieferten SPF- und DKIM-Einträge."
+reputation.feedback_id_missing:
+  title: "Die Nachricht hat keinen Feedback-ID-Header"
+  why: "Ohne Feedback-ID kann Gmail Postmaster Tools nicht sagen, welche Kampagne Beschwerden erzeugt. Orange verlangt diesen Header außerdem von Absendern mit mehr als 1.000 Nachrichten pro Tag."
+  fix:
+    - "Fügen Sie einen Header Feedback-ID hinzu: Kampagne:Kunde:Typ:Absenderkennung."
+    - "Behalten Sie für Ihren gesamten Versand dieselbe Absenderkennung (letztes Feld, 5 bis 15 Zeichen)."
+    - "Fügen Sie den Header vor der DKIM-Signatur hinzu und signieren Sie mit einer in Postmaster Tools verifizierten Domain."
+reputation.feedback_id_malformed:
+  title: "Der Header Feedback-ID ist fehlerhaft aufgebaut"
+  why: "Der Header Feedback-ID entspricht nicht dem Format von Google ({value}). Postmaster Tools kann die Beschwerden nicht gruppieren, und die Feedback-Schleife nützt Ihnen dann nichts."
+  fix:
+    - "Behalten Sie nur einen Header Feedback-ID pro Nachricht."
+    - "Setzen Sie als letztes Feld eine feste Absenderkennung mit 5 bis 15 Zeichen."
+    - "Verwenden Sie niemals einen Wert, der sich von Nachricht zu Nachricht ändert (Message-ID, Adresse des Empfängers)."
+    - "Nehmen Sie feedback-id in die von DKIM signierten Header auf."
+reputation.postmaster_tools_suggested:
+  title: "Verfolgen Sie {domain} in Gmail Postmaster Tools"
+  why: "Postmaster Tools ist der einzige Ort, an dem Gmail Ihre Beschwerderate und Ihren Konformitätsstatus bei großen Volumina angibt. Ohne dieses Tool entdecken Sie ein Problem erst, wenn Ihre Nachrichten bereits im Spam landen."
+  fix:
+    - "Öffnen Sie postmaster.google.com mit einem Google-Konto und fügen Sie {domain} hinzu."
+    - "Veröffentlichen Sie den angegebenen TXT-Verifizierungseintrag in der DNS-Zone von {domain}."
+    - "Prüfen Sie jede Woche die Spamrate und die Tabelle Compliance status."
+reputation.snds_suggested:
+  title: "Verfolgen Sie Ihre IP in Microsoft SNDS"
+  why: "Wenn {ip} Ihnen gehört, zeigt Ihnen Microsoft SNDS, wie Outlook.com deren Datenverkehr sieht: Volumen, Beschwerderate und Spam-Fallen. Es ist das Gegenstück zu Postmaster Tools für Microsoft."
+  fix:
+    - "Öffnen Sie sendersupport.olc.protection.outlook.com/snds/ und beantragen Sie den Zugang für den IP-Bereich, der {ip} enthält."
+    - "Bestätigen Sie den Antrag über die vorgeschlagene Kontaktadresse (abuse oder postmaster der Domain der IP)."
+reputation.yahoo_cfl_suggested:
+  title: "Melden Sie {dkim_domain} bei der Feedback-Schleife von Yahoo an"
+  why: "Yahoo sendet die Details der Beschwerden an DKIM-Domains, die für seine Complaint Feedback Loop angemeldet sind. Ohne Anmeldung wissen Sie nicht, welche Kontakte sich beschweren, und Sie schreiben ihnen weiter."
+  fix:
+    - "Melden Sie die Signaturdomain {dkim_domain} auf senders.yahooinc.com im Bereich Complaint Feedback Loop an."
+    - "Melden Sie jeden Kontakt, der in den erhaltenen Berichten auftaucht, automatisch ab."
+reputation.signal_spam_fbl_suggested:
+  title: "Melden Sie Ihre IP bei der Feedback-Schleife von Signal Spam an"
+  why: "La Poste leitet die Beschwerden seiner Nutzer über die Feedback-Schleife von Signal Spam weiter. Ohne Anmeldung sehen Sie die Meldungen Ihrer Empfänger bei laposte.net nicht."
+  fix:
+    - "Erstellen Sie ein Konto im Pro-Bereich von Signal Spam und melden Sie die IP {ip} oder Ihre Domain an."
+    - "Melden Sie Kontakte, die Sie melden, automatisch ab."
+reputation.bimi_absent:
+  title: "Kein BIMI-Logo für {domain}"
+  why: "BIMI zeigt Ihr Logo neben Ihren Nachrichten in den Mail-Diensten an, die es unterstützen. Sein Fehlen mindert die Zustellbarkeit nicht; es ist ein Bonus für die visuelle Identität."
+  fix:
+    - "Setzen Sie DMARC von {domain} zuerst auf p=quarantine oder p=reject, mit pct=100 oder ohne pct."
+    - "Bereiten Sie das Logo als SVG im Profil SVG Tiny PS vor (baseProfile='tiny-ps', version='1.2')."
+    - "Für Gmail beziehen Sie ein VMC- oder CMC-Zertifikat bei einer Zertifizierungsstelle und veröffentlichen Sie dann den Eintrag default._bimi.{domain} mit der Adresse des Logos (l=) und der des Zertifikats (a=)."

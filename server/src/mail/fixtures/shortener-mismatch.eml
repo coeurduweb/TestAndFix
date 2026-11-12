@@ -1,0 +1,20 @@
+From: Service client <support@atelier-exemple.fr>
+To: t-abcd2345@check.localhost
+Subject: Confirmez votre compte
+Date: Tue, 10 Nov 2026 15:58:00 +0100
+Message-ID: <x99@atelier-exemple.fr>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="zz"
+
+--zz
+Content-Type: text/plain; charset=utf-8
+
+Votre compte doit etre confirme aujourd hui. Ouvrez https://www.paypal.com pour le confirmer.
+Lien court : https://bit.ly/3xYzAbc
+
+--zz
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>Votre compte doit etre confirme aujourd hui. Ouvrez <a href="https://login.connexion-exemple.net/confirm?u=1">https://www.paypal.com</a> pour le confirmer.</p><p>Lien court : <a href="https://bit.ly/3xYzAbc">cliquez</a></p></body></html>
+
+--zz--

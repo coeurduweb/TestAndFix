@@ -1,0 +1,56 @@
+alignment.none_aligned:
+  title: "Weder SPF noch DKIM sind auf {domain} ausgerichtet"
+  why: "Die Nachricht ist womöglich authentifiziert, aber im Namen einer anderen Domain ({envelope_domain}, {dkim_domain}). Weder für DMARC noch für Gmail gibt es einen Nachweis, dass {domain} das erlaubt hat."
+  fix:
+    - "Richten Sie in {provider} die DKIM-Signatur mit d={domain} ein: Das ist die belastbarste Ausrichtung."
+    - "Wenn der Dienst es erlaubt, richten Sie zusätzlich eine eigene Rückweg-Domain (Return-Path) auf einer Subdomain von {domain} ein."
+    - "Wiederholen Sie den Test: Mindestens einer der beiden muss als ausgerichtet erscheinen."
+  fix_by_provider:
+    brevo: "Settings, Senders, Domains, IPs, Domains, Authenticate: Die CNAME-Einträge brevo1/brevo2._domainkey richten DKIM aus, der CNAME „Branded“ richtet den Return-Path aus."
+    mailchimp: "Account & billing, Domains, Start authentication: Die beiden DKIM-CNAME-Einträge richten die Signatur auf {domain} aus."
+    sendgrid: "Settings, Sender Authentication, Domain Authentication: Der CNAME em… richtet den Return-Path aus, s1 und s2._domainkey richten DKIM aus."
+    amazon_ses: "Verifizieren Sie {domain} mit Easy DKIM, um DKIM auszurichten. Um SPF auszurichten, konfigurieren Sie einen eigenen MAIL FROM auf einer Subdomain von {domain}."
+    mailjet: "Authentifizieren Sie die Domain (DKIM mailjet._domainkey). Der eigene Return-Path bnc3.{domain} zu bnc3.mailjet.com ist kostenpflichtigen Konten vorbehalten und wird auf Anfrage beim Support eingerichtet."
+    postmark: "Veröffentlichen Sie den DKIM-Schlüssel der Domain und den CNAME des eigenen Return-Path zu pm.mtasv.net. Postmark weist darauf hin, dass DMARC über DKIM besteht, auch wenn SPF nicht ausgerichtet ist."
+    hubspot: "Verbinden Sie die Versanddomain unter Settings, Content, Domains & URLs, Email Sending. Im geteilten Netzwerk von HubSpot lässt sich der Return-Path nicht anpassen, die Ausrichtung erfolgt daher über DKIM."
+    microsoft_365: "Aktivieren Sie DKIM für {domain}: Microsoft 365 signiert eine eigene Domain erst, wenn DKIM dafür konfiguriert ist."
+alignment.spf_not_aligned:
+  title: "Das SPF besteht für {envelope_domain}, nicht für {domain}"
+  why: "Ihr DMARC stützt sich nur auf DKIM. Das ist kein Fehler, aber wenn die Signatur unterwegs bricht (Mailingliste, Virenscanner), authentifiziert nichts mehr {domain}."
+  fix:
+    - "Wenn {provider} eine eigene Rückweg-Domain anbietet, richten Sie sie auf einer Subdomain von {domain} ein (zum Beispiel bounce.{domain})."
+    - "Andernfalls ist keine Aktion nötig, solange DKIM ausgerichtet bleibt."
+  fix_by_provider:
+    amazon_ses: "Konfigurieren Sie einen eigenen MAIL FROM: MX 10 feedback-smtp.<Region>.amazonses.com und TXT v=spf1 include:amazonses.com ~all auf der gewählten Subdomain."
+    postmark: "Legen Sie den CNAME für den eigenen Return-Path (Subdomain von {domain}) zu pm.mtasv.net an, mit dem Namen, der unter DNS Settings angezeigt wird."
+    sendgrid: "Mit automated security genügt der CNAME em…. Prüfen Sie, dass er unter Sender Authentication validiert ist."
+    mailchimp: "Mailchimp verwendet eine eigene Rückweg-Domain: Die Ausrichtung erfolgt über DKIM, weitere Schritte sind nicht nötig."
+alignment.dkim_not_aligned:
+  title: "DKIM besteht für {dkim_domain}, nicht für {domain}"
+  why: "DMARC hält nur über das SPF. Sobald ein Empfänger die Nachricht weiterleitet (Adressweiterleitung, Liste), bricht das SPF, und DMARC schlägt fehl, mit Ablehnung, wenn {domain} auf p=reject steht."
+  fix:
+    - "Richten Sie in {provider} eine DKIM-Signatur mit d={domain} ein."
+    - "Veröffentlichen Sie die gelieferten DKIM-Einträge und wiederholen Sie dann den Test."
+alignment.spf_only:
+  title: "DMARC besteht nur dank SPF"
+  why: "Die Nachricht ist nicht signiert: Nur das SPF authentifiziert {domain}. Von Ihren Empfängern weitergeleitete Nachrichten scheitern an DMARC, und Gmail verlangt bei Massenversand SPF und DKIM."
+  fix:
+    - "Aktivieren Sie DKIM für {domain} im Versanddienst ({provider})."
+    - "Behalten Sie das SPF bei: Beide ergänzen sich."
+alignment.relaxed_only:
+  title: "Die Ausrichtung stützt sich auf eine Subdomain von {domain}"
+  why: "Das ist gültig und bei Versanddiensten üblich. Merken Sie sich nur, dass eine strikte Ausrichtung (adkim=s oder aspf=s) diese Nachrichten scheitern ließe."
+  fix:
+    - "Setzen Sie in Ihrem DMARC weder adkim=s noch aspf=s, solange dieser Dienst über eine Subdomain signiert."
+alignment.freemail_from:
+  title: "Die Nachricht wird im Namen von {domain} von einem Server gesendet, der nicht zu dieser Domain gehört"
+  why: "Eine Adresse {domain} kann nur von den Servern von {domain} authentifiziert werden. Von {provider} gesendet, scheitert sie an DMARC, und die von {domain} veröffentlichte Richtlinie ({dmarc_record}) führt bei den meisten Empfängern dazu, dass die Nachricht abgelehnt oder im Spam einsortiert wird."
+  fix:
+    - "Verwenden Sie eine Absenderadresse auf Ihrer eigenen Domain (zum Beispiel contact@ihre-domain.de), die in {provider} authentifiziert ist."
+    - "Behalten Sie bei Bedarf die Adresse {domain} als Reply-To, um Antworten zu empfangen."
+alignment.multiple_from:
+  title: "Die Nachricht enthält mehrere Adressen oder From-Header"
+  why: "Bei mehreren Absendern weiß der Empfänger nicht, welche Domain er prüfen soll. DMARC kann dann nicht angewendet werden, und viele Server lehnen solche Nachrichten als fehlerhaft ab."
+  fix:
+    - "Konfigurieren Sie Ihre Software so, dass sie nur einen From-Header mit einer einzigen Adresse ausgibt."
+    - "Setzen Sie die übrigen Adressen in Reply-To oder in Kopie (Cc)."

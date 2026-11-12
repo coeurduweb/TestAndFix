@@ -1,0 +1,72 @@
+ip.not_public:
+  title: "O endereço {ip} não é um endereço público"
+  why: "{ip} pertence a esta categoria: {value}. Não é um endereço de envio na Internet: nenhuma lista negra nem serviço de reputação o conhece, e não é o endereço que os destinatários das suas mensagens veem."
+  fix:
+    - "Procure o endereço público pelo qual suas mensagens saem: nos cabeçalhos de uma mensagem recebida, localize o cabeçalho Received adicionado pelo primeiro servidor externo à sua rede. O IP entre colchetes depois de from é o seu endereço de saída."
+    - "Ou peça ao seu provedor de hospedagem ou ao seu serviço de envio o endereço IP de saída das suas mensagens."
+    - "Execute a verificação novamente com esse endereço público."
+ip.virustotal_flagged:
+  title: "{value} mecanismo(s) do VirusTotal classificam o IP {ip} como malicioso"
+  why: "O VirusTotal agrega dezenas de listas de segurança. Um mecanismo isolado costuma errar; vários mecanismos concordando geralmente indicam conteúdo malicioso hospedado nesse endereço ou em uma máquina comprometida."
+  fix:
+    - "Abra {url}: a aba Detection indica quais mecanismos sinalizam o endereço e com qual veredito."
+    - "Se o endereço for seu, procure um site invadido ou um arquivo malicioso hospedado, remova-o e depois execute a análise novamente no VirusTotal."
+    - "Para um mecanismo que erra, escreva ao fornecedor desse mecanismo com o link da ficha do VirusTotal: o VirusTotal informa que não pode alterar os resultados por conta própria."
+ip.otx_pulses:
+  title: "O IP {ip} aparece em {value} coleção(ões) de indicadores do OTX"
+  why: "As coleções (pulses) do OTX AlienVault são publicadas por membros da comunidade. Estar nelas é um indício a ser lido, não um veredito: um endereço compartilhado ou reatribuído costuma aparecer em coleções sem relação com o uso atual."
+  fix:
+    - "Abra {url} e veja a data e o assunto de cada coleção."
+    - "Leve em conta somente as coleções recentes que tratam de spam, phishing ou software malicioso. Se o endereço for seu, procure a causa como faria em uma denúncia de abuso."
+ip.prefix_not_announced:
+  title: "Nenhuma rede anuncia o endereço {ip} na Internet"
+  why: "As tabelas de roteamento observadas pelo RIPEstat não contêm nenhuma rota para {ip}. Um endereço não anunciado não consegue enviar nem receber e-mails pela Internet: em geral, é um erro de digitação, ou um endereço devolvido pelo antigo titular."
+  fix:
+    - "Verifique o endereço digitado: compare-o com o que o seu provedor de hospedagem informa, ou com o do cabeçalho Received adicionado pelo primeiro servidor externo em uma mensagem recebida."
+    - "Se o endereço for mesmo seu e tiver sido atribuído recentemente, pergunte ao seu provedor de hospedagem se o prefixo está anunciado, e execute a verificação mais tarde."
+ip.abuseipdb_reported:
+  title: "O IP {ip} está denunciado no AbuseIPDB (pontuação {value}%)"
+  why: "Administradores denunciaram {ip} por abusos: spam, ataques, varredura de portas. Algumas denúncias antigas sobre um IP compartilhado são comuns; uma pontuação alta indica atividade recente e repetida."
+  fix:
+    - "Abra {url} e leia as categorias e os comentários das denúncias, com as datas."
+    - "Se o endereço for seu, procure a máquina ou a conta comprometida (senha roubada, site invadido, servidor SMTP aberto) e corrija a causa."
+    - "Não espere uma remoção sob pedido: o AbuseIPDB não documenta um procedimento de remoção para o titular do endereço. O peso das denúncias diminui com o tempo, e a pontuação cai quando os abusos param."
+    - "Se o endereço pertencer ao seu provedor de hospedagem ou ao seu serviço de envio, encaminhe o link {url} a ele."
+ip.domain_not_found:
+  title: "O domínio {domain} não existe"
+  why: "Os servidores DNS autoritativos respondem que {domain} não existe (NXDOMAIN). Um nome inexistente não pode receber nem enviar e-mails, e nenhuma fonte consegue avaliar sua reputação."
+  fix:
+    - "Verifique a grafia do nome digitado."
+    - "Se o domínio for seu, confirme no seu registrador que ele está registrado, que não expirou e que os servidores DNS estão declarados."
+ip.domain_ip_listed:
+  title: "O IP {ip} do {value} {host} está inscrito em {list_name}"
+  why: "Este endereço serve {domain}. O IP de um servidor de e-mail inscrito em {list_name} tem suas mensagens recusadas ou classificadas como indesejadas pelos servidores que consultam essa lista. O IP de um site inscrito geralmente indica hospedagem compartilhada com sites abusivos, ou um site comprometido."
+  fix:
+    - "Leia o motivo e o procedimento de remoção na linha do endereço {ip}, mais abaixo nesta página."
+    - "Se o endereço pertencer ao seu provedor de hospedagem ou ao seu serviço de e-mail, encaminhe a inscrição a ele: cabe a ele pedir a remoção."
+    - "Se o servidor for seu, corrija a causa (conta ou site comprometido, envios não solicitados) antes de pedir a remoção em {delist_url}."
+ip.domain_recent:
+  title: "O domínio {domain} foi criado há {value}"
+  why: "Um domínio com menos de 30 dias ainda não tem histórico: os filtros de e-mail lhe dão pouca confiança, e as campanhas de phishing justamente usam domínios novos."
+  fix:
+    - "Se o domínio for seu, aumente gradualmente o volume de envios e publique SPF, DKIM e DMARC desde o início."
+    - "Se o domínio se apresentar como o de um serviço conhecido, compare-o com o domínio oficial desse serviço."
+ip.domain_safe_browsing:
+  title: "O Google Safe Browsing classifica o domínio {domain} como perigoso ({value})"
+  why: "O Google incluiu a página inicial de {domain} nas suas listas de sites perigosos. Os navegadores que usam o Safe Browsing, entre eles o Chrome, exibem uma página de alerta vermelha nesse endereço."
+  fix:
+    - "Se o domínio for seu, o site provavelmente foi invadido: limpe-o e depois peça uma nova análise no Google Search Console, relatório Problemas de segurança."
+    - "Caso contrário, não informe nenhum dado nesse site."
+ip.domain_virustotal:
+  title: "{value} mecanismo(s) do VirusTotal classificam o domínio {domain} como malicioso"
+  why: "O VirusTotal agrega dezenas de listas de segurança. Um mecanismo isolado costuma errar; vários mecanismos concordando geralmente indicam um site que hospeda ou hospedou conteúdo malicioso."
+  fix:
+    - "Abra a ficha do VirusTotal {url}: a aba Detection indica quais mecanismos sinalizam o domínio e com qual veredito."
+    - "Se o domínio for seu, procure um site invadido ou um arquivo malicioso hospedado, remova-o e depois execute a análise novamente no VirusTotal."
+    - "Para um mecanismo que erra, escreva ao fornecedor desse mecanismo com o link da ficha do VirusTotal."
+ip.domain_urlhaus:
+  title: "O URLhaus lista {value} endereço(s) malicioso(s) em {domain}"
+  why: "O URLhaus, mantido pela abuse.ch, lista os endereços que distribuem software malicioso. Arquivos de {domain} aparecem nele: o site hospeda ou hospedou um software malicioso."
+  fix:
+    - "Se o site for seu, abra a ficha do URLhaus {url} para ver os endereços envolvidos, remova esses arquivos e corrija a falha que permitiu depositá-los."
+    - "Troque as senhas de acesso ao site (FTP, administração, banco de dados) e atualize as extensões."

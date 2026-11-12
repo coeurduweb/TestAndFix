@@ -1,0 +1,126 @@
+sa.rdns_none:
+  title: "O IP de envio não tem reverse DNS"
+  why: "O IP {ip} que entregou a mensagem não retorna nenhum nome quando consultado em DNS reverso. Servidores de e-mail sérios sempre têm um: a ausência sugere uma máquina infectada ou um servidor montado às pressas, e vários provedores recusam essas conexões."
+  fix:
+    - "Peça ao provedor de hospedagem ou ao fornecedor do IP {ip} para criar um registro PTR, por exemplo mail.{domain}."
+    - "Faça esse nome apontar para {ip} no DNS direto (registro A), para que os dois sentidos coincidam."
+    - "Anuncie esse mesmo nome no HELO."
+sa.rdns_dynamic:
+  title: "O reverse DNS do IP de envio parece uma conexão residencial"
+  why: "O nome {ptr} do IP de envio contém o endereço IP ou palavras típicas de roteadores e conexões residenciais. O SpamAssassin deduz um computador ou um objeto conectado que envia diretamente, comportamento típico de máquinas infectadas."
+  fix:
+    - "Não entregue diretamente de uma conexão de internet de escritório ou residencial: use o SMTP autenticado do seu serviço de e-mail."
+    - "Para um servidor dedicado, peça um reverse DNS explícito do tipo mail.{domain}, em vez do nome genérico do provedor de hospedagem."
+sa.rdns_localhost:
+  title: "O reverse DNS público do IP de envio é localhost"
+  why: "O IP público {ip} se apresenta no DNS reverso como “localhost”. É um erro de configuração que os filtros associam a servidores abandonados ou sequestrados."
+  fix:
+    - "Peça ao fornecedor do IP para substituir o PTR de {ip} por um nome real (mail.{domain})."
+sa.helo_dynamic_ipaddr:
+  title: "O servidor se anuncia com um nome que contém o seu IP"
+  why: "O nome anunciado no HELO ({helo}) é construído a partir do endereço IP, como os nomes automáticos dos provedores de acesso. Um servidor de e-mail normalmente se anuncia com o próprio nome."
+  fix:
+    - "Configure o nome HELO do servidor com um nome escolhido, por exemplo mail.{domain}, que aponte para {ip}."
+    - "Alinhe o reverse DNS de {ip} com esse mesmo nome."
+  fix_by_provider:
+    postfix: "Defina myhostname = mail.exemplo.com.br no main.cf (ou smtp_helo_name apenas para o HELO de saída)."
+    exim: "Defina primary_hostname na configuração principal, ou helo_data no transporte remote_smtp."
+sa.helo_dynamic_ipaddr2:
+  title: "O servidor se anuncia com um nome que começa pelo seu IP"
+  why: "O nome HELO ({helo}) começa pelos quatro números de um endereço IP. É o padrão dos nomes de conexões dinâmicas, um dos mais penalizados pelo SpamAssassin entre as regras de HELO."
+  fix:
+    - "Dê ao servidor um nome próprio (mail.{domain}) e use-o no HELO."
+    - "Se não puder mudar o nome, envie por um relay SMTP autenticado."
+  fix_by_provider:
+    postfix: "Defina smtp_helo_name = mail.exemplo.com.br no main.cf e depois recarregue o Postfix."
+sa.helo_dynamic_split_ip:
+  title: "O nome HELO divide um endereço IP"
+  why: "O nome HELO ({helo}) contém um endereço IP dividido em pedaços, padrão dos nomes dinâmicos gerados pelos provedores. Penalidade alta."
+  fix:
+    - "Configure um nome HELO explícito (mail.{domain}) que resolva para {ip}."
+sa.helo_dynamic_dhcp:
+  title: "O nome HELO sugere uma conexão DHCP ou a cabo"
+  why: "O nome HELO ({helo}) contém uma palavra típica de conexões residenciais (dsl, cable, dhcp). O servidor parece ser uma máquina doméstica."
+  fix:
+    - "Envie pelo relay SMTP do seu serviço de e-mail, em vez de entregar a partir dessa conexão."
+sa.helo_localhost:
+  title: "O servidor se anuncia como localhost"
+  why: "O servidor que entregou a mensagem se apresentou com o nome “localhost”. Nenhum servidor de e-mail correto faz isso: é típico de um script PHP ou de um servidor instalado sem configuração. É uma das penalidades de HELO mais altas."
+  fix:
+    - "Configure o nome completo do host do servidor (mail.{domain}) e use-o no HELO."
+    - "Para um site que envia mensagens por conta própria, passe por uma extensão SMTP até o seu serviço de e-mail."
+  fix_by_provider:
+    postfix: "Defina myhostname com um nome completo no main.cf; verifique também /etc/hostname."
+    wordpress: "Instale uma extensão SMTP e envie pelo servidor do seu serviço de e-mail, em vez de usar mail()."
+sa.helo_no_domain:
+  title: "O nome HELO não é um nome de domínio completo"
+  why: "O servidor se anuncia com um nome curto, sem domínio ({helo}). A norma exige um nome completo. Caso frequente: um servidor Windows, um NAS ou um script que usa o nome da máquina."
+  fix:
+    - "Substitua o nome HELO por um nome completo do tipo mail.{domain}, que resolva para {ip}."
+    - "No Exchange ou em um servidor Windows, defina o FQDN do conector de envio."
+  fix_by_provider:
+    postfix: "Defina myhostname com um nome qualificado (pelo menos um ponto) no main.cf."
+sa.helo_misc_ip:
+  title: "O nome HELO parece um endereço IP dinâmico"
+  why: "O nome HELO ({helo}) contém uma sequência de números que parece um endereço IP. Penalidade leve, sinal de um nome de host genérico."
+  fix:
+    - "Use um nome HELO escolhido, sem endereço IP nele."
+sa.helo_static_host:
+  title: "Nome HELO estático reconhecido de um grande serviço de envio"
+  why: "O nome HELO contém um IP, mas o SpamAssassin reconhece o formato de um grande serviço de envio e anula as penalidades de HELO dinâmico."
+  fix:
+    - "Nada a corrigir."
+sa.khop_helo_fcrdns:
+  title: "O nome HELO não corresponde ao reverse DNS"
+  why: "O servidor se anuncia como {helo}, mas o seu IP {ip} se chama {ptr}. Em uma mensagem que, de resto, não está autenticada, o SpamAssassin vê um servidor que mente sobre a própria identidade."
+  fix:
+    - "Faça coincidirem três elementos: nome HELO, reverse DNS de {ip} e registro A desse nome."
+    - "Autentique também a mensagem por SPF ou DKIM: a regra deixa de se aplicar se um dos dois passar."
+sa.may_be_forged:
+  title: "O reverse DNS do IP de envio não aponta de volta para esse IP"
+  why: "O nome {ptr} do IP {ip} não aponta de volta para {ip}. O servidor receptor o marcou como “may be forged”. Sem SPF nem DKIM válido, isso basta para tornar o remetente suspeito."
+  fix:
+    - "Crie o registro A que faz {ptr} apontar para {ip}, ou troque o PTR por um nome que já aponte para lá."
+    - "Autentique a mensagem (SPF ou DKIM válido): a regra então deixa de valer."
+sa.ck_helo_generic:
+  title: "O nome HELO sugere um pool de endereços genérico"
+  why: "O nome HELO ({helo}) se parece com os nomes genéricos das faixas de endereços dos provedores. Efeito quase nulo na pontuação, mas outros filtros são mais severos."
+  fix:
+    - "Use um nome HELO dedicado (mail.{domain})."
+sa.fsl_helo_bare_ip_1:
+  title: "O servidor se anuncia com um endereço IP puro"
+  why: "O servidor disse “HELO {helo}” com um simples endereço IP em vez de um nome. A norma exige um nome de domínio, ou um IP entre colchetes como último recurso. Scripts de envio mal configurados costumam fazer isso."
+  fix:
+    - "Configure o software de envio para anunciar um nome completo (mail.{domain})."
+    - "No PHPMailer ou em uma biblioteca SMTP, preencha a opção Hostname ou Helo."
+sa.fsl_helo_non_fqdn_1:
+  title: "Nome HELO sem domínio"
+  why: "O nome HELO ({helo}) tem uma só palavra, sem domínio. Pontuação quase nula aqui, mas o mesmo erro aciona HELO_NO_DOMAIN, bem mais pesada."
+  fix:
+    - "Anuncie um nome completo do tipo mail.{domain}."
+sa.rcvd_helo_ip_mismatch:
+  title: "O HELO anuncia um IP diferente do IP real"
+  why: "O servidor se anunciou com o IP {helo}, mas estava se conectando a partir de {ip}. Isso acontece com um servidor atrás de um redirecionamento de porta ou com um software que anuncia um IP antigo."
+  fix:
+    - "Substitua o IP anunciado no HELO por um nome de host completo que resolva para {ip}."
+sa.rcvd_illegal_ip:
+  title: "Um cabeçalho Received contém um IP impossível"
+  why: "Uma linha Received cita um endereço IP que não pode existir na internet. Ou é um cabeçalho fabricado, ou um equipamento mal configurado que escreve um IP de documentação ou de teste."
+  fix:
+    - "Se a linha vier do seu servidor ou da sua aplicação, corrija o IP que ela registra."
+    - "Nunca insira um cabeçalho Received manualmente em um script de envio."
+sa.no_rdns_dotcom_helo:
+  title: "O servidor se apresenta como um grande provedor, mas não tem reverse DNS"
+  why: "O servidor anuncia no HELO o nome de um grande provedor de e-mail, mas o seu IP {ip} não tem nenhum reverse DNS. Os verdadeiros servidores desses provedores sempre têm um: trata-se de uma falsificação de identidade."
+  fix:
+    - "Configure o seu servidor para anunciar o próprio nome, não o de um provedor."
+sa.rcvd_fake_helo_dotcom:
+  title: "O nome HELO imita um nome de domínio conhecido"
+  why: "O servidor se anuncia com um nome genérico ou falsificado, como yahoo.com, localhost.com ou mydomain.com. Valores de exemplo deixados em uma configuração produzem exatamente isso."
+  fix:
+    - "Substitua o valor de exemplo do nome de host por mail.{domain}."
+sa.tvd_rcvd_ip:
+  title: "O servidor de envio se anunciou por um endereço IP"
+  why: "Informação: uma linha Received indica que o remetente se apresentou por um endereço IP. Sem peso aqui, mas reforça outras regras sobre o HELO."
+  fix:
+    - "Configure um nome HELO completo no servidor de envio."

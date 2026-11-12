@@ -1,0 +1,224 @@
+sa.uppercase_50_75:
+  title: "Message text is 50 to 75% in capitals"
+  why: "More than half of the letters in the body are capitals. A symbolic score today, but the message looks shouted and readers report it more readily."
+  fix:
+    - "Rewrite the text in normal case; keep capitals for acronyms."
+sa.uppercase_75_100:
+  title: "Message text is almost entirely in capitals"
+  why: "More than three quarters of the letters are capitals. Symbolic score."
+  fix:
+    - "Rewrite the text in normal case."
+sa.lots_of_money:
+  title: "The message mentions large sums of money"
+  why: "The text mentions large sums (10,000 €, “millions”). Symbolic score, but this rule feeds into several combined fraud rules."
+  fix:
+    - "Nothing mandatory. Avoid putting large amounts in the subject and in the first paragraph."
+sa.money_back:
+  title: "Mention of “money back guarantee”"
+  why: "The text contains the English expression “money back guarantee”. 1 point."
+  fix:
+    - "Rephrase (“refund within 30 days”) or remove the English expression from the footer."
+sa.risk_free:
+  title: "“Risk free” promise"
+  why: "The text promises no risk (“risk free”, “100% safe”) without any sign of a mailing list. Nearly 3 points: the phrase is typical of scams."
+  fix:
+    - "Remove the phrase, or add a real unsubscribe link and the List-Unsubscribe header: the rule then no longer applies."
+sa.guaranteed_100_percent:
+  title: "Mention of “100% guaranteed”"
+  why: "The text contains “100% guaranteed”. Nearly 3 points for this expression alone."
+  fix:
+    - "Remove the expression, or state the guarantee precisely (duration, conditions)."
+sa.bang_guar:
+  title: "“Guaranteed!” with an exclamation mark"
+  why: "The text contains “guarantee!” or “guaranteed!”. 1 point."
+  fix:
+    - "Remove the exclamation mark or the expression."
+sa.free_quote_instant:
+  title: "Offer of a free, immediate quote"
+  why: "The text offers a “free instant quote” or a “free no-obligation quote”. Phrasing typical of English-language prospecting spam. More than 1 point."
+  fix:
+    - "Rephrase the call to action without “free” or “instant” next to “quote”."
+sa.low_price:
+  title: "Mention of “lowest price”"
+  why: "The text contains “Low Price” or “Lowest Price”. Light penalty."
+  fix:
+    - "Nothing mandatory; avoid the phrase in the subject."
+sa.act_now_caps:
+  title: "“Act Now” in capitals"
+  why: "The text contains “Act Now” in capitals. Light penalty."
+  fix:
+    - "Replace it with a precise call to action (“Book your place”)."
+sa.this_ad:
+  title: "The text refers to “this ad” or “this promotion”"
+  why: "The text contains “this ad”, “this advertisement” or “this promotion”. Often found in an English legal notice in the footer. Nearly 3 points."
+  fix:
+    - "Remove or translate the English notice in the footer."
+sa.admits_spam:
+  title: "The text presents itself as an advertisement"
+  why: "The message contains “This is an advertisement”: some laws require this notice, but filters treat it as an admission. 2 points."
+  fix:
+    - "If the notice is not required for your audience, remove it."
+    - "Otherwise, use a sending tool that adds its own campaign headers (the rule does not apply when X-Campaignid is present)."
+sa.ad_prefs:
+  title: "“Advertising preferences” link or wording"
+  why: "The text contains “marketing preferences” or “ad settings”. Light penalty, often caused by the English preferences link."
+  fix:
+    - "Translate the label of the preferences link (“Manage my preferences”)."
+sa.excuse_remove:
+  title: "“To be removed from our mailings” wording"
+  why: "The text contains “to be removed from ... mailings” or “... offers”. An old English spam phrase, penalized by more than 3 points."
+  fix:
+    - "Replace the sentence with a direct unsubscribe link: “Unsubscribe”."
+sa.excuse_4:
+  title: "“To Be Removed, Please” wording"
+  why: "The text contains “To be removed, please...”. More than 1 point."
+  fix:
+    - "Replace it with a one-click unsubscribe link."
+sa.end_future_emails:
+  title: "Typical spam unsubscribe wording"
+  why: "The unsubscribe text uses an English phrase that spammers use a lot, and the message is not signed with DKIM. Light penalty."
+  fix:
+    - "Sign the message with DKIM: the rule does not apply to signed messages."
+sa.remove_before_link:
+  title: "“No thanks” or “unsubscribe here” just before an http link"
+  why: "A refusal phrase is followed by an unencrypted http:// link. Light penalty."
+  fix:
+    - "Use an https:// link and a clickable label rather than a displayed address."
+sa.obfu_unsub_ul:
+  title: "Unsubscribe text with underscores instead of spaces"
+  why: "The text contains expressions such as “click_here” or “to_unsubscribe”, written with underscores to evade filters. A file or variable name left visible can also trigger it."
+  fix:
+    - "Write the text normally, with spaces."
+    - "Check that no template tag (to_unsubscribe, click_here) appears unreplaced."
+sa.marketing_partners:
+  title: "Mention of marketing partners"
+  why: "The text mentions a “marketing partner” or a “partner site”, wording used by rented mailing lists. Symbolic score."
+  fix:
+    - "Nothing mandatory. Only send to contacts who signed up with you."
+sa.cant_see_ad:
+  title: "“Can't see the images below” wording"
+  why: "The message contains the English phrase “If you can't see this newsletter...” and has no List-Unsubscribe header. 1 point."
+  fix:
+    - "Add the List-Unsubscribe header (the rule then no longer applies), or translate the wording of the link to the online version."
+sa.not_spam:
+  title: "The message claims not to be spam"
+  why: "The text claims “This email is not spam” (in English, Spanish or German). Legitimate messages do not need to say so. 1 point."
+  fix:
+    - "Remove the sentence. Explain instead why the recipient is receiving the message (sign-up, customer)."
+sa.urg_biz:
+  title: "The text mentions an urgent matter"
+  why: "The text contains “urgent reply”, “urgent business” or “urgent request”. Phrasing used in English-language fraud. Moderate penalty."
+  fix:
+    - "Remove the urgency phrase; give a precise date if needed."
+sa.dear_something:
+  title: "Generic greeting “Dear Sir”, “Dear Madam”..."
+  why: "The message starts with “Dear Sir”, “Dear Madam”, “Dear Candidate”... Personalized messages use the name. Nearly 2 points."
+  fix:
+    - "Personalize the greeting with the recipient's first or last name, or remove it."
+sa.dear_friend:
+  title: "“Dear Friend” greeting"
+  why: "The message starts with “Dear Friend”. A signature greeting of scams, more than 2.5 points."
+  fix:
+    - "Personalize the greeting or remove it."
+sa.one_time:
+  title: "“One time offer” wording"
+  why: "The text contains “one-time offer” or “one time charge”. Moderate penalty."
+  fix:
+    - "Rephrase the offer without the English expression."
+sa.prices_are_affordable:
+  title: "“Affordable prices” wording"
+  why: "The text contains “affordable prices”. Moderate penalty."
+  fix:
+    - "State the concrete price or benefit instead of the phrase."
+sa.new_products:
+  title: "Announcement of new products in spam style"
+  why: "The text presents new items with an English phrase used in mass prospecting (“We are pleased to introduce our...”). 1 point."
+  fix:
+    - "Present the product directly, with its name and its interest, without an introductory phrase."
+sa.ready_to_ship:
+  title: "“Ready to ship from our warehouse” wording"
+  why: "The text promotes stock ready to ship from a warehouse, a phrase typical of industrial supplier spam. More than 1 point."
+  fix:
+    - "Rephrase with precise information (lead time, reference, conditions) rather than the stock phrase."
+sa.investment_advice:
+  title: "“Investment advice” wording"
+  why: "The text contains “investment advice”, often in a legal disclaimer. Light penalty."
+  fix:
+    - "Nothing mandatory if the notice is required."
+sa.fin_free:
+  title: "Financial freedom promise"
+  why: "The text promises “financial freedom” or “financially independent”. Light penalty."
+  fix:
+    - "Rephrase without a promise of gain."
+sa.compensation:
+  title: "Mention of financial compensation"
+  why: "The text mentions “compensation” without any sign of a list or authentication. Symbolic score."
+  fix:
+    - "Nothing mandatory. Authenticate the message (SPF, DKIM)."
+sa.fill_this_form:
+  title: "Request to fill in a form with personal information"
+  why: "The message asks you to reply with your name, address, phone number, profession... A pattern of English-language fraud. Symbolic score, but it weighs more in the combined rule sets."
+  fix:
+    - "Send people to a form on your website rather than asking for their information in a reply to the email."
+sa.fsl_bulk_sig:
+  title: "Bulk sending detected without an unsubscribe link"
+  why: "A collaborative network has seen this message in large numbers, and it contains no way to unsubscribe. Symbolic score, but it is a real defect: Gmail and Yahoo require one-click unsubscribe for bulk sends."
+  fix:
+    - "Add a visible unsubscribe link, and the List-Unsubscribe and List-Unsubscribe-Post headers."
+sa.english_uce_subject:
+  title: "Subject starting with “ADV”"
+  why: "The subject starts with “ADV” or “ADVERT”, an advertising label required by some US laws and looked for by filters. Nearly 3 points."
+  fix:
+    - "Remove the ADV prefix from the subject, unless your audience's law requires it."
+sa.subj_as_seen:
+  title: "Subject containing “As Seen”"
+  why: "The subject contains “As Seen” (“as seen on TV”). Nearly 1.5 points."
+  fix:
+    - "Rephrase the subject."
+sa.unicode_obfu_zw:
+  title: "Invisible characters inserted into words"
+  why: "Invisible characters (zero-width spaces) are inserted into words. This is an obfuscation technique, and preheader templates also add them. Symbolic score."
+  fix:
+    - "Remove zero-width characters from the visible text, and sign the message with DKIM."
+sa.unicode_obfu_zw_many:
+  title: "Many invisible characters inserted into words"
+  why: "The text is full of zero-width characters. Preheaders that chain &zwnj; or &#8203; to hide the beginning of the message produce many of them. 3 points."
+  fix:
+    - "Limit preheader padding: a few &nbsp; are enough, or none at all."
+    - "Remove zero-width characters stuck to the visible text."
+sa.unicode_obfu_asc:
+  title: "Cyrillic letters mixed with Latin words"
+  why: "Cyrillic letters that look like Latin letters are mixed into the text. This is a technique to defeat word filters. A copy-paste from a badly encoded document can introduce them. 2.5 points."
+  fix:
+    - "Retype the words concerned on the keyboard, or run the text through a tool that flags non-Latin characters."
+sa.percent_random:
+  title: "Unreplaced %RND or %RANDOM macro"
+  why: "The message contains a %RND or %RANDOM macro left as is: a mass-sending software did not substitute its random variable. Nearly 2 points."
+  fix:
+    - "Find the macro in the subject, the headers or the HTML, and remove it from the template."
+sa.longwords:
+  title: "Long run of long words"
+  why: "The text contains long runs of lowercase long words, like the random text spammers add to fool filters. 1 point."
+  fix:
+    - "Check that no filler text or keyword list runs through the message (alt attribute, hidden text, keyword list)."
+sa.unwanted_language_body:
+  title: "Message written in an unaccepted language"
+  why: "The test server only accepts certain languages, and the message is written in another one. This only happens if ok_languages has been restricted. 2.8 points."
+  fix:
+    - "No change to the message is needed if the language is intended; report that the test server filters languages."
+sa.nice_reply_a:
+  title: "The message looks like a real reply"
+  why: "The message has the headers of a real reply in a thread. Large bonus (nearly 3 points)."
+  fix:
+    - "Nothing to fix. Do not fake “Re:” in a campaign: this does not trigger this rule and it annoys readers."
+sa.gtube:
+  title: "GTUBE antispam test message"
+  why: "The message contains the GTUBE string, designed to be recognized as spam by all filters. 1,000 points."
+  fix:
+    - "Remove the GTUBE string: it only serves to check that a filter works."
+spamassassin.over_threshold:
+  title: "SpamAssassin classifies this message as spam ({value} points, threshold {rule_score})"
+  why: "Above this threshold, a server that filters with SpamAssassin at its default setting sends the message to junk or rejects it. The points come from the rules listed under “Junk folder risk”."
+  fix:
+    - "Fix first the SpamAssassin rules that cost the most points."
+    - "Then send a test message again: it must pass below {rule_score} points."

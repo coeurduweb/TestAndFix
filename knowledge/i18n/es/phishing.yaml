@@ -1,0 +1,89 @@
+phishing.safe_browsing:
+  title: "Google Safe Browsing clasifica este enlace como peligroso ({value})"
+  why: "Google ha clasificado {url} en sus listas de sitios peligrosos ({value}). Los navegadores que usan Safe Browsing, entre ellos Chrome, muestran una página de alerta roja en esta dirección, y un mensaje que contiene este enlace se trata como una amenaza."
+  fix:
+    - "No abras el enlace ni introduzcas ningún dato en la página."
+    - "Si ya lo hiciste, cambia de inmediato la contraseña afectada en todos los sitios donde la uses, y pide el bloqueo de la tarjeta a tu banco si diste una tarjeta."
+    - "Notifica el mensaje a Signal Spam (https://www.signal-spam.fr/)."
+    - "Si el sitio es tuyo, probablemente ha sido pirateado: limpia todas las páginas afectadas y después, en Google Search Console, abre el informe Problemas de seguridad y haz clic en Solicitar revisión."
+phishing.virustotal:
+  title: "{value} motor(es) de VirusTotal marcan este enlace como malicioso"
+  why: "Varios motores de seguridad independientes clasifican {url} como peligroso. Un solo motor a veces se equivoca; cuando varios coinciden, rara vez se trata de un error."
+  fix:
+    - "No abras el enlace."
+    - "Si lo abriste e introdujiste datos, cambia la contraseña afectada y avisa a tu banco si diste una tarjeta."
+    - "Si el sitio es tuyo, abre la ficha de VirusTotal para ver los motores implicados, limpia el sitio y después vuelve a lanzar el análisis."
+    - "Si un motor se equivoca, escribe a su editor con el enlace a la ficha de VirusTotal: VirusTotal no modifica por sí mismo los veredictos."
+phishing.virustotal_single:
+  title: "Un solo motor de VirusTotal marca este enlace"
+  why: "Un motor aislado a menudo se equivoca. Esta señal no basta para juzgar {url}, pero se suma a los demás indicios de este informe."
+  fix:
+    - "Abre la ficha de VirusTotal y mira qué motor marca el enlace y con qué veredicto."
+    - "Si los demás controles de este informe son buenos y el sitio es antiguo y conocido, suele tratarse de una falsa alarma."
+    - "Si el sitio es tuyo, notifica la falsa alarma al editor del motor implicado, con el enlace a la ficha de VirusTotal."
+phishing.urlhaus:
+  title: "URLhaus registra este enlace como distribuidor de software malicioso"
+  why: "URLhaus, mantenido por abuse.ch y Spamhaus, registra las direcciones que distribuyen software malicioso. {url} figura en él ({value}). Su base de datos se comparte con editores de antivirus y de listas de bloqueo."
+  fix:
+    - "No abras el enlace ni descargues nada."
+    - "Si ya se abrió algún archivo, desconecta el equipo de la red y lanza un análisis antivirus completo."
+    - "Si el sitio es tuyo, elimina el archivo malicioso y busca cómo llegó (extensión vulnerable, contraseña FTP robada), y después contacta con abuse.ch en https://contact.abuse.ch/."
+phishing.urlhaus_host:
+  title: "El sitio {domain} aloja otros enlaces maliciosos registrados por URLhaus"
+  why: "Este enlace concreto no está registrado, pero {value} otra(s) dirección(es) de {domain} distribuye(n) software malicioso en este momento, lo que indica un sitio pirateado o montado para una campaña."
+  fix:
+    - "Evita este sitio mientras no esté limpio, y no descargues nada desde él."
+    - "Si el sitio es tuyo, consulta la lista de direcciones registradas en URLhaus, elimina los archivos y corrige la vulnerabilidad, y después contacta con abuse.ch en https://contact.abuse.ch/."
+phishing.openphish:
+  title: "Este enlace figura en la lista de phishing de OpenPhish"
+  why: "OpenPhish publica las páginas de phishing que ha detectado. {url} forma parte de ellas: la página imita un servicio conocido para robar credenciales o datos de pago."
+  fix:
+    - "No abras el enlace ni introduzcas ningún dato."
+    - "Si introdujiste una contraseña, cámbiala de inmediato en el sitio oficial, en todos los sitios donde la uses, y activa la verificación en dos pasos."
+    - "Si diste una tarjeta, pide el bloqueo a tu banco."
+    - "Notifica la página a Phishing Initiative (https://phishing-initiative.fr/contrib/) y el mensaje a Signal Spam (https://www.signal-spam.fr/)."
+phishing.openphish_host:
+  title: "Otras páginas del sitio {domain} figuran en la lista de OpenPhish"
+  why: "Esta dirección concreta no está en la lista, pero otras páginas de {domain} sí. Esto ocurre cuando un sitio sirve de base a una campaña de phishing, o cuando ha sido pirateado."
+  fix:
+    - "Desconfía de cualquier página de este sitio que pida una contraseña, un código o un pago."
+    - "Para iniciar sesión en un servicio, escribe tú mismo su dirección oficial en el navegador."
+    - "Si el sitio es tuyo, busca las páginas añadidas sin que lo sepas (a menudo en una carpeta oculta o en un subdirectorio inusual), elimínalas y cambia las contraseñas de acceso al alojamiento."
+phishing.brand_lookalike:
+  title: "El dominio {url} imita el de {value}"
+  why: "El nombre se parece al de {value} sin pertenecerle: es el truco más habitual del phishing, que cuenta con una lectura rápida de la dirección. El sitio oficial es {domain}."
+  fix:
+    - "No uses este enlace: escribe tú mismo la dirección oficial {domain} en el navegador, o accede a través de la aplicación."
+    - "Si introdujiste un identificador o una tarjeta en esta página, cambia la contraseña en {domain} y avisa a la entidad correspondiente y a tu banco."
+    - "Notifica la dirección a Phishing Initiative (https://phishing-initiative.fr/contrib/)."
+phishing.deep_subdomains:
+  title: "La dirección {url} acumula {value} niveles de subdominio"
+  why: "Un nombre con muchos subdominios sirve a menudo para colocar un nombre conocido al principio de la dirección, donde se lee, mientras que el verdadero propietario está al final: {domain}."
+  fix:
+    - "Lee la dirección de derecha a izquierda: el verdadero propietario es {domain}, sea cual sea el nombre que aparece al principio."
+    - "Si {domain} no es el servicio que esperas, no introduzcas nada en la página."
+phishing.js_redirect:
+  title: "El enlace redirige mediante un script de la página"
+  why: "La página {url} envía al visitante a otro lugar mediante JavaScript en lugar de una redirección normal. Los filtros que no leen los scripts no ven el destino real: la técnica suele servir para ocultar una página de phishing."
+  fix:
+    - "Mira el destino final de la cadena que muestra este informe antes de fiarte del enlace."
+    - "Si el sitio es tuyo, sustituye la redirección por script por una redirección HTTP 301 o 302 configurada en el servidor."
+phishing.credential_form:
+  title: "La página pide {value} en un sitio que se hace pasar por otro"
+  why: "La página final contiene un formulario que pide {value}, y el sitio muestra signos de suplantación. Es la forma exacta de una página de phishing: lo que se introduce llega al autor de la página."
+  fix:
+    - "No introduzcas nada en esta página."
+    - "Si ya lo hiciste: cambia la contraseña en el sitio oficial y en todos los sitios donde la uses, activa la verificación en dos pasos, y pide el bloqueo de la tarjeta a tu banco si diste una tarjeta."
+    - "Notifica la página a Phishing Initiative (https://phishing-initiative.fr/contrib/) y el mensaje a Signal Spam (https://www.signal-spam.fr/)."
+phishing.form_on_page:
+  title: "La página final pide {value}"
+  why: "No se ha encontrado ningún otro signo de suplantación, y muchos sitios legítimos tienen una página de inicio de sesión o de pago. Solo la dirección indica si es el servicio que esperas: aquí {domain}."
+  fix:
+    - "Antes de introducir nada, comprueba que el nombre de dominio de la barra de direcciones es el del servicio esperado."
+    - "En caso de duda, abre el servicio escribiendo tú mismo su dirección en lugar de seguir el enlace."
+phishing.title_brand_mismatch:
+  title: "El título de la página cita {value}, pero el sitio es {domain}"
+  why: "El título de la página nombra una marca a la que el dominio no pertenece. Es normal en un artículo o una comparativa; en una página que se presenta como la de {value}, es un signo de suplantación."
+  fix:
+    - "Si la página se presenta como la de {value}, no introduzcas nada en ella y accede a través del sitio oficial de la marca."
+    - "Si la página te redirige después a un formulario, repite la comprobación con esa nueva dirección."

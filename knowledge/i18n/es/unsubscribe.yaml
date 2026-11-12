@@ -1,0 +1,105 @@
+unsubscribe.list_unsubscribe_missing:
+  title: "Este mensaje de marketing no tiene cabecera List-Unsubscribe"
+  why: "Gmail y Yahoo exigen esta cabecera en los mensajes de marketing de los grandes remitentes. Sin ella, el webmail no muestra su botón de baja: los lectores pulsan «Spam» en su lugar, lo que deteriora la reputación de {domain}."
+  fix:
+    - "Añade una cabecera List-Unsubscribe con una dirección https de baja propia de cada destinatario."
+    - "Añade a la vez List-Unsubscribe-Post: List-Unsubscribe=One-Click para la baja con un clic."
+    - "Firma estas dos cabeceras con DKIM."
+  fix_by_provider:
+    mailchimp: "Mailchimp añade List-Unsubscribe a las campañas. Si falta, comprueba que envías una campaña y no un mensaje a través de la API transaccional (Mandrill), donde tú mismo debes añadirla."
+    sendgrid: "Activa Settings > Tracking > Subscription Tracking, o usa grupos de baja (Unsubscribe Groups) en la llamada a la API: SendGrid añade entonces las cabeceras."
+    amazon_ses: "Añade las cabeceras List-Unsubscribe y List-Unsubscribe-Post a tus mensajes, o usa la gestión de suscripciones de SES (listas de contactos), que las añade."
+    wordpress: "Una extensión de boletines (MailPoet, The Newsletter Plugin, FluentCRM) gestiona la cabecera. Evita enviar un boletín con wp_mail() sin extensión."
+    postfix: "Postfix no añade esta cabecera: debe escribirla la aplicación que genera el mensaje, antes de la firma DKIM."
+unsubscribe.one_click_post_missing:
+  title: "La baja en un clic (List-Unsubscribe-Post) no está activada"
+  why: "El mensaje tiene List-Unsubscribe, pero no la cabecera List-Unsubscribe-Post. Gmail exige las dos para los envíos de marketing en volumen: sin ella, Gmail considera que no ofreces la baja en un clic."
+  fix:
+    - "Añade la línea List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Verifica que List-Unsubscribe contenga una dirección https que acepte una petición POST y dé de baja sin pedir confirmación."
+    - "Incluye las dos cabeceras en la firma DKIM (parámetro h=)."
+unsubscribe.mailto_only:
+  title: "La baja solo propone una dirección de correo (mailto)"
+  why: "Yahoo acepta mailto, pero Gmail exige la baja en un clic de la RFC 8058, que requiere una dirección https. Para Gmail, este mensaje no es, por tanto, conforme."
+  fix:
+    - "Añade una dirección https de baja en primera posición en List-Unsubscribe, y deja el mailto en segundo lugar."
+    - "Añade List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+unsubscribe.http_not_https:
+  title: "La dirección de baja está en http en lugar de https"
+  why: "La RFC 8058 exige una dirección https para la baja en un clic. Con http, Gmail y los demás webmails no muestran el botón de baja."
+  fix:
+    - "Sustituye http:// por https:// en List-Unsubscribe."
+    - "Verifica que el certificado del dominio de baja sea válido."
+unsubscribe.not_dkim_signed:
+  title: "Las cabeceras de baja no están cubiertas por DKIM"
+  why: "Ninguna firma DKIM válida cubre List-Unsubscribe ni List-Unsubscribe-Post. La RFC 8058 pide entonces a los webmails que no ofrezcan la baja en un clic: tu configuración no sirve de nada."
+  fix:
+    - "Añade list-unsubscribe y list-unsubscribe-post a la lista de cabeceras firmadas (parámetro h= de DKIM)."
+    - "Añade las cabeceras antes del paso de firma, no después."
+    - "Si un servidor de retransmisión añade estas cabeceras después de tu firma, pide que las añada la aplicación."
+  fix_by_provider:
+    postfix: "Con OpenDKIM, añade List-Unsubscribe y List-Unsubscribe-Post a SignHeaders en opendkim.conf, y luego reinicia OpenDKIM. Con rspamd, añádelas a sign_headers en dkim_signing.conf."
+unsubscribe.post_value_invalid:
+  title: "El valor de List-Unsubscribe-Post es incorrecto"
+  why: "La cabecera vale « {value} » en lugar de List-Unsubscribe=One-Click. Los webmails no reconocen entonces la baja en un clic."
+  fix:
+    - "Escribe exactamente: List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "No añadas comillas, punto y coma ni ningún otro parámetro."
+unsubscribe.syntax_invalid:
+  title: "La cabecera List-Unsubscribe está mal escrita"
+  why: "Las direcciones de List-Unsubscribe no están entre corchetes angulares o están mal separadas. Los webmails ignoran entonces la cabecera y no muestran el botón de baja."
+  fix:
+    - "Pon cada dirección entre corchetes angulares < >."
+    - "Separa las direcciones con una coma, la dirección https en primer lugar."
+unsubscribe.multiple_https:
+  title: "List-Unsubscribe contiene varias direcciones https"
+  why: "La RFC 8058 prevé una sola dirección https. Con varias, el webmail puede elegir la que no tramita la petición de baja en un clic."
+  fix:
+    - "Deja una sola dirección https, la que acepta la petición POST de baja en un clic."
+    - "Deja opcionalmente un mailto en segundo lugar."
+unsubscribe.endpoint_not_working:
+  title: "La dirección de baja en un clic no responde correctamente"
+  why: "La petición de baja a {url} recibió la respuesta {value}. Los webmails envían esta petición sin cookies y sin seguir redirecciones: si falla, el destinatario sigue suscrito y acaba marcando tus mensajes como spam."
+  fix:
+    - "Acepta una petición POST sin cookies ni sesión en la dirección de baja, y responde con un código 200."
+    - "No respondas con una redirección: tramita la baja directamente en esa dirección."
+    - "Localiza el contacto gracias al token presente en la propia dirección."
+unsubscribe.body_link_missing:
+  title: "El cuerpo del mensaje no tiene enlace de baja"
+  why: "Gmail y Yahoo piden un enlace de baja bien visible en el cuerpo de los mensajes de marketing, y la ley francesa impone un medio sencillo para rechazar los envíos siguientes. Sin este enlace, la única forma de no seguir recibiendo mensajes es el botón «Spam»."
+  fix:
+    - "Añade en el pie de página un enlace «Darse de baja» que lleve a una página de baja en {domain}."
+    - "La página debe dar de baja sin pedir contraseña ni inicio de sesión."
+  fix_by_provider:
+    mailchimp: "Mantén la etiqueta *|UNSUB|* en el bloque Footer de la campaña."
+    brevo: "Mantén el bloque de pie de página con el enlace de baja que inserta el editor de Brevo."
+    wordpress: "En MailPoet, el pie de página predeterminado contiene el enlace [link:subscription_unsubscribe_url]: no lo elimines."
+unsubscribe.body_link_hidden:
+  title: "El enlace de baja es difícil de ver"
+  why: "El enlace de baja es minúsculo o casi del mismo color que el fondo. Gmail y Yahoo piden que sea claramente visible: un enlace oculto empuja al lector a pulsar «Spam»."
+  fix:
+    - "Muestra el enlace en un tamaño legible y con un color que contraste con el fondo."
+    - "Colócalo al principio del pie de página, no después de varias líneas de avisos legales."
+unsubscribe.requires_login:
+  title: "La baja exige iniciar sesión"
+  why: "El enlace de baja lleva a una página de inicio de sesión. Yahoo pide una baja sin inicio de sesión, y la mayoría de los lectores abandona y luego marca el mensaje como spam."
+  fix:
+    - "Incluye en el enlace un token único que identifique al contacto, y dale de baja sin contraseña."
+    - "Ofrece la gestión detallada de preferencias en la misma página, sin imponerla."
+unsubscribe.mailto_domain_unreachable:
+  title: "La dirección de correo de baja no puede recibir mensajes"
+  why: "La dirección de baja {value} está en un dominio que no recibe correo. Las solicitudes de baja enviadas por los webmails se pierden."
+  fix:
+    - "Usa una dirección de baja en un dominio que tenga un registro MX, por ejemplo baja@{domain}."
+    - "Haz que tu herramienta de envío trate automáticamente los mensajes recibidos en esta dirección."
+unsubscribe.on_transactional:
+  title: "Mensaje transaccional sin cabecera de baja: está admitido"
+  why: "Gmail no exige la baja en un clic para los mensajes transaccionales. Si este mensaje también contiene promoción, los destinatarios pueden considerarlo promocional y marcarlo como spam."
+  fix:
+    - "Mantén los mensajes transaccionales sin contenido promocional."
+    - "Envía la promoción en mensajes separados, con List-Unsubscribe."
+unsubscribe.list_id_missing:
+  title: "El mensaje no indica de qué lista procede (List-Id)"
+  why: "List-Id permite a los destinatarios y a los webmails clasificar tus envíos por lista. Su ausencia no penaliza, pero ayuda a distinguir tus distintos boletines."
+  fix:
+    - "Añade una cabecera List-Id con un identificador estable para cada lista."

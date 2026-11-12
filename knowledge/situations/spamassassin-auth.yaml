@@ -1,0 +1,870 @@
+# Famille spamassassin, groupe auth. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/auth.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.spf_pass
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SPF_PASS)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_pass()
+      : le résultat SPF du MAIL FROM (Return-Path) est pass.'
+  sa_rules:
+  - SPF_PASS
+  title: SPF valide pour l'adresse d'enveloppe
+  why: 'L''IP {ip} figure bien dans l''enregistrement SPF de {envelope_domain}. C''est le comportement
+    attendu : SpamAssassin ne donne presque aucun bonus pour cela, mais son absence fait perdre l''alignement
+    DMARC côté SPF.'
+  fix:
+  - Rien à corriger. Gardez l'enregistrement SPF de {envelope_domain} à jour à chaque ajout ou retrait
+    d'un outil d'envoi.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208
+- id: sa.spf_fail
+  family: spamassassin
+  severity: high
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SPF_FAIL)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_fail()
+      : résultat SPF fail sur le MAIL FROM. Le score SA est quasi nul, le poids est porté par les règles
+      combinées et par les filtres des destinataires. Gravité fixée à la main, indépendamment du score
+      SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - SPF_FAIL
+  title: SPF en échec strict (-all) pour l'adresse d'enveloppe
+  why: '{envelope_domain} publie un SPF qui se termine par -all et l''IP {ip} n''y figure pas. SpamAssassin
+    pèse peu ce résultat, mais pour Gmail, Outlook ou Yahoo c''est un défaut d''authentification : sans
+    DKIM valide aligné sur {domain}, le message part en spam ou il est refusé. Cas typique : un nouvel
+    outil (CRM, boutique, formulaire) envoie au nom du domaine sans avoir été ajouté au SPF.'
+  fix:
+  - 'Identifiez le service qui possède l''IP {ip} (fournisseur détecté : {provider}).'
+  - 'Ajoutez son mécanisme include: ou ip4: à l''enregistrement SPF de {envelope_domain}, avant le -all.'
+  - Si ce service ne doit pas envoyer pour vous, coupez ses envois au nom de {domain}.
+  example_bad: v=spf1 include:_spf.google.com -all
+  example_good: v=spf1 include:_spf.google.com include:spf.brevo.com -all
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.6.4
+  - https://support.google.com/a/answer/81126
+- id: sa.spf_softfail
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(SPF_SOFTFAIL)
+    notes: 'score SA 4.0.x : 0.665 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_softfail()
+      : résultat SPF softfail sur le MAIL FROM.'
+  sa_rules:
+  - SPF_SOFTFAIL
+  title: SPF en échec souple (~all) pour l'adresse d'enveloppe
+  why: L'IP {ip} n'est pas autorisée par le SPF de {envelope_domain}, qui se termine par ~all. Le message
+    n'est pas rejeté pour autant, mais il perd le bénéfice du SPF et DMARC échoue si DKIM n'est pas aligné.
+    C'est souvent un outil d'envoi oublié dans le SPF.
+  fix:
+  - 'Repérez quel service envoie depuis {ip} ({provider}) et ajoutez son include: au SPF de {envelope_domain}.'
+  - Si l'envoi passe par un serveur WordPress ou un hébergement mutualisé, faites plutôt partir les e-mails
+    par SMTP authentifié vers votre messagerie officielle.
+  fix_by_provider:
+    wordpress: Installez une extension SMTP (WP Mail SMTP, FluentSMTP) et envoyez via le serveur de votre
+      messagerie au lieu de la fonction mail() de PHP.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.6.5
+- id: sa.spf_neutral
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(SPF_NEUTRAL)
+    notes: 'score SA 4.0.x : 0.779 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_neutral()
+      : résultat SPF neutral sur le MAIL FROM.'
+  sa_rules:
+  - SPF_NEUTRAL
+  title: SPF neutre (?all) pour l'adresse d'enveloppe
+  why: 'Le SPF de {envelope_domain} ne dit ni oui ni non pour l''IP {ip}, en général parce qu''il se termine
+    par ?all. Un SPF neutre ne protège rien : SpamAssassin le pénalise plus qu''un softfail.'
+  fix:
+  - Listez tous les services qui envoient au nom de {envelope_domain} et ajoutez-les au SPF.
+  - Remplacez ?all par ~all, puis par -all quand les rapports DMARC confirment qu'aucun envoi légitime
+    n'échoue.
+  example_bad: v=spf1 a mx ?all
+  example_good: v=spf1 a mx include:spf.brevo.com ~all
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.6.2
+- id: sa.spf_none
+  family: spamassassin
+  severity: medium
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SPF_NONE)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_none()
+      : le domaine du MAIL FROM ne publie pas de SPF. Gravité fixée à la main, indépendamment du score
+      SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - SPF_NONE
+  title: Aucun enregistrement SPF pour l'adresse d'enveloppe
+  why: '{envelope_domain} ne publie aucun SPF. SpamAssassin ne le pénalise presque pas, mais Gmail et
+    Yahoo exigent au minimum SPF ou DKIM, et n''importe qui peut envoyer au nom de ce domaine.'
+  fix:
+  - Créez un enregistrement TXT à la racine de {envelope_domain} qui commence par v=spf1.
+  - 'Ajoutez-y un include: par service d''envoi (messagerie, newsletter, site) et terminez par ~all.'
+  example_good: v=spf1 include:_spf.google.com include:spf.brevo.com ~all
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208
+  - https://support.google.com/a/answer/81126
+- id: sa.spf_helo_pass
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SPF_HELO_PASS)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_helo_pass()
+      : le nom annoncé en HELO/EHLO publie un SPF qui autorise l''IP.'
+  sa_rules:
+  - SPF_HELO_PASS
+  title: SPF valide pour le nom HELO du serveur
+  why: Le serveur s'annonce sous le nom {helo} et ce nom autorise l'IP {ip} dans son propre SPF. C'est
+    un signe de serveur bien configuré.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.3
+- id: sa.spf_helo_fail
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SPF_HELO_FAIL)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_helo_fail()
+      : le SPF du nom HELO renvoie fail pour l''IP.'
+  sa_rules:
+  - SPF_HELO_FAIL
+  title: Le nom HELO du serveur échoue au SPF
+  why: Le serveur s'annonce sous le nom {helo}, mais le SPF de ce nom exclut l'IP {ip}. Cela arrive quand
+    un serveur reprend le nom d'un autre, ou quand le SPF du nom d'hôte n'a pas suivi un changement d'IP.
+  fix:
+  - Faites annoncer au serveur un nom qui lui appartient et dont le reverse DNS ({ptr}) correspond.
+  - Publiez pour ce nom d'hôte un SPF minimal qui autorise sa propre IP.
+  example_good: mail.example.fr. TXT "v=spf1 a -all"
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.3
+- id: sa.spf_helo_softfail
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(SPF_HELO_SOFTFAIL)
+    notes: 'score SA 4.0.x : 0.732 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_helo_softfail()
+      : le SPF du nom HELO renvoie softfail pour l''IP.'
+  sa_rules:
+  - SPF_HELO_SOFTFAIL
+  title: Le nom HELO du serveur est en échec souple au SPF
+  why: Le SPF du nom {helo} ne couvre pas l'IP {ip} et se termine par ~all. Le serveur semble emprunter
+    un nom qui n'est pas le sien, ce que SpamAssassin pénalise légèrement.
+  fix:
+  - Configurez le nom HELO du serveur (myhostname sous Postfix) avec son vrai nom d'hôte.
+  - Ajoutez à ce nom d'hôte un SPF "v=spf1 a -all".
+  fix_by_provider:
+    postfix: Réglez myhostname dans main.cf sur le nom qui correspond au reverse DNS de l'IP, puis rechargez
+      Postfix.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.3
+- id: sa.spf_helo_neutral
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(SPF_HELO_NEUTRAL)
+    notes: 'score SA 4.0.x : 0.112 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_helo_neutral()
+      : le SPF du nom HELO renvoie neutral.'
+  sa_rules:
+  - SPF_HELO_NEUTRAL
+  title: Le nom HELO du serveur a un SPF neutre
+  why: Le SPF du nom {helo} ne se prononce pas sur l'IP {ip}. Effet faible, mais cela montre un nom d'hôte
+    sans SPF propre.
+  fix:
+  - Publiez pour {helo} un SPF "v=spf1 a -all" si ce nom pointe bien vers {ip}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.3
+- id: sa.spf_helo_none
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(SPF_HELO_NONE)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_helo_none()
+      : aucun SPF trouvé pour le nom HELO.'
+  sa_rules:
+  - SPF_HELO_NONE
+  title: Le nom HELO du serveur ne publie pas de SPF
+  why: Le nom {helo} annoncé par le serveur n'a pas de SPF. C'est très courant et presque sans effet sur
+    le score, mais un SPF de nom d'hôte coûte une ligne DNS.
+  fix:
+  - Si vous gérez ce serveur, ajoutez pour {helo} l'enregistrement TXT "v=spf1 a -all".
+  - Si c'est le serveur d'un prestataire ({provider}), il n'y a rien à faire de votre côté.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.3
+- id: sa.t_spf_permerror
+  family: spamassassin
+  severity: high
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_SPF_PERMERROR)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_permerror()
+      : l''évaluation SPF du MAIL FROM renvoie permerror (syntaxe invalide, plusieurs enregistrements,
+      plus de 10 requêtes DNS). Règle de test T_. Gravité fixée à la main, indépendamment du score SA,
+      qui sous-estime ici l''effet réel de ce défaut chez les destinataires. Pas de ligne score : valeur
+      par défaut de SpamAssassin.'
+  sa_rules:
+  - T_SPF_PERMERROR
+  title: SPF en erreur permanente pour l'adresse d'enveloppe
+  why: 'Le SPF de {envelope_domain} ne peut pas être évalué : syntaxe fautive, deux enregistrements v=spf1,
+    ou plus de 10 requêtes DNS. Les destinataires le traitent comme un échec, et DMARC ne peut pas compter
+    sur SPF.'
+  fix:
+  - Vérifiez qu'il n'existe qu'un seul enregistrement TXT commençant par v=spf1 sur {envelope_domain}.
+  - 'Comptez les include:, a, mx, ptr et exists : au-delà de 10, retirez les services inutilisés ou remplacez
+    des include: par des ip4:.'
+  - Corrigez les fautes de frappe (espaces manquants, ip4 mal formé, include vers un domaine qui n'existe
+    plus).
+  example_bad: v=spf1 include:_spf.google.com ~all  +  v=spf1 include:spf.brevo.com ~all
+  example_good: v=spf1 include:_spf.google.com include:spf.brevo.com ~all
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4
+  - https://www.rfc-editor.org/rfc/rfc7208#section-3.2
+- id: sa.t_spf_temperror
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_SPF_TEMPERROR)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_temperror()
+      : l''évaluation SPF du MAIL FROM renvoie temperror (échec DNS transitoire). Règle de test T_. Pas
+      de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_SPF_TEMPERROR
+  title: SPF en erreur temporaire pour l'adresse d'enveloppe
+  why: La lecture du SPF de {envelope_domain} a échoué à cause d'un incident DNS (délai dépassé, serveur
+    DNS injoignable). Si cela se répète, vos messages sont évalués sans SPF.
+  fix:
+  - 'Relancez le test : une erreur isolée ne demande aucune action.'
+  - 'Si elle revient, contrôlez que tous les serveurs DNS de {envelope_domain} répondent et que les domaines
+    cités en include: existent.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.6.6
+- id: sa.t_spf_helo_permerror
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_SPF_HELO_PERMERROR)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_helo_permerror()
+      : le SPF du nom HELO est invalide. Règle de test T_. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - T_SPF_HELO_PERMERROR
+  title: SPF du nom HELO en erreur permanente
+  why: Le nom {helo} publie un SPF invalide. Le serveur envoie donc avec un nom d'hôte mal configuré.
+  fix:
+  - Corrigez ou remplacez le SPF de {helo} par "v=spf1 a -all".
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.6.7
+- id: sa.t_spf_helo_temperror
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(T_SPF_HELO_TEMPERROR)
+    notes: 'score SA 4.0.x : 0.01 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_spf_helo_temperror()
+      : échec DNS transitoire sur le SPF du nom HELO. Règle de test T_. Pas de ligne score : valeur par
+      défaut de SpamAssassin.'
+  sa_rules:
+  - T_SPF_HELO_TEMPERROR
+  title: SPF du nom HELO en erreur temporaire
+  why: La lecture du SPF de {helo} a échoué à cause d'un incident DNS. Sans conséquence si c'est isolé.
+  fix:
+  - Relancez le test. Si l'erreur persiste, vérifiez que la zone DNS du nom {helo} répond.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_spf.cf
+  - https://www.rfc-editor.org/rfc/rfc7208#section-2.6.6
+- id: sa.dkim_signed
+  family: spamassassin
+  severity: info
+  # 0 since 2026-11-11: a signature is not a defect. When it verifies, DKIM_VALID cancels the rule and
+  # the analyzer ignores it; when it does not, the dkim family carries the points. Was 0.1.
+  penalty: 0
+  detect:
+    signal: spamassassin.hit(DKIM_SIGNED)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dkim_signed()
+      : présence d''au moins une signature DKIM, valide ou non. Score légèrement positif, compensé par
+      DKIM_VALID.'
+  sa_rules:
+  - DKIM_SIGNED
+  title: Le message porte une signature DKIM
+  why: 'Le message est signé. SpamAssassin ajoute un tout petit score qui est annulé dès que la signature
+    est valide : seule une signature cassée laisse ce point.'
+  fix:
+  - Rien à corriger si DKIM_VALID apparaît aussi. Sinon, voyez la règle DKIM_INVALID.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dkim.cf
+  - https://www.rfc-editor.org/rfc/rfc6376
+- id: sa.dkim_valid
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DKIM_VALID)
+    notes: 'score SA 4.0.x : -0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dkim_valid()
+      : au moins une signature DKIM vérifiée avec succès.'
+  sa_rules:
+  - DKIM_VALID
+  title: Au moins une signature DKIM est valide
+  why: 'Une signature DKIM (domaine {dkim_domain}) a été vérifiée : le message n''a pas été modifié en
+    route et le domaine signataire en répond.'
+  fix:
+  - Rien à corriger. Vérifiez seulement que le domaine signataire est bien {domain} (règle DKIM_VALID_AU).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dkim.cf
+  - https://www.rfc-editor.org/rfc/rfc6376
+- id: sa.dkim_valid_au
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DKIM_VALID_AU)
+    notes: 'score SA 4.0.x : -0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dkim_valid_author_sig()
+      : signature DKIM valide dont le d= correspond au domaine du From.'
+  sa_rules:
+  - DKIM_VALID_AU
+  title: Signature DKIM valide du domaine de l'expéditeur
+  why: La signature valide est celle de {domain}, le domaine visible dans le From. C'est ce qui permet
+    à DMARC de passer même si le SPF échoue.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dkim.cf
+  - https://www.rfc-editor.org/rfc/rfc6376
+  - https://www.rfc-editor.org/rfc/rfc7489#section-3.1.1
+- id: sa.dkim_valid_ef
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DKIM_VALID_EF)
+    notes: 'score SA 4.0.x : -0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dkim_valid_envelopefrom()
+      : signature DKIM valide dont le d= correspond au domaine du MAIL FROM.'
+  sa_rules:
+  - DKIM_VALID_EF
+  title: Signature DKIM valide du domaine d'enveloppe
+  why: Le domaine d'enveloppe {envelope_domain} a lui aussi signé le message. Bon signe de cohérence entre
+    l'outil d'envoi et le domaine.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dkim.cf
+  - https://www.rfc-editor.org/rfc/rfc6376
+- id: sa.dkim_invalid
+  family: spamassassin
+  severity: high
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(DKIM_INVALID)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta DKIM_SIGNED &&
+      !DKIM_VALID : une signature existe, aucune ne se vérifie. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - DKIM_INVALID
+  title: Signature DKIM présente mais invalide
+  why: 'Le message est signé (sélecteur {selector}, domaine {dkim_domain}) mais la vérification échoue
+    : clé publique absente ou différente dans le DNS, ou message modifié après signature (pied de page
+    ajouté par un antivirus, une liste de diffusion, un relais). Le score SpamAssassin est faible, mais
+    DMARC échoue si SPF n''est pas aligné non plus.'
+  fix:
+  - Vérifiez que l'enregistrement {selector}._domainkey.{dkim_domain} existe et contient la clé publique
+    actuelle de l'outil d'envoi.
+  - 'Si la clé est correcte, cherchez ce qui modifie le message après signature : signature ou mention
+    ajoutée par le serveur sortant, réécriture des liens, passage par une liste de diffusion.'
+  - 'Recopiez la clé sans retour à la ligne ni guillemet parasite : une clé coupée dans l''interface DNS
+    est la panne la plus fréquente.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dkim.cf
+  - https://www.rfc-editor.org/rfc/rfc6376#section-6.1
+- id: sa.dkim_adsp_all
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(DKIM_ADSP_ALL)
+    notes: 'score SA 4.0.x : 0.8 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dkim_adsp(''A'')
+      : pas de signature valide du domaine du From, et la politique ADSP (RFC 5617, publiée ou fixée par
+      adsp_override dans les règles) vaut all.'
+  sa_rules:
+  - DKIM_ADSP_ALL
+  title: Pas de signature DKIM du domaine alors qu'il doit tout signer
+  why: Le domaine du From est connu pour signer tous ses messages, mais ce message n'a pas de signature
+    valide de {domain}. Pour un domaine connu (banque, place de marché), c'est un indice fort d'usurpation.
+  fix:
+  - Si vous envoyez réellement au nom de {domain}, signez avec la clé DKIM de {domain} et non celle de
+    l'outil d'envoi.
+  - 'Si {domain} n''est pas votre domaine, n''utilisez pas cette adresse en From : prenez une adresse
+    de votre propre domaine.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dkim.cf
+  - https://www.rfc-editor.org/rfc/rfc5617
+- id: sa.dkim_adsp_nxdomain
+  family: spamassassin
+  severity: high
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(DKIM_ADSP_NXDOMAIN)
+    notes: 'score SA 4.0.x : 0.9 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dkim_adsp(''N'')
+      : pas de signature valide du domaine du From et ce domaine répond NXDOMAIN. Gravité fixée à la main,
+      indépendamment du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - DKIM_ADSP_NXDOMAIN
+  title: Le domaine de l'expéditeur n'existe pas dans le DNS
+  why: 'Le domaine {domain} affiché dans le From n''existe pas dans le DNS. Les destinataires ne peuvent
+    ni répondre ni vérifier quoi que ce soit, et beaucoup rejettent ces messages. Cas courant : une adresse
+    de test du type noreply@monsite.local laissée dans un formulaire ou un CMS.'
+  fix:
+  - Remplacez l'adresse d'expédition par une adresse d'un domaine réel que vous possédez.
+  - Dans WordPress ou le CMS, contrôlez l'adresse « From » des notifications et des formulaires.
+  fix_by_provider:
+    wordpress: Réglez l'adresse d'expédition dans l'extension SMTP (champ From Email) et dans chaque formulaire
+      (Contact Form 7, onglet E-mail, champ De).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dkim.cf
+  - https://www.rfc-editor.org/rfc/rfc5617
+- id: sa.dmarc_pass
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DMARC_PASS)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dmarc_pass()
+      : résultat DMARC pass (SPF ou DKIM aligné sur le domaine du From).'
+  sa_rules:
+  - DMARC_PASS
+  title: DMARC validé
+  why: SPF ou DKIM passe et correspond au domaine {domain} du From. C'est le niveau d'authentification
+    attendu par Gmail et Yahoo pour les envois en nombre.
+  fix:
+  - Rien à corriger. Si votre politique est encore p=none, passez à quarantine puis reject quand les rapports
+    sont propres.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dmarc.cf
+  - https://www.rfc-editor.org/rfc/rfc7489
+- id: sa.dmarc_none
+  family: spamassassin
+  severity: high
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(DMARC_NONE)
+    notes: 'score SA 4.0.x : 0.898 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dmarc_none()
+      : résultat DMARC fail et la politique publiée est none. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - DMARC_NONE
+  title: DMARC en échec, politique p=none
+  why: Ni SPF ni DKIM ne sont alignés sur {domain}. La politique p=none demande de ne rien bloquer, mais
+    SpamAssassin ajoute des points et Gmail ou Yahoo traitent un échec DMARC comme un défaut d'authentification,
+    surtout pour les envois en nombre.
+  fix:
+  - 'Signez avec DKIM au nom de {domain} dans l''outil d''envoi : c''est l''alignement le plus robuste.'
+  - Ou bien configurez un Return-Path personnalisé sous {domain} pour aligner SPF.
+  - Lisez les rapports DMARC (rua) pour repérer les autres sources qui échouent.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dmarc.cf
+  - https://www.rfc-editor.org/rfc/rfc7489#section-6.3
+- id: sa.dmarc_quar
+  family: spamassassin
+  severity: high
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(DMARC_QUAR)
+    notes: 'score SA 4.0.x : 1.198 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dmarc_quarantine()
+      : résultat DMARC fail et la politique publiée est quarantine. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - DMARC_QUAR
+  title: DMARC en échec, politique quarantine
+  why: 'Le message échoue à DMARC et {domain} demande lui-même qu''il soit mis en indésirables. Les destinataires
+    suivent cette consigne : ce message arrivera en spam.'
+  fix:
+  - Activez la signature DKIM de {domain} dans l'outil d'envoi ({provider}) et publiez la clé fournie.
+  - Vérifiez que le domaine de signature d= est {domain} ou un sous-domaine de {domain}.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dmarc.cf
+  - https://www.rfc-editor.org/rfc/rfc7489#section-6.3
+- id: sa.dmarc_reject
+  family: spamassassin
+  severity: critical
+  penalty: 0.9
+  detect:
+    signal: spamassassin.hit(DMARC_REJECT)
+    notes: 'score SA 4.0.x : 1.797 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dmarc_reject()
+      : résultat DMARC fail et la politique publiée est reject. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - DMARC_REJECT
+  title: DMARC en échec, politique reject
+  why: 'Le message échoue à DMARC et {domain} demande son rejet. La plupart des grands fournisseurs le
+    refusent purement et simplement : ce test ne l''a reçu que parce qu''il ne bloque pas.'
+  fix:
+  - Faites signer ce flux en DKIM avec le domaine {domain} avant tout autre envoi.
+  - En attendant, ne repassez pas DMARC en p=none sans avoir identifié la source fautive dans les rapports
+    rua.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dmarc.cf
+  - https://www.rfc-editor.org/rfc/rfc7489#section-6.3
+- id: sa.dmarc_missing
+  family: spamassassin
+  severity: medium
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DMARC_MISSING)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dmarc_missing()
+      : aucun enregistrement _dmarc trouvé pour le domaine du From. Gravité fixée à la main, indépendamment
+      du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - DMARC_MISSING
+  title: Aucune politique DMARC publiée
+  why: '{domain} ne publie pas d''enregistrement DMARC. SpamAssassin ne pénalise presque pas, mais Gmail
+    et Yahoo l''exigent des expéditeurs en nombre, et le domaine reste usurpable.'
+  fix:
+  - Créez un enregistrement TXT sur _dmarc.{domain} avec au minimum v=DMARC1; p=none; et une adresse rua
+    pour recevoir les rapports.
+  - Après quelques semaines de rapports propres, passez à p=quarantine puis p=reject.
+  example_good: _dmarc.example.fr. TXT "v=DMARC1; p=none; rua=mailto:dmarc@example.fr"
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dmarc.cf
+  - https://www.rfc-editor.org/rfc/rfc7489#section-6.3
+  - https://support.google.com/a/answer/81126
+- id: sa.dmarc_permerror
+  family: spamassassin
+  severity: medium
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DMARC_PERMERROR)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dmarc_permerror()
+      : l''enregistrement DMARC du domaine du From ne peut pas être analysé. Gravité fixée à la main,
+      indépendamment du score SA, qui sous-estime ici l''effet réel de ce défaut chez les destinataires.'
+  sa_rules:
+  - DMARC_PERMERROR
+  title: Enregistrement DMARC invalide
+  why: 'L''enregistrement _dmarc.{domain} est illisible (balise inconnue, v=DMARC1 absent ou mal placé,
+    deux enregistrements). Les destinataires l''ignorent : votre politique ne s''applique pas.'
+  fix:
+  - Vérifiez qu'il n'y a qu'un seul TXT sur _dmarc.{domain} et qu'il commence exactement par v=DMARC1;
+  - Séparez les balises par des points-virgules et retirez les guillemets parasites ajoutés par l'interface
+    DNS.
+  example_bad: '"p=quarantine; v=DMARC1"'
+  example_good: '"v=DMARC1; p=quarantine; rua=mailto:dmarc@example.fr"'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dmarc.cf
+  - https://www.rfc-editor.org/rfc/rfc7489#section-6.4
+- id: sa.dmarc_temperror
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DMARC_TEMPERROR)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dmarc_temperror()
+      : la lecture de l''enregistrement DMARC a échoué temporairement.'
+  sa_rules:
+  - DMARC_TEMPERROR
+  title: 'DMARC non évalué : erreur DNS temporaire'
+  why: La requête DNS vers _dmarc.{domain} n'a pas abouti. Le message a été évalué sans DMARC.
+  fix:
+  - Relancez le test. Si l'erreur revient, vérifiez que tous les serveurs DNS de {domain} répondent.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_dmarc.cf
+  - https://www.rfc-editor.org/rfc/rfc7489#section-6.6.3
+- id: sa.arc_signed
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(ARC_SIGNED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_arc_signed()
+      : présence d''en-têtes ARC.'
+  sa_rules:
+  - ARC_SIGNED
+  title: Le message porte une signature ARC
+  why: Un relais intermédiaire (liste de diffusion, transfert, passerelle de sécurité) a scellé le résultat
+    d'authentification qu'il a vu. Information neutre.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_arc.cf
+  - https://www.rfc-editor.org/rfc/rfc8617
+- id: sa.arc_valid
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(ARC_VALID)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_arc_valid()
+      : la chaîne ARC se vérifie.'
+  sa_rules:
+  - ARC_VALID
+  title: Chaîne ARC valide
+  why: Les scellés ARC posés par les relais sont intacts. Un destinataire peut s'en servir pour accepter
+    un message transféré dont le SPF ou le DKIM a été cassé en route.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_arc.cf
+  - https://www.rfc-editor.org/rfc/rfc8617
+- id: sa.arc_invalid
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(ARC_INVALID)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta ARC_SIGNED &&
+      !ARC_VALID.'
+  sa_rules:
+  - ARC_INVALID
+  title: Signature ARC présente mais invalide
+  why: Un relais a posé des en-têtes ARC qui ne se vérifient plus, souvent parce qu'un équipement en aval
+    a modifié le message. Impact faible, mais le message perd la protection ARC en cas de transfert.
+  fix:
+  - Si le relais est le vôtre (passerelle antispam, liste de diffusion), vérifiez qu'il signe ARC après
+    ses propres modifications.
+  - 'Sinon, aucune action : c''est le relais intermédiaire qui doit corriger.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_arc.cf
+  - https://www.rfc-editor.org/rfc/rfc8617
+- id: sa.arc_trusted
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(ARC_TRUSTED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : check_arc_trusted()
+      : chaîne ARC valide posée par un scelleur déclaré de confiance.'
+  sa_rules:
+  - ARC_TRUSTED
+  title: Chaîne ARC scellée par un relais de confiance
+  why: Le message est passé par un relais dont le serveur de test reconnaît la signature ARC. Signal favorable.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_arc.cf
+  - https://www.rfc-editor.org/rfc/rfc8617
+- id: sa.env_and_hdr_spf_match
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(ENV_AND_HDR_SPF_MATCH)
+    notes: 'score SA 4.0.x : -0.5 (sa-update r1939780, jeu réseau + Bayes). Teste : meta USER_IN_DEF_SPF_WL
+      && adresse d''enveloppe identique au From.'
+  sa_rules:
+  - ENV_AND_HDR_SPF_MATCH
+  title: Expéditeur reconnu par la liste d'accueil SPF par défaut
+  why: L'adresse figure dans la liste d'accueil SPF livrée avec SpamAssassin et l'enveloppe correspond
+    au From. Bonus réservé à de grands expéditeurs connus.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/60_welcomelist_spf.cf
+- id: sa.user_in_def_dkim_wl
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(USER_IN_DEF_DKIM_WL)
+    notes: 'score SA 4.0.x : -7.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_def_dkim_welcomelist_from()
+      : From listé par def_welcomelist_from_dkim dans les règles livrées, avec signature DKIM correspondante.'
+  sa_rules:
+  - USER_IN_DEF_DKIM_WL
+  title: Expéditeur dans la liste d'accueil DKIM par défaut
+  why: SpamAssassin livre une liste de grands expéditeurs connus, reconnus par leur signature DKIM. Le
+    message en fait partie et reçoit un fort bonus.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/60_welcomelist_dkim.cf
+- id: sa.user_in_def_spf_wl
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(USER_IN_DEF_SPF_WL)
+    notes: 'score SA 4.0.x : -7.5 (sa-update r1939780, jeu réseau + Bayes). Teste : check_for_def_spf_welcomelist_from()
+      : From listé par def_welcomelist_from_spf avec SPF pass.'
+  sa_rules:
+  - USER_IN_DEF_SPF_WL
+  title: Expéditeur dans la liste d'accueil SPF par défaut
+  why: L'expéditeur figure dans la liste de domaines connus livrée avec SpamAssassin, validée par SPF.
+    Fort bonus.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/60_welcomelist_spf.cf
+- id: sa.user_in_def_welcomelist
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(USER_IN_DEF_WELCOMELIST)
+    notes: 'score SA 4.0.x : -15 (sa-update r1939780, jeu réseau + Bayes). Teste : check_from_in_default_welcomelist()
+      : From listé par def_welcomelist_auth (authentifié par SPF ou DKIM).'
+  sa_rules:
+  - USER_IN_DEF_WELCOMELIST
+  title: Expéditeur dans la liste d'accueil par défaut
+  why: L'expéditeur figure dans la liste d'accueil livrée avec SpamAssassin et il est authentifié. Gros
+    bonus, réservé à des services très connus.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/60_welcomelist.cf
+- id: sa.to_eq_fm_spf_fail
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(TO_EQ_FM_SPF_FAIL)
+    notes: 'score SA 4.0.x : 0.907 (sa-update r1939780, jeu réseau + Bayes). Teste : meta To == From,
+      SPF_FAIL, message hors fil de discussion et pas tout de confiance.'
+  sa_rules:
+  - TO_EQ_FM_SPF_FAIL
+  title: Destinataire identique à l'expéditeur et SPF en échec
+  why: 'Le message prétend venir de l''adresse même du destinataire et le SPF échoue : c''est le schéma
+    de l''arnaque « votre boîte a été piratée ». Un envoi légitime le déclenche quand un formulaire de
+    site envoie au propriétaire en utilisant son adresse comme expéditeur, depuis un serveur non autorisé.'
+  fix:
+  - Dans le formulaire du site, mettez en From une adresse technique du domaine (par exemple site@{domain})
+    envoyée par SMTP authentifié.
+  - Placez l'adresse du visiteur en Reply-To, jamais en From.
+  fix_by_provider:
+    wordpress: 'Contact Form 7 : onglet E-mail, champ De = votre adresse technique, en-têtes supplémentaires
+      = Reply-To: [your-email].'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+  - https://www.rfc-editor.org/rfc/rfc7208
+- id: sa.to_eq_fm_dom_spf_fail
+  family: spamassassin
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: spamassassin.hit(TO_EQ_FM_DOM_SPF_FAIL)
+    notes: 'score SA 4.0.x : 0.417 (sa-update r1939780, jeu réseau + Bayes). Teste : meta domaine du To
+      == domaine du From, SPF_FAIL, hors fil de discussion.'
+  sa_rules:
+  - TO_EQ_FM_DOM_SPF_FAIL
+  title: Même domaine en destinataire et en expéditeur, SPF en échec
+  why: Le message vient en apparence du domaine du destinataire, mais depuis un serveur que son SPF n'autorise
+    pas. Souvent un site web ou une imprimante qui envoie « en interne » sans passer par la messagerie
+    officielle.
+  fix:
+  - Faites passer ces envois par le serveur SMTP de la messagerie du domaine, avec authentification.
+  - Ou ajoutez l'IP {ip} du serveur web au SPF si vous la maîtrisez et qu'elle est fixe.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+  - https://www.rfc-editor.org/rfc/rfc7208
+- id: sa.dkimwl_wl_high
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DKIMWL_WL_HIGH)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : askdns _DKIMDOMAIN_.lookup.dkimwl.org,
+      réponse 127.x.x.5, hors messagerie gratuite et envoi en nombre.'
+  sa_rules:
+  - DKIMWL_WL_HIGH
+  title: Domaine signataire de haute confiance chez DKIMwl
+  why: Le domaine qui a signé le message ({dkim_domain}) est classé en haute confiance par la liste DKIMwl.
+    Signal favorable.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_dkimwl.cf
+  - https://dkimwl.org/
+- id: sa.dkimwl_wl_med
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DKIMWL_WL_MED)
+    notes: 'score SA 4.0.x : -0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : askdns _DKIMDOMAIN_.lookup.dkimwl.org,
+      réponse 127.x.x.3.'
+  sa_rules:
+  - DKIMWL_WL_MED
+  title: Domaine signataire de confiance moyenne chez DKIMwl
+  why: Le domaine signataire {dkim_domain} est connu de DKIMwl avec une confiance moyenne. Signal neutre
+    à favorable.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_dkimwl.cf
+  - https://dkimwl.org/
+- id: sa.dkimwl_wl_medhi
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DKIMWL_WL_MEDHI)
+    notes: 'score SA 4.0.x : -1 (sa-update r1939780, jeu réseau + Bayes). Teste : askdns _DKIMDOMAIN_.lookup.dkimwl.org,
+      réponse 127.x.x.4.'
+  sa_rules:
+  - DKIMWL_WL_MEDHI
+  title: Domaine signataire de confiance moyenne à haute chez DKIMwl
+  why: Le domaine signataire {dkim_domain} est bien noté par DKIMwl, ce qui retire un point au score.
+  fix:
+  - Rien à corriger.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_dkimwl.cf
+  - https://dkimwl.org/
+- id: sa.dkimwl_bl
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(DKIMWL_BL)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : askdns _DKIMDOMAIN_.lookup.dkimwl.org,
+      réponse 127.x.x.0.'
+  sa_rules:
+  - DKIMWL_BL
+  title: Domaine signataire bloqué chez DKIMwl
+  why: Le domaine qui signe le message ({dkim_domain}) est classé comme expéditeur bloqué par DKIMwl.
+    Si ce domaine est celui de votre outil d'envoi et non le vôtre, c'est sa réputation globale qui vous
+    pénalise.
+  fix:
+  - Signez avec votre propre domaine {domain} plutôt qu'avec le domaine partagé de l'outil d'envoi.
+  - Si le domaine bloqué est le vôtre, cherchez la cause (compte compromis, liste achetée) puis contactez
+    DKIMwl.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_dkimwl.cf
+  - https://dkimwl.org/
+- id: sa.dkimwl_blocked
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(DKIMWL_BLOCKED)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : askdns _DKIMDOMAIN_.lookup.dkimwl.org,
+      réponse 127.255.255.255 : la requête a été bloquée.'
+  sa_rules:
+  - DKIMWL_BLOCKED
+  title: Requête DKIMwl refusée au serveur de test
+  why: 'Avis d''administration : DKIMwl a refusé de répondre au serveur qui analyse le message. Cela ne
+    concerne pas votre envoi.'
+  fix:
+  - Aucune action de votre part. Le résultat DKIMwl est simplement absent de ce test.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/pds/20_dkimwl.cf
+  - https://dkimwl.org/

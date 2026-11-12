@@ -1,0 +1,205 @@
+# Famille subdomains : sous-domaines révélés par les journaux Certificate Transparency (outil
+# Sous-domaines, US-051).
+# Variables : {domain} domaine mesuré, {subdomain} sous-domaine concerné (le premier quand la fiche en
+# regroupe plusieurs), {service} service tiers reconnu, {target} cible du CNAME, {value} nombre ou
+# valeur mesurée.
+# Sources vérifiées le 2026-11-11 : RFC 6962 §1, RFC 9162 §11.5, RFC 5280 §4.1.2.5, RFC 6125 §6.4.3,
+# fingerprints.json du projet can-i-take-over-xyz (statuts « Vulnerable » et « Edge case »),
+# documentation Microsoft Azure, GitHub Pages, Heroku, Shopify, guide d'intégration Let's Encrypt.
+# Le seuil de 14 jours est un réglage de l'outil (server/src/tools/subdomains/analyze.ts), ramené au
+# tiers de la durée de vie du certificat (à la moitié sous 10 jours) comme le recommande Let's Encrypt.
+# Expiration jugée sur le certificat servi (poignée de main TLS), jamais sur les seuls journaux CT :
+# le 2026-11-11, crt.sh ne renvoyait pas le certificat en service d'un sous-domaine mesuré (faux positif
+# corrigé avant livraison). Ne pas revenir à un jugement sur les données CT seules.
+
+- id: subdomains.takeover_risk
+  family: subdomains
+  severity: critical
+  penalty: 4.0
+  detect:
+    signal: "le CNAME du sous-domaine pointe vers un service classé « Vulnerable » par can-i-take-over-xyz, et la cible répond NXDOMAIN ou sert la page d'erreur caractéristique d'une ressource non réclamée"
+    notes: "Un CNAME qui survit à la ressource qu'il désignait permet à n'importe quel client du service de recréer cette ressource sous le même nom et de servir son propre contenu sur le sous-domaine."
+  title: "{subdomain} peut être repris par un inconnu chez {service}"
+  why: >
+    {subdomain} pointe vers {target}, une ressource {service} qui n'existe plus. N'importe qui peut ouvrir
+    un compte chez {service}, recréer cette ressource sous ce nom et publier ce qu'il veut sur {subdomain} :
+    page d'hameçonnage à votre nom, vol des cookies posés sur {domain}, certificat obtenu à votre insu.
+  fix:
+    - "Si {subdomain} ne sert plus : supprimez son enregistrement CNAME dans la zone DNS de {domain}. C'est la correction la plus sûre."
+    - "S'il doit servir : recréez tout de suite la ressource chez {service} sous le nom {target}, dans votre compte, puis rattachez-y {subdomain}."
+    - "Relancez la mesure : {subdomain} doit passer en « ne résout plus » ou en « actif » sans alerte."
+    - "Pour l'avenir : supprimez le CNAME avant de supprimer la ressource chez le service, jamais après."
+  example_bad: "{subdomain}. 3600 IN CNAME {target}."
+  references:
+    - https://github.com/EdOverflow/can-i-take-over-xyz
+    - https://learn.microsoft.com/en-us/azure/security/fundamentals/subdomain-takeover
+    - https://developer.mozilla.org/en-US/docs/Web/Security/Subdomain_takeovers
+
+- id: subdomains.takeover_possible
+  family: subdomains
+  severity: high
+  penalty: 3.0
+  detect:
+    signal: "le CNAME pointe vers un service classé « Edge case » par can-i-take-over-xyz (GitHub Pages, Heroku, Shopify, Netlify, Vercel) et la page servie est l'erreur d'une ressource non réclamée"
+    notes: "« Edge case » : la reprise n'est possible que sous conditions propres au service (domaine non vérifié dans le compte, ancienne configuration). Le CNAME orphelin reste à corriger dans tous les cas."
+  title: "{subdomain} pointe vers une ressource {service} qui n'existe plus"
+  why: >
+    {subdomain} renvoie vers {target}, et {service} répond qu'aucun site n'est rattaché à ce nom. Selon les
+    réglages du service, un autre client peut réclamer {subdomain} et y publier son contenu. Même sans
+    reprise, vos visiteurs tombent sur une page d'erreur de {service}.
+  fix:
+    - "Si {subdomain} ne sert plus : supprimez son enregistrement CNAME dans la zone DNS de {domain}."
+    - "S'il doit servir : rattachez de nouveau {subdomain} à votre site ou votre application chez {service}."
+    - "Chez GitHub Pages, vérifiez {domain} dans les réglages Pages de votre compte ou de votre organisation : plus personne d'autre ne pourra alors l'utiliser."
+    - "Relancez la mesure pour confirmer que l'alerte a disparu."
+  example_bad: "{subdomain}. 3600 IN CNAME {target}."
+  references:
+    - https://github.com/EdOverflow/can-i-take-over-xyz
+    - https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/verifying-your-custom-domain-for-github-pages
+    - https://devcenter.heroku.com/articles/custom-domains
+    - https://help.shopify.com/en/manual/domains/add-a-domain/connecting-domains/connect-domain-manual
+
+- id: subdomains.cname_dangling
+  family: subdomains
+  severity: medium
+  penalty: 1.5
+  detect:
+    signal: "un ou plusieurs sous-domaines ont un CNAME dont la cible répond NXDOMAIN, vers un service que la table de prise de contrôle ne connaît pas"
+    notes: "Si le domaine de la cible est libre à l'enregistrement, quiconque l'achète contrôle aussi le sous-domaine. Sinon le nom est simplement mort."
+  title: "CNAME vers une cible qui n'existe plus : {value}"
+  why: >
+    {subdomain} pointe vers {target}, un nom qui n'existe pas (NXDOMAIN). Le sous-domaine ne sert plus à rien,
+    et si le domaine de la cible expire ou devient libre, celui qui l'achète contrôle aussi votre sous-domaine.
+  fix:
+    - "Pour chaque nom listé, ouvrez la zone DNS de {domain} et supprimez l'enregistrement CNAME s'il ne sert plus."
+    - "Si le nom doit servir, remplacez la cible par l'adresse actuelle du service."
+    - "Vérifiez que le domaine de chaque cible vous appartient encore ou appartient bien au service attendu."
+  references:
+    - https://developer.mozilla.org/en-US/docs/Web/Security/Subdomain_takeovers
+    - https://learn.microsoft.com/en-us/azure/security/fundamentals/subdomain-takeover
+
+- id: subdomains.cert_expiring
+  family: subdomains
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "sous-domaine actif dont le certificat servi sur le port 443, lu par une poignée de main TLS, expire dans moins de 14 jours et dans moins du tiers de sa durée de vie"
+    notes: "Let's Encrypt recommande de renouveler quand il reste un tiers de la durée de vie (30 jours pour un certificat de 90 jours), la moitié sous 10 jours. Le certificat servi fait foi : crt.sh peut manquer des certificats récents (constaté le 2026-11-11)."
+  title: "Sous-domaines dont le certificat servi expire bientôt : {value}"
+  why: >
+    Le certificat que {subdomain} présente en ce moment arrive à expiration, alors qu'il aurait déjà dû être
+    renouvelé. Le renouvellement automatique est sans doute en panne : à l'échéance, les navigateurs
+    afficheront une alerte de sécurité et bloqueront le site.
+  fix:
+    - "Sur le serveur qui sert {subdomain}, lancez le renouvellement à la main (par exemple certbot renew) et lisez l'erreur."
+    - "Causes fréquentes : enregistrement DNS modifié, défi HTTP bloqué par une redirection ou un pare-feu, tâche planifiée arrêtée."
+    - "Si {subdomain} passe derrière un CDN ou un hébergeur, vérifiez que le certificat y est bien actif."
+    - "Relancez la mesure : la date d'expiration affichée doit avoir reculé."
+  references:
+    - https://letsencrypt.org/docs/integration-guide/
+    - https://www.rfc-editor.org/rfc/rfc5280#section-4.1.2.5
+
+- id: subdomains.cert_expired_active
+  family: subdomains
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "sous-domaine actif dont le certificat servi sur le port 443 couvre bien le nom mais est expiré"
+    notes: "Constaté par une poignée de main TLS au moment de la mesure, pas d'après les journaux CT."
+  title: "Sous-domaines qui servent un certificat expiré : {value}"
+  why: >
+    {subdomain} présente en ce moment un certificat expiré : les navigateurs affichent une alerte de sécurité
+    et la plupart des visiteurs s'arrêtent là. Les applications et les API refusent la connexion.
+  fix:
+    - "Sur le serveur qui sert {subdomain}, renouvelez le certificat (par exemple certbot renew) et rechargez le serveur web."
+    - "Si {subdomain} ne sert plus, supprimez son enregistrement dans la zone DNS de {domain}."
+    - "Relancez la mesure pour confirmer la nouvelle date d'expiration."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5280#section-4.1.2.5
+    - https://letsencrypt.org/docs/integration-guide/
+
+- id: subdomains.internal_names
+  family: subdomains
+  severity: info
+  penalty: 0
+  detect:
+    signal: "un libellé du sous-domaine désigne un environnement ou un outil interne : dev, staging, preprod, recette, test, admin, intranet, vpn, jenkins, gitlab, phpmyadmin..."
+    notes: "RFC 9162 §11.5 : les journaux révèlent l'existence de noms difficiles à découvrir autrement, et certains libellés renseignent sur le service et le logiciel, ce qui facilite les attaques ciblées."
+  title: "Noms internes visibles de tous : {value}"
+  why: >
+    Chaque certificat est inscrit dans des journaux publics que n'importe qui peut lire. Des noms comme
+    {subdomain} indiquent à un attaquant où se trouvent vos environnements de test et vos outils
+    d'administration, souvent moins protégés que le site principal.
+  fix:
+    - "Vérifiez que chaque nom actif de la liste exige une authentification ou n'est joignable que depuis votre réseau (liste d'adresses autorisées, VPN)."
+    - "Pour les environnements de test, préférez un certificat joker (*.{domain}) : il ne révèle pas le nom exact de chaque sous-domaine."
+    - "Supprimez dans la zone DNS les noms qui ne servent plus. Les journaux, eux, gardent l'historique pour toujours."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9162#section-11.5
+    - https://www.rfc-editor.org/rfc/rfc6962#section-1
+
+- id: subdomains.dead_names
+  family: subdomains
+  severity: info
+  penalty: 0
+  detect:
+    signal: "sous-domaines présents dans les journaux CT qui ne résolvent plus (NXDOMAIN ou aucune adresse)"
+    notes: "Les journaux CT ne retirent jamais une entrée (RFC 6962 §1 : append-only). Un nom disparu du DNS reste listé."
+  title: "Sous-domaines qui ne résolvent plus : {value}"
+  why: >
+    Ces noms ont eu un certificat mais n'ont plus d'adresse aujourd'hui. Les journaux publics les gardent pour
+    toujours : c'est normal et sans danger tant qu'aucun CNAME ne traîne vers un service supprimé.
+  fix:
+    - "Rien à faire si ces noms ne servent plus."
+    - "Si l'un d'eux devait encore servir, recréez son enregistrement dans la zone DNS de {domain}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6962#section-1
+
+- id: subdomains.wildcard_dns
+  family: subdomains
+  severity: info
+  penalty: 0
+  detect:
+    signal: "un nom tiré au hasard sous le domaine résout (enregistrement joker *.domaine dans la zone)"
+    notes: "Avec un joker DNS, tout nom inventé répond : un sous-domaine disparu paraît encore actif s'il reçoit la même adresse que le joker."
+  title: "La zone de {domain} répond à n'importe quel nom"
+  why: >
+    Un nom inventé sous {domain} reçoit l'adresse {value}. Les sous-domaines qui reçoivent cette même adresse
+    sont marqués « via le joker DNS » : ils peuvent ne plus exister en tant que tels.
+  fix:
+    - "Si le joker n'est pas voulu, supprimez l'enregistrement *.{domain} de la zone DNS."
+    - "S'il est voulu, regardez les noms marqués « via le joker DNS » : ceux qui ne servent plus ne demandent aucune action."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4592
+
+- id: subdomains.resolution_capped
+  family: subdomains
+  severity: info
+  penalty: 0
+  detect:
+    signal: "plus de 500 noms trouvés : seuls les 500 plus récents sont résolus"
+    notes: "Plafond de l'outil pour borner la durée de la mesure et le nombre de requêtes DNS."
+  title: "Sous-domaines listés sans résolution DNS : {value}"
+  why: >
+    Les journaux donnent plus de 500 noms pour {domain}. Les 500 vus le plus récemment sont résolus ; les
+    {value} autres sont listés sans état DNS, et la note ne tient pas compte d'eux.
+  fix:
+    - "Mesurez un sous-domaine plus précis (par exemple dev.{domain}) pour résoudre tous ses noms."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9162#section-11.5
+
+- id: subdomains.none_found
+  family: subdomains
+  severity: info
+  penalty: 0
+  detect:
+    signal: "les sources CT ont répondu sans aucun nom sous le domaine"
+    notes: "Un domaine sans site en https, ou servi uniquement par un certificat d'une autre entité, peut n'avoir aucun certificat à son nom."
+  title: "Aucun certificat publié pour {domain}"
+  why: >
+    Les journaux Certificate Transparency ne contiennent aucun certificat à ce nom. Soit {domain} ne sert aucun
+    site en https, soit ses certificats couvrent d'autres noms.
+  fix:
+    - "Vérifiez l'orthographe du domaine, puis mesurez le domaine principal si vous avez saisi un sous-domaine."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6962#section-1

@@ -1,0 +1,193 @@
+# Famille rdns : reverse DNS (enregistrement PTR) de l'IP d'envoi {ip}.
+# Le PTR se règle chez le propriétaire de l'IP (hébergeur, fournisseur d'accès, service
+# d'envoi), jamais dans la zone DNS de {domain}. Gmail demande à tous les expéditeurs « des
+# enregistrements DNS direct et inverse valides » ; Yahoo formule la même exigence.
+
+- id: rdns.missing
+  family: rdns
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dns.PTR(ip) == [] && dns.PTR(ip).rcode in [NXDOMAIN, NOERROR]"
+    notes: "Aucun PTR pour {ip}. Exigence de Gmail (« Ensure that sending domains or IPs have valid forward and reverse DNS records ») et de Yahoo pour tous les expéditeurs."
+  sa_rules: [RDNS_NONE]
+  title: "L'IP d'envoi {ip} n'a pas de reverse DNS"
+  why: >
+    Un serveur de messagerie sans reverse DNS ressemble à une machine infectée. Gmail et
+    Yahoo l'exigent de tous les expéditeurs : sans lui, vos messages vont en spam ou sont
+    refusés.
+  fix:
+    - "Choisissez un nom pour le serveur sous votre domaine, par exemple mail.{domain}, et créez son enregistrement A (ou AAAA) vers {ip} dans la zone DNS de ce domaine."
+    - "Demandez au propriétaire de l'IP {ip} (hébergeur ou fournisseur d'accès) de régler le PTR sur ce nom ; c'est lui seul qui peut le faire."
+    - "Utilisez ce même nom comme HELO du serveur, puis refaites le test."
+  fix_by_provider:
+    ovh: "Pour un VPS ou un serveur dédié : espace client, Network, Adresses IP Publiques, bouton ⁝ en face de {ip}, Configurer le reverse DNS. L'enregistrement A du nom doit déjà pointer vers {ip} (vérifié immédiatement), en minuscules."
+    cpanel: "L'outil Email Deliverability affiche le PTR mais ne permet pas de le modifier : demandez-le à l'hébergeur du serveur."
+    o2switch: "Sur un hébergement mutualisé, le PTR de l'IP du serveur est géré par o2switch : ouvrez un ticket si le test le signale absent."
+    postfix: "Une fois le PTR posé, réglez myhostname sur ce même nom dans main.cf."
+  example_good: "PTR de {ip} : mail.{domain}.  et  mail.{domain}. IN A {ip}"
+  references:
+    - https://support.google.com/mail/answer/81126
+    - https://senders.yahooinc.com/best-practices/
+    - https://docs.ovhcloud.com/fr/guides/bare-metal-cloud/virtual-private-servers/configuring-reverse-dns
+    - https://www.rfc-editor.org/rfc/rfc1912#section-2.1
+
+- id: rdns.fcrdns_mismatch
+  family: rdns
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "dns.PTR(ip) != [] && dns.addresses(ptr) != [] && ip not in dns.addresses(ptr)"
+    notes: "Le PTR de {ip} donne {ptr}, mais {ptr} pointe vers d'autres adresses : le reverse DNS n'est pas confirmé dans l'autre sens (FCrDNS). Gmail parle d'enregistrements direct et inverse valides."
+  sa_rules: []
+  title: "Le reverse DNS de {ip} ({ptr}) ne revient pas vers {ip}"
+  why: >
+    Le nom {ptr} ne pointe pas vers l'IP d'envoi. N'importe qui pouvant écrire un PTR, seul
+    l'aller-retour prouve l'identité du serveur : sans lui, les filtres traitent le serveur
+    comme non identifié.
+  fix:
+    - "Ajoutez {ip} à l'enregistrement A (ou AAAA) de {ptr}, ou corrigez celui-ci s'il désigne une ancienne adresse."
+    - "Si {ptr} n'est pas sous votre contrôle, faites régler le PTR sur un nom de {domain} dont vous gérez l'enregistrement A."
+  example_good: "{ip} PTR {ptr}  et  {ptr} A {ip}"
+  references:
+    - https://support.google.com/mail/answer/81126
+    - https://www.rfc-editor.org/rfc/rfc1912#section-2.1
+
+- id: rdns.ptr_target_nxdomain
+  family: rdns
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "dns.PTR(ip) != [] && dns.rcode(ptr) == NXDOMAIN"
+    notes: "Le PTR existe mais désigne un nom qui n'existe pas. Cas fréquent après un changement de domaine ou la suppression d'un sous-domaine."
+  sa_rules: []
+  title: "Le reverse DNS de {ip} pointe vers un nom inexistant ({ptr})"
+  why: >
+    Le nom donné par le reverse DNS n'existe plus. Pour les destinataires, c'est équivalent à
+    une absence de reverse DNS confirmé.
+  fix:
+    - "Recréez l'enregistrement A de {ptr} vers {ip}, ou faites régler le PTR sur un nom existant de {domain}."
+    - "Vérifiez avec dig -x {ip} puis dig A <nom obtenu>."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1912#section-2.1
+
+- id: rdns.generic_dynamic
+  family: rdns
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "ptr matches /[0-9]+[-.][0-9]+[-.][0-9]+[-.][0-9]+|dyn|dhcp|dsl|pool|cable|ppp|dial|client|customer|residential|broadband|fibre|fiber|ftth/i && not ptr matches /^(mail|smtp|mx|out)[0-9]*[.]/i"
+    notes: "PTR attribué automatiquement à une connexion grand public (contient l'IP ou un mot comme dynamic, dsl, pool). SpamAssassin RDNS_DYNAMIC ; SpamRATS Dyna et Spamhaus PBL visent ces plages."
+  sa_rules: [RDNS_DYNAMIC]
+  title: "Le reverse DNS de {ip} ({ptr}) est celui d'une connexion grand public"
+  why: >
+    {ptr} ressemble à une box internet ou à un abonné résidentiel. Les grands fournisseurs
+    refusent ou classent en spam le courrier envoyé directement depuis ces connexions.
+  fix:
+    - "N'envoyez pas directement depuis cette connexion : passez par le serveur SMTP authentifié de votre messagerie (port 587 ou 465)."
+    - "Si {ip} est une IP fixe destinée à un serveur, demandez à votre fournisseur un reverse DNS personnalisé du type mail.{domain}."
+  fix_by_provider:
+    postfix: "Réglez relayhost = [smtp.votre-fournisseur]:587 avec authentification SASL et TLS obligatoire, puis postfix reload."
+    wordpress: "Utilisez une extension SMTP qui envoie par le serveur de votre messagerie au lieu de la fonction mail() du serveur."
+  references:
+    - https://github.com/apache/spamassassin/blob/trunk/rules/20_dynrdns.cf
+    - https://www.spamhaus.org/blocklists/policy-blocklist/
+
+- id: rdns.generic_hosting
+  family: rdns
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "ptr matches /^(ip|vps|ns|srv|server|host|static)[-.]?[0-9-]+|[.](vps|ip|dedicated|cloud)[.]/i && not org_domain(ptr) == org_domain(domain) && not provider.is_esp"
+    notes: "PTR par défaut d'un hébergeur ou d'un nuage (par exemple vps-1234abcd.vps.ovh.net, ec2-203-0-113-10.eu-west-1.compute.amazonaws.com) : valide et confirmé, mais générique. Ne pas signaler pour les services d'envoi, dont le PTR est toujours à leur nom."
+  sa_rules: []
+  title: "Le reverse DNS de {ip} est le nom par défaut de l'hébergeur ({ptr})"
+  why: >
+    Le reverse DNS fonctionne, mais il ne dit rien de votre service. Un nom propre à
+    {domain} rend votre serveur plus identifiable et le distingue des machines louées à la
+    volée.
+  fix:
+    - "Créez l'enregistrement A de mail.{domain} vers {ip}."
+    - "Faites régler le PTR de {ip} sur mail.{domain} dans l'interface de votre hébergeur."
+    - "Utilisez ce nom comme HELO."
+  fix_by_provider:
+    ovh: "Espace client, Network, Adresses IP Publiques, ⁝, Configurer le reverse DNS, puis saisissez mail.{domain}."
+  references:
+    - https://docs.ovhcloud.com/fr/guides/bare-metal-cloud/virtual-private-servers/configuring-reverse-dns
+
+- id: rdns.ipv6_missing
+  family: rdns
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "ip.version == 6 && dns.PTR(ip) == []"
+    notes: "Envoi en IPv6 sans PTR. Les exigences de Gmail et Yahoo portent sur les IP d'envoi sans distinction de version ; un serveur qui a un PTR en IPv4 mais sort en IPv6 est un cas très fréquent."
+  sa_rules: [RDNS_NONE]
+  title: "L'adresse IPv6 d'envoi {ip} n'a pas de reverse DNS"
+  why: >
+    Votre serveur a envoyé ce message en IPv6, et cette adresse n'a pas de reverse DNS. Même
+    si l'IPv4 est bien configurée, le message est jugé sur l'adresse réellement utilisée.
+  fix:
+    - "Demandez à votre hébergeur un PTR pour {ip}, avec le même nom que pour l'IPv4 (par exemple mail.{domain}), et ajoutez l'enregistrement AAAA correspondant."
+    - "Ajoutez aussi {ip} à votre SPF (ip6:)."
+    - "À défaut, désactivez l'envoi en IPv6 sur ce serveur."
+  fix_by_provider:
+    postfix: "Pour n'envoyer qu'en IPv4 en attendant, réglez smtp_address_preference = ipv4 (ou inet_protocols = ipv4), puis postfix reload."
+  references:
+    - https://support.google.com/mail/answer/81126
+    - https://www.postfix.org/postconf.5.html#smtp_address_preference
+
+- id: rdns.multiple_ptr
+  family: rdns
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "count(dns.PTR(ip)) > 1"
+    notes: "Plusieurs PTR pour une même IP : les destinataires n'en lisent souvent qu'un, au hasard, et la confirmation dans l'autre sens peut échouer une fois sur deux."
+  sa_rules: []
+  title: "L'IP {ip} a plusieurs reverse DNS"
+  why: >
+    Selon le PTR tiré par le destinataire, la vérification réussit ou échoue. Vos résultats
+    deviennent irréguliers d'un message à l'autre.
+  fix:
+    - "Ne gardez qu'un seul PTR pour {ip}, celui qui correspond au HELO du serveur."
+    - "Vérifiez que ce nom pointe bien vers {ip}."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1912#section-2.1
+
+- id: rdns.temperror
+  family: rdns
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "dns.PTR(ip).rcode in [SERVFAIL, TIMEOUT]"
+    notes: "Les serveurs de la zone in-addr.arpa ou ip6.arpa de {ip} ne répondent pas. À confirmer par un second test."
+  sa_rules: []
+  title: "Le reverse DNS de {ip} n'a pas pu être lu"
+  why: >
+    Les serveurs DNS chargés du reverse de {ip} ne répondent pas. Les destinataires qui
+    vérifient le PTR traitent alors le serveur comme sans reverse DNS ou retardent le
+    message.
+  fix:
+    - "Refaites le test pour confirmer."
+    - "Si l'erreur persiste, signalez-la au propriétaire de l'IP : la délégation de sa zone inverse est cassée."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc1912#section-2.1
+
+- id: rdns.unrelated_domain
+  family: rdns
+  severity: info
+  penalty: 0
+  detect:
+    signal: "ptr != null && ip in dns.addresses(ptr) && org_domain(ptr) != org_domain(domain)"
+    notes: "Le PTR est valide et confirmé mais appartient à un autre domaine (service d'envoi, hébergeur). Ce n'est pas un défaut : aucune règle n'exige que le PTR soit dans {domain}. Entrée informative pour éviter une fausse alerte."
+  sa_rules: []
+  title: "Le reverse DNS de {ip} ({ptr}) n'est pas à votre nom, ce qui est normal"
+  why: >
+    Quand vous passez par un service d'envoi ou un serveur mutualisé, le reverse DNS est à
+    son nom. C'est attendu : ce qui compte est qu'il existe et revienne vers {ip}, ce qui est
+    le cas.
+  fix:
+    - "Aucune action n'est nécessaire."
+  references:
+    - https://support.google.com/mail/answer/81126

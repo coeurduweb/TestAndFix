@@ -1,0 +1,19 @@
+dmarc-report.forwarding:
+  title: "Encaminhamento provável por {ip} (nome reverso: {ptr})"
+  why: "{value} mensagem(ns) de {domain} chegam por um servidor que retransmite e-mails (redirecionamento de endereço, lista de distribuição). O SPF falha por construção: é normal, e só o DKIM mantém essas mensagens autenticadas."
+  fix:
+    - "Não adicione {ip} ao seu SPF: você autorizaria um servidor que não controla a enviar em nome de {domain}."
+    - "Verifique se todos os seus envios são assinados em DKIM com d={domain}: é a única autenticação que sobrevive ao encaminhamento."
+    - "Nada mais a fazer. Antes de passar para p=reject, saiba que uma mensagem encaminhada cuja assinatura DKIM foi quebrada no caminho (lista que altera o assunto ou o corpo) falha no DMARC e pode ser recusada."
+dmarc-report.more_sources:
+  title: "{value} outra(s) fonte(s) não alinhada(s) não estão detalhadas"
+  why: "Só as dez fontes mais volumosas de cada categoria têm uma ficha. As demais aparecem na tabela de fontes, com o volume e o alinhamento de cada uma."
+  fix:
+    - "Abra a tabela de fontes e ordene-a pelo número de mensagens."
+    - "Trate primeiro as fontes detalhadas aqui: corrigir um serviço de envio costuma resolver vários IPs de uma vez."
+dmarc-report.low_volume:
+  title: "Volume de relatórios ainda baixo ({value} mensagens)"
+  why: "Os relatórios enviados cobrem apenas {value} mensagem(ns): um envio mensal ou uma ferramenta pouco usada pode ainda não aparecer. As taxas de alinhamento ainda não são representativas."
+  fix:
+    - "Envie os relatórios das próximas semanas, de todos os destinatários que enviam para você."
+    - "Não endureça sua política DMARC apenas com base nesses relatórios."

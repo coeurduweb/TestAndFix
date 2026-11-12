@@ -1,0 +1,765 @@
+# Famille spamassassin, groupe content. Généré par research/scripts/sa_build.py
+# depuis research/work/sa/src/content.yaml et les règles sa-update r1939780 (SpamAssassin 4.0.x).
+# Ne pas éditer à la main : modifier la source puis régénérer.
+- id: sa.uppercase_50_75
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(UPPERCASE_50_75)
+    notes: 'score SA 4.0.x : 0.008 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_for_uppercase(''50'',
+      ''75'') : part des lettres en majuscules dans le corps.'
+  sa_rules:
+  - UPPERCASE_50_75
+  title: Texte du message à 50 à 75 % en majuscules
+  why: Plus de la moitié des lettres du corps sont en capitales. Score symbolique aujourd'hui, mais le
+    message paraît crié et les lecteurs le signalent plus volontiers.
+  fix:
+  - Réécrivez le texte en casse normale ; gardez les capitales pour les sigles.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_meta_tests.cf
+- id: sa.uppercase_75_100
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(UPPERCASE_75_100)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta check_for_uppercase(''75'',
+      ''100'').'
+  sa_rules:
+  - UPPERCASE_75_100
+  title: Texte du message presque entièrement en majuscules
+  why: Plus des trois quarts des lettres sont en capitales. Score symbolique.
+  fix:
+  - Réécrivez le texte en casse normale.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_meta_tests.cf
+- id: sa.lots_of_money
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(LOTS_OF_MONEY)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : montants avec
+      symbole monétaire et au moins 4 chiffres, ou « million », « thousand », « sum of »..., hors itinéraire
+      de voyage.'
+  sa_rules:
+  - LOTS_OF_MONEY
+  title: Le message cite de grosses sommes d'argent
+  why: Le texte mentionne de grosses sommes (10 000 €, « millions »). Score symbolique, mais cette règle
+    entre dans plusieurs règles combinées de fraude.
+  fix:
+  - Rien d'obligatoire. Évitez d'aligner de gros montants dans l'objet et le premier paragraphe.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_lotsa_money.cf
+- id: sa.money_back
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(MONEY_BACK)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : body /money back guarantee/i.
+      Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - MONEY_BACK
+  title: Mention « money back guarantee »
+  why: Le texte contient l'expression anglaise « money back guarantee ». 1 point.
+  fix:
+  - Reformulez (« remboursement sous 30 jours ») ou retirez l'expression anglaise du pied de page.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.risk_free
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(RISK_FREE)
+    notes: 'score SA 4.0.x : 2.699 (sa-update r1939780, jeu réseau + Bayes). Teste : meta body « no risk
+      », « risk free », « free of risk », « 100% safe » (et une variante allemande), hors lien de désinscription,
+      liste, image cliquable, texte d''abonnement et Re:/Fw:.'
+  sa_rules:
+  - RISK_FREE
+  title: Promesse « sans risque »
+  why: 'Le texte promet l''absence de risque (« risk free », « 100% safe ») sans aucun signe de liste
+    de diffusion. Près de 3 points : la formule est typique des arnaques.'
+  fix:
+  - 'Retirez la formule, ou ajoutez un vrai lien de désinscription et l''en-tête List-Unsubscribe : la
+    règle ne s''applique plus alors.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_lotsa_money.cf
+- id: sa.guaranteed_100_percent
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(GUARANTEED_100_PERCENT)
+    notes: 'score SA 4.0.x : 2.699 (sa-update r1939780, jeu réseau + Bayes). Teste : body /100% GUARANTEED/i.'
+  sa_rules:
+  - GUARANTEED_100_PERCENT
+  title: Mention « 100% guaranteed »
+  why: Le texte contient « 100% guaranteed ». Près de 3 points pour cette seule expression.
+  fix:
+  - Retirez l'expression ou formulez la garantie précisément (durée, conditions).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.bang_guar
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(BANG_GUAR)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\bguaranteed?\!/i.'
+  sa_rules:
+  - BANG_GUAR
+  title: « Guaranteed! » avec point d'exclamation
+  why: Le texte contient « guarantee! » ou « guaranteed! ». 1 point.
+  fix:
+  - Retirez le point d'exclamation ou l'expression.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.free_quote_instant
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(FREE_QUOTE_INSTANT)
+    notes: 'score SA 4.0.x : 1.297 (sa-update r1939780, jeu réseau + Bayes). Teste : body /free.{0,12}(?:(?:instant|express|online|no.?obligation).{0,4})+.{0,32}\bquote/i.'
+  sa_rules:
+  - FREE_QUOTE_INSTANT
+  title: Offre de devis gratuit et immédiat
+  why: Le texte propose un « free instant quote » ou « free no-obligation quote ». Formule des spams de
+    prospection en anglais. Plus d'un point.
+  fix:
+  - Reformulez l'appel à l'action sans « free » ni « instant » accolés à « quote ».
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.low_price
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(LOW_PRICE)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\blow.{0,4} (?-i:P)rice/i
+      : « Low Price », « Lowest Price » avec P majuscule.'
+  sa_rules:
+  - LOW_PRICE
+  title: Mention « lowest price »
+  why: Le texte contient « Low Price » ou « Lowest Price ». Pénalité faible.
+  fix:
+  - Rien d'obligatoire ; évitez la formule dans l'objet.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.act_now_caps
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(ACT_NOW_CAPS)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\bA(?i:ct) N(?i:ow)\b/.'
+  sa_rules:
+  - ACT_NOW_CAPS
+  title: « Act Now » en capitales
+  why: Le texte contient « Act Now » avec majuscules. Pénalité faible.
+  fix:
+  - Remplacez par un appel à l'action précis (« Réservez votre place »).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.this_ad
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(THIS_AD)
+    notes: 'score SA 4.0.x : 2.699 (sa-update r1939780, jeu réseau + Bayes). Teste : meta body /(?:\b|_)this[-
+      _]+(?:ad(?:vertisement)?|promo(?:tion)?)s?(?:\b|_)/i, hors Message-ID Mozilla, From encodé QP, retour
+      chariot dans l''objet et Return-Path cohérent.'
+  sa_rules:
+  - THIS_AD
+  title: Le texte parle de « this ad » ou « this promotion »
+  why: Le texte contient « this ad », « this advertisement » ou « this promotion ». Souvent dans une mention
+    légale anglaise du pied de page. Près de 3 points.
+  fix:
+  - Retirez ou traduisez la mention anglaise du pied de page.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.admits_spam
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(ADMITS_SPAM)
+    notes: 'score SA 4.0.x : 1.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta body « this
+      is an advertisement », « the above is an e-mail advertisement »..., hors X-Campaignid, texte caché
+      et listes Lyris/ezmlm.'
+  sa_rules:
+  - ADMITS_SPAM
+  title: Le texte se présente comme une publicité
+  why: 'Le message contient « This is an advertisement » : certaines lois imposent cette mention, mais
+    les filtres la traitent comme un aveu. 2 points.'
+  fix:
+  - Si la mention n'est pas exigée pour votre public, retirez-la.
+  - Sinon, utilisez un outil d'envoi qui ajoute ses en-têtes de campagne (la règle ne s'applique pas avec
+    X-Campaignid).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.ad_prefs
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(AD_PREFS)
+    notes: 'score SA 4.0.x : 0.25 (sa-update r1939780, jeu réseau + Bayes). Teste : body /(?:\b|_)(?:ad(?:vertising)?|promo(?:tion)?|marketing)[-
+      _](?:pref(?:s|erences)|settings)(?:\b|_)/i.'
+  sa_rules:
+  - AD_PREFS
+  title: Lien ou mention « advertising preferences »
+  why: Le texte contient « marketing preferences » ou « ad settings ». Pénalité faible, souvent due au
+    lien de gestion des préférences en anglais.
+  fix:
+  - Traduisez le libellé du lien de préférences (« Gérer mes préférences »).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.excuse_remove
+  family: spamassassin
+  severity: high
+  penalty: 1.6
+  detect:
+    signal: spamassassin.hit(EXCUSE_REMOVE)
+    notes: 'score SA 4.0.x : 3.299 (sa-update r1939780, jeu réseau + Bayes). Teste : body /to be removed
+      from.{0,20}(?:mailings|offers)/i.'
+  sa_rules:
+  - EXCUSE_REMOVE
+  title: Formule « to be removed from our mailings »
+  why: Le texte contient « to be removed from ... mailings » ou « ... offers ». Formule des vieux spams
+    en anglais, pénalisée de plus de 3 points.
+  fix:
+  - 'Remplacez la phrase par un lien de désinscription direct : « Se désinscrire ».'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.excuse_4
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(EXCUSE_4)
+    notes: 'score SA 4.0.x : 1.325 (sa-update r1939780, jeu réseau + Bayes). Teste : body /To Be Removed,?
+      Please/i.'
+  sa_rules:
+  - EXCUSE_4
+  title: Formule « To Be Removed, Please »
+  why: Le texte contient « To be removed, please... ». Plus d'un point.
+  fix:
+  - Remplacez par un lien de désinscription en un clic.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.end_future_emails
+  family: spamassassin
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: spamassassin.hit(END_FUTURE_EMAILS)
+    notes: 'score SA 4.0.x : 0.314 (sa-update r1939780, jeu réseau + Bayes). Teste : meta body « stop
+      receiving these emails », « do not wish to receive future mailings », « discontinue future messages
+      »..., sans DKIM, Errors-To, X-Mailer-LID, en-têtes en casse anormale ni relais .gov.'
+  sa_rules:
+  - END_FUTURE_EMAILS
+  title: Formule de désinscription typique du spam
+  why: Le texte de désinscription utilise une formule anglaise que les spammeurs emploient beaucoup et
+    le message n'est pas signé en DKIM. Pénalité faible.
+  fix:
+  - 'Signez le message en DKIM : la règle ne s''applique pas aux messages signés.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.remove_before_link
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(REMOVE_BEFORE_LINK)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : body m{(?:no thanks|not
+      interested|unsubscribe here).{0,5}http://}i.'
+  sa_rules:
+  - REMOVE_BEFORE_LINK
+  title: « No thanks » ou « unsubscribe here » juste avant un lien http
+  why: Une formule de refus est suivie d'un lien en http:// non chiffré. Pénalité faible.
+  fix:
+  - Utilisez un lien https:// et un libellé cliquable plutôt qu'une adresse affichée.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.obfu_unsub_ul
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(OBFU_UNSUB_UL)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta body /(?:click_here|remove_your|our_e?mail|this_list|to_unsubscribe|future_e?mail|our_list)/,
+      hors MAILING_LIST_MULTI. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - OBFU_UNSUB_UL
+  title: Texte de désinscription avec des tirets bas à la place des espaces
+  why: Le texte contient des expressions comme « click_here » ou « to_unsubscribe », écrites avec des
+    tirets bas pour échapper aux filtres. Un nom de fichier ou de variable laissé visible peut aussi la
+    déclencher.
+  fix:
+  - Écrivez le texte normalement, avec des espaces.
+  - Vérifiez qu'aucune balise de modèle (to_unsubscribe, click_here) n'apparaît non remplacée.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.marketing_partners
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(MARKETING_PARTNERS)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\b(?:marketing|network)
+      partner|\bpartner (?:web)?site/i.'
+  sa_rules:
+  - MARKETING_PARTNERS
+  title: Mention de partenaires marketing
+  why: Le texte mentionne un « marketing partner » ou un « partner site », formule des listes louées.
+    Score symbolique.
+  fix:
+  - Rien d'obligatoire. N'envoyez qu'à des contacts qui se sont inscrits chez vous.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.cant_see_ad
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(CANT_SEE_AD)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : formule anglaise
+      du type « can''t see this newsletter / the images below », sans en-tête List-Unsubscribe.'
+  sa_rules:
+  - CANT_SEE_AD
+  title: Formule « can't see the images below »
+  why: Le message contient la formule anglaise « If you can't see this newsletter... » et n'a pas d'en-tête
+    List-Unsubscribe. 1 point.
+  fix:
+  - Ajoutez l'en-tête List-Unsubscribe (la règle ne s'applique plus) ou traduisez la phrase du lien «
+    version en ligne ».
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.not_spam
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(NOT_SPAM)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\b(?:(?:this (?:e?-?mail|message)|we)
+      (?:is not|are not|cannot be considered) Spam|ESTE CORREO NO PUEDE SER CONSIDERADO ...|Diese Nachricht
+      ist KEIN SPAM)/i. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - NOT_SPAM
+  title: Le message affirme ne pas être du spam
+  why: Le texte affirme « This email is not spam » (en anglais, espagnol ou allemand). Les messages légitimes
+    n'ont pas besoin de le dire. 1 point.
+  fix:
+  - Supprimez la phrase. Expliquez plutôt pourquoi le destinataire reçoit le message (inscription, client).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.urg_biz
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(URG_BIZ)
+    notes: 'score SA 4.0.x : 0.573 (sa-update r1939780, jeu réseau + Bayes). Teste : meta body /urgent.{0,16}(?:assistance|business|buy|confidential|notice|proposal|reply|request|response)/i.'
+  sa_rules:
+  - URG_BIZ
+  title: Le texte parle d'une affaire urgente
+  why: Le texte contient « urgent reply », « urgent business », « urgent request ». Formule des fraudes
+    en anglais. Pénalité modérée.
+  fix:
+  - Retirez la formule d'urgence ; donnez une date précise si nécessaire.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.dear_something
+  family: spamassassin
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: spamassassin.hit(DEAR_SOMETHING)
+    notes: 'score SA 4.0.x : 1.973 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\bDear (?:IT\W|Internet|candidate|sirs?|madam|investor|travell?er|car
+      shopper|web)\b/i.'
+  sa_rules:
+  - DEAR_SOMETHING
+  title: Formule d'appel générique « Dear Sir », « Dear Madam »...
+  why: Le message commence par « Dear Sir », « Dear Madam », « Dear Candidate »... Les messages personnalisés
+    utilisent le nom. Près de 2 points.
+  fix:
+  - Personnalisez l'appel avec le prénom ou le nom du destinataire, ou supprimez-le.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.dear_friend
+  family: spamassassin
+  severity: high
+  penalty: 1.3
+  detect:
+    signal: spamassassin.hit(DEAR_FRIEND)
+    notes: 'score SA 4.0.x : 2.577 (sa-update r1939780, jeu réseau + Bayes). Teste : body /^\s*Dear Friend\b/i.'
+  sa_rules:
+  - DEAR_FRIEND
+  title: Formule d'appel « Dear Friend »
+  why: Le message commence par « Dear Friend ». Formule emblématique des arnaques, plus de 2,5 points.
+  fix:
+  - Personnalisez l'appel ou supprimez-le.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.one_time
+  family: spamassassin
+  severity: medium
+  penalty: 0.4
+  detect:
+    signal: spamassassin.hit(ONE_TIME)
+    notes: 'score SA 4.0.x : 0.714 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\bone\W+time
+      (?:charge|investment|offer|promotion)/i.'
+  sa_rules:
+  - ONE_TIME
+  title: Mention « one time offer »
+  why: Le texte contient « one-time offer » ou « one time charge ». Pénalité modérée.
+  fix:
+  - Reformulez l'offre sans l'expression anglaise.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.prices_are_affordable
+  family: spamassassin
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: spamassassin.hit(PRICES_ARE_AFFORDABLE)
+    notes: 'score SA 4.0.x : 0.551 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\baffordable
+      .{0,10}prices\b/i.'
+  sa_rules:
+  - PRICES_ARE_AFFORDABLE
+  title: Mention « affordable prices »
+  why: Le texte contient « affordable prices ». Pénalité modérée.
+  fix:
+  - Indiquez le prix ou l'avantage concret au lieu de la formule.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.new_products
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(NEW_PRODUCTS)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta body « here are
+      new products », « we are pleased to introduce our... », « our company has recently launched... »,
+      hors beaucoup de texte caché.'
+  sa_rules:
+  - NEW_PRODUCTS
+  title: Annonce de nouveaux produits au style spam
+  why: Le texte présente des nouveautés avec une formule anglaise des prospections de masse (« We are
+    pleased to introduce our... »). 1 point.
+  fix:
+  - Présentez le produit directement, avec son nom et son intérêt, sans formule d'introduction.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.ready_to_ship
+  family: spamassassin
+  severity: medium
+  penalty: 0.6
+  detect:
+    signal: spamassassin.hit(READY_TO_SHIP)
+    notes: 'score SA 4.0.x : 1.249 (sa-update r1939780, jeu réseau + Bayes). Teste : body : « ready to
+      ship », « in our warehouse », « we ship from our factory », « shipping directly to you »...'
+  sa_rules:
+  - READY_TO_SHIP
+  title: Formules « ready to ship from our warehouse »
+  why: Le texte vante un stock prêt à expédier depuis un entrepôt, formule des spams de fournisseurs industriels.
+    Plus d'un point.
+  fix:
+  - Reformulez avec des informations précises (délai, référence, conditions) plutôt que la formule toute
+    faite.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.investment_advice
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(INVESTMENT_ADVICE)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\binvestment
+      advice/i.'
+  sa_rules:
+  - INVESTMENT_ADVICE
+  title: Mention « investment advice »
+  why: Le texte contient « investment advice », souvent dans un avertissement légal. Pénalité faible.
+  fix:
+  - Rien d'obligatoire si la mention est requise.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.fin_free
+  family: spamassassin
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: spamassassin.hit(FIN_FREE)
+    notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : body /\bfinancial(?:ly)?
+      (?:free|independen)/i.'
+  sa_rules:
+  - FIN_FREE
+  title: Promesse de liberté financière
+  why: Le texte promet « financial freedom » ou « financially independent ». Pénalité faible.
+  fix:
+  - Reformulez sans promesse de gain.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_phrases.cf
+- id: sa.compensation
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(COMPENSATION)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta body /\b(?:compensat(?:e|ion)|recompensed?|ausgleich)\b/i,
+      sans List-Unsubscribe, lien de désinscription, commentaire HTML, authentification, ni autres signes
+      légitimes.'
+  sa_rules:
+  - COMPENSATION
+  title: Mention de compensation financière
+  why: Le texte parle de « compensation » sans aucun signe de liste ou d'authentification. Score symbolique.
+  fix:
+  - Rien d'obligatoire. Authentifiez le message (SPF, DKIM).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_lotsa_money.cf
+- id: sa.fill_this_form
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FILL_THIS_FORM)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : formule longue
+      « fill in the form » ou plus de 4 champs d''informations personnelles demandés (nom, adresse, téléphone,
+      âge...), hors fil de discussion et liste.'
+  sa_rules:
+  - FILL_THIS_FORM
+  title: Demande de remplir un formulaire avec des informations personnelles
+  why: Le message demande de répondre en donnant nom, adresse, téléphone, profession... Schéma des fraudes
+    en anglais. Score symbolique, mais base de règles combinées plus lourdes.
+  fix:
+  - Renvoyez vers un formulaire sur votre site plutôt que de demander les informations par réponse à l'e-mail.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_fillform.cf
+- id: sa.fsl_bulk_sig
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(FSL_BULK_SIG)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : DCC_CHECK,
+      RAZOR2_CHECK ou PYZOR_CHECK, sans List-Unsubscribe ni lien de désinscription, VERP ou relais smtp.'
+  sa_rules:
+  - FSL_BULK_SIG
+  title: Envoi en nombre détecté sans lien de désinscription
+  why: 'Un réseau collaboratif a vu ce message en grand nombre et il ne contient aucun moyen de se désinscrire.
+    Score symbolique, mais c''est un défaut réel : Gmail et Yahoo exigent la désinscription en un clic
+    pour les envois en nombre.'
+  fix:
+  - Ajoutez un lien de désinscription visible et les en-têtes List-Unsubscribe et List-Unsubscribe-Post.
+  example_good: 'List-Unsubscribe: <https://exemple.fr/desinscription?id=abc>, <mailto:desinscription@exemple.fr>
+
+    List-Unsubscribe-Post: List-Unsubscribe=One-Click'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/smf/30_smf_nontest.cf
+  - https://www.rfc-editor.org/rfc/rfc8058
+  - https://support.google.com/a/answer/81126
+- id: sa.english_uce_subject
+  family: spamassassin
+  severity: high
+  penalty: 1.4
+  detect:
+    signal: spamassassin.hit(ENGLISH_UCE_SUBJECT)
+    notes: 'score SA 4.0.x : 2.899 (sa-update r1939780, jeu réseau + Bayes). Teste : header Subject =~
+      /^[^0-9a-z]*adv(?:ert)?\b/i.'
+  sa_rules:
+  - ENGLISH_UCE_SUBJECT
+  title: Objet qui commence par « ADV »
+  why: L'objet commence par « ADV » ou « ADVERT », étiquette de publicité imposée par certaines lois américaines
+    et cherchée par les filtres. Près de 3 points.
+  fix:
+  - Retirez le préfixe ADV de l'objet sauf obligation légale pour votre public.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.subj_as_seen
+  family: spamassassin
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: spamassassin.hit(SUBJ_AS_SEEN)
+    notes: 'score SA 4.0.x : 1.461 (sa-update r1939780, jeu réseau + Bayes). Teste : header Subject =~
+      /\bAs Seen/i.'
+  sa_rules:
+  - SUBJ_AS_SEEN
+  title: Objet contenant « As Seen »
+  why: L'objet contient « As Seen » (« as seen on TV »). Près d'1,5 point.
+  fix:
+  - Reformulez l'objet.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_head_tests.cf
+- id: sa.unicode_obfu_zw
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(UNICODE_OBFU_ZW)
+    notes: 'score SA 4.0.x : 0.001 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : plus d''une
+      occurrence de caractères de largeur nulle (U+200B, U+200C, U+200D, BOM) au milieu de texte, sans
+      texte d''abonnement, liste, VERP, List-Unsubscribe ni DKIM.'
+  sa_rules:
+  - UNICODE_OBFU_ZW
+  title: Caractères invisibles insérés dans les mots
+  why: Des caractères invisibles (espaces de largeur nulle) sont insérés dans des mots. C'est une technique
+    d'obfuscation ; des modèles de preheader en ajoutent aussi. Score symbolique.
+  fix:
+  - Retirez les caractères de largeur nulle du texte visible ; signez le message en DKIM.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.unicode_obfu_zw_many
+  family: spamassassin
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: spamassassin.hit(UNICODE_OBFU_ZW_MANY)
+    notes: 'score SA 4.0.x : 2.999 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : plus de 9
+      occurrences de caractères de largeur nulle au milieu du texte, hors relais au rDNS mail.'
+  sa_rules:
+  - UNICODE_OBFU_ZW_MANY
+  title: Nombreux caractères invisibles insérés dans les mots
+  why: Le texte est truffé de caractères de largeur nulle. Les preheaders qui enchaînent des &zwnj; ou
+    &#8203; pour masquer le début du message en produisent beaucoup. 3 points.
+  fix:
+  - 'Limitez le remplissage du preheader : quelques &nbsp; suffisent, ou aucun.'
+  - Retirez les caractères de largeur nulle collés au texte visible.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.unicode_obfu_asc
+  family: spamassassin
+  severity: high
+  penalty: 1.2
+  detect:
+    signal: spamassassin.hit(UNICODE_OBFU_ASC)
+    notes: 'score SA 4.0.x : 2.499 (sa-update r1939780, jeu réseau + Bayes). Teste : meta body : lettres
+      cyrilliques а, е, о, р, с (identiques à a, e, o, p, c latins) intercalées dans des mots latins.'
+  sa_rules:
+  - UNICODE_OBFU_ASC
+  title: Lettres cyrilliques mêlées à des mots latins
+  why: Des lettres cyrilliques qui ressemblent aux lettres latines sont mélangées au texte. Technique
+    pour déjouer les filtres de mots. Un copier-coller depuis un document mal encodé peut en introduire.
+    2,5 points.
+  fix:
+  - Retapez les mots concernés au clavier ou passez le texte dans un outil qui signale les caractères
+    non latins.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.percent_random
+  family: spamassassin
+  severity: medium
+  penalty: 0.9
+  detect:
+    signal: spamassassin.hit(PERCENT_RANDOM)
+    notes: 'score SA 4.0.x : 1.838 (sa-update r1939780, jeu réseau + Bayes). Teste : meta header ALL ou
+      rawbody =~ /%RA?ND(?:OM)?(?:_|\b|[A-Z]{3})/i.'
+  sa_rules:
+  - PERCENT_RANDOM
+  title: Macro %RND ou %RANDOM non remplacée
+  why: 'Le message contient une macro %RND ou %RANDOM laissée telle quelle : un logiciel d''envoi de masse
+    n''a pas substitué sa variable aléatoire. Près de 2 points.'
+  fix:
+  - Repérez la macro dans l'objet, les en-têtes ou le HTML et retirez-la du modèle.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_meta_tests.cf
+- id: sa.longwords
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(LONGWORDS)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : au moins deux
+      motifs parmi 6 mots de 8 lettres et plus, 9 mots de 6 lettres et plus, 10 mots de 5 lettres et plus,
+      consécutifs et en minuscules. Pas de ligne score : valeur par défaut de SpamAssassin.'
+  sa_rules:
+  - LONGWORDS
+  title: Longue suite de mots longs
+  why: Le texte contient de longues suites de mots longs en minuscules, comme les textes aléatoires ajoutés
+    par les spammeurs pour tromper les filtres. 1 point.
+  fix:
+  - Vérifiez qu'aucun texte de remplissage ou mot-clé en série ne traîne dans le message (balise alt,
+    texte caché, liste de mots-clés).
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+- id: sa.unwanted_language_body
+  family: spamassassin
+  severity: high
+  penalty: 1.4
+  detect:
+    signal: spamassassin.hit(UNWANTED_LANGUAGE_BODY)
+    notes: 'score SA 4.0.x : 2.8 (sa-update r1939780, jeu réseau + Bayes). Teste : check_language() (plugin
+      TextCat) : la langue détectée du corps n''est pas dans ok_languages. Dépend du plugin TextCat, non
+      chargé par défaut dans SpamAssassin 4.0 : la règle n''apparaît que si le serveur de test l''active.'
+  sa_rules:
+  - UNWANTED_LANGUAGE_BODY
+  title: Message rédigé dans une langue non acceptée
+  why: Le serveur de test n'accepte que certaines langues et le message est rédigé dans une autre. Ne
+    se produit que si ok_languages a été restreint. 2,8 points.
+  fix:
+  - Aucune correction côté message si la langue est voulue ; signalez que le serveur de test filtre les
+    langues.
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/25_textcat.cf
+- id: sa.nice_reply_a
+  family: spamassassin
+  severity: info
+  penalty: 0.0
+  detect:
+    signal: spamassassin.hit(NICE_REPLY_A)
+    notes: 'score SA 4.0.x : -2.92 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : objet commençant
+      par Re:, Sv:, Vs:, Aw: avec In-Reply-To et References présents, et logiciel de messagerie connu.'
+  sa_rules:
+  - NICE_REPLY_A
+  title: Le message ressemble à une vraie réponse
+  why: Le message a les en-têtes d'une vraie réponse dans un fil de discussion. Gros bonus (près de 3
+    points).
+  fix:
+  - 'Rien à corriger. Ne simulez pas de faux Re: dans une campagne : cela ne déclenche pas cette règle
+    et irrite les lecteurs.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/fredt/99_zFVGT_FakeReply.cf
+- id: sa.gtube
+  family: spamassassin
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: spamassassin.hit(GTUBE)
+    notes: 'score SA 4.0.x : 1000 (sa-update r1939780, jeu réseau + Bayes). Teste : body : contient la
+      chaîne de test XJS*C4JDBQADN1.NSBN3*2IDNEN*GTUBE-STANDARD-ANTI-UBE-TEST-EMAIL*C.34X.'
+  sa_rules:
+  - GTUBE
+  title: Message de test antispam GTUBE
+  why: Le message contient la chaîne GTUBE, faite exprès pour être reconnue comme spam par tous les filtres.
+    1 000 points.
+  fix:
+  - 'Retirez la chaîne GTUBE : elle ne sert qu''à vérifier qu''un filtre fonctionne.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
+
+- id: spamassassin.over_threshold
+  family: spamassassin
+  severity: critical
+  impact: blocking
+  # The points are carried by the rules themselves: this entry only states the consequence.
+  penalty: 0
+  detect:
+    signal: spamassassin.score >= spamassassin.threshold
+    notes: "required_score vaut 5.0 par défaut dans SpamAssassin (Mail::SpamAssassin::Conf)."
+  sa_rules: []
+  title: "SpamAssassin classe ce message en spam ({value} points, seuil {rule_score})"
+  why: >
+    Au-delà de ce seuil, un serveur qui filtre avec SpamAssassin et son réglage par défaut range le
+    message en indésirables ou le refuse. Les points viennent des règles listées dans « Risque
+    d'indésirables ».
+  fix:
+    - "Corrigez d'abord les règles SpamAssassin qui coûtent le plus de points."
+    - "Renvoyez ensuite un message de test : il doit passer sous {rule_score} points."
+  references:
+    - https://spamassassin.apache.org/full/4.0.x/doc/Mail_SpamAssassin_Conf.html

@@ -1,0 +1,153 @@
+sa.mime_html_only:
+  title: "Die Nachricht hat keine Textversion"
+  why: "Die Nachricht enthält nur HTML. Die direkte Strafe ist gering, aber sie dient als Bedingung für mehrere schwerere Regeln (TO_NO_BRKTS_HTML_ONLY, TO_EQ_FM_HTML_ONLY ...). PHP-Skripte und manche Editoren senden nur HTML."
+  fix:
+    - "Senden Sie eine Nachricht als multipart/alternative mit einem lesbaren Teil text/plain und dem HTML-Teil."
+    - "Aktivieren Sie im Versandtool die automatische Erzeugung der Textversion und prüfen Sie diese danach."
+  fix_by_provider:
+    wordpress: "wp_mail() sendet nur einen Teil: Um eine Textversion hinzuzufügen, tragen Sie $phpmailer->AltBody in einer Funktion ein, die am Hook phpmailer_init hängt."
+sa.mime_html_only_multi:
+  title: "Multipart-Nachricht ohne Textteil"
+  why: "Die Nachricht erklärt sich als multipart/alternative (Text und HTML), enthält aber nur HTML. Die Struktur kündigt eine Textversion an, die nicht existiert. Symbolischer Wert."
+  fix:
+    - "Fügen Sie den fehlenden Teil text/plain hinzu oder stellen Sie die Nachricht auf einfaches text/html um."
+sa.mime_html_mostly:
+  title: "Fast leerer Textteil neben dem HTML"
+  why: "Eine Textversion existiert, aber sie ist fast leer („Ihr Programm kann kein HTML lesen“). Filter werten sie als fehlenden Text."
+  fix:
+    - "Füllen Sie die Textversion mit demselben Inhalt wie das HTML: Titel, Absätze, Links im Klartext."
+sa.mpart_alt_diff:
+  title: "Text- und HTML-Version unterscheiden sich"
+  why: "Die Textversion stimmt kaum mit dem HTML überein: allgemeiner Text, alter Inhalt oder Textversion einer anderen Vorlage. Spammer setzen einen harmlosen Text als Text ein und das eigentliche Angebot ins HTML."
+  fix:
+    - "Erzeugen Sie die Textversion neu aus dem endgültigen HTML dieser Kampagne."
+    - "Lassen Sie nicht die Textversion einer alten Vorlage stehen."
+sa.mpart_alt_diff_count:
+  title: "Die Textversion hat deutlich weniger Wörter als das HTML"
+  why: "Die Zahl der unterschiedlichen Wörter zwischen Text und HTML ist sehr unausgewogen. Die Textversion gibt den Inhalt des HTML nicht wieder. Mehr als ein Punkt."
+  fix:
+    - "Lassen Sie die Textversion automatisch aus dem HTML erzeugen und korrigieren Sie sie anschließend."
+sa.mime_no_text:
+  title: "Multipart-Nachricht ohne erkennbaren Textteil"
+  why: "Die Nachricht ist multipart, aber kein Teil ist als Text deklariert: Alles steckt in Anhängen oder in nicht textuellen Typen. Symbolischer Wert, aber zusammen mit einem X-Mailer PHP wiegt er knapp 3 Punkte."
+  fix:
+    - "Fügen Sie einen Teil text/plain oder text/html hinzu, der die Nachricht beschreibt."
+sa.mime_qp_long_line:
+  title: "Quoted-Printable-Zeile zu lang"
+  why: "Eine im Quoted-Printable-Format kodierte Zeile überschreitet die von der Norm vorgesehene Länge (76 Zeichen). Symbolischer Wert, aber manche Server zerschneiden diese Zeilen und beschädigen das HTML oder die DKIM-Signatur."
+  fix:
+    - "Lassen Sie die Versandbibliothek das Quoted-Printable-Format kodieren, statt es selbst zu schreiben."
+sa.mime_base64_text:
+  title: "Einfacher Text in Base64 kodiert"
+  why: "Ein reiner ASCII-Textteil ist in Base64 kodiert, was ihn für einen einfachen Filter unlesbar macht. Nichts rechtfertigt das bei einem Text ohne Akzente: Spammer tun es, um ihren Inhalt zu verbergen. Mehr als 1,5 Punkte."
+  fix:
+    - "Kodieren Sie die Textteile in Quoted-Printable oder 7bit und deklarieren Sie charset=UTF-8."
+sa.base64_length_79_inf:
+  title: "Base64-Zeilen mit mehr als 79 Zeichen"
+  why: "Ein in Base64 kodierter Teil hat zu lange Zeilen. Die MIME-Norm begrenzt diese Zeilen auf 76 Zeichen; Skripte, die mit base64_encode() ohne Umbruch kodieren, erzeugen eine einzige Zeile. 1,5 Punkte."
+  fix:
+    - "Teilen Sie das Base64 in Zeilen zu 76 Zeichen (chunk_split() in PHP) oder lassen Sie die Versandbibliothek kodieren."
+sa.base64_length_78_79:
+  title: "Base64-Zeilen mit 78 Zeichen"
+  why: "Ein Base64-Teil hat Zeilen mit 78 Zeichen, über den vorgesehenen 76. Geringer Abzug."
+  fix:
+    - "Teilen Sie das Base64 in Zeilen zu 76 Zeichen."
+sa.mime_header_ctype_only:
+  title: "Content-Type ohne die übrigen MIME-Header"
+  why: "Die Nachricht deklariert einen Content-Type, aber kein MIME-Version, das bei jeder Verwendung von MIME vorgeschrieben ist. Das verrät von Hand geschriebene Header. Geringer Abzug."
+  fix:
+    - "Fügen Sie den Header MIME-Version: 1.0 hinzu oder lassen Sie die Nachricht von einer Bibliothek erzeugen."
+sa.mime_suspect_name:
+  title: "Der Name des Anhangs passt nicht zu seinem Inhalt"
+  why: "Ein Anhang trägt eine Endung, die nicht zu seinem deklarierten Typ passt (zum Beispiel eine .pdf-Datei, die als Bild deklariert ist). Schadsoftware tarnt sich so."
+  fix:
+    - "Hängen Sie Dateien mit ihrem echten MIME-Typ an (application/pdf für ein PDF); Bibliotheken leiten ihn von der Endung ab."
+sa.mime_charset_faraway:
+  title: "MIME-Zeichensatz einer unerwarteten Sprache"
+  why: "Ein Teil der Nachricht ist in einem Zeichensatz einer Sprache deklariert, die der Testserver nicht akzeptiert. Die Regel greift nur, wenn der Server ok_locales eingeschränkt hat."
+  fix:
+    - "Kodieren Sie die gesamte Nachricht in UTF-8."
+sa.charset_faraway_header:
+  title: "Zeichensatz einer unerwarteten Sprache in den Headern"
+  why: "Der Betreff oder der Absendername ist in einem fremden Zeichensatz kodiert (big5, koi8-r ...). Die Regel greift nur, wenn der Server ok_locales eingeschränkt hat, wiegt dann aber über 3 Punkte."
+  fix:
+    - "Kodieren Sie Betreff und Absendername in UTF-8."
+sa.bogus_mime_version:
+  title: "Ungültiger MIME-Version-Header"
+  why: "Der Header MIME-Version hat nicht den Wert 1.0, den einzigen existierenden. Typisch für ein Skript, das den Header von Hand mit einem Tippfehler schreibt."
+  fix:
+    - "Schreiben Sie genau MIME-Version: 1.0."
+sa.mimepart_limit_exceeded:
+  title: "Zu viele MIME-Teile"
+  why: "Die Nachricht enthält so viele MIME-Teile, dass SpamAssassin die Analyse abgebrochen hat. Symbolischer Wert, aber eine solche Nachricht ist für alle Filter verdächtig."
+  fix:
+    - "Fassen Sie die Anhänge in einem Archiv zusammen oder bieten Sie einen Download-Link an."
+sa.empty_message:
+  title: "Nachricht ohne Textinhalt"
+  why: "Die Nachricht hat weder Text noch Anhang. Leere Testversände und Bestätigungsnachrichten für Adressen haben dieses Profil. Mehr als 2 Punkte."
+  fix:
+    - "Testen Sie mit dem echten Inhalt der Nachricht, nicht mit einem leeren Versand."
+sa.pp_mime_fake_ascii_text:
+  title: "Text als ASCII deklariert, enthält aber andere Zeichen"
+  why: "Der Textteil deklariert sich als ASCII (oder gibt nichts an), enthält aber Akzentbuchstaben. Beim Empfänger kann aus „é“ ein „Ã©“ werden."
+  fix:
+    - "Deklarieren Sie für den Textteil: Content-Type: text/plain; charset=UTF-8."
+sa.t_mime_malf:
+  title: "MIME-Header im Nachrichtentext"
+  why: "Der Nachrichtentext enthält Zeilen Content-Type, die Teil-Header sein sollten. Die MIME-Struktur ist defekt. Testregel ohne Gewicht."
+  fix:
+    - "Erzeugen Sie das MIME mit einer Bibliothek und prüfen Sie die Leerzeile zwischen den Teil-Headern und dem Inhalt."
+sa.body_8bits:
+  title: "Nachrichtentext mit langer Folge von 8-Bit-Zeichen"
+  why: "Der Nachrichtentext enthält lange Folgen von Nicht-ASCII-Bytes, typisch für nicht-lateinische Sprachen oder schlecht kodierten Text. Betrifft nur Server, die ok_languages eingeschränkt haben. 1,5 Punkte."
+  fix:
+    - "Prüfen Sie die deklarierte Kodierung (UTF-8) und dass kein Text falsch umgewandelt wurde."
+sa.null_in_body:
+  title: "Nullbyte in der Nachricht"
+  why: "Die Nachricht enthält ein Nullzeichen, das in einer E-Mail verboten ist. Es stammt meist aus einer binären Datei, die ohne Kodierung eingefügt wurde, oder aus einem Text in UTF-16. 1,6 Punkte."
+  fix:
+    - "Kodieren Sie Anhänge in Base64 und speichern Sie Texte in UTF-8, nicht in UTF-16."
+sa.mime_php_no_text:
+  title: "Kein Textteil und X-Mailer PHP"
+  why: "Ein PHP-Skript sendet eine Multipart-Nachricht ohne jeden Textteil. Knapp 3 Punkte: Das ist die Signatur eines Massenversand-Skripts."
+  fix:
+    - "Fügen Sie der Nachricht einen Textteil hinzu und entfernen Sie den Header X-Mailer PHP."
+    - "Verwenden Sie PHPMailer oder Symfony Mailer mit ausgefülltem AltBody."
+sa.malf_html_b64:
+  title: "HTML in Base64 ohne html-Tag"
+  why: "Die Nachricht ist ein HTML-Fragment ohne <html>-Tag, in Base64 kodiert. Beide Mängel zusammen bilden das Profil eines Spam-Generators."
+  fix:
+    - "Senden Sie ein vollständiges HTML-Dokument, quoted-printable kodiert."
+sa.encrypted_message:
+  title: "Verschlüsselte Nachricht"
+  why: "Die Nachricht ist verschlüsselt (PGP oder S/MIME). Spammer tun das praktisch nie: Bonus von einem Punkt."
+  fix:
+    - "Nichts zu korrigieren."
+sa.microsoft_executable:
+  title: "Angehängtes Windows-Programm"
+  why: "Ein Anhang ist ein Windows-Programm oder -Skript oder trägt eine Endung, die eines ausführt. Der Abzug in SpamAssassin ist gering, aber die meisten Anbieter blockieren diese Anhänge."
+  fix:
+    - "Hängen Sie niemals ein Programm oder Skript an: Bieten Sie einen Download-Link auf Ihrer Website an."
+    - "Prüfen Sie, dass keine Datei .url oder .lnk (Verknüpfung) versehentlich angehängt ist."
+sa.gmd_pdf_encrypted:
+  title: "Verschlüsseltes PDF im Anhang"
+  why: "Ein angehängtes PDF ist durch ein Passwort geschützt oder verschlüsselt und kann daher nicht analysiert werden. Schadsoftware nutzt oft geschützte PDFs."
+  fix:
+    - "Senden Sie das PDF ohne Schutz oder teilen Sie das Dokument über einen gesicherten Link."
+sa.gmd_pdf_empty_body:
+  title: "PDF im Anhang mit leerem Nachrichtentext"
+  why: "Die Nachricht enthält nur ein PDF und keinen Text. Häufig bei automatisch versendeten Rechnungen und Angeboten, aber auch bei Phishing mit gefälschter Rechnung."
+  fix:
+    - "Fügen Sie ein paar Zeilen hinzu, die das Dokument vorstellen (Rechnungsnummer, Betrag, Kontakt)."
+  fix_by_provider:
+    wordpress: "Ergänzen Sie in WooCommerce oder im Rechnungs-Plugin den Text der E-Mail, die das PDF begleitet."
+sa.any_bounce_message:
+  title: "Automatische Antwortnachricht"
+  why: "Die Nachricht ist eine Unzustellbarkeitsmeldung (Bounce), eine Abwesenheitsnotiz oder eine Virenwarnung. Information: Das ist nicht der Versand, den Sie testen wollten."
+  fix:
+    - "Prüfen Sie, dass Sie die Nachricht an die Testadresse gesendet haben und nicht eine Rücksendung weitergeleitet haben."
+sa.bounce_message:
+  title: "Unzustellbarkeitsmeldung eines Mailservers"
+  why: "Die Nachricht ist eine von einem Server gesendete Unzustellbarkeitsmeldung. Information."
+  fix:
+    - "Für diesen Test ist nichts zu korrigieren. Wenn Sie viele solcher Meldungen erhalten, bereinigen Sie Ihre Versandliste."

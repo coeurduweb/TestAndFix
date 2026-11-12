@@ -1,0 +1,197 @@
+blacklist.spamhaus_sbl:
+  title: Die IP {ip} ist auf Spamhaus SBL gelistet
+  why: Spamhaus ist die von E-Mail-Servern am häufigsten genutzte Liste. Ein Eintrag in der SBL führt dazu, dass ein großer Teil der Empfänger Ihre Nachrichten ablehnt, oft schon bei der Verbindung.
+  fix:
+    - Rufen Sie den Eintrag der IP {ip} unter {delist_url} auf, um den Grund und die SBL-Vorgangsnummer zu lesen.
+    - "Beseitigen Sie die Ursache: kompromittiertes Konto, missbrauchtes Formular, gekaufte Adressliste."
+    - "Wenden Sie sich an Ihren Hoster oder Internetanbieter: Laut Spamhaus muss der Antrag auf Entfernung eines SBL-Eintrags von dem Anbieter gestellt werden, der für die IP verantwortlich ist. Die Entfernung ist kostenlos."
+    - "Wenn {ip} eine geteilte IP eines Versanddienstes ({provider}) ist, informieren Sie dessen Support: Die IP gehört Ihnen nicht, und der Eintrag muss dort bearbeitet werden."
+blacklist.spamhaus_css:
+  title: Die IP {ip} ist auf Spamhaus CSS gelistet
+  why: Spamhaus hat von {ip} automatisch erkannten Spam festgestellt. Solange der Eintrag besteht, lehnt ein großer Teil der Empfänger Ihre Nachrichten ab.
+  fix:
+    - "Suchen Sie die Quelle: ein gehacktes E-Mail-Konto, eine Website, die versendet (Formular, Erweiterung), oder ein HELO und ein Reverse DNS, die falsch konfiguriert sind und wie die eines Bots aussehen."
+    - Beseitigen Sie die Ursache, bevor Sie einen Antrag stellen, sonst wird die IP sofort wieder eingetragen.
+    - Beantragen Sie die Entfernung unter {delist_url} (Sie selbst können nur eine begrenzte Anzahl von Anträgen stellen) oder warten Sie den Ablauf ab, normalerweise drei Tage nach der letzten Erkennung.
+blacklist.spamhaus_xbl:
+  title: Die IP {ip} ist auf Spamhaus XBL gelistet (kompromittierter Rechner)
+  why: "Spamhaus hat beobachtet, dass sich {ip} wie ein infizierter Rechner verhält. Viele Empfänger lehnen Ihre Nachrichten ab, und das Problem geht über den E-Mail-Versand hinaus: Ein Gerät in Ihrem Netzwerk wird vermutlich von einem Dritten gesteuert."
+  fix:
+    - Lesen Sie unter {delist_url} nach, welche Art von Infektion erkannt wurde und wann die letzte Erkennung stattfand.
+    - Prüfen Sie die Computer, Server und vernetzten Geräte hinter {ip} und ändern Sie die Passwörter der E-Mail-Konten.
+    - Wenn {ip} ein Server ist, blockieren Sie ausgehend den Port 25 für alle Prozesse außer der E-Mail-Software.
+    - Beantragen Sie nach der Bereinigung des Rechners die Entfernung unter {delist_url}.
+blacklist.spamhaus_pbl:
+  title: Die IP {ip} liegt in einem Privatkundenbereich (Spamhaus PBL)
+  why: Ihr Server versendet direkt über einen Privatanschluss oder über einen IP-Bereich, den dessen Eigentümer für Endnutzer vorsieht. Viele Empfänger lehnen solche Sendungen ab, auch wenn Sie nichts falsch gemacht haben.
+  fix:
+    - Versenden Sie über den authentifizierten SMTP-Server Ihres E-Mail-Dienstes oder Internetanbieters (Port 587 oder 465), statt direkt zuzustellen.
+    - Wenn {ip} eine feste IP eines echten E-Mail-Servers mit korrektem Reverse DNS ist, können Sie unter {delist_url} die Ausnahme beantragen. Sie gilt ein Jahr und ist nur möglich, wenn die Richtlinie des Netzwerks sie erlaubt.
+    - Bei mehreren Adressen muss der Internetanbieter, dem der IP-Bereich gehört, die Entfernung beantragen.
+  fix_by_provider:
+    postfix: Setzen Sie relayhost = [smtp.ihr-anbieter]:587 mit smtp_sasl_auth_enable = yes und smtp_tls_security_level = encrypt und führen Sie danach postfix reload aus.
+    wordpress: Installieren Sie ein SMTP-Plugin und senden Sie über den SMTP-Server Ihres E-Mail-Dienstes statt über die Funktion mail() des Servers.
+blacklist.spamhaus_drop:
+  title: Die IP {ip} liegt in einem Spamhaus-DROP-Bereich
+  why: Spamhaus betrachtet den gesamten Bereich von {ip} als von böswilligen Akteuren kontrolliert. Keine Einstellung auf Ihrer Seite macht diese IP für den E-Mail-Versand nutzbar.
+  fix:
+    - Hören Sie auf, von dieser IP aus zu versenden.
+    - Wechseln Sie den Hoster oder Versanddienst und prüfen Sie die neue IP, bevor Sie sie verwenden.
+blacklist.spamhaus_dbl_sender:
+  title: Die Domain {domain} ist auf Spamhaus DBL gelistet
+  why: "Ihre Domain selbst gilt als mit Spam oder Betrug verbunden. Eine andere IP hilft nicht: Jede Nachricht, die {domain} enthält, im Absender oder in einem Link, wird von Empfängern, die die DBL nutzen, abgelehnt oder als Spam eingestuft."
+  fix:
+    - Rufen Sie den Eintrag der Domain unter {delist_url} auf.
+    - "Suchen Sie die Ursache: gehackte Website mit Phishing-Seiten, Kampagne an Adressen ohne Einwilligung, offene Weiterleitungen."
+    - Beantragen Sie die Entfernung unter {delist_url}, sobald die Ursache beseitigt ist. Spamhaus nennt eine Bearbeitungszeit von bis zu 24 Stunden, garantiert die Entfernung aber nicht.
+blacklist.spamhaus_dbl_abused:
+  title: Ein Hostname der Domain {domain} ist auf Spamhaus DBL als missbrauchte Website gelistet
+  why: Spamhaus betrachtet Ihre Domain als legitim, aber ein Teil Ihrer Website wird von Dritten missbraucht, zum Beispiel durch eine gehackte Seite oder eine offene Weiterleitung. Nachrichten, die auf diesen Hostnamen verweisen, werden gefiltert.
+  fix:
+    - Ermitteln Sie unter {delist_url} den eingetragenen Hostnamen und die Art des Missbrauchs.
+    - Bereinigen Sie die Website (Aktualisierung von CMS und Plugins, Entfernung der hinzugefügten Dateien) oder schließen Sie die offene Weiterleitung.
+    - Beantragen Sie die Entfernung unter {delist_url}, sobald die Korrektur online ist.
+  fix_by_provider:
+    wordpress: Aktualisieren Sie WordPress, das Theme und alle Plugins, entfernen Sie unbekannte Administratorkonten und lassen Sie einen Virenscan der Website laufen, bevor Sie die Entfernung beantragen.
+blacklist.barracuda:
+  title: Die IP {ip} ist bei Barracuda (BRBL) gelistet
+  why: Unternehmen, die durch ein Barracuda-Gateway geschützt sind, lehnen Ihre Nachrichten ab. Das kommt bei professionellen Kunden häufig vor und schadet deshalb dem B2B-Versand.
+  fix:
+    - Beseitigen Sie die Ursache des verdächtigen Versands (gehacktes Konto, nicht genehmigte Liste, plötzlich gestiegenes Volumen).
+    - Füllen Sie das Formular https://www.barracudacentral.org/rbl/removal-request mit der IP {ip}, einer gültigen Kontaktadresse und einer Erläuterung der Korrektur aus.
+    - "Stellen Sie nur einen einzigen Antrag: Barracuda ignoriert mehrfache Anträge und nennt in der Regel eine Bearbeitung innerhalb von 12 Stunden."
+blacklist.spamcop:
+  title: Die IP {ip} ist bei SpamCop gelistet
+  why: Empfänger haben Ihre Nachrichten als Spam gemeldet. Solange die Meldungen weitergehen, lehnen Server, die SpamCop nutzen, Ihre Sendungen ab.
+  fix:
+    - Prüfen Sie unter https://www.spamcop.net/bl.shtml das Datum der letzten Meldung.
+    - Entfernen Sie Adressen ohne Einwilligung aus Ihren Versänden und machen Sie den Abmeldelink gut sichtbar.
+    - "Warten Sie: SpamCop entfernt die IP 24 Stunden nach der letzten Meldung automatisch und bittet darum, keine Anfrage für eine vorzeitige Entfernung zu senden."
+blacklist.uceprotect_level1:
+  title: Die IP {ip} ist bei UCEPROTECT Stufe 1 gelistet
+  why: Ihre IP hat an eine UCEPROTECT-Spamfalle gesendet. Nur wenige große Anbieter nutzen diese Liste, aber manche Unternehmensserver prüfen sie.
+  fix:
+    - "Bereinigen Sie Ihre Versandliste: Spamfallen stammen oft aus alten oder gekauften Dateien."
+    - Prüfen Sie, ob kein Konto und keine Website ohne Ihr Wissen von {ip} aus versendet.
+    - Warten Sie den automatischen Ablauf ab, 7 Tage nach der letzten Erkennung. Eine kostenpflichtige Entfernung ist nicht nötig.
+blacklist.uceprotect_level2:
+  title: Das Netz von {ip} ist bei UCEPROTECT Stufe 2 gelistet
+  why: Nicht Ihre IP ist betroffen, sondern der Adressblock Ihres Hosters, wegen der Nachbarn. Die Wirkung beschränkt sich auf die wenigen Server, die diese Stufe nutzen.
+  fix:
+    - "Zahlen Sie nichts für eine Entfernung: Der Antrag kann nur vom Anbieter gestellt werden, und der Eintrag erlischt von selbst."
+    - Melden Sie den Eintrag Ihrem Hoster, damit er die betreffenden Kunden überprüft.
+    - Wenn Ihr Versand umfangreich ist, bitten Sie Ihren Hoster um eine IP in einem anderen Block oder nutzen Sie einen Versanddienst.
+blacklist.uceprotect_level3:
+  title: Der Hoster von {ip} ist bei UCEPROTECT Stufe 3 vollständig gelistet
+  why: "Alle Adressen Ihres Hosters sind gelistet, Ihre eigene und die von Millionen anderen. Nur sehr wenige Server blockieren auf dieser Stufe, die Wirkung auf Ihren Versand ist meist null."
+  fix:
+    - "Stellen Sie keinen Antrag auf Entfernung und zahlen Sie nichts: Nur der Hoster kann handeln."
+    - Bewahren Sie diese Information auf, falls ein bestimmter Empfänger Sie unter Berufung auf UCEPROTECT ablehnt, und geben Sie sie an ihn weiter.
+blacklist.sorbs_closed:
+  title: "SORBS ist geschlossen: Ein zitierter Eintrag hat keine Gültigkeit mehr"
+  why: "Die Liste SORBS funktioniert nicht mehr. Ein Werkzeug oder Server, das sie noch zitiert, verwendet eine veraltete Konfiguration: Die eigentliche Ursache für eine mögliche Ablehnung liegt woanders."
+  fix:
+    - Ignorieren Sie jeden „SORBS-Eintrag“, den ein Testwerkzeug meldet.
+    - "Wenn ein Empfänger Sie unter Berufung auf SORBS ablehnt, teilen Sie seinem Administrator mit, dass die Liste geschlossen ist und aus seiner Konfiguration entfernt werden muss."
+blacklist.psbl:
+  title: Die IP {ip} ist auf PSBL gelistet
+  why: Ihre IP hat an Spamfallen gesendet. SpamAssassin-Filter vergeben Zusatzpunkte für Ihre Nachrichten, solange der Eintrag besteht.
+  fix:
+    - Bereinigen Sie Ihre Versandliste von alten oder nicht genehmigten Adressen.
+    - "Entfernen Sie die IP selbst unter https://psbl.org/remove: Das ist kostenlos und sofort möglich, aber die IP wird erneut gelistet, wenn die Sendungen an Spamfallen weitergehen."
+blacklist.mailspike:
+  title: Die IP {ip} hat bei Mailspike einen schlechten Ruf
+  why: Mailspike stuft {ip} als Versender unerwünschter Post ein. SpamAssassin und andere Filter vergeben Punkte für Ihre Nachrichten.
+  fix:
+    - Prüfen Sie die IP und den Grund unter https://mailspike.io/ip_verify.
+    - Beseitigen Sie die Ursache (plötzliches Volumen, ungültige Adressen, infizierter Rechner).
+    - Nutzen Sie das Entfernungsformular auf derselben Seite, wenn der Eintrag nicht innerhalb von 36 Stunden von selbst erlischt.
+blacklist.spamrats_dyna:
+  title: "Die IP {ip} ist auf SpamRATS Dyna gelistet (wirkt wie eine dynamische IP)"
+  why: Der Reverse DNS von {ip} ({ptr}) wirkt wie der eines Privatkunden. Server, die SpamRATS nutzen, lehnen solche Direktsendungen ab.
+  fix:
+    - Lassen Sie sich von Ihrem Hoster einen eigenen Reverse DNS einrichten, zum Beispiel mail.{domain}, der weder die IP noch Wörter wie dynamic oder pool enthält.
+    - Wenn die IP tatsächlich ein Privatanschluss ist, versenden Sie über einen authentifizierten SMTP-Server.
+    - Beantragen Sie danach die Entfernung unter https://www.spamrats.com/removal.php.
+blacklist.spamrats_noptr:
+  title: Die IP {ip} ist auf SpamRATS NoPtr gelistet (kein Reverse DNS)
+  why: "{ip} hat keinen Reverse DNS. SpamRATS listet die IP allein aus diesem Grund, und große Anbieter bestrafen diesen Mangel ebenfalls."
+  fix:
+    - Lassen Sie Ihren Hoster einen Reverse DNS für {ip} einrichten, zum Beispiel mail.{domain}, und legen Sie den passenden A-Eintrag an.
+    - Beantragen Sie danach die Entfernung unter https://www.spamrats.com/removal.php.
+blacklist.spamrats_spam:
+  title: Die IP {ip} ist auf SpamRATS Spam gelistet
+  why: SpamRATS hat Spam von {ip} beobachtet. Server, die diese Liste nutzen, lehnen Ihre Sendungen ab.
+  fix:
+    - "Suchen Sie die Quelle der Sendungen: gehacktes Konto, missbrauchtes Formular, Liste ohne Einwilligung."
+    - Beantragen Sie nach der Beseitigung der Ursache die Entfernung unter https://www.spamrats.com/removal.php (oder über die Kontaktseite, wenn keine automatische Entfernung angeboten wird).
+blacklist.surbl:
+  title: Eine im Nachrichtentext genannte Domain ist auf SURBL gelistet ({value})
+  why: Ein Link in der Nachricht verweist auf eine Domain, die SURBL mit Spam oder Betrug verbindet. Filter, die Links prüfen, stufen die Nachricht als Spam ein, unabhängig vom Ruf Ihrer IP.
+  fix:
+    - Prüfen Sie die betroffene Domain ({value}) und die Listungskategorie unter https://www.surbl.org/surbl-analysis.
+    - Gehört die Domain Ihnen nicht (Link-Verkürzer, Affiliate-Link, extern gehostetes Bild), entfernen Sie sie aus der Nachricht.
+    - Gehört sie Ihnen, bereinigen Sie die Website und beantragen Sie die Entfernung über das Formular auf derselben Seite.
+blacklist.uribl_black:
+  title: Eine Domain im Nachrichtentext steht auf der URIBL-Sperrliste ({value})
+  why: Eine Domain der Nachricht steht auf der Sperrliste von URIBL. SpamAssassin und andere Filter vergeben dann einen hohen Punktwert für die Nachricht.
+  fix:
+    - Prüfen Sie die Domain ({value}) unter https://lookup.uribl.com.
+    - Entfernen Sie Links auf diese Domain aus der Nachricht, wenn die Domain Ihnen nicht gehört.
+    - Gehört sie Ihnen, beseitigen Sie die Ursache und beantragen Sie die Entfernung unter https://admin.uribl.com (Anmeldung erforderlich).
+blacklist.uribl_grey_red:
+  title: Eine Domain im Nachrichtentext steht auf einer sekundären URIBL-Liste ({value})
+  why: Eine Domain der Nachricht steht auf einer URIBL-Liste mit geringerer Schwere. Die Wirkung ist gering, sie kommt aber zu den anderen ungünstigen Signalen hinzu.
+  fix:
+    - Prüfen Sie die Domain ({value}) und die betreffende Liste unter https://lookup.uribl.com.
+    - "Gehört die Domain Ihnen, stellen Sie sicher, dass Ihre Sendungen nur an Personen gehen, die sie angefordert haben, und beantragen Sie dann die Entfernung unter https://admin.uribl.com."
+blacklist.abusix:
+  title: Die IP {ip} ist bei Abusix Mail Intelligence gelistet
+  why: Abusix hat unerwünschtes Verhalten von {ip} beobachtet. Server und Filter, die seine Daten nutzen, lehnen Ihre Nachrichten ab oder bestrafen sie.
+  fix:
+    - Prüfen Sie den Grund unter https://lookup.abusix.com/.
+    - Beseitigen Sie die Ursache und beantragen Sie danach die Entfernung auf derselben Seite (eine Bestätigung per E-Mail ist erforderlich).
+    - Ohne Antrag läuft der Eintrag in der Regel 5,2 Tage nach dem letzten Ereignis ab.
+blacklist.invaluement:
+  title: "{list_name}: Die IP {ip} oder die Domain {domain} ist bei Invaluement gelistet"
+  why: Invaluement wird von Unternehmensfiltern genutzt. Ein Eintrag dort führt dazu, dass Ihre Nachrichten bei diesen Kunden abgelehnt werden.
+  fix:
+    - Prüfen Sie den Grund unter https://www.invaluement.com/research/.
+    - Beseitigen Sie die Ursache und beantragen Sie danach die Entfernung unter https://www.invaluement.com/removal/.
+blacklist.microsoft_banned_ip:
+  title: Microsoft blockiert die IP {ip}
+  why: Microsoft lehnt Nachrichten von {ip} für alle Domains ab, die bei Microsoft 365 gehostet werden. Ein großer Teil der geschäftlichen Empfänger erhält Ihre Sendungen nicht mehr.
+  fix:
+    - Beseitigen Sie zuerst die Ursache (gehacktes Konto, nicht genehmigte Liste, ungewöhnliches Volumen).
+    - "Öffnen Sie https://sender.office.com, geben Sie eine Kontaktadresse und die IP {ip} ein, klicken Sie auf den erhaltenen Bestätigungslink und danach auf Delist IP."
+    - Rechnen Sie mit bis zu 24 Stunden, manchmal länger, bis die Sperre aufgehoben ist.
+    - Wenn die Ablehnung 5.7.511 anzeigt, leiten Sie die Ablehnungsmeldung an delist@microsoft.com weiter.
+blacklist.query_blocked:
+  title: Die Liste {list_name} konnte nicht abgefragt werden
+  why: "Die Liste hat unsere Anfrage abgelehnt, statt zu antworten. Das sagt nichts über {ip} oder {domain} aus: Diese Prüfung hat für diese Liste einfach nicht stattgefunden."
+  fix:
+    - Keine Aktion Ihrerseits erforderlich. Wenn ein anderes Werkzeug Ihnen mit diesem Code einen Eintrag meldet, handelt es sich um einen Fehlalarm.
+    - "Zur eigenen Prüfung nutzen Sie die Abfrageseite der Liste: {delist_url}."
+blacklist.ip_listed:
+  title: Die IP {ip} ist auf {list_name} gelistet
+  why: Empfangsserver, die {list_name} abfragen, lehnen Nachrichten von {ip} ab oder stufen sie als Spam ein. Eine Liste trägt eine Adresse ein, wenn sie dort missbräuchliche Sendungen oder die Aktivität eines kompromittierten Rechners beobachtet.
+  fix:
+    - "Öffnen Sie die Seite der Liste ({delist_url}): Dort stehen in der Regel Grund und Datum des Eintrags."
+    - "Beseitigen Sie die Ursache, bevor Sie einen Antrag stellen: gehacktes E-Mail-Konto, missbrauchtes Website-Formular, gekaufte oder nicht genehmigte Kontaktliste, falsch konfigurierter Server."
+    - Beantragen Sie die Entfernung nach dem Verfahren der Liste. Manche Listen entfernen die Adresse nach einer Zeit ohne neuen Missbrauch selbst.
+    - "Wenn {ip} zu Ihrem Versanddienst oder Ihrem Hoster gehört, geben Sie ihm den Eintrag weiter: Er muss die Entfernung beantragen."
+blacklist.domain_listed:
+  title: Die Domain {domain} ist auf {list_name} gelistet
+  why: Filter, die {list_name} abfragen, lehnen Nachrichten ab oder stufen sie als Spam ein, die {domain} als Absender oder in einem Link verwenden. Übliche Ursachen sind unverlangte Sendungen oder eine gehackte Website, auf der eine schädliche Seite liegt.
+  fix:
+    - "Öffnen Sie die Seite der Liste ({delist_url}), um den Grund des Eintrags zu erfahren."
+    - Wenn die Website von {domain} gehackt wurde, bereinigen Sie sie und ändern Sie die Passwörter für den Hosting-Zugang.
+    - Wenn Sendungen die Ursache sind, stoppen Sie diejenigen, die an Adressen ohne Einwilligung gehen.
+    - Beantragen Sie danach die Entfernung nach dem Verfahren der Liste.
+blacklist.listed:
+  title: "{value} ist auf {list_name} gelistet"
+  why: Empfangsserver prüfen {list_name}, bevor sie eine Nachricht annehmen. Solange {value} dort steht, können die davon abhängigen Nachrichten als Spam eingestuft oder abgelehnt werden.
+  fix:
+    - "Öffnen Sie die Seite der Liste ({delist_url}), um Grund und Datum des Eintrags zu erfahren."
+    - "Finden und beseitigen Sie die Ursache: gehacktes Konto, missbrauchtes Formular, Versand ohne Einwilligung, kompromittierte Website."
+    - Beantragen Sie danach die Entfernung nach dem Verfahren der Liste.

@@ -1,0 +1,118 @@
+reputation.freemail_from_via_third_party:
+  title: You send with a {domain} address through a service that does not belong to {domain}
+  why: "The message carries a {domain} address but is sent from {provider}, which can neither sign for {domain} nor appear in its SPF. DMARC always fails: with the current policy of {domain} ({value}), the message is filed as junk or rejected."
+  fix:
+    - Buy a domain name in your own name (for example your-company.com) and create an address on it.
+    - Declare this domain in your sending tool and set up SPF, DKIM and DMARC.
+    - "If you like, keep your free address as Reply-To during the transition."
+    - "For a one-off message from a free address, send it from the webmail or the SMTP servers of that mail service, never from a third-party tool."
+  fix_by_provider:
+    wordpress: "In WP Mail SMTP, do not put a gmail.com or orange.fr address in From Email: use an address on the site's domain, or go through the Gmail mailer of the plugin if you insist on the Gmail address."
+    mailchimp: Mailchimp automatically replaces a risky free mail address with an address on its own subdomain (send.mailchimpapp.com or mail.mailchimpapp.com), with replies always going to your address. To send in your name, authenticate your own domain in Website > Domains.
+reputation.domain_very_new:
+  title: The sending domain has just been created
+  why: "{domain} was registered {value} days ago. New domains are heavily used by spammers, who often change them: filters give them little trust as long as they have no sending history."
+  fix:
+    - Start by sending to your most engaged contacts, in small volumes, then increase gradually.
+    - Put a website up on {domain} with the company's identity and legal notices.
+    - Set up SPF, DKIM and DMARC from the first send.
+    - Register {domain} in Gmail Postmaster Tools to track its reputation.
+reputation.from_domain_not_resolvable:
+  title: The sender's domain cannot receive mail
+  why: "{domain} does not exist in DNS or has no receiving server. Replies and non-delivery notices are lost, and many servers refuse a sender they cannot reach."
+  fix:
+    - Check the spelling of the domain in the sender field.
+    - If the domain is correct, add an MX record pointing to your mail service.
+    - If the domain has expired, renew it with your registrar before sending anything further.
+reputation.no_website:
+  title: No website responds on the sender's domain
+  why: https://{domain} does not respond. Orange asks high-volume senders for a website on the From domain with the company's identity, and recipients who want to check who you are find nothing.
+  fix:
+    - Publish at least one page on {domain} with the company name, address, legal notices and privacy policy.
+    - "If your site is on another domain, have https://{domain} redirect to it."
+reputation.from_domain_differs_from_links:
+  title: The sending domain is not that of the website being promoted
+  why: The message is sent from {domain} but mainly links to {value}. Filters and readers do not connect the two, and the reputation of your site does not benefit your mailings.
+  fix:
+    - "Send from your website's domain or from one of its subdomains, for example news.{value}."
+    - If you keep a separate domain, have it redirect to your website and mention it in the footer.
+reputation.lookalike_domain:
+  title: The sending domain resembles that of a well-known brand
+  why: "{domain} closely resembles {value}. Anti-phishing filters watch domains that look like those of major brands, and they heavily penalize mail sent from them."
+  fix:
+    - If this domain has been yours for a long time, publish DMARC at p=reject and a BIMI record to reinforce its identity.
+    - If you bought it recently, send instead from a domain that does not invite confusion.
+reputation.noreply_sender:
+  title: The sender is a “do not reply” address
+  why: Recipients cannot reply to you. Microsoft recommends an address that receives replies, and a reader who cannot reply is more likely to use the “Spam” button.
+  fix:
+    - "Use an address that really receives replies, for example contact@{domain}."
+    - If you keep noreply, add a Reply-To pointing to a mailbox that is actually checked.
+reputation.ip_new_no_history:
+  title: The sending IP has no history yet
+  why: "The IP {ip} is new or has hardly ever sent. Major mail services judge an IP on its history: a large immediate volume from an unknown IP is treated as spam."
+  fix:
+    - Increase the volume gradually over several weeks, starting with your most active contacts.
+    - Monitor temporary rejections (4xx codes) and slow down as soon as they appear.
+    - "If your volume is low, prefer a shared IP from your sending tool, which already has a reputation."
+  fix_by_provider:
+    sendgrid: "Turn on IP Warmup on the dedicated IP in Settings > IP Addresses: SendGrid spreads the volume automatically."
+    amazon_ses: Turn on automatic warm-up (standard auto warm-up) on the dedicated IP pool, or use managed dedicated IPs.
+reputation.shared_esp_identity:
+  title: Your sends carry the signature of {provider}, not yours
+  why: DKIM signs for {dkim_domain} and bounces go to {envelope_domain}, two domains of {provider}. Your reputation then depends on all its customers, and DMARC cannot align with {domain}.
+  fix:
+    - "Authenticate {domain} in {provider}: DKIM with d={domain} and a return domain on a subdomain of {domain}."
+    - Publish the DNS records the tool provides, then run the test again.
+  fix_by_provider:
+    brevo: Settings > Senders, domains & dedicated IPs > Domains > Add a domain, then publish the Brevo records shown.
+    mailchimp: "Website > Domains > Authenticate: publish the DKIM CNAME records provided by Mailchimp."
+    sendgrid: Settings > Sender Authentication > Authenticate Your Domain.
+    mailjet: "In the Mailjet account settings, in the section for sender domains and addresses: add {domain}, then publish the SPF and DKIM records provided."
+reputation.feedback_id_missing:
+  title: The message has no Feedback-ID header
+  why: Without a Feedback-ID, Gmail Postmaster Tools cannot tell you which campaign generates complaints. Orange also asks senders of more than 1,000 messages per day for this header.
+  fix:
+    - "Add a Feedback-ID header: campaign:client:type:SenderID."
+    - Keep the same sender ID (last field, 5 to 15 characters) for your entire stream.
+    - Add the header before the DKIM signature, and sign with a domain verified in Postmaster Tools.
+reputation.feedback_id_malformed:
+  title: The Feedback-ID header is malformed
+  why: The Feedback-ID header does not follow Google's format ({value}). Postmaster Tools will not be able to group complaints, and the feedback loop will be of no use to you.
+  fix:
+    - Keep a single Feedback-ID header per message.
+    - Make the last field a fixed sender ID of 5 to 15 characters.
+    - Never use a value that changes with each message (Message-ID, recipient address).
+    - Include feedback-id in the headers signed by DKIM.
+reputation.postmaster_tools_suggested:
+  title: Track {domain} in Gmail Postmaster Tools
+  why: Postmaster Tools is the only place where Gmail shows your complaint rate and your compliance status with the requirements for bulk senders. Without it, you discover a problem when your messages are already in spam.
+  fix:
+    - Open postmaster.google.com with a Google account, and add {domain}.
+    - Publish the verification TXT record provided in the DNS zone of {domain}.
+    - Check the spam rate and the Compliance status table every week.
+reputation.snds_suggested:
+  title: Track your IP in Microsoft SNDS
+  why: "If {ip} is dedicated to you, Microsoft SNDS shows you how Outlook.com sees its traffic: volume, complaint rate and spam traps. It is the equivalent of Postmaster Tools for Microsoft."
+  fix:
+    - Open sendersupport.olc.protection.outlook.com/snds/ and request access for the IP range that contains {ip}.
+    - Validate the request through the suggested contact address (abuse or postmaster of the IP's domain).
+reputation.yahoo_cfl_suggested:
+  title: Register {dkim_domain} in Yahoo's feedback loop
+  why: Yahoo sends the details of complaints to DKIM domains registered with its Complaint Feedback Loop. Without registration, you do not know which contacts report you, and you keep writing to them.
+  fix:
+    - "Register the signing domain {dkim_domain} at senders.yahooinc.com, in the Complaint Feedback Loop section."
+    - Automatically unsubscribe each contact that appears in the reports received.
+reputation.signal_spam_fbl_suggested:
+  title: Register your IP with the Signal Spam feedback loop
+  why: La Poste forwards its users' complaints through the Signal Spam feedback loop. Without registration, you do not see reports from your recipients at laposte.net.
+  fix:
+    - "Create an account on the Signal Spam professional area and register the IP {ip} or your domain."
+    - Automatically unsubscribe the contacts who report you.
+reputation.bimi_absent:
+  title: No BIMI logo for {domain}
+  why: BIMI displays your logo next to your messages in the mail services that support it. Its absence does not penalize deliverability; it is a bonus for visual identity.
+  fix:
+    - First move the DMARC of {domain} to p=quarantine or p=reject, with pct=100 or without pct.
+    - "Prepare the logo as SVG in the SVG Tiny PS profile (baseProfile='tiny-ps', version='1.2')."
+    - "For Gmail, get a VMC or CMC certificate from a certificate authority, then publish the record default._bimi.{domain} with the logo's address (l=) and the certificate's (a=)."

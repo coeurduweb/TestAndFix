@@ -1,0 +1,434 @@
+/* Domain tools (scanner, DKIM, DMARC, BIMI, MTA-STS, SMTP, RDAP, DNSSEC). Tokens only. */
+
+.dm-report {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s4);
+}
+.dm-report > .block + .block {
+  margin-top: 0;
+}
+.dm-above-hero {
+  max-width: 48rem;
+  margin: 0 auto var(--s5);
+}
+
+/* label with a muted second line */
+.dm-label {
+  display: inline-grid;
+  gap: 1px;
+  min-width: 0;
+}
+.dm-label__mono {
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+.dm-label__sub {
+  font-size: var(--fs-xs);
+  font-weight: 450;
+  color: var(--ink-3);
+}
+.dm-finding {
+  display: grid;
+  gap: var(--s3);
+}
+.dm-finding + .dm-finding {
+  padding-top: var(--s3);
+  border-top: 1px solid var(--rule);
+}
+.dm-finding__title {
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/* links to the detailed page, see also */
+.dm-more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: 2rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.dm-more svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  stroke-width: 2;
+}
+.dm-more:hover {
+  text-decoration: underline;
+}
+.dm-section-foot {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s4);
+  padding-top: var(--s1);
+}
+.dm-seealso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-sm);
+}
+.dm-guess a {
+  font-weight: 600;
+}
+
+/* ---------- DKIM ---------- */
+.dm-selectors {
+  display: grid;
+  gap: var(--s3);
+}
+.dm-selectors .page-form {
+  margin-bottom: 0;
+}
+.dm-tried {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+.dm-tried summary {
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  min-height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+}
+.dm-limits {
+  margin: var(--s3) 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: var(--s2);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  max-width: 72ch;
+}
+.chip.dm-chip-remove {
+  padding-right: var(--s2);
+}
+
+/* ---------- DMARC plan ---------- */
+.dm-plan {
+  list-style: none;
+  margin: var(--s4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s5);
+}
+.dm-plan li {
+  display: grid;
+  gap: var(--s3);
+}
+.dm-plan__when {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.dm-plan__when strong {
+  color: var(--ink);
+}
+
+/* ---------- BIMI preview ---------- */
+.dm-bimi {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+  padding-top: var(--s4);
+}
+@media (min-width: 48rem) {
+  .dm-bimi {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.dm-bimi__frames {
+  display: flex;
+  gap: var(--s4);
+  align-items: flex-end;
+}
+.dm-bimi__frame {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.dm-bimi__square,
+.dm-bimi__round {
+  display: block;
+  object-fit: contain;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+}
+.dm-bimi__square {
+  width: 6rem;
+  height: 6rem;
+  border-radius: var(--radius);
+}
+.dm-bimi__round {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+}
+.dm-inbox {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  max-width: 30rem;
+}
+.dm-inbox__row {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  gap: var(--s3);
+  align-items: center;
+  padding: var(--s2) var(--s3);
+}
+.dm-inbox__row + .dm-inbox__row {
+  border-top: 1px solid var(--rule);
+}
+.dm-inbox__avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: contain;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+}
+.dm-inbox__initial {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--paper-3);
+  color: var(--ink-2);
+  font-weight: 650;
+}
+.dm-inbox__from {
+  font-weight: 650;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+}
+.dm-inbox__from svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--lab);
+}
+.dm-inbox__subject {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dm-inbox__time {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+}
+
+/* ---------- DNSSEC chain ---------- */
+.dm-chain-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s1);
+}
+.dm-chain-label svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  color: var(--ink-3);
+  align-self: center;
+}
+.dm-sub-table {
+  overflow-x: auto;
+}
+.dm-sub-table .data-table td,
+.dm-sub-table .data-table th {
+  padding: 0.3rem var(--s2);
+}
+.dm-sub-table .data-table td {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+}
+.dm-digest {
+  max-width: 22ch;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- SMTP transcript ---------- */
+.dm-transcript {
+  max-height: 18rem;
+  overflow: auto;
+}
+.dm-label--child {
+  padding-left: var(--s3);
+}
+
+.dm-report .field__hint a,
+.dm-report p .mono,
+.dm-wrap {
+  overflow-wrap: anywhere;
+}
+.dm-note {
+  padding-top: var(--s3);
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+.dm-after-preview {
+  margin-top: var(--s4);
+}
+/* a link whose text can wrap: the arrow follows the last word instead of floating at the far right */
+.dm-more--inline {
+  display: inline;
+}
+.dm-more--inline svg {
+  display: inline-block;
+  vertical-align: -0.12em;
+  margin-left: 0.25em;
+}
+
+/* ---------- scanner tiles: compact solid surfaces, a lit dot, the measure in mono ---------- */
+.dm-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  gap: var(--s2);
+}
+.dm-tile {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--s3) var(--s3) var(--s2);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--edge);
+}
+.dm-tile__title {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+}
+.dm-tile__title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.dm-tile__title a:hover {
+  text-decoration: underline;
+}
+.dm-tile__line {
+  min-height: 2.4em;
+  font: 500 var(--fs-xs) / 1.45 var(--font-mono);
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.dm-tile__link {
+  min-height: 1.75rem;
+  font-size: var(--fs-xs);
+}
+@media (min-width: 48rem) {
+  .dm-tabs__list {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+@media (max-width: 30rem) {
+  .dm-tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ---------- scanner: one surface, one tab per section ---------- */
+.dm-tabs {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+}
+.dm-tabs__list {
+  display: flex;
+  gap: var(--s1);
+  padding: var(--s2);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--rule);
+}
+.dm-tabs__list button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: none;
+  min-height: 2rem;
+  padding: 0 var(--s3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-3);
+  font: 600 var(--fs-sm) var(--font-ui);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
+}
+.dm-tabs__list button:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+.dm-tabs__list button[aria-selected='true'] {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+.dm-panel {
+  display: grid;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s4);
+}
+.dm-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s1) var(--s3);
+  font-size: var(--fs-sm);
+}
+.dm-panel__head .mono {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.dm-tech {
+  gap: var(--s2);
+}
+.dm-tech .details {
+  scroll-margin-top: 5rem;
+}
+/* cards and their links never widen the column past the phone screen */
+.dm-report .issues {
+  grid-template-columns: minmax(0, 1fr);
+}
+.dm-report .dm-more {
+  display: inline;
+  overflow-wrap: anywhere;
+}
+.dm-report .dm-more svg {
+  display: inline-block;
+  vertical-align: -0.15em;
+  margin-left: var(--s1);
+}
+.dm-report .issue {
+  grid-template-columns: minmax(0, 1fr);
+}
+.dm-report .issue__title,
+.dm-report .issue__why,
+.dm-report .issue__steps,
+.dm-report .issue__provider,
+.dm-report .issue__details,
+.dm-report .field__hint {
+  overflow-wrap: anywhere;
+}

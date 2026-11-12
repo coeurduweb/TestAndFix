@@ -1,0 +1,31 @@
+From: "Atelier Exemple" <contact@atelier-exemple.fr>
+To: t-abcd2345@check.localhost
+Subject: Votre devis pour la terrasse
+Date: Tue, 10 Nov 2026 15:58:00 +0100
+Message-ID: <20261110155800.4821@mail.atelier-exemple.fr>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1"
+
+--b1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Bonjour Madame Martin,
+
+Comme convenu au t=C3=A9l=C3=A9phone, voici le devis pour la terrasse en bois de
+votre maison. Les travaux peuvent commencer la semaine du 23 novembre si le
+devis vous convient. Vous pouvez le consulter ici :
+https://www.atelier-exemple.fr/devis/2026-118
+
+Bien cordialement,
+Paul, Atelier Exemple
+
+--b1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html><html lang=3D"fr"><body><p>Bonjour Madame Martin,</p>
+<p>Comme convenu au t=C3=A9l=C3=A9phone, voici le devis pour la terrasse en bois de votre maison. Les travaux peuvent commencer la semaine du 23 novembre si le devis vous convient. Vous pouvez le <a href=3D"https://www.atelier-exemple.fr/devis/2026-118">consulter ici</a>.</p>
+<p>Bien cordialement,<br>Paul, Atelier Exemple</p></body></html>
+
+--b1--

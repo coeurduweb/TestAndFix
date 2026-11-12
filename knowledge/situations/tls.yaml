@@ -1,0 +1,425 @@
+# Famille tls : chiffrement du transport SMTP. Deux sens sont testés :
+# 1. à l'envoi, la connexion du serveur expéditeur ({ip}) vers notre serveur de test ;
+# 2. à la réception, ce que les MX de {domain} offrent aux expéditeurs (STARTTLS, certificat,
+#    DANE). Le second sens ne joue pas sur le classement du message testé, mais sur la
+#    capacité de {domain} à recevoir réponses et rejets en sécurité.
+
+- id: tls.inbound_plaintext
+  family: tls
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "smtp.session.tls == false"
+    notes: "Le serveur expéditeur n'a pas utilisé STARTTLS alors que notre serveur le propose. Visible aussi dans l'en-tête Received ajouté par notre serveur (with ESMTP au lieu de with ESMTPS, RFC 3848). Gmail exige une connexion TLS de tous les expéditeurs."
+  sa_rules: []
+  title: "Le message a été transmis sans chiffrement TLS"
+  why: >
+    Votre serveur a envoyé le message en clair alors que le destinataire proposait le
+    chiffrement. Gmail exige une connexion TLS de tous les expéditeurs, et le contenu peut
+    être lu en chemin.
+  fix:
+    - "Activez le chiffrement opportuniste (STARTTLS) pour les envois sortants de votre serveur."
+    - "Vérifiez qu'une bibliothèque TLS récente est installée et que le serveur n'est pas réglé pour désactiver TLS vers certains domaines."
+    - "Refaites le test : l'en-tête Received doit indiquer with ESMTPS."
+  fix_by_provider:
+    postfix: "Dans main.cf, réglez smtp_tls_security_level = may (et smtp_tls_loglevel = 1 pour suivre), puis postfix reload."
+    exim: "Dans le transport remote_smtp, laissez hosts_try_tls = * (valeur par défaut) et vérifiez qu'aucun hosts_avoid_tls ne vise le destinataire."
+    wordpress: "Dans votre extension SMTP, choisissez le chiffrement TLS (port 587) ou SSL (port 465), jamais « Aucun »."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3207
+    - https://www.rfc-editor.org/rfc/rfc3848
+    - https://support.google.com/a/answer/81126
+    - https://www.postfix.org/postconf.5.html#smtp_tls_security_level
+
+- id: tls.inbound_old_version
+  family: tls
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "smtp.session.tls == true && smtp.session.tls_version in ['SSLv3', 'TLSv1', 'TLSv1.1']"
+    notes: "La RFC 8996 interdit TLS 1.0 et TLS 1.1 (MUST NOT). Le serveur expéditeur n'a pas su négocier TLS 1.2 ou 1.3 avec notre serveur."
+  sa_rules: []
+  title: "Le message a été transmis en {value}, une version de TLS obsolète"
+  why: >
+    TLS 1.0 et 1.1 sont abandonnés depuis la RFC 8996. Les serveurs de réception les
+    refusent de plus en plus : votre serveur risque alors de repasser en clair ou de ne plus
+    pouvoir livrer.
+  fix:
+    - "Mettez à jour le système et la bibliothèque TLS (OpenSSL, GnuTLS) du serveur d'envoi."
+    - "Autorisez TLS 1.2 et TLS 1.3 dans la configuration du logiciel d'envoi."
+    - "Refaites le test et vérifiez la version affichée dans l'en-tête Received."
+  fix_by_provider:
+    postfix: "Dans main.cf, réglez smtp_tls_protocols = >=TLSv1.2 (Postfix 3.6 ou plus récent ; sinon !SSLv2, !SSLv3, !TLSv1, !TLSv1.1), puis postfix reload."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8996
+    - https://www.rfc-editor.org/rfc/rfc9325
+    - https://www.postfix.org/postconf.5.html#smtp_tls_protocols
+
+- id: tls.inbound_weak_cipher
+  family: tls
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "smtp.session.cipher matches /RC4|3DES|DES-CBC|NULL|EXPORT|anon/i"
+    notes: "La RFC 9325 (BCP 195) interdit les suites NULL, RC4, export et anonymes, et déconseille 3DES."
+  sa_rules: []
+  title: "La connexion TLS a utilisé une suite de chiffrement faible ({value})"
+  why: >
+    Le chiffrement négocié par votre serveur est cassé ou trop faible pour protéger le
+    message. Il signale aussi un logiciel ancien, que les destinataires finiront par refuser.
+  fix:
+    - "Mettez à jour la bibliothèque TLS du serveur d'envoi."
+    - "Retirez de la configuration les suites RC4, 3DES, NULL, export et anonymes."
+  fix_by_provider:
+    postfix: "Dans main.cf, réglez smtp_tls_ciphers = medium et smtp_tls_exclude_ciphers = aNULL, eNULL, RC4, 3DES, MD5, puis postfix reload."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9325#section-4.1
+
+- id: tls.submission_without_tls
+  family: tls
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(r.with == 'ESMTPA' for r in received)"
+    notes: "RFC 3848 : with ESMTPA signale une session authentifiée sans TLS (ESMTPSA = authentifiée et chiffrée). Le mot de passe du compte d'envoi a circulé en clair. La RFC 8314 recommande la soumission en TLS implicite (port 465)."
+  sa_rules: []
+  title: "Le mot de passe d'envoi a circulé sans chiffrement"
+  why: >
+    Votre logiciel s'est authentifié auprès du serveur d'envoi sans TLS. Quiconque écoute le
+    réseau peut récupérer l'identifiant et s'en servir pour envoyer du spam à votre nom, ce
+    qui ruinerait la réputation de {domain}.
+  fix:
+    - "Dans votre logiciel de messagerie ou votre application, choisissez le port 465 avec SSL/TLS, ou le port 587 avec STARTTLS obligatoire."
+    - "Changez le mot de passe du compte, puisqu'il a pu être intercepté."
+    - "Côté serveur, refusez l'authentification sans TLS."
+  fix_by_provider:
+    postfix: "Côté serveur de soumission, réglez smtpd_tls_auth_only = yes dans main.cf."
+    wordpress: "Dans votre extension SMTP, sélectionnez le chiffrement SSL (465) ou TLS (587)."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3848
+    - https://www.rfc-editor.org/rfc/rfc8314#section-3
+    - https://www.postfix.org/postconf.5.html#smtpd_tls_auth_only
+
+- id: tls.mx_no_starttls
+  family: tls
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any('STARTTLS' not in smtp.ehlo(mx.host).extensions for mx in dns.MX(domain))"
+    notes: "Test EHLO sur le port 25 de chaque MX de {domain}."
+  sa_rules: []
+  title: "Le serveur de réception de {domain} ne propose pas le chiffrement"
+  why: >
+    Les messages envoyés à {domain} circulent en clair. Les expéditeurs qui exigent TLS
+    (MTA-STS, politiques internes) ne peuvent pas vous livrer, et les réponses à vos envois
+    sont lisibles en chemin.
+  fix:
+    - "Installez un certificat sur le serveur de réception (Let's Encrypt convient) pour le nom utilisé dans le MX."
+    - "Activez STARTTLS sur le port 25 du serveur."
+    - "Refaites le test : la réponse EHLO doit contenir STARTTLS."
+  fix_by_provider:
+    postfix: "Dans main.cf, renseignez smtpd_tls_cert_file et smtpd_tls_key_file, puis smtpd_tls_security_level = may, et postfix reload."
+    exim: "Renseignez tls_certificate et tls_privatekey et laissez tls_advertise_hosts = * dans la configuration principale."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3207
+    - https://www.postfix.org/postconf.5.html#smtpd_tls_security_level
+
+- id: tls.mx_starttls_broken
+  family: tls
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "any('STARTTLS' in smtp.ehlo(mx.host).extensions && smtp.starttls(mx.host).handshake == fail for mx in dns.MX(domain))"
+    notes: "STARTTLS est annoncé mais la négociation échoue (certificat illisible, protocole incompatible, clé absente). Beaucoup d'expéditeurs réessaient alors en clair, d'autres abandonnent."
+  sa_rules: []
+  title: "Le chiffrement annoncé par le MX de {domain} échoue"
+  why: >
+    Le serveur de {domain} propose TLS mais la négociation échoue. Selon l'expéditeur, le
+    message est retardé, livré en clair ou abandonné : vous perdez une partie du courrier
+    entrant.
+  fix:
+    - "Consultez le journal du serveur de réception au moment du test pour lire l'erreur TLS."
+    - "Vérifiez que les fichiers de certificat et de clé existent, sont lisibles par le service et correspondent."
+    - "Activez TLS 1.2 et TLS 1.3 et redémarrez le service."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc3207#section-4.1
+
+- id: tls.mx_old_version_only
+  family: tls
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(max(smtp.starttls(mx.host).supported_versions) < 'TLSv1.2' for mx in dns.MX(domain))"
+    notes: "Le MX n'accepte que TLS 1.0 ou 1.1, interdits par la RFC 8996."
+  sa_rules: []
+  title: "Le MX de {domain} n'accepte que des versions de TLS obsolètes"
+  why: >
+    Les expéditeurs à jour refusent TLS 1.0 et 1.1. Avec ce serveur, ils livrent en clair ou
+    ne livrent plus du tout, notamment ceux qui appliquent MTA-STS.
+  fix:
+    - "Mettez à jour le système et la bibliothèque TLS du serveur de réception."
+    - "Activez TLS 1.2 et TLS 1.3 dans la configuration SMTP."
+  fix_by_provider:
+    postfix: "Dans main.cf, réglez smtpd_tls_protocols = >=TLSv1.2 (Postfix 3.6 ou plus récent), puis postfix reload."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8996
+
+- id: tls.mx_cert_expired
+  family: tls
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: "any(smtp.starttls(mx.host).cert.not_after < now for mx in dns.MX(domain))"
+    notes: "En TLS opportuniste, la plupart des expéditeurs livrent quand même ; avec MTA-STS en mode enforce ou DANE, ils refusent de livrer."
+  sa_rules: []
+  title: "Le certificat TLS du MX de {domain} a expiré"
+  why: >
+    Les expéditeurs qui vérifient le certificat, par exemple parce que {domain} publie une
+    politique MTA-STS, refusent de livrer. Les autres livrent sans garantie d'identité.
+  fix:
+    - "Renouvelez le certificat du serveur de réception."
+    - "Automatisez le renouvellement (certbot renew ou équivalent) et rechargez le service SMTP après chaque renouvellement."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-4.1
+
+- id: tls.mx_cert_expiring
+  family: tls
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "any(smtp.starttls(mx.host).cert.not_after - now < 14 days for mx in dns.MX(domain))"
+    notes: "Avertissement préventif."
+  sa_rules: []
+  title: "Le certificat TLS du MX de {domain} expire bientôt"
+  why: >
+    Dans moins de deux semaines, les expéditeurs qui vérifient le certificat ne pourront plus
+    livrer à {domain}.
+  fix:
+    - "Vérifiez que le renouvellement automatique fonctionne (par exemple certbot renew --dry-run)."
+    - "Contrôlez que le service SMTP recharge le nouveau certificat, pas seulement le serveur web."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-4.1
+
+- id: tls.mx_cert_self_signed
+  family: tls
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "any(smtp.starttls(mx.host).cert.chain_valid == false && smtp.starttls(mx.host).cert.self_signed for mx in dns.MX(domain))"
+    notes: "Accepté en TLS opportuniste, refusé par MTA-STS (RFC 8461 §4.1 exige un certificat valide émis par une autorité de confiance). Sans effet avec DANE-EE(3)."
+  sa_rules: []
+  title: "Le MX de {domain} présente un certificat auto-signé"
+  why: >
+    Un certificat auto-signé chiffre la connexion sans prouver l'identité du serveur. Vous ne
+    pourrez pas activer MTA-STS, et les expéditeurs qui l'exigent ne vous livreront pas.
+  fix:
+    - "Remplacez le certificat par un certificat d'une autorité reconnue (Let's Encrypt est gratuit) pour le nom du MX."
+    - "Si vous utilisez DANE, publiez le TLSA correspondant au nouveau certificat avant de l'installer."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-4.1
+
+- id: tls.mx_cert_name_mismatch
+  family: tls
+  severity: low
+  penalty: 0.3
+  detect:
+    signal: "any(mx.host not in smtp.starttls(mx.host).cert.names for mx in dns.MX(domain))"
+    notes: "Le certificat présenté ne couvre pas le nom cité dans le MX (ni en nom principal, ni en nom alternatif, ni par joker)."
+  sa_rules: []
+  title: "Le certificat du MX de {domain} ne porte pas le bon nom"
+  why: >
+    Le certificat a été émis pour un autre nom que celui de votre MX. Les expéditeurs qui
+    vérifient l'identité du serveur, dont ceux qui appliquent MTA-STS, refuseront de livrer.
+  fix:
+    - "Émettez un certificat qui couvre exactement le nom du MX (par exemple mx1.{domain})."
+    - "Ou modifiez le MX pour qu'il désigne le nom couvert par le certificat actuel."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8461#section-4.1
+    - https://www.rfc-editor.org/rfc/rfc6125
+
+- id: tls.mx_cert_chain_incomplete
+  family: tls
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "any(smtp.starttls(mx.host).cert.chain_valid == false && smtp.starttls(mx.host).cert.missing_intermediate for mx in dns.MX(domain))"
+    notes: "Le serveur n'envoie pas le certificat intermédiaire : les clients qui ne le possèdent pas déjà ne peuvent pas valider la chaîne."
+  sa_rules: []
+  title: "Le MX de {domain} n'envoie pas la chaîne de certificats complète"
+  why: >
+    Il manque le certificat intermédiaire. Une partie des expéditeurs ne peut pas vérifier
+    votre certificat, ce qui suffit à bloquer leurs envois si {domain} publie MTA-STS.
+  fix:
+    - "Configurez le serveur avec le fichier qui contient le certificat suivi des intermédiaires (fullchain.pem avec Let's Encrypt)."
+    - "Redémarrez le service SMTP et refaites le test."
+  fix_by_provider:
+    postfix: "Faites pointer smtpd_tls_cert_file vers fullchain.pem et non vers cert.pem, puis postfix reload."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8446#section-4.4.2
+
+- id: tls.dane_tlsa_mismatch
+  family: tls
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "dnssec.secure(_25._tcp.mx.host TLSA) && none(tlsa.matches(smtp.starttls(mx.host).cert) for tlsa in dns.TLSA('_25._tcp.' + mx.host))"
+    notes: "RFC 7672 §2.2 : avec un TLSA signé et utilisable, l'expéditeur DANE doit authentifier le serveur ; en cas d'échec il passe au MX suivant ou retarde la livraison. Typique après un renouvellement de certificat avec changement de clé."
+  sa_rules: []
+  title: "Les enregistrements TLSA (DANE) du MX de {domain} ne correspondent plus au certificat"
+  why: >
+    Les expéditeurs qui valident DANE refusent de livrer à {domain} tant que le TLSA ne
+    correspond pas au certificat présenté : ils retardent le message puis le renvoient en
+    erreur.
+  fix:
+    - "Calculez l'empreinte de la clé publique du certificat actuel (usage 3 1 1 : DANE-EE, SPKI, SHA-256)."
+    - "Publiez ce nouveau TLSA à côté de l'ancien dans _25._tcp.<nom du MX>."
+    - "Lors des prochains renouvellements, réutilisez la même clé (certbot --reuse-key) ou publiez le TLSA de la future clé avant de l'installer."
+  example_good: "_25._tcp.mx1.{domain}. IN TLSA 3 1 1 <empreinte SHA-256 de la clé publique>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7672#section-2.2
+    - https://www.rfc-editor.org/rfc/rfc7671#section-8.1
+
+- id: tls.dane_unsigned
+  family: tls
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dns.TLSA('_25._tcp.' + mx.host) != [] && dnssec.secure(mx.host) == false"
+    notes: "RFC 7672 : un TLSA non validé par DNSSEC est ignoré."
+  sa_rules: []
+  title: "Le MX de {domain} publie des TLSA dans une zone non signée"
+  why: >
+    Sans DNSSEC, les expéditeurs ignorent vos enregistrements TLSA : ils ne vous apportent
+    aucune protection et donnent une fausse impression de sécurité.
+  fix:
+    - "Activez DNSSEC sur la zone qui porte le nom du MX, puis publiez le DS chez le registraire."
+    - "Ou supprimez les TLSA tant que la zone n'est pas signée."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7672#section-2.2
+
+- id: tls.dane_pkix_usage
+  family: tls
+  severity: info
+  penalty: 0.1
+  detect:
+    signal: "any(tlsa.usage in [0, 1] for tlsa in dns.TLSA('_25._tcp.' + mx.host))"
+    notes: "RFC 7672 §3.1.3 : pour SMTP sur le port 25, les TLSA d'usage PKIX-TA(0) et PKIX-EE(1) SHOULD NOT être publiés ; la RFC recommande DANE-EE(3) SPKI(1) SHA2-256(1)."
+  sa_rules: []
+  title: "Les TLSA du MX de {domain} utilisent un usage déconseillé pour SMTP"
+  why: >
+    Les usages 0 et 1 reposent sur les autorités de certification, sur lesquelles les
+    serveurs de messagerie ne s'accordent pas. Les expéditeurs DANE peuvent les traiter comme
+    inutilisables.
+  fix:
+    - "Remplacez ces enregistrements par un TLSA 3 1 1 calculé sur la clé publique du certificat."
+    - "Gardez l'ancien et le nouveau en parallèle le temps du TTL, puis retirez l'ancien."
+  example_bad: "_25._tcp.mx1.{domain}. IN TLSA 1 0 1 <empreinte>"
+  example_good: "_25._tcp.mx1.{domain}. IN TLSA 3 1 1 <empreinte>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc7672#section-3.1.3
+
+# Fiches ajoutées le 2026-11-10 : certificat HTTPS des sites visités par le vérificateur de
+# lien (tls.web_cert_*). Ici {domain} est le nom d'hôte du site, {url} son adresse https et
+# {value} l'émetteur du certificat (ou son âge pour tls.web_cert_recent_free). Deux lecteurs :
+# la personne qui vérifie un lien reçu, puis le propriétaire du site.
+
+- id: tls.web_cert_expired
+  family: tls
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "tls.cert(host).not_after < now"
+    notes: "Certificat du site expiré. Les navigateurs affichent une page d'alerte avant d'ouvrir le site."
+  sa_rules: []
+  title: "Le certificat HTTPS de {domain} a expiré"
+  why: >
+    Le navigateur affiche une alerte de sécurité sur {url}. Un site entretenu ne laisse pas
+    expirer son certificat : le site est abandonné, ou ce n'est pas celui qu'il prétend être.
+  fix:
+    - "Ne passez pas outre l'alerte du navigateur pour saisir des informations sur ce site."
+    - "Si le site est le vôtre, renouvelez le certificat (émetteur actuel : {value}) puis automatisez le renouvellement, par exemple avec certbot renew dans une tâche planifiée."
+    - "Vérifiez ensuite que le serveur web a bien été rechargé et sert le nouveau certificat."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5280#section-4.1.2.5
+    - https://letsencrypt.org/docs/
+
+- id: tls.web_cert_self_signed
+  family: tls
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "tls.cert(host).issuer == tls.cert(host).subject && !tls.cert(host).trusted"
+    notes: "Certificat auto-signé : il n'est garanti par aucune autorité de certification reconnue."
+  sa_rules: []
+  title: "Le certificat HTTPS de {domain} est auto-signé"
+  why: >
+    Aucune autorité reconnue ne garantit ce certificat : n'importe qui peut en fabriquer un
+    au nom de {domain}. Le navigateur affiche une alerte de sécurité et le chiffrement ne
+    prouve rien sur l'identité du site.
+  fix:
+    - "Ne passez pas outre l'alerte du navigateur pour saisir des informations sur ce site."
+    - "Si le site est le vôtre, remplacez le certificat par un certificat d'une autorité reconnue pour {domain} : Let's Encrypt en délivre gratuitement, et la plupart des hébergeurs l'installent depuis leur panneau."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc5280#section-6
+    - https://letsencrypt.org/getting-started/
+
+- id: tls.web_cert_name_mismatch
+  family: tls
+  severity: high
+  penalty: 1.5
+  detect:
+    signal: "host not in tls.cert(host).subject_alt_names (joker compris)"
+    notes: "Le certificat présenté ne couvre pas le nom visité (RFC 9525 §6.3). Cas courant : hébergement mutualisé qui sert le certificat d'un autre site, ou sous-domaine oublié lors de l'émission."
+  sa_rules: []
+  title: "Le certificat présenté n'est pas celui de {domain}"
+  why: >
+    Le serveur présente un certificat établi pour un autre nom que {domain}. Le navigateur
+    affiche une alerte : soit le site est mal configuré, soit l'adresse ne mène pas au
+    service attendu.
+  fix:
+    - "Ne passez pas outre l'alerte du navigateur pour saisir des informations sur ce site."
+    - "Si le site est le vôtre, émettez un certificat qui couvre exactement {domain} (et la variante avec ou sans www si les deux sont utilisées)."
+    - "Sur un hébergement mutualisé, vérifiez que le domaine est bien rattaché au site et que le certificat a été demandé pour lui dans le panneau de l'hébergeur."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9525#section-6.3
+
+- id: tls.web_cert_untrusted
+  family: tls
+  severity: medium
+  penalty: 1.0
+  detect:
+    signal: "!tls.cert(host).trusted && !self_signed && name_matches && !expired"
+    notes: "La chaîne ne remonte pas à une autorité reconnue : certificat intermédiaire manquant, ou autorité absente des magasins de confiance. RFC 8446 §4.4.2 : le serveur envoie son certificat suivi de ceux qui le certifient."
+  sa_rules: []
+  title: "Le certificat HTTPS de {domain} n'est pas reconnu"
+  why: >
+    La chaîne de certificats de {url} ne remonte pas à une autorité reconnue (émetteur :
+    {value}). Le plus souvent, le serveur n'envoie pas le certificat intermédiaire : certains
+    navigateurs et logiciels affichent alors une alerte, d'autres non.
+  fix:
+    - "Si vous recevez ce lien, méfiez-vous d'une alerte du navigateur sur ce site et n'y saisissez rien en cas de doute."
+    - "Si le site est le vôtre, configurez le serveur avec la chaîne complète fournie par l'autorité (fichier fullchain.pem avec Let's Encrypt), puis rechargez le serveur web."
+    - "Si l'autorité n'est pas reconnue du tout, remplacez le certificat par celui d'une autorité reconnue."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc8446#section-4.4.2
+    - https://www.rfc-editor.org/rfc/rfc5280#section-6
+
+- id: tls.web_cert_recent_free
+  family: tls
+  severity: medium
+  penalty: 0.7
+  detect:
+    signal: "tls.cert(host).issuer in config.free_cas && tls.cert(host).age < 7 days && rdap(domain).age < 90 days"
+    notes: "Certificat d'une autorité gratuite émis il y a moins de 7 jours, sur un domaine créé il y a moins de 90 jours (seuils internes de l'outil). Le certificat est valide : c'est le contexte qui est suspect, pas l'autorité."
+  sa_rules: []
+  title: "Certificat gratuit émis il y a {value} pour un domaine récent"
+  why: >
+    Un certificat gratuit est normal et sûr en soi. Mais un certificat de quelques jours sur
+    un domaine de quelques semaines est le profil d'un site monté pour une campagne
+    d'hameçonnage : le cadenas du navigateur ne dit rien de l'honnêteté du site.
+  fix:
+    - "Ne vous fiez pas au cadenas : vérifiez que le nom de domaine {domain} est bien celui du service que vous attendez."
+    - "En cas de doute, ouvrez le service en tapant vous-même son adresse officielle."
+    - "Si le site est le vôtre et vient d'être lancé, ce signal disparaîtra de lui-même avec l'âge du domaine."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc6962

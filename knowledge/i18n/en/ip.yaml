@@ -1,0 +1,72 @@
+ip.not_public:
+  title: The address {ip} is not a public address
+  why: "{ip} falls into this category: {value}. It is not a sending address on the Internet: no blocklist or reputation service knows it, and it is not the address that recipients of your messages see."
+  fix:
+    - "Find the public address your messages leave from: in the headers of a received message, look for the Received header added by the first server outside your network. The IP in square brackets after from is your outgoing address."
+    - Or ask your host or your sending service for the outgoing IP address of your messages.
+    - Run the check again with this public address.
+ip.virustotal_flagged:
+  title: "{value} VirusTotal engine(s) flag the IP {ip} as malicious"
+  why: VirusTotal aggregates dozens of security lists. A single engine is often wrong. Several engines agreeing usually means malicious content hosted at this address, or a compromised machine.
+  fix:
+    - "Open {url}: the Detection tab shows which engines flag the address and with what verdict."
+    - If the address is yours, look for a hacked site or a malicious file hosted there, remove it, then run the scan again on VirusTotal.
+    - "For an engine that is wrong, write to that engine's vendor with the link to the VirusTotal page: VirusTotal says it cannot change the results itself."
+ip.otx_pulses:
+  title: The IP {ip} appears in {value} OTX indicator collection(s)
+  why: "OTX AlienVault collections (pulses) are published by community members. Appearing in one is a signal to read, not a verdict: a shared or reassigned address often shows up in collections unrelated to its current use."
+  fix:
+    - Open {url} and look at the date and subject of each collection.
+    - Only consider recent collections about spam, phishing or malware. If the address is yours, look for the cause as you would for an abuse report.
+ip.prefix_not_announced:
+  title: No network announces the address {ip} on the Internet
+  why: "The routing tables observed by RIPEstat contain no route to {ip}. An address that is not announced can neither send nor receive mail on the Internet. This is often a typo, or an address returned by its former holder."
+  fix:
+    - "Check the address you entered: compare it with the one your host gives you, or with the one in the Received header added by the first external server in a received message."
+    - If the address is yours and was just assigned, ask your host whether the prefix is announced, then run the check again later.
+ip.abuseipdb_reported:
+  title: The IP {ip} is reported on AbuseIPDB (score {value}%)
+  why: "Administrators have reported {ip} for abuse: spam, attacks, port scanning. A few old reports on a shared IP are common. A high score indicates recent and repeated activity."
+  fix:
+    - Open {url} and read the categories and comments of the reports, with their dates.
+    - If the address is yours, look for the compromised machine or account (stolen password, hacked site, open SMTP server) and fix the cause.
+    - "Do not wait for a removal on request: AbuseIPDB does not document a removal procedure for the address holder. The weight of reports decreases over time, and the score drops once the abuse stops."
+    - If the address belongs to your host or your sending service, send them the link {url}.
+ip.domain_not_found:
+  title: The domain {domain} does not exist
+  why: The authoritative DNS servers answer that {domain} does not exist (NXDOMAIN). A name that does not exist can neither receive nor send mail, and no source can judge its reputation.
+  fix:
+    - Check the spelling of the name you entered.
+    - If the domain is yours, check with your registrar that it is registered, has not expired, and that its DNS servers are declared.
+ip.domain_ip_listed:
+  title: The IP {ip} of the {value} {host} is listed on {list_name}
+  why: "This address serves {domain}. The IP of a mail server listed on {list_name} has its messages refused or filed as junk by the servers that consult this list. The IP of a listed website usually indicates shared hosting with abusive sites, or a compromised site."
+  fix:
+    - Read the reason and the removal procedure in the entry for the address {ip}, further down this page.
+    - "If the address belongs to your host or your mail service, pass the listing on to them: it is up to them to request removal."
+    - If the server is yours, fix the cause (compromised account or site, unsolicited sending) before requesting removal at {delist_url}.
+ip.domain_recent:
+  title: The domain {domain} was created {value} ago
+  why: "A domain less than 30 days old has no history yet: mail filters give it little trust, and phishing campaigns precisely use new domains."
+  fix:
+    - If the domain is yours, gradually increase your sending volume and publish SPF, DKIM and DMARC from the start.
+    - If the domain presents itself as that of a known service, compare it with that service's official domain.
+ip.domain_safe_browsing:
+  title: Google Safe Browsing classifies the domain {domain} as dangerous ({value})
+  why: Google has listed the home page of {domain} in its lists of dangerous sites. Browsers that use Safe Browsing, including Chrome, show a red warning page for this address.
+  fix:
+    - "If the domain is yours, the site has probably been hacked: clean it up, then request a review in Google Search Console, Security issues report."
+    - Otherwise, do not enter any information on this site.
+ip.domain_virustotal:
+  title: "{value} VirusTotal engine(s) classify the domain {domain} as malicious"
+  why: VirusTotal aggregates dozens of security lists. A single engine is often wrong. Several engines agreeing usually means a site that hosts, or has hosted, malicious content.
+  fix:
+    - "Open the VirusTotal page {url}: the Detection tab shows which engines flag the domain and with what verdict."
+    - If the domain is yours, look for a hacked site or a malicious file hosted there, remove it, then run the scan again on VirusTotal.
+    - For an engine that is wrong, write to that engine's vendor with the link to the VirusTotal page.
+ip.domain_urlhaus:
+  title: URLhaus lists {value} malicious address(es) on {domain}
+  why: "URLhaus, maintained by abuse.ch, lists addresses that distribute malware. Files from {domain} are listed there: the site hosts, or has hosted, malware."
+  fix:
+    - If the site is yours, open the URLhaus page {url} to see the addresses concerned, delete these files, and fix the vulnerability that allowed them to be uploaded.
+    - Change the passwords used to access the site (FTP, administration, database) and update the extensions.

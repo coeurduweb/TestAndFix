@@ -1,0 +1,23 @@
+From: La lettre Exemple <lettre@atelier-exemple.fr>
+To: t-abcd2345@check.localhost
+Subject: La lettre de novembre
+Date: Tue, 10 Nov 2026 15:58:00 +0100
+Message-ID: <nl-2026-11@atelier-exemple.fr>
+List-Id: Lettre Exemple <lettre.atelier-exemple.fr>
+List-Unsubscribe: <https://www.atelier-exemple.fr/desinscription?u=42>, <mailto:desinscription@atelier-exemple.fr>
+Precedence: bulk
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="nl"
+
+--nl
+Content-Type: text/plain; charset=utf-8
+
+Ce mois-ci, nous vous presentons nos ateliers de menuiserie et le calendrier des portes ouvertes de decembre.
+Se desinscrire : https://www.atelier-exemple.fr/desinscription?u=42
+
+--nl
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>Ce mois-ci, nous vous presentons nos ateliers de menuiserie et le calendrier des portes ouvertes de decembre.</p><p><a href="https://www.atelier-exemple.fr/desinscription?u=42">Se desinscrire</a></p></body></html>
+
+--nl--

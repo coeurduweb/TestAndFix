@@ -1,0 +1,143 @@
+content.no_text_part:
+  title: Die Nachricht hat keine Textversion
+  why: Die Nachricht enthält nur HTML. Spamfilter werten das Fehlen einer Textversion als Hinweis, und Leser, die Klartext anzeigen, sehen nichts Lesbares.
+  fix:
+    - "Senden Sie die Nachricht als multipart/alternative: zuerst einen Teil text/plain, danach den Teil text/html."
+    - Aktivieren Sie in Ihrem Tool die automatische Erzeugung der Textversion und prüfen Sie diese anschließend.
+  fix_by_provider:
+    mailchimp: Lassen Sie in der Kampagne unter Plain-text email die automatische Erzeugung aktiviert oder verfassen Sie die Textversion selbst.
+    sendgrid: "Geben Sie im API-Aufruf v3 /mail/send zwei Einträge in content an: einen vom Typ text/plain, danach einen vom Typ text/html."
+    wordpress: Setzen Sie mit PHPMailer $phpmailer->AltBody in einem Filter phpmailer_init oder verwenden Sie eine SMTP-Erweiterung, die die Textversion erzeugt.
+content.text_part_empty:
+  title: Die Textversion der Nachricht ist leer
+  why: Ein leerer Textteil neben einem gefüllten HTML-Teil ist ein bekannter Trick, um Filter zu täuschen, die den Text lesen. Er wird bestraft, und Leser im Textmodus sehen nichts.
+  fix:
+    - Füllen Sie die Textversion mit demselben Inhalt wie die HTML-Version.
+    - Wenn Ihr Tool sie erzeugt, prüfen Sie, dass es keine leere Variable erhält.
+content.text_html_mismatch:
+  title: Textversion und HTML-Version sagen nicht dasselbe
+  why: "Die beiden Versionen ähneln sich nur zu {value}. Eine Nachricht, deren Text und HTML voneinander abweichen, ist eine den Filtern bekannte Verschleierungstechnik, und oft handelt es sich um eine vergessene alte Vorlage."
+  fix:
+    - Erzeugen Sie die Textversion aus dem aktuellen HTML neu.
+    - Wenn Sie sie von Hand schreiben, aktualisieren Sie sie bei jeder Änderung am HTML.
+  fix_by_provider:
+    mailchimp: Klicken Sie unter Plain-text email nach jeder Änderung des Inhalts auf Regenerate from HTML.
+content.text_too_short:
+  title: Die Nachricht enthält sehr wenig Text
+  why: "Der Textkörper hat nur {value} Wörter. Bei so wenig Text fehlen den Filtern Anhaltspunkte für ihr Urteil, sie stützen sich vor allem auf Links und Reputation, oft zu Ihrem Nachteil."
+  fix:
+    - Ergänzen Sie einige Sätze, die erklären, warum der Empfänger diese Nachricht erhält und was Sie ihm anbieten.
+    - Fügen Sie eine Signatur mit dem Firmennamen und einer Kontaktmöglichkeit hinzu.
+content.url_only_body:
+  title: Die Nachricht besteht nur aus einem Link
+  why: Eine Nachricht, die nur eine Webadresse enthält, ist das typische Format von Phishing und Link-Spam. Sie wird fast immer gefiltert.
+  fix:
+    - "Schreiben Sie mindestens einige Sätze: wer Sie sind, warum Sie schreiben und was der Link enthält."
+    - Setzen Sie den Link auf einen eindeutigen Text, statt die Adresse allein einzufügen.
+content.trigger_words:
+  title: Der Text häuft aggressive Werbeformeln an
+  why: Die Nachricht enthält {value} typische Spam-Formulierungen. Einzeln wiegen sie wenig, aber ihre Häufung verstärkt die anderen negativen Signale.
+  fix:
+    - "Ersetzen Sie allgemeine Formeln durch eine genaue Beschreibung des Angebots: Produkt, Preis, Enddatum."
+    - Ersetzen Sie „hier klicken“ durch einen Linktext, der sagt, wohin der Link führt.
+content.excessive_caps:
+  title: Der Text enthält viele Großbuchstaben
+  why: Ein großer Teil des Textes ist in Großbuchstaben gesetzt. Das wirkt aggressiv und gehört zu den Kriterien der Inhaltsfilter.
+  fix:
+    - Schreiben Sie die Passagen in Großbuchstaben in normaler Schreibweise um.
+    - Zum Hervorheben verwenden Sie Fettschrift oder eine HTML-Überschrift statt Großbuchstaben.
+content.excessive_punctuation:
+  title: Die Nachricht enthält Reihen von Ausrufezeichen oder Symbolen
+  why: Folgen wie „!!!“ oder „€€€“ sind ein bekanntes Spam-Merkmal für Filter und Leser.
+  fix:
+    - Verwenden Sie pro Satz höchstens ein Ausrufezeichen.
+    - Schreiben Sie Beträge als Zahl mit Währungsangabe und wiederholen Sie das Symbol nicht.
+content.invisible_characters:
+  title: Der Text enthält unsichtbare Zeichen
+  why: "Die Nachricht enthält {value} unsichtbare Zeichen. In Wörter eingefügt, dienen sie dazu, Filter zu umgehen: Diese erkennen sie und bestrafen die Nachricht als Verschleierungsversuch."
+  fix:
+    - Fügen Sie Ihren Text in einen Editor ein, der unsichtbare Zeichen anzeigt, und entfernen Sie sie.
+    - "Kopieren Sie nicht direkt aus einer Textverarbeitung oder von einer Webseite: Fügen Sie als Klartext ein und stellen Sie die Formatierung danach wieder her."
+content.homoglyphs:
+  title: Wörter mischen mehrere Alphabete
+  why: "Das Wort {value} enthält Buchstaben eines anderen Alphabets, die lateinischen Buchstaben ähneln. Diese Technik dient dazu, Marken nachzuahmen und Filter zu täuschen; sie wird stark bestraft."
+  fix:
+    - Tippen Sie die markierten Wörter auf der Tastatur neu ein, statt sie zu kopieren.
+    - Wenn Ihr Text automatisch übersetzt wurde, prüfen Sie die Wörter, die griechische oder kyrillische Zeichen enthalten.
+content.image_only:
+  title: Die Nachricht besteht aus Bildern mit fast keinem Text
+  why: "Abgesehen von den Bildern enthält die Nachricht fast keinen Text: {value}. Filter können den Text in Bildern nicht lesen und misstrauen diesem Format, das häufig für Spam genutzt wird. Werden Bilder blockiert, sieht der Empfänger eine fast leere Nachricht."
+  fix:
+    - Schreiben Sie Titel, Angebot und Handlungsaufforderung als HTML-Text und verwenden Sie Bilder nur zur Illustration.
+    - Ersetzen Sie Buttons aus Bildern durch Buttons aus HTML und CSS.
+    - Versehen Sie jedes verbleibende Bild mit einem aussagekräftigen alt-Attribut.
+  fix_by_provider:
+    mailchimp: Ersetzen Sie den Bild-Block durch einen Text-Block für Titel und Angebot und verwenden Sie den Button-Block für die Handlungsaufforderung.
+    brevo: Verwenden Sie im Drag-and-Drop-Editor die Titel-, Text- und Button-Blöcke statt eines einzelnen Bildes.
+content.html_clipped_gmail:
+  title: Das HTML ist so schwer, dass Gmail es kürzt
+  why: "Das HTML wiegt {value}. Mailchimp gibt an, dass Gmail Nachrichten oberhalb von etwa 102 KB abschneidet und „Nachricht gekürzt“ anzeigt. Der Abmeldelink und das Pixel zur Messung der Öffnungen, die unten stehen, verschwinden dann."
+  fix:
+    - Entfernen Sie doppelte CSS-Stile und Kommentare aus dem HTML.
+    - Kürzen Sie die Nachricht oder teilen Sie sie auf mehrere Versände auf.
+    - Ersetzen Sie im HTML base64-kodierte Bilder durch gehostete Bilder.
+    - Platzieren Sie den Abmeldelink im Footer so weit oben, dass er auch bei einer Kürzung sichtbar bleibt.
+  fix_by_provider:
+    mailchimp: "Fügen Sie kein HTML aus einem anderen Tool in einen Code-Block ein: Es enthält oft doppelte Stile."
+content.mojibake:
+  title: Sonderzeichen erscheinen als Zeichensalat
+  why: "Der Text enthält Folgen wie {value}: UTF-8 wurde einmal zu oft umgewandelt. Die Nachricht wirkt für die Leser schlampig, und die Filter lesen verzerrte Wörter."
+  fix:
+    - Prüfen Sie, dass Ihre Vorlagen in UTF-8 gespeichert und mit charset=UTF-8 deklariert sind.
+    - "Suchen Sie den Schritt, der den Text ein zweites Mal umwandelt: Datenbankexport, utf8_encode() in PHP oder Kopieren aus einer falsch gespeicherten Datei."
+    - Verwenden Sie in MySQL den Zeichensatz utf8mb4 für die Verbindung und die Tabellen.
+content.replacement_characters:
+  title: Der Text enthält Ersatzzeichen (�)
+  why: Bei einer Zeichensatzumwandlung gingen Buchstaben verloren und wurden durch eine Raute mit Fragezeichen ersetzt. Der Text ist an dieser Stelle endgültig beschädigt.
+  fix:
+    - Suchen Sie die betroffenen Wörter und tippen Sie sie in der Quellvorlage neu ein.
+    - "Korrigieren Sie die Verarbeitungskette: Der Text muss bei jedem Schritt in UTF-8 gelesen und geschrieben werden."
+content.mixed_languages:
+  title: Die Nachricht mischt mehrere Sprachen
+  why: "Ein großer Teil der Nachricht ist auf {value} geschrieben. Eine Sprachmischung verrät oft eine schlecht übersetzte Vorlage oder eine vergessene Standardvorlage und verwirrt den Empfänger."
+  fix:
+    - Übersetzen Sie die Blöcke, die in der Sprache der ursprünglichen Vorlage geblieben sind, oft Fußzeile und Buttons.
+    - Wenn Sie an mehrere Zielgruppen schreiben, senden Sie eine Version je Sprache.
+  fix_by_provider:
+    mailchimp: Die Texte von Fußzeile und Abmeldeseite übersetzen Sie unter Audience > Settings > Audience name and defaults im Feld Sprache.
+content.unreplaced_merge_tags:
+  title: Personalisierungsplatzhalter werden nicht ersetzt
+  why: Der Empfänger sieht den Platzhalter {value} statt seines Inhalts. Die Nachricht wirkt automatisch und schlampig, was die Spam-Meldungen erhöht.
+  fix:
+    - Prüfen Sie die genaue Schreibweise des Platzhalters in der Dokumentation Ihres Versandtools.
+    - Füllen Sie das zugehörige Feld für alle Kontakte aus oder legen Sie einen Standardwert fest.
+    - Senden Sie einen Test an einen echten Kontakt der Liste statt an eine leere Testadresse.
+  fix_by_provider:
+    mailchimp: Prüfen Sie den Platzhalter unter Audience > Settings > Audience fields and *|MERGE|* tags und legen Sie für das Feld einen Standardwert fest.
+content.placeholder_text:
+  title: Die Nachricht enthält Blindtext
+  why: "„{value}“ steht in der Nachricht: Ein Block der Vorlage wurde nicht ausgefüllt. Die Nachricht wirkt ungeprüft, und dieser Text ist den Filtern bekannt."
+  fix:
+    - Ersetzen oder entfernen Sie den Blindtext-Block.
+    - Prüfen Sie die vollständige Vorschau, auch die mobile Version, vor jedem Versand.
+content.sender_identity_missing:
+  title: Die Nachricht sagt nicht klar, wer sie sendet
+  why: "In dieser Werbenachricht erscheinen weder ein Firmenname noch eine Adresse. In Frankreich muss eine Werbenachricht den Werbenden erkennbar machen, und anonyme Absender werden häufiger als Spam gemeldet."
+  fix:
+    - "Ergänzen Sie in der Fußzeile den Firmennamen, die Postanschrift und einen Link zu Ihrer Website auf {domain}."
+    - Erklären Sie in einem Satz, warum der Empfänger diese Nachricht erhält (Anmeldung, Kauf, Kundenkonto).
+  fix_by_provider:
+    mailchimp: "Die Adresse stammt aus dem Platzhalter *|LIST:ADDRESS| der Fußzeile: Tragen Sie sie unter Audience > Settings > Audience name and defaults ein."
+    brevo: "Tragen Sie die Firmenadresse in den Kontoeinstellungen ein: Der Fußzeilen-Block des Editors übernimmt sie."
+content.text_part_base64:
+  title: Der Textteil ist ohne Notwendigkeit in base64 kodiert
+  why: Der Text besteht fast nur aus ASCII-Zeichen, ist aber in base64 kodiert. Diese unnötige Vorsichtsmaßnahme ist im Spam verbreitet, um den Inhalt vor einfachen Filtern zu verbergen, und manche Filter bewerten sie negativ.
+  fix:
+    - "Kodieren Sie die Textteile als quoted-printable: Sonderzeichen bleiben lesbar und der Text bleibt sichtbar."
+    - In PHPMailer setzen Sie $mail->Encoding = 'quoted-printable'.
+content.empty_message:
+  title: Die Nachricht ist vollständig leer
+  why: "Weder Betreff, Text noch Anhang: Die Filter von Microsoft stufen diese Art von Nachricht bei aktivierter Option mit hoher Sicherheit als Spam ein, und sie hat keine Chance, anderswo gelesen zu werden."
+  fix:
+    - Prüfen Sie, dass Ihre Anwendung den Inhalt der Vorlage im Moment des Versands tatsächlich übergibt.
+    - Testen Sie den Versand mit einer gefüllten Nachricht, bevor Sie eine Kampagne erneut starten.

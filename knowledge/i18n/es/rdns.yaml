@@ -1,0 +1,68 @@
+rdns.missing:
+  title: La IP de envío {ip} no tiene reverse DNS
+  why: "Un servidor de correo sin reverse DNS parece una máquina infectada. Gmail y Yahoo lo exigen a todos los remitentes: sin él, tus mensajes acaban en spam o son rechazados."
+  fix:
+    - "Elige un nombre para el servidor bajo tu dominio, por ejemplo mail.{domain}, y crea su registro A (o AAAA) hacia {ip} en la zona DNS de ese dominio."
+    - "Pide al titular de la IP {ip} (proveedor de alojamiento o proveedor de acceso a Internet) que configure el PTR con ese nombre: solo él puede hacerlo."
+    - Usa ese mismo nombre como HELO del servidor y repite la prueba.
+  fix_by_provider:
+    ovh: "Para un VPS o un servidor dedicado: área de cliente, Network, Direcciones IP públicas, botón ⁝ junto a {ip}, Configurar reverse DNS. El registro A del nombre debe apuntar ya a {ip} (se comprueba de inmediato), en minúsculas."
+    cpanel: "La herramienta Email Deliverability muestra el PTR, pero no permite modificarlo: pídeselo al proveedor del servidor."
+    o2switch: "En un alojamiento compartido, el PTR de la IP del servidor lo gestiona o2switch: abre un ticket si la prueba lo señala como ausente."
+    postfix: Una vez publicado el PTR, configura myhostname con ese mismo nombre en main.cf.
+rdns.fcrdns_mismatch:
+  title: "El reverse DNS de {ip} ({ptr}) no devuelve a {ip}"
+  why: "El nombre {ptr} no apunta a la IP de envío. Como cualquiera puede escribir un PTR, solo la ida y vuelta demuestra la identidad del servidor: sin ella, los filtros tratan al servidor como no identificado."
+  fix:
+    - "Añade {ip} al registro A (o AAAA) de {ptr}, o corrige este si apunta a una dirección antigua."
+    - Si {ptr} no está bajo tu control, pide que configuren el PTR con un nombre de {domain} cuyo registro A gestiones tú.
+rdns.ptr_target_nxdomain:
+  title: "El reverse DNS de {ip} apunta a un nombre inexistente ({ptr})"
+  why: El nombre que devuelve el reverse DNS ya no existe. Para los destinatarios, equivale a no tener un reverse DNS confirmado.
+  fix:
+    - Vuelve a crear el registro A de {ptr} hacia {ip}, o pide que configuren el PTR con un nombre existente de {domain}.
+    - "Comprueba con dig -x {ip} y después con dig A <nombre obtenido>."
+rdns.generic_dynamic:
+  title: "El reverse DNS de {ip} ({ptr}) es el de una conexión de consumo"
+  why: "{ptr} parece un router de internet doméstico o un abonado residencial. Los grandes proveedores rechazan o clasifican como spam el correo enviado directamente desde estas conexiones."
+  fix:
+    - "No envíes directamente desde esta conexión: usa el servidor SMTP autenticado de tu servicio de correo (puerto 587 o 465)."
+    - Si {ip} es una IP fija destinada a un servidor, pide a tu proveedor un reverse DNS personalizado del tipo mail.{domain}.
+  fix_by_provider:
+    postfix: "Configura relayhost = [smtp.tu-proveedor]:587 con autenticación SASL y TLS obligatorio, y después postfix reload."
+    wordpress: Usa una extensión SMTP que envíe a través del servidor de tu servicio de correo, en lugar de la función mail() del servidor.
+rdns.generic_hosting:
+  title: "El reverse DNS de {ip} es el nombre por defecto del proveedor de alojamiento ({ptr})"
+  why: El reverse DNS funciona, pero no dice nada de tu servicio. Un nombre propio de {domain} hace tu servidor más identificable y lo distingue de las máquinas alquiladas sobre la marcha.
+  fix:
+    - Crea el registro A de mail.{domain} hacia {ip}.
+    - Pide que configuren el PTR de {ip} como mail.{domain} desde el panel de tu proveedor de alojamiento.
+    - Usa este nombre como HELO.
+  fix_by_provider:
+    ovh: "Área de cliente, Network, Direcciones IP públicas, ⁝, Configurar reverse DNS, y después introduce mail.{domain}."
+rdns.ipv6_missing:
+  title: "La dirección IPv6 de envío {ip} no tiene reverse DNS"
+  why: Tu servidor envió este mensaje por IPv6, y esa dirección no tiene reverse DNS. Aunque la IPv4 esté bien configurada, el mensaje se juzga por la dirección realmente utilizada.
+  fix:
+    - Pide a tu proveedor de alojamiento un PTR para {ip}, con el mismo nombre que para la IPv4 (por ejemplo, mail.{domain}), y añade el registro AAAA correspondiente.
+    - Añade también {ip} a tu SPF (ip6:).
+    - Si no, desactiva el envío por IPv6 en este servidor.
+  fix_by_provider:
+    postfix: "Para enviar solo por IPv4 mientras tanto, configura smtp_address_preference = ipv4 (o inet_protocols = ipv4) y después postfix reload."
+rdns.multiple_ptr:
+  title: "La IP {ip} tiene varios reverse DNS"
+  why: Según el PTR que obtenga el destinatario, la verificación se supera o falla. Tus resultados se vuelven irregulares de un mensaje a otro.
+  fix:
+    - Conserva un solo PTR para {ip}, el que corresponde al HELO del servidor.
+    - Comprueba que ese nombre apunta a {ip}.
+rdns.temperror:
+  title: "No se pudo leer el reverse DNS de {ip}"
+  why: Los servidores DNS encargados del reverse de {ip} no responden. Los destinatarios que verifican el PTR tratan entonces el servidor como si no tuviera reverse DNS, o retrasan el mensaje.
+  fix:
+    - Repite la prueba para confirmarlo.
+    - "Si el error persiste, notifícalo al titular de la IP: la delegación de su zona inversa está rota."
+rdns.unrelated_domain:
+  title: "El reverse DNS de {ip} ({ptr}) no está a tu nombre, y es lo normal"
+  why: "Cuando usas un servicio de envío o un servidor compartido, el reverse DNS está a nombre de ese servicio. Es lo esperado: lo que importa es que exista y que devuelva a {ip}, y así es."
+  fix:
+    - No es necesaria ninguna acción.

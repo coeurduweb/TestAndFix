@@ -1,0 +1,83 @@
+images.missing_alt:
+  title: "Einige Bilder haben keinen alternativen Text"
+  why: "Diese Bilder haben kein alt-Attribut (ihre Liste steht unter dieser Auffälligkeit). Wenn Bilder blockiert sind, was bei mehreren Clients die Voreinstellung bleibt, sieht der Leser an ihrer Stelle nur einen leeren Rahmen."
+  fix:
+    - "Fügen Sie jedem Bild ein alt-Attribut hinzu, das sagt, was es zeigt oder bewirkt (zum Beispiel „Winterkollektion ansehen“)."
+    - "Setzen Sie bei einem rein dekorativen Bild alt=\"\"."
+  fix_by_provider:
+    mailchimp: "Klicken Sie auf das Bild, dann auf Edit, und füllen Sie das Feld Alt text aus."
+    brevo: "Wählen Sie das Bild im Editor aus und füllen Sie das Feld Alternativer Text im rechten Bereich aus."
+images.http_insecure:
+  title: "Manche Bilder werden unverschlüsselt über http geladen"
+  why: "Das Bild {url} wird unverschlüsselt geladen. Manche Clients zeigen es nicht an oder eine Warnung, und die Filter von Microsoft können die Spam-Bewertung erhöhen."
+  fix:
+    - "Ersetzen Sie http:// durch https:// in der Adresse jedes Bildes."
+    - "Prüfen Sie, dass der Server, der die Bilder hostet, ein gültiges Zertifikat hat."
+images.third_party_host:
+  title: "Bilder liegen auf der Website eines Dritten"
+  why: "Das Bild {url} wird von einer Website geladen, die weder {domain} noch Ihr Versandtool ist. Wenn diese Website es entfernt oder einen schlechten Ruf hat, verschwindet das Bild oder reißt Ihre Nachricht mit sich."
+  fix:
+    - "Laden Sie das Bild herunter und hosten Sie es auf {domain} oder in der Bildbibliothek Ihres Versandtools."
+    - "Prüfen Sie, dass Sie das Recht haben, dieses Bild zu verwenden."
+images.ip_host:
+  title: "Ein Bild wird von einer IP-Adresse geladen"
+  why: "Das Bild {url} wird von einer IP-Adresse statt von einem Domainnamen geladen. Das ist ein Hinweis auf einen improvisierten Server, den Filter, auch die von Microsoft, gegen die Nachricht werten."
+  fix:
+    - "Hosten Sie das Bild unter einem Domainnamen, zum Beispiel https://{domain}/img/."
+images.unreachable:
+  title: "Ein Bild der Nachricht lädt nicht"
+  why: "Das Bild {url} antwortet mit {status}. Der Leser sieht einen leeren Rahmen oder ein kaputtes Symbol, und eine halb leere Nachricht wirkt verdächtig."
+  fix:
+    - "Öffnen Sie die Adresse des Bildes in einem Browser, um den Fehler zu bestätigen."
+    - "Korrigieren Sie den Pfad in der Vorlage oder stellen Sie das Bild wieder online."
+    - "Wenn Ihr Hoster Anfragen ohne Referrer blockiert, erlauben Sie das direkte Laden der Bilder aus dem betreffenden Ordner."
+images.wrong_content_type:
+  title: "Die Adresse eines Bildes liefert etwas anderes als ein Bild"
+  why: "Die Adresse {url} liefert einen Inhalt vom Typ {value} statt eines Bildes: oft eine Anmelde- oder Fehlerseite. Das Bild wird nicht angezeigt."
+  fix:
+    - "Prüfen Sie, dass das Bild öffentlich ist und keine Anmeldung verlangt."
+    - "Verwenden Sie den direkten Link zur Bilddatei, nicht den der Freigabeseite."
+images.too_heavy:
+  title: "Ein Bild ist sehr schwer"
+  why: "Das Bild {url} wiegt {value}. Auf dem Handy braucht es lange zum Anzeigen und verbraucht Datenvolumen: Der Leser schließt die Nachricht oft, bevor er sie gesehen hat."
+  fix:
+    - "Skalieren Sie das Bild auf die Abmessungen, in denen es in der Nachricht angezeigt wird, mit einem Spielraum nur für hochauflösende Displays."
+    - "Komprimieren Sie es als JPEG für Fotos und als PNG für Logos und flächige Grafiken."
+images.image_heavy:
+  title: "Bilder überwiegen den Text deutlich"
+  why: "Der Großteil der Nachricht besteht aus Bildern. Wenn sie blockiert sind, sieht der Leser fast nichts, und die Filter haben wenig Text, um die Nachricht zu beurteilen."
+  fix:
+    - "Nehmen Sie die wichtigen Angaben (Angebot, Datum, Preis, Schaltfläche) aus den Bildern heraus und schreiben Sie sie als HTML-Text."
+    - "Verwenden Sie Bilder zur Illustration, nicht als Träger der Botschaft."
+images.inline_cid_many:
+  title: "Die Nachricht bettet viele Bilder als eingebettete Anhänge ein"
+  why: "Die Nachricht enthält {value} eingebettete Bilder über cid:. Jedes erhöht das Gewicht der Nachricht, und manche Clients zeigen sie zusätzlich als Anhänge an, was nach einem verdächtigen Versand aussieht."
+  fix:
+    - "Hosten Sie die Bilder auf {domain} oder bei Ihrem Versandtool und binden Sie sie über eine https-Adresse ein."
+    - "Behalten Sie höchstens das Logo als eingebettetes Bild bei, wenn es ohne Herunterladen angezeigt werden soll."
+  fix_by_provider:
+    microsoft_365: "In Outlook wird ein Bild, das in den Text eingefügt wird, zu einem eingebetteten Bild. Für einen Newsletter verwenden Sie besser ein Versandtool statt des E-Mail-Programms."
+    wordpress: "Wenn eine Benachrichtigungserweiterung die Bilder als eingebettete Anhänge hinzufügt, deaktivieren Sie diese Option und verwenden Sie Bilder, die auf der Website gehostet sind."
+images.tracking_pixel:
+  title: "Die Nachricht enthält ein Pixel zur Messung der Öffnungen"
+  why: "Die Nachricht enthält ein unsichtbares Bild, das die Öffnung misst. Das ist bei Newslettern üblich, aber Organisationen, die die Option Web bugs von Microsoft Defender aktiviert haben, stufen diese Nachrichten mit hoher Sicherheit als Spam ein."
+  fix:
+    - "Deaktivieren Sie bei transaktionalen Nachrichten und persönlichen Mitteilungen die Messung der Öffnungen in Ihrem Tool."
+    - "Vergleichen Sie bei Newslettern an Unternehmen mit Microsoft 365 die Zustellraten mit und ohne Pixel."
+images.tracking_pixel_without_content:
+  title: "Die Nachricht enthält nur ein Tracking-Pixel und fast nichts sonst"
+  why: "Eine fast leere Nachricht mit einem Tracking-Pixel dient vor allem dazu zu prüfen, ob die Adresse aktiv ist. Das ist eine Praxis von Spammern, und die Filter erkennen sie."
+  fix:
+    - "Prüfen Sie, dass der Inhalt der Vorlage beim Versand übergeben wird."
+    - "Wenn die Nachricht ein technischer Test ist, entfernen Sie das Tracking-Pixel."
+images.missing_dimensions:
+  title: "Bei einigen Bildern ist keine Breite angegeben"
+  why: "Ohne angegebene Breite kann ein großes Bild in Outlook für Windows überlaufen, und das Layout verschiebt sich, wenn Bilder blockiert sind."
+  fix:
+    - "Fügen Sie jedem Bild das Attribut width hinzu (in Pixeln, ohne Einheit), und height, wenn das Seitenverhältnis fest ist."
+    - "Ergänzen Sie für die Anzeige auf dem Handy style='max-width:100%;height:auto'."
+images.redirecting_src:
+  title: "Die Adresse eines Bildes läuft über eine Weiterleitung"
+  why: "Das Bild {url} wird erst nach einer Weiterleitung ausgeliefert. Die Anzeige ist langsamer, und manche Bild-Proxys folgen nicht allen Weiterleitungen."
+  fix:
+    - "Tragen Sie in die Nachricht die endgültige Adresse der Bilddatei ein."

@@ -1,0 +1,104 @@
+helo.not_fqdn:
+  title: "サーバーが不完全な名前で自己紹介しています（{helo}）"
+  why: "サーバーは「{helo}」と名乗っていますが、これはドメインを含まない名前で、インターネット上の誰も検証できません。多くのスパムフィルターはこの種のメッセージに減点を加え、一部の厳格なサーバーは EHLO コマンドの時点で拒否します。"
+  fix:
+    - "自分のドメインに属する完全な名前を選んでください。例：mail.{domain}"
+    - "この名前に A レコード（IPv6 で送信する場合は AAAA も）を作成し、{ip} を指すようにしてください。"
+    - "IP {ip} のホスティング業者に依頼して、逆引きDNS（PTR）をこの同じ名前に設定してもらってください。"
+    - "送信ソフトウェアのホスト名としてこの名前を宣言し（手順は下記のソフトウェア別の説明を参照）、サービスを再起動してください。"
+  fix_by_provider:
+    postfix: "/etc/postfix/main.cf に myhostname = mail.{domain} を設定してください（smtp_helo_name は既定で $myhostname を使います）。その後 postfix reload を実行してください。"
+    exim: "メイン設定で primary_hostname = mail.{domain} を設定するか、smtp トランスポートの helo_data オプションを設定し、Exim を再起動してください。"
+    wordpress: "サイトが PHPMailer で SMTP 送信している場合は、phpmailer_init フックで $phpmailer->Hostname = 'mail.{domain}' を設定してください（SMTP拡張機能に同等の項目があれば、そちらを使ってください）。"
+    cpanel: "共有ホスティングでは、HELO はホスティング業者が選んだサーバー名になります。名前「{helo}」を挙げて、業者にチケットを送ってください。"
+helo.ip_unbracketed:
+  title: "サーバーが裸のIPアドレスで自己紹介しています（{helo}）"
+  why: "IPを括弧で囲まずに名乗るのは SMTP の構文違反です。感染したマシンや、雑に作られた送信スクリプトによく見られる特徴で、SpamAssassin などのフィルターはこれに減点します。"
+  fix:
+    - "サーバーに mail.{domain} のような完全な名前を付け、その A レコードを {ip} に向けてください。"
+    - "{ip} の逆引きDNSが、この名前と一致するようにしてください。"
+    - "この名前を送信ソフトウェアの HELO として設定し、再起動してください。"
+  fix_by_provider:
+    postfix: "main.cf で myhostname = mail.{domain} を設定し、IPアドレスを含む smtp_helo_name がないことを確認してから、postfix reload を実行してください。"
+    exim: "primary_hostname または helo_data を、$sending_ip_address ではなく mail.{domain} に設定してください。"
+    wordpress: "HELO にIPが入る場合は、多くの場合ホスト名を設定していない PHPMailer が原因です。phpmailer_init で $phpmailer->Hostname を設定してください。"
+helo.address_literal:
+  title: "サーバーがアドレスリテラルで自己紹介しています（{helo}）"
+  why: "構文自体は正しいですが、正規のメールサーバーは通常、自分の名前を名乗ります。名前がなければ、受信側は HELO の SPF を検証できず、{helo} をあなたのドメインと照合することもできません。信頼性の判断材料が1つ減ります。"
+  fix:
+    - "サーバーに mail.{domain} などの完全な名前を付け、その A レコードを {ip} に向けてください。"
+    - "{ip} の逆引きDNSを、この名前に設定してください。"
+    - "送信ソフトウェアの HELO 設定で、リテラルをこの名前に置き換えてください。"
+  fix_by_provider:
+    postfix: "main.cf で myhostname = mail.{domain} を設定し、postfix reload を実行してください。"
+    exim: "smtp トランスポートで helo_data = mail.{domain} を設定してください。"
+helo.localhost:
+  title: "サーバーが「{helo}」と名乗っています"
+  why: "インターネットから「localhost」と名乗るサーバーは、感染したマシンのように見えます。スパムフィルターはこの場合を強く減点し、いくつかのサーバーは EHLO の時点でメッセージを拒否します。"
+  fix:
+    - "サーバーの公開名を選んでください（例：mail.{domain}）。その A レコードを {ip} に向けてください。"
+    - "{ip} の逆引きDNSを、同じ名前に設定してください。"
+    - "送信ソフトウェアの設定に、この名前を登録してください（ソフトウェアがシステムからホスト名を読む場合は /etc/hostname も）。その後ソフトウェアを再起動してください。"
+  fix_by_provider:
+    postfix: "main.cf で myhostname = mail.{domain} を設定してください。この設定がないと Postfix はシステム名を使い、多くの場合 localhost になります。その後 postfix reload を実行してください。"
+    exim: "primary_hostname = mail.{domain} を設定してください。設定しないと Exim はシステム名を使います。"
+    wordpress: "HELO が localhost になるのは、通常、名前を設定していないサーバー上の PHPMailer が原因です。phpmailer_init で $phpmailer->Hostname = 'mail.{domain}' を設定するか、メールサービスの認証付き SMTP を使ってください。"
+    plesk: "「ツールと設定」の「サーバー設定」で、完全修飾ドメイン名を mail.{domain} に置き換えてください。"
+helo.default_template:
+  title: "サーバーが既定の名前で自己紹介しています（{helo}）"
+  why: "「{helo}」は、インストール時に残された既定の名前か、プライベートネットワーク専用のドメインです。インターネット上では解決されず、フィルターに、設定されていないサーバーであることを知らせてしまいます。"
+  fix:
+    - "この名前を、ドメインの公開名（例：mail.{domain}）に置き換えてください。"
+    - "この名前の A レコードを {ip} に作成し、{ip} の逆引きDNSをこの名前に設定してください。"
+    - "送信ソフトウェアを再起動し、テストをやり直してください。"
+  fix_by_provider:
+    postfix: "main.cf で myhostname = mail.{domain} を設定し、mydomain も確認してから、postfix reload を実行してください。"
+    exim: "primary_hostname = mail.{domain} を設定してください。"
+helo.not_resolving:
+  title: "通知された名前（{helo}）が DNS に存在しません"
+  why: "受信側は「{helo}」のアドレスを見つけられません。reject_unknown_helo_hostname を設定した Postfix を含む複数のフィルターが、この場合を拒否または減点します。"
+  fix:
+    - "{helo} の A レコードを、対象ドメインの DNS ゾーンに作成し、{ip} を指すようにしてください。"
+    - "{helo} があなたの管理するドメインに属していない場合は、HELO を {domain} のドメインの名前（例：mail.{domain}）に変更してください。"
+    - "TTL の時間だけ伝播を待ってから、テストをやり直してください。"
+  fix_by_provider:
+    cloudflare_dns: "DNS の Records で、名前 {helo}、宛先 {ip} の A レコードを追加してください。プロキシは無効にしてください（グレーの雲アイコン）。メールサーバーの名前はプロキシを通してはいけません。"
+    postfix: "名前が誤っている場合は、main.cf の myhostname を修正してから postfix reload を実行してください。"
+helo.ip_mismatch:
+  title: "通知された名前（{helo}）が送信IP {ip} を指していません"
+  why: "サーバーは「{helo}」と名乗っていますが、この名前は {ip} とは別のアドレスを指しています。フィルターはこれを、IP変更後の設定ミスか、名前の詐称とみなします。"
+  fix:
+    - "{ip} が本当にサーバーの現在のIPであれば、{helo} の A レコード（または AAAA レコード）を {ip} に更新してください。"
+    - "サーバーが別のIPから送信している場合（NAT、リレー）は、その送信IPに対応する名前を HELO として使ってください。"
+    - "{ip} の逆引きDNSが、この同じ名前を返すか確認してください。"
+helo.ptr_mismatch:
+  title: "HELO（{helo}）が逆引きDNS（{ptr}）と異なります"
+  why: "サーバーは名前を名乗っていますが、そのIPは別の名前を返します。これは誤りではありません。ただし、HELO と PTR が同一で、その PTR が {ip} に解決されるのが、フィルターにとって最も分かりやすい構成です。"
+  fix:
+    - "サーバーに固有の名前を選んでください。自社のドメインに属する場合は、例えば {ptr} を使います。"
+    - "この名前を HELO と {ip} の逆引きDNSの両方に使い、そのAレコードが {ip} を指していることを確認してください。"
+  fix_by_provider:
+    postfix: "main.cf で myhostname = {ptr} を設定し、postfix reload を実行してください。"
+    exim: "primary_hostname = {ptr} を設定してください。"
+helo.impersonation:
+  title: "他の組織のドメインの名前で自己紹介しています（{helo}）"
+  why: "サーバーは、別の組織に属する名前を名乗っていますが、{ip} はその組織のものではありません。受信者はこれをなりすましとみなすため、メッセージは拒否される可能性が高くなります。"
+  fix:
+    - "直ちにこの HELO を、自社ドメインの名前（例：mail.{domain}）に置き換えてください。"
+    - "その A レコードを {ip} に作成し、{ip} の逆引きDNSをこの名前に設定してください。"
+    - "このサーバーを管理していない場合は、誰が設定したのかを調べてください。許可なくインストールされたソフトウェアが原因のこともあります。"
+helo.invalid_characters:
+  title: "通知された名前（{helo}）に禁止文字が含まれています"
+  why: "アンダースコア、スペース、空のラベルなどの文字があると、名前は無効になります。一部のサーバーは EHLO コマンドを拒否し、その他のサーバーはメッセージに減点を加えます。"
+  fix:
+    - "サーバーの名前を、文字、数字、ドット、ハイフンだけで付け直してください（例：mail.{domain}）。"
+    - "対応する A レコードを {ip} に作成し、逆引きDNSを揃えてください。"
+    - "送信ソフトウェアの HELO を更新してから、再起動してください。"
+helo.dynamic_name:
+  title: "サーバーが家庭用回線の名前で自己紹介しています（{helo}）"
+  why: "この名前は、インターネットサービスプロバイダーがボックスや一般消費者向け回線に割り当てる名前に似ています。フィルターはこれを強く減点します。この種の接続からの送信の大半は、感染したマシンによるものだからです。"
+  fix:
+    - "この回線から直接送信しないでください。メールサービスの認証付き SMTP サーバー（ポート 587）、または送信サービスを使ってください。"
+    - "専用サーバーの場合は、ホスティング業者に、例えば mail.{domain} のようなカスタムの逆引きDNSを依頼し、その名前を HELO として使ってください。"
+  fix_by_provider:
+    postfix: "メールサービス経由で中継するには、SASL認証付きで relayhost = [smtp.your-provider.example]:587 を設定してから、postfix reload を実行してください。"

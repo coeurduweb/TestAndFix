@@ -1,0 +1,244 @@
+# Famille dnssec : signature DNS de la zone de {domain}. Une zone signée mais cassée est
+# pire qu'une zone non signée : les résolveurs qui valident (Google Public DNS, Cloudflare,
+# Quad9 et beaucoup de serveurs de messagerie) répondent SERVFAIL et ne voient plus ni MX,
+# ni SPF, ni DKIM, ni DMARC.
+
+- id: dnssec.bogus
+  family: dnssec
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "resolver.validating.query(domain, SOA).rcode == SERVFAIL && resolver.query(domain, SOA, cd=true).rcode == NOERROR"
+    notes: "La zone répond quand on désactive la validation (bit CD) mais échoue avec validation : la chaîne de confiance DNSSEC est cassée. Cause précise à chercher via les entrées dnssec.ds_mismatch, dnssec.dnskey_missing et dnssec.rrsig_expired."
+  sa_rules: []
+  title: "La signature DNSSEC de {domain} est invalide"
+  why: >
+    Les résolveurs qui vérifient DNSSEC refusent toutes les réponses de {domain}. Pour eux,
+    votre SPF, vos clés DKIM et votre DMARC n'existent plus : vos messages sont mis en
+    attente ou refusés, et le courrier vers {domain} ne peut plus être livré.
+  fix:
+    - "Vérifiez la zone avec l'analyseur DNSViz (dnsviz.net) ou l'outil DNSSEC Analyzer de Verisign pour connaître l'enregistrement en cause."
+    - "Si vous avez changé d'hébergeur DNS récemment, supprimez chez votre registraire l'ancien enregistrement DS, puis réactivez DNSSEC chez le nouvel hébergeur et publiez son DS."
+    - "En cas d'urgence, retirez l'enregistrement DS chez le registraire : la zone redevient non signée mais résoluble une fois le TTL du DS écoulé."
+  fix_by_provider:
+    cloudflare_dns: "Dans DNS, Settings, section DNSSEC, vérifiez l'état ; si le DS affiché diffère de celui publié chez le registraire, remplacez ce dernier par la valeur indiquée par Cloudflare."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4035#section-5.5
+    - https://dnsviz.net/
+    - https://dnssec-analyzer.verisignlabs.com/
+
+- id: dnssec.ds_mismatch
+  family: dnssec
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "dns.DS(domain, from=parent) != [] && none(ds.matches(dnskey) for ds in dns.DS(domain) for dnskey in dns.DNSKEY(domain) if dnskey.is_ksk)"
+    notes: "L'enregistrement DS publié par le registre ne correspond à aucune clé DNSKEY de la zone : cas typique d'un changement d'hébergeur DNS ou de clé sans mise à jour du DS chez le registraire."
+  sa_rules: []
+  title: "L'enregistrement DS de {domain} ne correspond plus à ses clés DNSSEC"
+  why: >
+    Le registre annonce une clé que la zone de {domain} ne publie plus. Les résolveurs qui
+    valident considèrent toutes vos réponses DNS comme falsifiées : SPF, DKIM, DMARC et MX
+    deviennent invisibles.
+  fix:
+    - "Relevez les clés publiées par votre hébergeur DNS actuel (enregistrements DNSKEY, ou valeur DS fournie par son interface)."
+    - "Chez votre registraire, supprimez l'ancien DS et ajoutez celui de l'hébergeur actuel."
+    - "Attendez l'expiration du TTL de l'ancien DS (valeur visible avec dig DS {domain}) avant de refaire le test."
+  fix_by_provider:
+    cloudflare_dns: "Dans DNS, Settings, DNSSEC, copiez l'enregistrement DS proposé et collez-le chez votre registraire à la place de l'ancien."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4035#section-5
+    - https://dnsviz.net/
+
+- id: dnssec.dnskey_missing
+  family: dnssec
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "dns.DS(domain, from=parent) != [] && dns.DNSKEY(domain) == []"
+    notes: "Le registre annonce que la zone est signée (DS présent) mais la zone ne publie aucune clé : souvent après un déménagement vers un hébergeur DNS qui ne signe pas, ou une désactivation de DNSSEC sans retrait du DS."
+  sa_rules: []
+  title: "{domain} annonce DNSSEC mais sa zone n'est plus signée"
+  why: >
+    Un DS subsiste chez le registre alors que la zone de {domain} n'est plus signée. Les
+    résolveurs qui valident refusent alors toutes ses réponses, et votre messagerie cesse de
+    fonctionner pour une partie des destinataires.
+  fix:
+    - "Choisissez : soit réactiver DNSSEC chez votre hébergeur DNS actuel, soit retirer le DS."
+    - "Pour retirer le DS, supprimez-le dans l'interface DNSSEC de votre registraire."
+    - "Pour réactiver, activez DNSSEC chez l'hébergeur DNS, puis remplacez le DS du registraire par la nouvelle valeur."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4035#section-5
+    - https://dnsviz.net/
+
+- id: dnssec.rrsig_expired
+  family: dnssec
+  severity: critical
+  penalty: 3.0
+  detect:
+    signal: "any(rrsig.expiration < now for rrsig in dns.RRSIG(domain))"
+    notes: "Les signatures RRSIG ont une date d'expiration ; si l'hébergeur ne re-signe plus la zone (signature manuelle, script arrêté), elle devient invalide d'un coup."
+  sa_rules: []
+  title: "Les signatures DNSSEC de {domain} ont expiré"
+  why: >
+    Les signatures de votre zone ne sont plus valables. Les résolveurs qui valident refusent
+    les réponses de {domain}, ce qui rend invisibles votre SPF, vos clés DKIM et votre DMARC.
+  fix:
+    - "Relancez la signature de la zone chez votre hébergeur DNS, ou sur votre serveur (par exemple rndc sign {domain} avec BIND, ou la commande de re-signature de votre logiciel)."
+    - "Mettez en place une re-signature automatique (signature en ligne gérée par le serveur DNS) pour que cela ne se reproduise pas."
+    - "Si la zone ne peut pas être re-signée rapidement, retirez le DS chez le registraire."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4034#section-3.1.5
+    - https://dnsviz.net/
+
+- id: dnssec.rrsig_expiring
+  family: dnssec
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "min(rrsig.expiration for rrsig in dns.RRSIG(domain)) - now < 3 days"
+    notes: "Avertissement : la signature expire dans moins de trois jours. Normal si l'hébergeur re-signe en continu ; inquiétant si la date ne bouge pas d'un test à l'autre."
+  sa_rules: []
+  title: "Les signatures DNSSEC de {domain} expirent bientôt"
+  why: >
+    Si la zone n'est pas re-signée avant l'échéance, {domain} deviendra illisible pour les
+    résolveurs qui valident, et votre messagerie avec.
+  fix:
+    - "Vérifiez que la re-signature automatique est active chez votre hébergeur DNS ou sur votre serveur."
+    - "Refaites ce test demain : la date d'expiration doit avoir avancé."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4034#section-3.1.5
+
+- id: dnssec.unsigned
+  family: dnssec
+  severity: info
+  penalty: 0
+  detect:
+    signal: "dns.DS(domain, from=parent) == []"
+    notes: "Zone non signée. Ce n'est pas pénalisé par les filtres antispam, mais DANE (TLSA) ne fonctionne qu'avec DNSSEC."
+  sa_rules: []
+  title: "La zone DNS de {domain} n'est pas signée (DNSSEC)"
+  why: >
+    Sans DNSSEC, un attaquant placé sur le réseau peut falsifier les réponses DNS de
+    {domain}, par exemple vos MX. Ce n'est pas un critère de délivrabilité, mais c'est un
+    préalable à DANE, la protection la plus solide du transport du courrier.
+  fix:
+    - "Activez DNSSEC chez votre hébergeur DNS."
+    - "Publiez chez votre registraire l'enregistrement DS fourni par l'hébergeur (souvent automatique quand registraire et hébergeur sont le même)."
+    - "Contrôlez le résultat avec dnsviz.net avant d'en dépendre."
+  fix_by_provider:
+    cloudflare_dns: "Dans DNS, Settings, cliquez sur Enable DNSSEC, puis ajoutez chez votre registraire l'enregistrement DS affiché."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4033
+    - https://www.rfc-editor.org/rfc/rfc7672
+
+- id: dnssec.algorithm_not_recommended
+  family: dnssec
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "any(dnskey.algorithm in [1, 3, 5, 6, 7, 10, 12] for dnskey in dns.DNSKEY(domain))"
+    notes: "RFC 9904 (qui remplace la RFC 8624) : RSAMD5 (1), DSA (3), DSA-NSEC3-SHA1 (6) et ECC-GOST (12) MUST NOT pour signer ; RSASHA1 (5), RSASHA1-NSEC3-SHA1 (7) et RSASHA512 (10) NOT RECOMMENDED. Recommandés : ECDSAP256SHA256 (13), ED25519 (15), RSASHA256 (8)."
+  sa_rules: []
+  title: "La zone {domain} est signée avec un algorithme déconseillé"
+  why: >
+    L'algorithme utilisé pour signer votre zone est déconseillé ou interdit pour la signature.
+    Des résolveurs peuvent cesser de le valider et traiter alors votre zone comme non signée
+    ou invalide.
+  fix:
+    - "Demandez à votre hébergeur DNS un changement d'algorithme (rollover) vers ECDSAP256SHA256 (13)."
+    - "Pendant le changement, publiez le nouveau DS chez le registraire avant de retirer l'ancien, en respectant les TTL."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9904#section-3
+    - https://www.rfc-editor.org/rfc/rfc6781
+
+- id: dnssec.nsec3_iterations
+  family: dnssec
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "dns.NSEC3PARAM(domain).iterations > 0"
+    notes: "RFC 9276 : si NSEC3 est utilisé, le nombre d'itérations supplémentaires MUST être 0. Les résolveurs peuvent traiter les zones à itérations élevées comme non sécurisées, voire renvoyer SERVFAIL."
+  sa_rules: []
+  title: "La zone {domain} utilise NSEC3 avec des itérations supplémentaires"
+  why: >
+    Les itérations NSEC3 n'apportent aucune sécurité et alourdissent la validation. Au-delà
+    d'un certain seuil, des résolveurs considèrent la zone comme non sécurisée ou en erreur,
+    ce qui peut faire échouer la résolution de vos enregistrements de messagerie.
+  fix:
+    - "Réglez les paramètres NSEC3 de la zone sur 0 itération et un sel vide."
+    - "Si votre hébergeur DNS gère la signature, demandez-lui d'appliquer les valeurs de la RFC 9276."
+  example_bad: "NSEC3PARAM 1 0 10 AB12CD34"
+  example_good: "NSEC3PARAM 1 0 0 -"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9276#section-3.1
+
+- id: dnssec.mx_zone_bogus
+  family: dnssec
+  severity: high
+  penalty: 1.0
+  detect:
+    signal: "any(resolver.validating.query(mx.host, A).rcode == SERVFAIL && resolver.query(mx.host, A, cd=true).rcode == NOERROR for mx in dns.MX(domain))"
+    notes: "La zone de {domain} est saine, mais celle qui héberge le nom du serveur MX a une signature DNSSEC cassée."
+  sa_rules: []
+  title: "Le serveur MX de {domain} est dans une zone DNSSEC cassée"
+  why: >
+    Le nom de votre serveur de réception n'est plus résolu par les résolveurs qui valident.
+    Les réponses et les rejets adressés à {domain} ne peuvent plus être livrés par ces
+    expéditeurs.
+  fix:
+    - "Identifiez le domaine qui porte le nom du MX et prévenez son gestionnaire (souvent votre fournisseur de messagerie)."
+    - "S'il s'agit d'un de vos domaines, appliquez la correction de l'entrée « signature DNSSEC invalide » sur cette zone."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4035#section-5.5
+    - https://dnsviz.net/
+
+# Fiches ajoutées le 2026-11-10 pour les situations du vérificateur DNSSEC qui n'avaient
+# qu'un texte de repli. Recommandations d'algorithmes : RFC 9904 (novembre 2025), qui
+# remplace la RFC 8624.
+
+- id: dnssec.ds_missing
+  family: dnssec
+  severity: low
+  penalty: 0.2
+  detect:
+    signal: "dns.DS(domain, from=parent) == [] && dns.DNSKEY(domain) != []"
+    notes: "La zone publie des clés DNSKEY mais le registre ne publie aucun DS : la zone est insecure, les résolveurs ne la valident pas. Cas typique : DNSSEC activé chez l'hébergeur DNS sans publier le DS chez le registraire, ou registraire différent de l'hébergeur."
+  sa_rules: []
+  title: "La zone {domain} est signée mais le registre n'a pas d'enregistrement DS"
+  why: >
+    Votre hébergeur DNS signe la zone, mais sans DS chez le registre la chaîne de confiance
+    s'arrête là : aucun résolveur ne valide {domain}. Vous avez le travail de DNSSEC sans sa
+    protection, et DANE ne peut pas fonctionner.
+  fix:
+    - "Chez votre hébergeur DNS, relevez l'enregistrement DS de {domain} (ou la clé KSK avec son algorithme, si le registraire demande la clé)."
+    - "Chez votre registraire, ouvrez la rubrique DNSSEC du domaine et ajoutez ce DS, de type de condensé 2 (SHA-256)."
+    - "Après la propagation, contrôlez la chaîne avec dnsviz.net : une erreur de recopie rendrait toute la zone invalide pour les résolveurs qui valident."
+  fix_by_provider:
+    cloudflare_dns: "Dans DNS, Settings, section DNSSEC, cliquez sur Enable DNSSEC (ou sur DS record si DNSSEC est déjà actif) et recopiez les valeurs chez votre registraire. Avec Cloudflare Registrar, le DS est publié automatiquement, ce qui peut prendre un à deux jours."
+  references:
+    - https://www.rfc-editor.org/rfc/rfc4035#section-5
+    - https://developers.cloudflare.com/dns/dnssec/
+    - https://dnsviz.net/
+
+- id: dnssec.ds_sha1
+  family: dnssec
+  severity: low
+  penalty: 0.1
+  detect:
+    signal: "any(ds.digest_type == 1 for ds in dns.DS(domain)) && !any(ds.digest_type != 1 && ds.matches for ds in dns.DS(domain))"
+    notes: "RFC 9904 §4 : le condensé SHA-1 (type 1) ne doit pas être utilisé pour publier une délégation (MUST NOT) ; les validateurs doivent encore savoir le vérifier. SHA-256 (type 2) est recommandé."
+  sa_rules: []
+  title: "Le DS de {domain} n'utilise que SHA-1"
+  why: >
+    La délégation DNSSEC de {domain} repose sur un condensé SHA-1, que la norme interdit
+    désormais de publier. Les validateurs l'acceptent encore aujourd'hui, mais la
+    délégation ne suit plus les recommandations.
+  fix:
+    - "Chez votre hébergeur DNS, relevez le DS de type 2 (SHA-256) correspondant à la même clé."
+    - "Ajoutez-le chez votre registraire, à côté du DS actuel."
+    - "Une fois le nouveau DS publié et le TTL de l'ancien écoulé, retirez le DS de type 1."
+  example_bad: "{domain}. IN DS 12345 13 1 2BB183AF5F22588179A53B0A98631FAD1A292118"
+  example_good: "{domain}. IN DS 12345 13 2 <condensé SHA-256 de 64 caractères hexadécimaux>"
+  references:
+    - https://www.rfc-editor.org/rfc/rfc9904#section-4

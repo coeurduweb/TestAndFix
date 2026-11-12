@@ -1,0 +1,105 @@
+unsubscribe.list_unsubscribe_missing:
+  title: "This marketing message has no List-Unsubscribe header"
+  why: "Gmail and Yahoo require this header on marketing messages from large senders. Without it, the webmail does not display its unsubscribe button: readers click “Spam” instead, which damages the reputation of {domain}."
+  fix:
+    - "Add a List-Unsubscribe header with an https unsubscribe address specific to each recipient."
+    - "At the same time, add List-Unsubscribe-Post: List-Unsubscribe=One-Click for one-click unsubscribe."
+    - "Sign these two headers with DKIM."
+  fix_by_provider:
+    mailchimp: "Mailchimp adds List-Unsubscribe to campaigns. If it is missing, check that you are sending a campaign and not a message through the transactional API (Mandrill), where you must add it yourself."
+    sendgrid: "Enable Settings > Tracking > Subscription Tracking, or use unsubscribe groups (Unsubscribe Groups) in the API call: SendGrid then adds the headers."
+    amazon_ses: "Add the List-Unsubscribe and List-Unsubscribe-Post headers to your messages, or use SES subscription management (contact lists), which adds them."
+    wordpress: "A newsletter plugin (MailPoet, The Newsletter Plugin, FluentCRM) handles the header. Avoid sending a newsletter through wp_mail() without a plugin."
+    postfix: "Postfix does not add this header: it must be written by the application that generates the message, before the DKIM signature."
+unsubscribe.one_click_post_missing:
+  title: "One-click unsubscribe (List-Unsubscribe-Post) is not enabled"
+  why: "The message has a List-Unsubscribe but not the List-Unsubscribe-Post header. Gmail requires both for high-volume marketing sends: without it, Gmail considers that you do not offer one-click unsubscribe."
+  fix:
+    - "Add the line List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Check that List-Unsubscribe contains an https address that accepts a POST request and unsubscribes without asking for confirmation."
+    - "Include both headers in the DKIM signature (h= parameter)."
+unsubscribe.mailto_only:
+  title: "Unsubscribe offers only an email address (mailto)"
+  why: "Yahoo accepts mailto, but Gmail requires the one-click unsubscribe of RFC 8058, which requires an https address. For Gmail, this message is therefore not compliant."
+  fix:
+    - "Add an https unsubscribe address in first position in List-Unsubscribe, and keep the mailto second."
+    - "Add List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+unsubscribe.http_not_https:
+  title: "The unsubscribe address uses http instead of https"
+  why: "RFC 8058 requires an https address for one-click unsubscribe. With http, Gmail and other webmails do not offer the unsubscribe button."
+  fix:
+    - "Replace http:// with https:// in List-Unsubscribe."
+    - "Check that the certificate of the unsubscribe domain is valid."
+unsubscribe.not_dkim_signed:
+  title: "The unsubscribe headers are not covered by DKIM"
+  why: "No valid DKIM signature covers List-Unsubscribe and List-Unsubscribe-Post. RFC 8058 then asks webmails not to offer one-click unsubscribe: your setup is of no use."
+  fix:
+    - "Add list-unsubscribe and list-unsubscribe-post to the list of signed headers (h= parameter of DKIM)."
+    - "Add the headers before the signing step, not after."
+    - "If a relay adds these headers after your signature, have the application add them instead."
+  fix_by_provider:
+    postfix: "With OpenDKIM, add List-Unsubscribe and List-Unsubscribe-Post to SignHeaders in opendkim.conf, then restart OpenDKIM. With rspamd, add them to sign_headers in dkim_signing.conf."
+unsubscribe.post_value_invalid:
+  title: "The List-Unsubscribe-Post value is incorrect"
+  why: "The header is “{value}” instead of List-Unsubscribe=One-Click. Webmails then do not recognize one-click unsubscribe."
+  fix:
+    - "Write exactly: List-Unsubscribe-Post: List-Unsubscribe=One-Click."
+    - "Do not add quotation marks, a semicolon or any other parameter."
+unsubscribe.syntax_invalid:
+  title: "The List-Unsubscribe header is malformed"
+  why: "The List-Unsubscribe addresses are not written between angle brackets or are poorly separated. Webmails then ignore the header and do not display the unsubscribe button."
+  fix:
+    - "Put each address between angle brackets < >."
+    - "Separate the addresses with a comma, the https address first."
+unsubscribe.multiple_https:
+  title: "List-Unsubscribe contains several https addresses"
+  why: "RFC 8058 provides for a single https address. With several, the webmail may choose the one that does not handle the one-click request."
+  fix:
+    - "Keep a single https address, the one that accepts the one-click POST request."
+    - "Optionally keep a mailto second."
+unsubscribe.endpoint_not_working:
+  title: "The one-click unsubscribe address does not respond correctly"
+  why: "The unsubscribe request to {url} received the response {value}. Webmails send this request without cookies and without following redirects: if it fails, the recipient stays subscribed and ends up reporting your messages as spam."
+  fix:
+    - "Make the unsubscribe address accept a POST request without cookie or session, and respond with a 200 code."
+    - "Do not respond with a redirect: process the unsubscribe directly at this address."
+    - "Find the contact using the token contained in the address itself."
+unsubscribe.body_link_missing:
+  title: "The message body has no unsubscribe link"
+  why: "Gmail and Yahoo require a clearly visible unsubscribe link in the body of marketing messages, and French law requires a simple way to refuse subsequent sends. Without this link, the only way to stop receiving your messages is the “Spam” button."
+  fix:
+    - "Add an “Unsubscribe” link in the footer that leads to an unsubscribe page on {domain}."
+    - "The page must unsubscribe without asking for a password or login."
+  fix_by_provider:
+    mailchimp: "Keep the *|UNSUB|* tag in the Footer block of the campaign."
+    brevo: "Keep the footer block with the unsubscribe link inserted by the Brevo editor."
+    wordpress: "In MailPoet, the default footer contains the link [link:subscription_unsubscribe_url]: do not delete it."
+unsubscribe.body_link_hidden:
+  title: "The unsubscribe link is hard to see"
+  why: "The unsubscribe link is tiny or almost the same color as the background. Gmail and Yahoo clearly require it to be visible: a hidden link pushes the reader to click “Spam”."
+  fix:
+    - "Display the link at a readable size and in a color that contrasts with the background."
+    - "Place it at the start of the footer, not after several lines of legal notices."
+unsubscribe.requires_login:
+  title: "Unsubscribing requires logging in"
+  why: "The unsubscribe link leads to a login page. Yahoo requires unsubscribing without logging in, and most readers give up then report the message as spam."
+  fix:
+    - "Put in the link a unique token that identifies the contact, and unsubscribe them without a password."
+    - "Offer fine-grained preference management on the same page, without imposing it."
+unsubscribe.mailto_domain_unreachable:
+  title: "The unsubscribe email address cannot receive messages"
+  why: "The unsubscribe address {value} is on a domain that does not receive mail. Unsubscribe requests sent by webmails are lost."
+  fix:
+    - "Use an unsubscribe address on a domain that has an MX record, for example unsubscribe@{domain}."
+    - "Have the messages received at this address processed automatically by your sending tool."
+unsubscribe.on_transactional:
+  title: "Transactional message without an unsubscribe header: this is allowed"
+  why: "Gmail does not require one-click unsubscribe for transactional messages. If this message also contains promotion, recipients may judge it promotional and report it."
+  fix:
+    - "Keep transactional messages free of promotional content."
+    - "Send the promotion in separate messages, with List-Unsubscribe."
+unsubscribe.list_id_missing:
+  title: "The message does not indicate which list it comes from (List-Id)"
+  why: "List-Id lets recipients and webmails sort your sends by list. Its absence is not penalized, but it helps tell your different mailings apart."
+  fix:
+    - "Add a List-Id header with a stable identifier per list."

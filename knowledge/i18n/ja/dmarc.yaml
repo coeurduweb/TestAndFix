@@ -1,0 +1,216 @@
+dmarc.missing:
+  title: "ドメイン {domain} に DMARC ポリシーがありません"
+  why: "DMARC がなければ、誰でも {domain} になりすましてもブロックされず、あなたの名義で行われた送信についてレポートも届きません。Gmail、Yahoo、Outlook.com は多量の送信者に DMARC を要求し、それ以外の送信者はスパムに振り分けられるか、拒否されます。"
+  fix:
+    - "レポートを受け取るアドレスを作成してください。例：dmarc@{domain}"
+    - "_dmarc.{domain} に TXT を公開してください：v=DMARC1; p=none; rua=mailto:dmarc@{domain}"
+    - "数週間レポートを読み、認証されていないサービスを修正してから、p=quarantine、次に p=reject に進めてください。"
+  fix_by_provider:
+    google_workspace: "DMARC の TXT _dmarc は、Google の管理コンソールではなく、DNS ホスティング事業者で追加してください。Google は、SPF または DKIM を設定してから 48時間待ち、p=none から始めることを勧めています。"
+    microsoft_365: "DMARC の TXT _dmarc は、DNS ホスティング事業者で追加してください。onmicrosoft.com ドメインの場合、DMARC は Microsoft 365 管理センターで作成します。"
+    ovh: "DNS ゾーン > エントリを追加で、種類 DMARC（専用のフォーム）または TXT、サブドメイン _dmarc を選んでください。OVHcloud は p=none と、数週間にわたるレポートの分析を勧めています。"
+    o2switch: "o2switch は DMARC を文書化していません。cPanel の Zone Editor で、名前 _dmarc.{domain} の TXT を追加してください。"
+    cpanel: "Email、Email Deliverability、Manage、DMARC のセクションで、Install the Suggested Record を実行してください（cPanel 124 以降）。cPanel は、DMARC には有効な SPF と DKIM が必要だと示しています。"
+    plesk: "ウェブサイトとドメイン、DNS で、_dmarc.{domain} の TXT を追加または確認してください。サーバーの設定によっては、Plesk がすでに作成している場合があります。"
+    ionos: "ドメイン、歯車アイコン、DNS、レコードを追加、TXT、ホスト名 _dmarc の順に進んでください。フランス語の例にある p=rejet や p=quarantaine のような値は使わないでください。有効なのは none、quarantine、reject だけです。"
+    gandi: "_dmarc の TXT を追加してください。Gandi は p=reject の例を示していますが、転送されたメッセージがブロックされる恐れがあると注意しています。まず p=none から始めてください。"
+    infomaniak: "Manager、グローバルセキュリティ：DMARC アシスタントがレコードを作成します（シンプルモードまたは詳細モード）。"
+    zoho: "DNS ホスティング事業者で _dmarc の TXT を追加してください。Zoho Mail のヘルプにある DMARC のページを参照できます。"
+    proton: "Settings、All settings、Domain names、Review、DMARC タブで、提示されたレコードをコピーしてください。その後 Proton は p=quarantine を推奨しています。"
+    brevo: "Brevo は DMARC を必須としています。指定された値：v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com。すでに DMARC がある場合は、末尾に ; rua=mailto:rua@dmarc.brevo.com を追加するだけにして、レコードは1つだけ残してください。"
+    mailchimp: "Account & billing、Domains の手順には、_dmarc の TXT が含まれており、その値は手順に表示されます。"
+    sendgrid: "SendGrid のドメイン認証では、_dmarc の TXT として v=DMARC1; p=none; を提案しています。"
+    amazon_ses: "AWS は p=none から始め、その後 quarantine、reject に進めることを勧めています。SPF の整合には、カスタムの MAIL FROM を設定してください。"
+    postmark: "Postmark は、送信量に関係なく DMARC を推奨しています。p=none から始めてください。"
+    sparkpost: "Bird のプラットフォームでは、送信の前に DMARC が必須です。最低限の値：v=DMARC1; p=none; rua=mailto:dmarc-agg@dmarc.bird.com;"
+    hubspot: "Settings、Content、Domains & URLs、Email Sending で、HubSpot が _dmarc の TXT に公開する値を生成します。"
+    cloudflare_dns: "Email、DMARC Management、Enable：Cloudflare がレコードを作成するか、既存のレコードに自分の rua アドレスを追加します（ルートドメインのみ、ベータ機能）。"
+dmarc.subdomain_no_policy:
+  title: "{domain} も、そのメインドメインも DMARC を公開していません"
+  why: "サブドメインから送信していますが、DMARC ポリシーがそれを対象としていません。Gmail、Yahoo、Outlook.com の要件を満たしておらず、そのサブドメインはなりすまされる恐れがあります。"
+  fix:
+    - "メインドメインに DMARC を公開してください：_dmarc.<メインドメイン> に p=none と rua= を設定します。これはすべてのサブドメインもカバーします。"
+    - "サブドメイン {domain} に独自のポリシーが必要な場合は、さらに _dmarc.{domain} に TXT を公開してください。"
+    - "既存のサブドメインのポリシーを設定するには sp= を、存在しないサブドメインのポリシーを設定するには np= を追加してください。"
+dmarc.multiple_records:
+  title: "ドメイン {domain} が複数の DMARC レコードを公開しています"
+  why: "DMARC レコードが2つあると、受信側は両方を無視します。その結果、{domain} にはポリシーもレポートもなく、DMARC がないのと同じ状態になります。"
+  fix:
+    - "_dmarc.{domain} にある2つのレコードを確認してください。"
+    - "1つにまとめてください。p= の値は1つだけにし、すべてのレポート用アドレスをカンマで区切って rua= にまとめます。"
+    - "もう一方のレコードを削除してください。"
+  fix_by_provider:
+    brevo: "Brevo は DMARC を1つだけ残すよう求めています。2つ目を作る代わりに、既存のレコードの rua= リストに rua=mailto:rua@dmarc.brevo.com を追加してください。"
+dmarc.syntax_invalid:
+  title: "{domain} の DMARC レコードは、構文の理由で無視されています"
+  why: "レコードが v=DMARC1 で正確に始まっていません。受信側はこれが存在しないものとして扱います。つまり、ポリシーもレポートもありません。"
+  fix:
+    - "レコードを v=DMARC1; で始め、大文字と小文字を正確に守ってください。"
+    - "タグはセミコロンで区切り、等号を使ってください（p=none。p:none は不可）。"
+    - "公開してください：{suggested_record}"
+dmarc.policy_invalid:
+  title: "{domain} の DMARC ポリシーに無効な値があります"
+  why: "p=（または sp=、np=）の値が認識されません。厳格なポリシーは適用されません。受信側が使えるのは、せいぜい p=none だけで、最悪の場合は DMARC 全体を無視します。"
+  fix:
+    - "none、quarantine、reject のいずれかだけを、英語の小文字で使ってください。"
+    - "公開してください：{suggested_record}"
+dmarc.record_at_apex:
+  title: "{domain} の DMARC が誤った場所に公開されています"
+  why: "受信側は DMARC を _dmarc.{domain} で探します。ドメインのルートに置かれたレコードは読まれることがないため、{domain} は DMARC がないものとして扱われます。"
+  fix:
+    - "名前 _dmarc で同じ TXT を作成してください（多くの管理画面は .{domain} を自動で付け加えます）。"
+    - "ルートにある v=DMARC1 のレコードを削除してください。"
+dmarc.policy_none:
+  title: "{domain} の DMARC ポリシーは観察中です（p=none）"
+  why: "p=none は、Gmail、Yahoo、Outlook.com が要求する最低限を満たしますが、不正なメッセージに対して何の処理も求めません。なりすましを行う者は、今も {domain} を使えます。"
+  fix:
+    - "rua= のアドレスで受け取ったレポートを分析し、認証されていない正当なサービスを特定してください。"
+    - "それらを修正してから（SPF または DKIM を整合させる）、p=quarantine、次に p=reject に進めてください。"
+    - "段階的に移行するには、pct= ではなく、RFC 9989 の t=y（ポリシーを1段階下げて適用）を使う方法があります。"
+dmarc.policy_none_stale:
+  title: "{domain} は6か月以上 p=none のままです"
+  why: "観察は、有効なポリシーへ移行するための準備です。6か月たてば、レポートで判断するには通常十分であり、先に進まない限り {domain} はなりすましの対象のままです。"
+  fix:
+    - "DMARC レポートで、送信サービスが SPF または DKIM の整合で通過していることを確認してください。"
+    - "p=quarantine に進めてください。必要に応じて、数週間 t=y を併用してください。"
+    - "正当なメッセージが拒否されていないことがレポートで確認できたら、p=reject に進めてください。"
+dmarc.pct_partial:
+  title: "{domain} の DMARC ポリシーは、一部のメッセージにしか適用されません（pct={value}）"
+  why: "pct= は、ポリシーを一定割合のメッセージに適用するためのものでしたが、確実に適用されないため、規格から削除されました。結果は受信側によって異なり、pct が 100 でないと Gmail は BIMI のロゴを拒否します。"
+  fix:
+    - "pct= を削除してください（Gmail 向けに BIMI を準備している場合は pct=100 にしてください）。"
+    - "テスト段階では、代わりに t=y を使ってください。この場合、ポリシーは1段階下げて適用されます。"
+dmarc.pct_zero:
+  title: "{domain} の DMARC ポリシーが無効化されています（pct=0）"
+  why: "pct=0 では、quarantine または reject のポリシーがどのメッセージにも適用されません。厳格なポリシーを掲げていても、{domain} は実際には保護されていません。"
+  fix:
+    - "まだテストを続ける場合は、pct=0 を t=y に置き換えてください。RFC 9989 で定められたタグです。"
+    - "テストが終わった場合は、pct=0 を削除してください。"
+dmarc.testing_flag:
+  title: "{domain} の DMARC ポリシーがテストモード（t=y）です"
+  why: "ポリシーは、表示されている内容より1段階低く適用されています。移行期間中はこれで問題ありませんが、保護は部分的なままです。"
+  fix:
+    - "レポートが問題ないことを確認したら、t=y を削除し、p={value} を完全に適用してください。"
+dmarc.sp_weaker:
+  title: "{domain} のサブドメインの DMARC ポリシーが弱くなっています（sp=）"
+  why: "メインドメインは保護されていますが、sp= によりサブドメインのポリシーが弱くなっています。なりすまし者は factures.{domain} からブロックされずに送信できます。"
+  fix:
+    - "レポートで、正当なサブドメインが DMARC に失敗していないことを確認してください。"
+    - "sp= を p= と揃えるか、sp= を削除してサブドメインが p= を継承するようにしてください。"
+    - "存在しないサブドメインをブロックするには、np=reject を追加してください。"
+dmarc.np_absent:
+  title: "{domain} は、存在しないサブドメインを明示的にブロックしていません（np=）"
+  why: "なりすまし者は、存在しないサブドメインを作り出すことがよくあります。np=reject を指定すると、実際のサブドメインに影響を与えずにそれらをブロックできます。"
+  fix:
+    - "DMARC レコードに np=reject を追加してください。"
+dmarc.rua_missing:
+  title: "{domain} の DMARC がレポートを要求していません（rua= がありません）"
+  why: "rua= がないと、誰があなたの名義で送信しているのか、どのサービスが失敗しているのかがわかりません。そのため、より厳格なポリシーへリスクなしに移行することはできません。"
+  fix:
+    - "専用のアドレス（例：dmarc@{domain}）を作成するか、DMARC レポートの分析サービスのアドレスを使ってください。"
+    - "そのアドレスを rua=mailto: としてレコードに追加してください。"
+  fix_by_provider:
+    cloudflare_dns: "Email、DMARC Management、Enable を選ぶと、Cloudflare の rua アドレスが追加され、ダッシュボードにレポートが表示されます。"
+    brevo: "Brevo が示すアドレス rua=mailto:rua@dmarc.brevo.com を追加できます。"
+dmarc.rua_invalid_uri:
+  title: "{domain} の DMARC レポート用アドレスの書き方が誤っています"
+  why: "mailto: がないアドレスは解釈されません。レポートは届かず、p= も無効な場合、DMARC は全く適用されません。"
+  fix:
+    - "各アドレスの前に mailto: を付け、カンマで区切ってください（空白なし）。"
+    - "公開してください：{suggested_record}"
+dmarc.rua_external_unauthorized:
+  title: "{domain} の外部 DMARC レポート用アドレスが、これらのレポートを許可していません"
+  why: "レポートは、同意を公開していない別のドメインに送られています。そのため受信側はレポートを送信しません。結果として、何も届きません。"
+  fix:
+    - "rua= のアドレスのドメインの所有者に、TXT {domain}._report._dmarc.<そのドメイン> を値 v=DMARC1 で公開してもらってください（分析サービスは通常これを自動で行います）。"
+    - "または、外部アドレスに転送される {domain} のアドレスを使ってください。"
+dmarc.ruf_present:
+  title: "{domain} の DMARC が、詳細な失敗レポートを要求しています（ruf=）"
+  why: "ruf= のレポートには、メッセージの抜粋や個人のアドレスが含まれることがあります。このレポートはめったに送られず、それを受け取るアドレスは保護されている必要があります。"
+  fix:
+    - "誰かが実際にレポートを処理している場合にのみ ruf= を残し、アドレスが保護されていることを確認してください。"
+    - "そうでなければ、ruf= とそれに伴う fo= を削除してください。"
+dmarc.fo_without_ruf:
+  title: "{domain} の DMARC の fo= が効果を持っていません"
+  why: "fo= は失敗レポートを制御しますが、ruf= のアドレスが指定されていません。そのため、このタグは何の効果もありません。"
+  fix:
+    - "fo= を削除するか、本当にこれらのレポートが必要であれば ruf= のアドレスを追加してください。"
+dmarc.obsolete_tags:
+  title: "{domain} の DMARC に、削除されたタグ（ri=、rf=）が含まれています"
+  why: "これらのタグは、現在の規格には存在しません。問題は起きませんが、レコードを無駄に長くします。"
+  fix:
+    - "レコードから ri= と rf= を削除してください。"
+dmarc.unknown_tags:
+  title: "{domain} の DMARC に、未知のタグが含まれています"
+  why: "つづりを誤ったタグは、エラーメッセージなしで無視されます。そのため、設定したつもりの項目は存在しないことになります。"
+  fix:
+    - "テストで示されたタグのつづりを修正してください。"
+    - "公開してください：{suggested_record}"
+dmarc.psd_misused:
+  title: "{domain} の DMARC が、自らを公開サフィックスとして宣言しています（psd=y）"
+  why: "psd=y はドメインレジストリー専用です。自社のドメインに設定すると、受信者は {domain} とそのサブドメインを別々の組織と見なしてしまい、送信用サブドメインの整合が壊れます。"
+  fix:
+    - "psd=y を削除するか、{domain} が組織のドメインであることを示すために psd=n に置き換えてください。"
+dmarc.strict_alignment_breaks:
+  title: "{domain} の厳格な整合により、このメッセージが DMARC に失敗しています"
+  why: "送信サービスは {domain} のサブドメインを使っており、これは緩やかな整合では十分です。adkim=s または aspf=s を指定すると、そのサブドメインは認められず、メッセージは DMARC に失敗します。"
+  fix:
+    - "adkim=s と aspf=s を削除してください（緩やかモードの r が既定値です）。"
+    - "厳格な整合が必要な場合は、DKIM の署名を正確に d={domain} で行ってください。"
+  fix_by_provider:
+    amazon_ses: "AWS は、カスタムの MAIL FROM による SPF の整合には、aspf=s を設定しないことが前提だと示しています。"
+    google_workspace: "Google のドキュメントの例には adkim=s; aspf=s が含まれています。第三者のサービスがサブドメインから送信する場合は、そのまま写さないでください。"
+dmarc.fail_reject:
+  title: "このメッセージは DMARC に失敗し、{domain} は拒否を要求しています"
+  why: "{domain} に整合する認証が一つも通過していません。あなたの p=reject ポリシーは、これらのメッセージを拒否するよう求めています。Gmail、Yahoo、Outlook.com では、このメッセージは拒否されるでしょう。"
+  fix:
+    - "このメッセージを送った送信サービスを特定してください（{provider}、IP {ip}）。"
+    - "そのサービスで {domain} を認証してください。まず d={domain} の DKIM、サービスが対応していれば整合した SPF も設定します。"
+    - "そのサービスが {domain} の名義で送信すべきでない場合は、ポリシーが役目を果たしています。緩めないでください。"
+dmarc.fail_quarantine:
+  title: "このメッセージは DMARC に失敗し、{domain} は隔離を要求しています"
+  why: "{domain} に整合する認証が一つも通過していません。あなたのポリシーは、これらのメッセージを不審なものとして扱うよう求めています。ほとんどの受信者はこれらをスパムフォルダーに入れます。"
+  fix:
+    - "このメッセージを送った送信サービスを特定してください（{provider}、IP {ip}）。"
+    - "そのサービスで d={domain} の DKIM を設定し、可能であれば整合した SPF も設定してください。"
+    - "テストをやり直してください。DMARC の結果が pass である必要があります。"
+dmarc.fail_none:
+  title: "このメッセージは DMARC に失敗しています（ポリシー p=none）"
+  why: "あなたのポリシーは何も要求していませんが、失敗は見えています。Gmail は多量送信の整合を要求し、Yahoo は DMARC の合格を要求しています。このメッセージはスパムフォルダーに入るおそれがあり、このフローを修正しない限り、ポリシーを強化することはできません。"
+  fix:
+    - "サービス（{provider}、IP {ip}）を特定し、そのサービスで {domain} を認証してください（d={domain} の DKIM）。"
+    - "DMARC レポートで、同じ状況にあるほかのサービスがないか確認してください。"
+dmarc.temperror:
+  title: "{domain} の DMARC を読み取れませんでした（一時的な DNS エラー）"
+  why: "受信者はあなたのポリシーを読み取れませんでした。受信側では、メッセージが遅延されるか、DMARC なしで処理されます。"
+  fix:
+    - "テストをやり直して、エラーが再現するか確認してください。"
+    - "{domain} のすべてのネームサーバーが応答していること、そして DNSSEC の署名が有効であることを確認してください。"
+dmarc.duplicate_tag:
+  title: "タグ {value} が {domain} の DMARC に2回現れています"
+  why: "DMARC が DKIM から引き継いだ構文では、タグが繰り返されるとレコードは無効になります。受信側によっては、DMARC 全体が無視されるか、2つの値のうち片方だけが採用されます。どのポリシーが適用されるのか、もうわからなくなります。"
+  fix:
+    - "DNS ホスティング事業者で、TXT レコード _dmarc.{domain} を開いてください。"
+    - "{value} は、希望する値を持つ1つだけ残してください。複数のレポート用アドレスは、カンマで区切って1つの rua= タグにまとめてください。"
+    - "修正後のレコードの提案：{suggested_record}"
+dmarc.inherited:
+  title: "{domain} は {value} の DMARC ポリシーを適用しています"
+  why: "_dmarc.{domain} にはレコードがありません。そのため受信側は {value} のレコードを適用します。その sp=（なければ p=）が使われます。これはサブドメインにおける DMARC の通常の動作です。どのポリシーが適用されるかを把握していれば十分です。"
+  fix:
+    - "{value} のポリシーが {domain} にも適切であれば、何もする必要はありません。"
+    - "{domain} 専用のポリシーが必要な場合（例：新しい送信ツールを導入するまで p=none）は、_dmarc.{domain} に v=DMARC1 で始まる TXT を公開してください。"
+    - "すべてのサブドメインをまとめて設定するには、{value} のレコードの sp= を調整してください。"
+dmarc.invalid_tag_value:
+  title: "{domain} の DMARC に無効な値があります：{value}"
+  why: "受信側は理解できない値を無視し、そのタグの既定値を適用します。整合やレポートオプションについて設定したつもりの内容は、存在しないことになります。"
+  fix:
+    - "DNS ホスティング事業者で、TXT レコード _dmarc.{domain} を開いてください。"
+    - "テストで示されたタグを修正してください。adkim と aspf には r または s、fo には 0、1、d、s をコロンで区切って指定できます。"
+    - "修正後のレコードの提案：{suggested_record}"
+dmarc.strict_alignment:
+  title: "{domain} の DMARC は厳格な整合を要求しています（{value}）"
+  why: "厳格な整合では、{domain} のサブドメインを使って署名または送信されたメッセージが、DMARC に失敗します。多くの送信ツールは、戻りアドレスにサブドメインを使います（em…、mg.、bounce. など）。厳格にすると、それらの SPF の整合が失われます。"
+  fix:
+    - "送信がすべて {domain} を正確に使っており、DKIM（d=）も戻りアドレスも同じである場合にのみ、厳格な設定を残してください。"
+    - "そうでなければ adkim=s と aspf=s を削除してください。緩やかモード（r）が既定値です。"
+    - "厳格な設定を残す前に、DMARC レポートで正当な送信元が失敗していないことを確認してください。"

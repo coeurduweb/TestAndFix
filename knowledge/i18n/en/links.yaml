@@ -1,0 +1,143 @@
+links.shortener:
+  title: "The message uses a link shortener"
+  why: "The link {url} goes through a public shortener. These domains are shared with spammers: their reputation falls on your message, and the recipient cannot see where it leads."
+  fix:
+    - "Replace the shortened link with the full address of the page on {domain}."
+    - "If the address is too long, create a short redirect on your own domain, for example https://{domain}/promo."
+    - "If you need click tracking, use the tracking of your sending tool with a custom tracking domain."
+links.text_url_mismatch:
+  title: "A link displays one address and leads to another"
+  why: "The link text shows an address but the click leads to {url}. This is the hallmark of phishing: anti-phishing filters penalize this mismatch heavily."
+  fix:
+    - "If the link text is an address, make it point exactly to that address."
+    - "Otherwise, write a descriptive link text, for example “View my order”, instead of an address."
+    - "If the mismatch comes from click tracking, set up a tracking domain on a subdomain of {domain}."
+links.http_not_https:
+  title: "Some links use http instead of https"
+  why: "The link {url} is not encrypted. Browsers flag it as not secure, and an unencrypted link is a negative signal for filters that assess link quality."
+  fix:
+    - "Replace http:// with https:// in all the links of the template."
+    - "If the page does not respond over HTTPS, install a certificate on the site (Let's Encrypt is free with most hosts)."
+  fix_by_provider:
+    sendgrid: "If the http comes from click tracking, enable SSL on the tracking domain: Settings > Sender Authentication > Link Branding, then follow SendGrid's SSL click tracking procedure."
+links.ip_literal:
+  title: "A link points to an IP address instead of a domain name"
+  why: "The link {url} uses an IP address. Legitimate sites have a domain name: filters, including Microsoft's, treat these links as suspicious."
+  fix:
+    - "Replace the IP address with the domain name of the site, for example https://{domain}/."
+    - "If the service has no name, create a subdomain of {domain} that points to this IP and install a certificate."
+links.nonstandard_port:
+  title: "A link points to an unusual port"
+  why: "The link {url} targets a port other than the usual web ports. Microsoft offers to raise the spam score of these messages, and some corporate networks block these ports."
+  fix:
+    - "Serve the page on port 443 (standard HTTPS) and remove the port number from the link."
+    - "If the application runs on another port, place it behind a reverse proxy on a subdomain of {domain}."
+links.uribl_listed:
+  title: "A link in the message points to a blacklisted domain"
+  why: "The domain of the link {url} is listed on {list_name}. Filters check these lists for every link: a single listed domain is often enough to send the message to junk."
+  fix:
+    - "If the domain is not yours, remove this link from the message or replace it with another source."
+    - "If it is your domain or your tracking domain, check the diagnosis for the blacklist family, fix the cause, then request removal at {delist_url}."
+    - "Check that the link does not go through a shortener or a shared tracking domain."
+links.domain_recent:
+  title: "A link points to a domain registered very recently"
+  why: "The domain of the link {url} was registered {value} ago. New domains are widely used for phishing: filters give them little trust."
+  fix:
+    - "If possible, point the link to a page on your main domain {domain}, which is older."
+    - "If the new domain must remain, put it online with a real site, and gradually increase the volume of sends that cite it."
+links.broken:
+  title: "A link in the message is broken"
+  why: "The link {url} returns an error {value}. The reader lands on an error page, and a dead link is a sign of a neglected message for filters that follow links."
+  fix:
+    - "Open the link in a browser to confirm the error."
+    - "Correct the address in the template, or restore the page on the site."
+    - "If the page has moved, add a 301 redirect from the old address to the new one."
+links.redirect_chain:
+  title: "A link goes through several redirects"
+  why: "The link {url} goes through {value} redirects before arriving. Each step slows down opening and can pass through a domain with a poor reputation. Long chains are typical of spam."
+  fix:
+    - "Put the final address of the page in the message, after the redirects."
+    - "Keep at most one redirect: the one from your sending tool's click tracking."
+links.open_redirect:
+  title: "A link goes through an open redirect on a third-party site"
+  why: "The link {url} uses another site's redirect to hide the real destination. This technique is used to get around filters, which recognize it."
+  fix:
+    - "Replace this link with the direct address of the destination page."
+    - "If you copied the link from a search engine or a social network, open the page and copy the address shown in the browser's address bar."
+links.tracking_domain_unbranded:
+  title: "Tracking links use the sending tool's shared domain"
+  why: "Clicks go through the domain of {provider}, which is shared with all its customers. If one of them sends spam, this domain can be penalized, and your links with it."
+  fix:
+    - "Set up a custom tracking domain on a subdomain, for example click.{domain}."
+    - "Publish the CNAME record given by your sending tool, then enable the domain in its settings."
+  fix_by_provider:
+    sendgrid: "Settings > Sender Authentication > Link Branding > Brand your links: choose a subdomain of {domain} and publish the CNAMEs shown."
+    mailgun: "In the sending domain, Tracking section, enter a tracking domain on {domain} and publish the CNAME shown."
+    amazon_ses: "Create a configuration set with a custom redirect domain for click tracking, then publish the CNAME pointing to the tracking endpoint of your region."
+links.executable_target:
+  title: "A link downloads an executable file"
+  why: "The link {url} directly downloads a file of type {value}. Gmail refuses this type of file as an attachment, and filters treat a link to an executable the same way."
+  fix:
+    - "Replace the direct link with a link to a download page on {domain} that explains the file."
+    - "If it is software, distribute it from an app store or a signed download page."
+links.unsafe_scheme:
+  title: "A link uses a dangerous protocol (javascript:, data:, file:)"
+  why: "The link {url} is not a web address. Clients disable it, and filters see an attempt to run code or open a local file."
+  fix:
+    - "Replace each such link with an https address pointing to a page on {domain}."
+    - "If your tool's editor created a javascript:void(0) link, remove the link or give it a real destination."
+links.userinfo_in_url:
+  title: "A link contains an @ that hides its real destination"
+  why: "In {url}, everything before the @ is ignored by the browser: the link seems to lead to one site and leads to another. This is a known phishing technique and is penalized."
+  fix:
+    - "Remove the username:password@ part from the link."
+    - "If the link must pass an identifier, pass it as a query parameter after the ?."
+links.punycode_lookalike:
+  title: "A link uses an accented domain that imitates a known domain"
+  why: "The link {url} uses a domain name written with characters that look like those of a known domain. This is a spoofing technique that filters and browsers monitor."
+  fix:
+    - "If this domain is not yours, remove the link."
+    - "If it is your accented domain, prefer its version without accents on {domain} in emails."
+links.free_hosting_or_dyndns:
+  title: "A link points to free hosting or dynamic DNS"
+  why: "The link {url} is hosted on a service where anyone can create a page for free. These services are widely used for phishing, and their reputation is low."
+  fix:
+    - "Host the page on your own domain {domain}."
+    - "If you use a page builder, connect a subdomain of {domain} to it."
+links.cloud_share:
+  title: "The message points to a file share with little explanation"
+  why: "A short message that points to a shared file resembles fake invoice mailings. Filters and recipients are wary of it."
+  fix:
+    - "Explain in a few sentences what the file contains and why you are sending it."
+    - "For an expected document (invoice, quote), attach a PDF or make it available in a customer area on {domain}."
+links.no_link_to_sender_domain:
+  title: "No link leads to the sender's website"
+  why: "The message comes from {domain} but no link leads to this domain. Filters match the sending domain with the links: a total gap is reminiscent of mailings sent on behalf of third parties."
+  fix:
+    - "Add at least one link to your website on {domain}, for example in the logo and the footer."
+    - "If you sell on a marketplace, also add a link to your own website."
+links.localhost_or_staging:
+  title: "A link points to a test environment or a private network"
+  why: "The link {url} only works on your network or your test server. The recipient gets an error, and the message looks unproofread."
+  fix:
+    - "Replace the test address with the public address, on {domain}."
+    - "In your application, set the base address of the site (for example APP_URL or siteurl) to the production value."
+  fix_by_provider:
+    wordpress: "Check Settings > General > Site Address (URL), and search the database for the old address with WP-CLI: wp search-replace 'https://preprod.{domain}' 'https://{domain}' --dry-run."
+links.too_many:
+  title: "The message contains many links for little text"
+  why: "The message contains {value} links. A high density of links relative to the text is a typical spam profile, and it multiplies the risk of pointing to a poorly reputed domain."
+  fix:
+    - "Keep one main call to action and a few secondary links."
+    - "Remove duplicate links that lead to the same page."
+links.empty_href:
+  title: "Some links have no destination"
+  why: "Some buttons or links lead nowhere. The reader clicks without result, and the message looks unfinished."
+  fix:
+    - "Give each link an https address, or remove the a tag around the text."
+    - "Check in particular the social network icons in the footer."
+links.mailto_only:
+  title: "The message contains only mailto links"
+  why: "All the links open a new message. This is not penalized, but the reader has no way to check who you are on a website."
+  fix:
+    - "Add a link to your website on {domain}, for example in the signature."

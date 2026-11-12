@@ -1,0 +1,12 @@
+# Build context of the image: sources only (no local data, secrets, dependencies or test output)
+.git
+node_modules
+**/node_modules
+data
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+*.log
+i18n/todo

@@ -1,0 +1,19 @@
+dmarc-report.forwarding:
+  title: "Reenvío probable por {ip} (nombre inverso: {ptr})"
+  why: "{value} mensaje(s) de {domain} llegan a través de un servidor que retransmite el correo (reenvío de direcciones, lista de distribución). El SPF falla por diseño en este caso: es normal, y solo el DKIM mantiene estos mensajes autenticados."
+  fix:
+    - "No añadas {ip} a tu SPF: autorizarías a un servidor que no controlas a enviar en nombre de {domain}."
+    - "Comprueba que todos tus envíos estén firmados con DKIM con d={domain}: es la única autenticación que sobrevive al reenvío."
+    - "Nada más que hacer. Antes de pasar a p=reject, ten en cuenta que un mensaje reenviado cuya firma DKIM se rompió por el camino (una lista que modifica el asunto o el cuerpo) falla en DMARC y puede ser rechazado."
+dmarc-report.more_sources:
+  title: "{value} otra(s) fuente(s) no alineada(s) no se detallan"
+  why: "Solo las diez fuentes más voluminosas de cada categoría tienen una ficha. Las demás aparecen en la tabla de fuentes, con su volumen y su alineación."
+  fix:
+    - "Abre la tabla de fuentes y ordénala por número de mensajes."
+    - "Empieza por las fuentes detalladas aquí: corregir un servicio de envío suele arreglar varias IP a la vez."
+dmarc-report.low_volume:
+  title: "Volumen de informes todavía bajo ({value} mensajes)"
+  why: "Los informes subidos solo cubren {value} mensaje(s): un envío mensual o una herramienta poco usada puede no aparecer todavía. Las tasas de alineación aún no son representativas."
+  fix:
+    - "Sube los informes de las próximas semanas, de todos los destinatarios que te los envían."
+    - "No endurezcas tu política DMARC solo con base en estos informes."

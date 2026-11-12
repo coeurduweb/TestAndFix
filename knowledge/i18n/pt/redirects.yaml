@@ -1,0 +1,201 @@
+redirects.loop:
+  title: "A cadeia de redirecionamentos entra em loop"
+  why: "{url} redireciona para um endereço já visitado: o navegador desiste com o erro “muitos redirecionamentos” e os robôs nunca chegam à página. O site fica inacessível por esse endereço."
+  fix:
+    - "Identifique na cadeia acima os dois endereços que se redirecionam mutuamente."
+    - "Procure as regras que os produzem: .htaccess, configuração do nginx, extensão de redirecionamento do CMS, regra de página do CDN."
+    - "Uma causa frequente: o servidor força https enquanto o CDN ou o proxy se comunica com ele em http. Teste então o cabeçalho X-Forwarded-Proto em vez de %{HTTPS}."
+    - "Mantenha uma única regra que envie diretamente para o endereço final e refaça a medição."
+  fix_by_provider:
+    wordpress: "Em Ajustes > Geral, coloque o mesmo endereço, em https, nos campos “Endereço do WordPress (URL)” e “Endereço do site (URL)”. Depois, desative uma a uma as extensões que redirecionam (Redirection, Really Simple SSL, extensão de cache) e refaça a medição após cada uma; por fim, verifique as regras do .htaccess na raiz."
+redirects.too_many:
+  title: "A cadeia de redirecionamentos não termina"
+  why: "Depois de {value} requisições a partir de {url}, a cadeia continua. Os robôs do Google seguem no máximo 10 saltos: além disso, a página final não é rastreada, e cada salto atrasa o visitante."
+  fix:
+    - "Leia a cadeia acima e descubra onde ela deixa de se aproximar do destino."
+    - "Substitua os redirecionamentos sucessivos por um único redirecionamento 301 para o endereço final."
+redirects.private_target:
+  title: "A cadeia leva a um endereço privado"
+  why: "{url} aponta para {ip}, um endereço privado ou local. Pela Internet, ninguém consegue acessá-lo: é um erro de configuração do DNS, ou um redirecionamento que aponta para um servidor interno."
+  fix:
+    - "Se o domínio for público, corrija o registro A ou AAAA dele para que aponte para o IP público do servidor."
+    - "Se o redirecionamento apontar para um servidor interno (pré-produção, intranet), substitua o destino pelo endereço público."
+redirects.unreachable:
+  title: "Um endereço da cadeia não responde"
+  why: "A requisição para {url} falhou: {value}. O visitante vê uma página de erro do navegador, e os robôs não conseguem rastrear nada."
+  fix:
+    - "Se o nome não existir, crie o registro A (ou CNAME) no provedor do DNS, ou corrija o redirecionamento que leva a ele."
+    - "Se a conexão for recusada ou expirar, verifique se o servidor web escuta nas portas 80 e 443 e se o firewall as deixa passar."
+    - "Se a negociação TLS falhar, instale um certificado para esse nome no servidor."
+redirects.chain_long:
+  title: "Redirecionamentos demais antes de chegar ao destino"
+  why: "{url} passa por {value} redirecionamentos antes de {final}. Cada salto acrescenta uma conexão completa e atrasa a exibição, sobretudo no celular; os links que apontam para o endereço antigo transmitem menos bem o seu sinal."
+  fix:
+    - "Faça cada endereço antigo apontar diretamente para {final}, em um único redirecionamento 301."
+    - "Reúna as regras de http para https e de www em uma única regra, como a proposta acima."
+    - "Atualize os links internos, o sitemap e as tags canônicas com o endereço final."
+redirects.temporary_for_permanent:
+  title: "Um redirecionamento temporário é usado para uma mudança definitiva"
+  why: "{url} responde {status} (redirecionamento temporário) embora a mudança seja definitiva: {value}. Um redirecionamento temporário diz aos buscadores que o endereço antigo continua sendo o correto: o Google pode seguir exibindo o antigo, e o sinal dos links se transfere pior."
+  fix:
+    - "Troque o código por 301 (ou 308, se o método precisar ser mantido) na regra que produz esse salto."
+    - "Refaça a medição: a linha deve exibir 301 ou 308."
+  fix_by_provider:
+    wordpress: "Se a regra vier de uma extensão de redirecionamento (Ferramentas > Redirection, por exemplo), abra-a e escolha o código 301. Se ela estiver no .htaccess, substitua [R,L] ou [R=302,L] por [R=301,L]."
+redirects.redirect_to_error:
+  title: "O redirecionamento leva a uma página com erro"
+  why: "{url} redireciona ({value}) para {final}, que responde {status}. O visitante cai em um erro e o Google remove a página do índice: o benefício do redirecionamento se perde."
+  fix:
+    - "Troque o destino do redirecionamento por uma página que responda 200: a nova página equivalente ou, na falta dela, a seção superior."
+    - "Se o endereço de partida for um link curto (bit.ly, tinyurl.com...), altere o destino na conta do encurtador: nenhuma regra de servidor precisa ser escrita."
+    - "Se o conteúdo não existir mais, remova o redirecionamento e deixe o endereço antigo responder 410."
+    - "Se o destino responder 5xx, o servidor de destino está fora do ar: consulte os logs de erro dele."
+redirects.final_error:
+  title: "O endereço responde com erro"
+  why: "{url} responde {status} sem redirecionamento. Se esse endereço ainda recebe visitas ou links, eles terminam em erro; o Google remove do índice as URLs com 4xx."
+  fix:
+    - "Se a página foi movida, adicione um redirecionamento 301 para o novo endereço."
+    - "Se ela foi removida de propósito, mantenha 404 ou 410 e retire os links que apontam para ela."
+    - "Se o erro for 5xx, consulte os logs de erro do servidor ou da aplicação."
+redirects.redirect_without_location:
+  title: "Um código de redirecionamento sem endereço de destino"
+  why: "{url} responde {status}, mas não indica nenhum destino (cabeçalho Location ausente). O navegador fica em uma página vazia e os robôs param ali."
+  fix:
+    - "Adicione o cabeçalho Location com o endereço completo de destino na regra ou no código que produz esse {status}."
+    - "Se nenhum redirecionamento for desejado, faça a página responder 200."
+redirects.https_to_http:
+  title: "Um redirecionamento volta de https para http"
+  why: "{url} redireciona para {target}, em texto claro. O visitante perde a criptografia no meio do caminho, o navegador exibe “não seguro”, e um site que publica HSTS se bloqueia sozinho."
+  fix:
+    - "Troque o destino desse redirecionamento pelo equivalente em https://."
+    - "Verifique a configuração de endereço do site no CMS: ele deve começar com https://."
+  fix_by_provider:
+    wordpress: "Em Ajustes > Geral, os dois campos “Endereço do WordPress (URL)” e “Endereço do site (URL)” devem começar com https://."
+redirects.http_not_redirected:
+  title: "A versão http não é redirecionada para https"
+  why: "{url} é servida em texto claro, em vez de redirecionar para https://{domain}. Os visitantes que digitam o endereço sem https permanecem em uma página não criptografada, marcada como “não seguro” pelos navegadores."
+  fix:
+    - "Instale um certificado para {domain}, se ainda não tiver (o Let's Encrypt é gratuito na maioria dos provedores de hospedagem)."
+    - "Adicione a regra proposta acima: um único redirecionamento 301 de http para https."
+    - "Atrás de um CDN, ative a opção “sempre usar HTTPS” do CDN."
+  fix_by_provider:
+    wordpress: "Em Ajustes > Geral, passe os dois endereços do site para https://, depois adicione a regra 301 acima no início do .htaccess, antes do bloco # BEGIN WordPress."
+redirects.hsts_missing:
+  title: "HSTS ausente na página https"
+  why: "{domain} não publica HSTS: a cada visita digitada sem https, o navegador passa primeiro pelo http, onde um intermediário pode interceptar ou desviar o redirecionamento."
+  fix:
+    - "Adicione o cabeçalho proposto acima na configuração https do site."
+    - "Comece com uma duração curta (max-age=300) se não tiver certeza de que todos os subdomínios têm certificado, depois aumente para um ano."
+    - "Adicione includeSubDomains somente se todos os subdomínios de {domain} responderem em https."
+redirects.hsts_short:
+  title: "Duração do HSTS curta demais"
+  why: "O cabeçalho HSTS de {domain} vale apenas {value}. Passado esse prazo sem visitas, o navegador esquece a regra e volta ao http na visita seguinte."
+  fix:
+    - "Eleve max-age para 31536000 (um ano) quando o site estiver estável em https."
+redirects.hsts_no_subdomains:
+  title: "HSTS não cobre os subdomínios"
+  why: "HSTS protege {domain}, mas não os seus subdomínios: um subdomínio esquecido continua acessível em texto claro. É opcional, mas necessário para a lista de preload dos navegadores."
+  fix:
+    - "Verifique se todos os subdomínios de {domain} respondem em https com um certificado válido."
+    - "Depois, adicione includeSubDomains ao cabeçalho, como acima."
+redirects.meta_refresh:
+  title: "Redirecionamento por meta refresh em vez de redirecionamento HTTP"
+  why: "{url} carrega primeiro uma página e depois a envia para {target} após {value} segundo(s), por uma tag meta. O visitante baixa uma página desnecessária; o Google entende esse procedimento, mas recomenda um redirecionamento no servidor e trata um atraso diferente de zero como temporário."
+  fix:
+    - "Substitua a tag por um redirecionamento 301 no servidor, como proposto acima."
+    - "Depois, remova a página intermediária."
+redirects.refresh_header:
+  title: "Redirecionamento pelo cabeçalho Refresh em vez de um código 3xx"
+  why: "{url} responde normalmente e depois pede ao navegador que vá para {target} após {value} segundo(s), com o cabeçalho Refresh. Isso não é um redirecionamento HTTP padrão: prefira um código 301."
+  fix:
+    - "Substitua o cabeçalho Refresh por um redirecionamento 301 no servidor, como proposto acima."
+redirects.js_redirect:
+  title: "Redirecionamento em JavaScript em vez de um redirecionamento HTTP"
+  why: "{url} só envia para {target} por meio de um script. Sem JavaScript (alguns robôs, pré-visualizações de links, navegadores com bloqueio de scripts), o redirecionamento não acontece, e o Google só o vê se a renderização da página for bem-sucedida."
+  fix:
+    - "Substitua o script por um redirecionamento 301 no servidor, como proposto acima."
+    - "Se só for possível usar JavaScript (hospedagem estática sem regras), adicione pelo menos um meta refresh imediato e um link visível para {target}."
+redirects.js_seen:
+  title: "Um script da página pode enviar para outro lugar"
+  why: "O HTML de {url} contém uma mudança de endereço para {target}. Como a página tem conteúdo próprio, o check não a seguiu: provavelmente ela depende de uma ação ou de uma condição."
+  fix:
+    - "Se esse redirecionamento precisar acontecer a cada visita, faça-o no servidor com um 301."
+redirects.canonical_missing:
+  title: "A página final não indica o seu endereço canônico"
+  why: "{url} não declara o seu endereço canônico. Se a mesma página também responder com parâmetros ou em outro endereço, o Google escolhe sozinho qual exibir."
+  fix:
+    - "Adicione no <head> a tag proposta acima, com o endereço absoluto da página."
+  fix_by_provider:
+    wordpress: "Yoast SEO e Rank Math adicionam a tag canônica por padrão: verifique se uma dessas extensões está ativa e se esse tipo de conteúdo não está excluído da indexação nas configurações dela."
+redirects.canonical_mismatch:
+  title: "A canônica não corresponde ao endereço onde o redirecionamento termina"
+  why: "O redirecionamento termina em {url}, mas a página declara {target} como canônico. Os dois sinais se contradizem: o Google pode escolher um ou outro, e o redirecionamento deveria ter apontado diretamente para a canônica."
+  fix:
+    - "Se {target} for o endereço correto, faça o redirecionamento terminar diretamente nele."
+    - "Se {url} for o endereço correto, corrija a tag canônica como proposto acima."
+redirects.canonical_relative:
+  title: "A canônica está escrita com caminho relativo"
+  why: "A página declara {value} como canônico, sem o esquema nem o domínio. O Google recomenda um endereço absoluto: caso contrário, uma cópia do site em outro domínio herdaria a mesma canônica."
+  fix:
+    - "Escreva o endereço completo, como proposto acima."
+redirects.final_noindex:
+  title: "A página final proíbe a sua indexação"
+  why: "{url} pede aos buscadores que não a exibam nos resultados. Se essa for a página para onde os seus redirecionamentos levam, todo o tráfego de busca para esses endereços se perde."
+  fix:
+    - "Se a página deve ser encontrada, remova noindex do cabeçalho X-Robots-Tag (configuração do servidor) ou da tag meta robots (ajuste de SEO do CMS)."
+  fix_by_provider:
+    wordpress: "Em Ajustes > Leitura, desmarque “Desencorajar os mecanismos de busca de indexar este site”. Em Yoast SEO ou Rank Math, verifique também a configuração de indexação desse tipo de conteúdo."
+redirects.cert_invalid:
+  title: "Certificado inválido em {domain}"
+  why: "O certificado apresentado por {domain} é recusado: {value}. Os navegadores bloqueiam a página atrás de um aviso de segurança, e nenhum visitante chega a seguir o redirecionamento."
+  fix:
+    - "Renove ou reinstale o certificado de {domain} pelo painel da hospedagem (Let's Encrypt: execute a emissão novamente)."
+    - "Se o nome não estiver coberto, emita um certificado que contenha {domain} nos seus nomes (com e sem www, se ambos responderem)."
+    - "Se a cadeia não for reconhecida, instale no servidor, junto com o certificado do site, o certificado intermediário fornecido pela autoridade."
+redirects.cert_expiring:
+  title: "O certificado de {domain} expira em breve"
+  why: "O certificado de {domain} só será válido por mais {value} dia(s). Se não for renovado a tempo, os navegadores bloquearão o site atrás de um aviso."
+  fix:
+    - "Verifique se a renovação automática está ativa no painel da hospedagem ou na tarefa do certbot."
+    - "Faça uma renovação manual agora e refaça a medição."
+redirects.heavy_body:
+  title: "O HTML da página final é muito pesado"
+  why: "O documento HTML de {url} pesa {value}. O Googlebot só lê os primeiros 2 MB: o restante não é considerado na indexação, e o visitante espera o download completo."
+  fix:
+    - "Tire do HTML os dados embutidos volumosos (imagens em base64, grandes blocos JSON, estilos e scripts incorporados) e coloque-os em arquivos separados."
+    - "Pagine as listas muito longas."
+redirects.uncompressed:
+  title: "A página final não está compactada"
+  why: "{url} envia {value} de texto sem compactação, embora o navegador aceite. Uma compactação gzip ou Brotli costuma reduzir o volume de três a cinco vezes, e a exibição chega mais rápido."
+  fix:
+    - "Apache: ative o módulo deflate (ou brotli) para text/html, text/css, application/javascript e application/json."
+    - "nginx: adicione gzip on; e gzip_types text/css application/javascript application/json; no bloco http."
+redirects.slow:
+  title: "A cadeia é lenta"
+  why: "São necessários {value} ms para chegar a {url}, dos quais {ttfb} ms são de espera pelo primeiro byte na página final. O visitante espera antes de ver qualquer coisa."
+  fix:
+    - "Leia o detalhe por salto acima: se o DNS ou a conexão dominarem, reduza o número de saltos e de domínios percorridos."
+    - "Se a espera pelo primeiro byte dominar, ative o cache de páginas do CMS ou do servidor (LiteSpeed Cache, WP Rocket, cache do nginx)."
+    - "Refaça o comando curl proposto acima antes e depois de cada alteração: ele mede as mesmas fases a partir do seu computador."
+redirects.variants_diverge:
+  title: "As variantes do site não chegam ao mesmo endereço"
+  why: "Dependendo de como o endereço é digitado, {domain} chega a {value} páginas diferentes. O Google vê duplicatas, divide entre elas o sinal dos links, e o visitante nem sempre encontra a mesma versão."
+  fix:
+    - "Escolha um único endereço de referência, aqui {final}."
+    - "Faça todas as outras variantes redirecionarem para ele em um único 301, com a regra proposta acima."
+redirects.variant_extra_hops:
+  title: "Algumas variantes passam por vários redirecionamentos"
+  why: "Antes de chegar a {final}, essas variantes encadeiam vários redirecionamentos (por exemplo http, depois https, depois www): {value}. Uma única regra basta, e cada salto evitado acelera a primeira visita."
+  fix:
+    - "Substitua as regras sucessivas pela regra única proposta acima, que envia cada variante diretamente para {target}."
+redirects.variant_unreachable:
+  title: "Uma variante do site não responde"
+  why: "{value} não responde. Os visitantes que digitam essa forma do endereço, ou que seguem um link antigo, caem em um erro em vez de serem redirecionados."
+  fix:
+    - "Se o nome não existir no DNS, crie-o (um CNAME www apontando para {domain}, por exemplo) e depois redirecione-o com 301."
+    - "Se o nome existir, mas não responder em https, adicione-o ao certificado do site."
+redirects.language_redirect:
+  title: "Redirecionamento de idioma, temporário com razão"
+  why: "{url} redireciona para {target} com {status}, conforme o idioma anunciado pelo navegador. Isso é uma negociação: um redirecionamento definitivo fixaria esse idioma para todos os visitantes e para os buscadores."
+  fix:
+    - "Mantenha esse código temporário. Para os buscadores, declare as versões de idioma com links hreflang em vez do redirecionamento."

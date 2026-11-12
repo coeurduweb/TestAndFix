@@ -1,0 +1,97 @@
+attachments.dangerous_extension:
+  title: "An attachment is of a type that Gmail blocks"
+  why: "The file {value} is of a type that Gmail refuses for security reasons. Gmail will reject the message, and most other mail services very likely will too."
+  fix:
+    - "Remove the attachment."
+    - "Upload the file to a download space on {domain} or to a file sharing service, and put the link in the message."
+    - "Do not rename the extension to get around the block: Gmail also inspects the content of archives."
+attachments.archive_with_dangerous:
+  title: "An attached archive contains a file of a blocked type"
+  why: "The attached archive contains {value}, a prohibited file type. Gmail opens archives and blocks the prohibited types they contain: the message will be refused."
+  fix:
+    - "Remove the archive from the message."
+    - "Share the file through a download link from {domain}."
+attachments.encrypted_archive:
+  title: "An attached archive is password-protected"
+  why: "The archive {value} is encrypted: no filter can check its contents. Gmail refuses password-protected archives that contain other archives, and other filters treat them as suspicious."
+  fix:
+    - "Send the files without an encrypted archive, as ordinary attachments if their type is accepted."
+    - "For confidential documents, upload them to a secure space that requires authentication, and send only the link."
+attachments.double_extension:
+  title: "An attachment has a double extension"
+  why: "The file {value} imitates a document, but its real extension is the last one. This is the most common trick used to make someone open a program: filters block it."
+  fix:
+    - "Rename the file with a single extension, the one for its real format."
+    - "If the file really is a program, do not send it by email: use a download link instead."
+attachments.filename_bidi_override:
+  title: "The name of an attachment contains a character that reverses how it displays"
+  why: "The file name contains an invisible character that makes the extension appear backwards, so that a program looks like a document. This technique is treated as malicious."
+  fix:
+    - "Rename the file by typing the name yourself, without copying it."
+    - "Check the file's actual type before sending it."
+attachments.office_macro:
+  title: "An attached Office document contains macros"
+  why: "The file {value} contains macros. Macros are a major vector for malware: Gmail blocks those it considers malicious, and Office disables them by default on files received from the Internet."
+  fix:
+    - "Save the document without macros, using File > Save As, in .docx, .xlsx or .pptx format."
+    - "If the recipient does not need to edit the document, send it as a PDF."
+attachments.html_attachment:
+  title: "An HTML page is attached to the message"
+  why: "The file {value} opens in the browser as a web page. This format is mainly used for phishing with fake forms: filters treat it with strong suspicion."
+  fix:
+    - "Put the content in the body of the message, or publish it on a page of {domain} and send the link."
+    - "If it is a document to keep, send it as a PDF."
+attachments.pdf_active_content:
+  title: "An attached PDF contains code or an automatic action"
+  why: "The PDF {value} contains JavaScript, an action on opening or a hidden file. An ordinary document does not need any of these: filters treat it as potentially malicious."
+  fix:
+    - "Regenerate the PDF from the source document using the standard export option, without dynamic forms."
+    - "Or print it to PDF (“Microsoft Print to PDF” or “Save as PDF”): the code and embedded files are removed."
+attachments.pdf_with_links:
+  title: "The message points to links hidden in an attached PDF"
+  why: "The message is short and the links are in the PDF {value}. Putting links in an attachment is a known way to avoid link analysis: some filters take this into account."
+  fix:
+    - "Put the important links in the body of the message, on {domain}."
+    - "Add a few sentences that explain what the document contains."
+attachments.too_large:
+  title: "The message is too large for some mail services to receive"
+  why: "The message weighs {value}, attachments included after encoding. Google sets a limit of 25 MB of attachments for personal Gmail accounts, and Orange accepts 45 MB at most per message: beyond that, the message may be refused."
+  fix:
+    - "Remove the heavy attachments and put a download link in their place."
+    - "Compress PDFs (export at “web” or “screen” quality) and resize photos."
+    - "Keep in mind that encoding for sending increases the size by about one third."
+  fix_by_provider:
+    google_workspace: "Insert large files with the Google Drive button in the compose window rather than as attachments."
+    microsoft_365: "In Outlook, attach the file from OneDrive and choose Share link rather than Attach a copy."
+attachments.large:
+  title: "The attachments are heavy"
+  why: "The attachments weigh {value}. The message gets through, but it fills the recipient's mailbox and downloads slowly on mobile. On a bulk send, it multiplies the volume transmitted."
+  fix:
+    - "Compress documents and resize images before attaching them."
+    - "For a message sent to several recipients, use a download link instead."
+attachments.type_mismatch:
+  title: "The real type of an attachment does not match its name"
+  why: "The file {value} has an extension that does not match its actual content. Filters check file signatures and treat this mismatch as an attempt at disguise."
+  fix:
+    - "Open the file with the software that created it, and save it again in the format it claims."
+    - "Check that your application does not rename files when attaching them."
+attachments.no_filename:
+  title: "An attachment has no file name"
+  why: "The recipient will see a file named “noname” or “ATT00001” without knowing how to open it. An attachment without a name is also a sign of a message assembled by hand."
+  fix:
+    - "Give each attachment an explicit name in your code, for example invoice-2026-11.pdf."
+    - "Let the sending library write Content-Disposition with the filename parameter, encoded according to RFC 2231 if it contains accents."
+attachments.winmail_dat:
+  title: "The message contains a winmail.dat file"
+  why: "Outlook sent the message in TNEF format. Outside Microsoft clients, the recipient only sees an unreadable winmail.dat file, and your real attachments are inside it."
+  fix:
+    - "In Outlook, File > Options > Mail > Compose messages: choose HTML instead of Rich Text."
+    - "Do not set rich text for a specific contact in their properties."
+  fix_by_provider:
+    microsoft_365: "In Exchange Online PowerShell, disable TNEF for outgoing mail: Set-RemoteDomain Default -TNEFEnabled $false."
+attachments.attachment_without_body:
+  title: "The attachment is sent without any accompanying text"
+  why: "The message contains only an attachment and almost no text. This is exactly the format of trap fake invoices: filters and recipients are wary of it."
+  fix:
+    - "Add a few sentences: who you are, what the file contains, and why you are sending it."
+    - "Add a signature with the company name and a way to contact you."

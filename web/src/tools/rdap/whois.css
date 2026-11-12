@@ -1,0 +1,388 @@
+/* Whois et RDAP (Signal): comparison of the two parties, statuses, contacts, list table. */
+
+/* ---------- landing: the list field under the hero input ---------- */
+.wh-list {
+  justify-self: stretch;
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-top: var(--s2);
+}
+.wh-list__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.wh-list__head svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--fam, var(--ink-3));
+}
+.wh-list__title {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.wh-list__hint {
+  font-size: var(--fs-xs);
+}
+.wh-list textarea {
+  width: 100%;
+  min-height: 6.5rem;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--paper-2);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  color: var(--ink);
+  font: 13px/1.5 var(--font-mono);
+}
+.wh-list textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.wh-list__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--fs-xs);
+}
+
+/* ---------- comparison ---------- */
+.wh-cmp {
+  container-type: inline-size;
+  overflow: hidden;
+}
+.wh-cmp__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.wh-cmp__table th,
+.wh-cmp__table td {
+  text-align: left;
+  vertical-align: baseline;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.wh-cmp__table tbody tr:last-child th,
+.wh-cmp__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.wh-cmp__table thead th {
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  color: var(--ink-3);
+  width: 40%;
+}
+.wh-cmp__table thead th:first-child {
+  width: 20%;
+}
+.wh-src {
+  display: block;
+  margin-top: 2px;
+  font-weight: 500;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.wh-cmp__table tbody th {
+  font-weight: 600;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.wh-cmp__table tbody th .tag {
+  margin-left: 8px;
+}
+.wh-cmp__table td {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.wh-cmp__table .wh-wrap {
+  font-size: 12.5px;
+}
+.wh-cmp__table--one tbody th {
+  width: 20%;
+}
+.wh-row--diff td {
+  background: color-mix(in oklch, var(--warn) 7%, transparent);
+}
+
+/* a narrow card: each field becomes a small block, the two answers labelled */
+@container (max-width: 34rem) {
+  .wh-cmp__table thead {
+    display: none;
+  }
+  .wh-cmp__table,
+  .wh-cmp__table tbody,
+  .wh-cmp__table tr,
+  .wh-cmp__table th,
+  .wh-cmp__table td {
+    display: block;
+    width: auto;
+  }
+  .wh-cmp__table tr {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .wh-cmp__table tbody tr:last-child {
+    border-bottom: 0;
+  }
+  .wh-cmp__table tbody th,
+  .wh-cmp__table td {
+    padding: 2px 0;
+    border: 0;
+    white-space: normal;
+  }
+  .wh-cmp__table td[data-label]::before {
+    content: attr(data-label) ' : ';
+    font-family: var(--font-ui);
+    font-size: var(--fs-xs);
+    color: var(--ink-3);
+  }
+}
+
+/* ---------- statuses ---------- */
+.wh-status {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  display: grid;
+}
+.wh-status li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 14rem) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 7px 14px;
+  font-size: var(--fs-sm);
+}
+.wh-status li + li {
+  border-top: 1px solid var(--rule);
+}
+.wh-status__code {
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.wh-status__meaning {
+  color: var(--ink-2);
+}
+@media (max-width: 40rem) {
+  .wh-status li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .wh-status__meaning {
+    grid-column: 2;
+  }
+}
+
+/* ---------- contacts ---------- */
+.wh-contacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 10px;
+}
+.wh-contact {
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+}
+.wh-contact__role {
+  font-size: 13px;
+  font-weight: 700;
+}
+.wh-contact dl {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+.wh-contact dl > div {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 8px;
+  font-size: var(--fs-sm);
+}
+.wh-contact dt {
+  color: var(--ink-3);
+}
+.wh-contact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.wh-contact__note {
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+}
+
+/* ---------- technical ---------- */
+.wh-ns,
+.wh-attempts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-sm);
+}
+.wh-attempts li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.wh-attempts .dot {
+  transform: translateY(-1px);
+}
+.wh-raw pre {
+  max-height: 26rem;
+  overflow: auto;
+}
+
+/* ---------- list table ---------- */
+.wh-tb-wrap {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.wh-tb-wrap:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.wh-tb {
+  width: 100%;
+  min-width: 64rem;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.wh-tb th {
+  text-align: left;
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  color: var(--ink-3);
+  padding: 10px 6px 6px;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+.wh-tb th button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 1.75rem;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.wh-tb th[aria-sort='ascending'] button,
+.wh-tb th[aria-sort='descending'] button {
+  color: var(--lab);
+}
+.wh-tb th button:focus-visible,
+.wh-tb a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.wh-tb th svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+.wh-sort-idle {
+  opacity: 0.45;
+}
+.wh-tb td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  color: var(--ink-2);
+}
+.wh-tb tbody tr:last-child td {
+  border-bottom: 0;
+}
+.wh-tb-row {
+  animation: wh-in var(--t) var(--ease-out) both;
+}
+@keyframes wh-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wh-tb-row {
+    animation: none;
+  }
+}
+.wh-tb-row--pending td {
+  color: var(--ink-3);
+}
+.wh-c-dom a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 3px;
+}
+.wh-c-dom a:hover {
+  color: var(--lab);
+  text-decoration-color: var(--lab);
+}
+.wh-c-dom {
+  min-width: 8rem;
+  max-width: 15rem;
+  overflow-wrap: anywhere;
+}
+.wh-c-date {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.wh-c-st,
+.wh-c-ns,
+.wh-c-a {
+  font-size: 11.5px;
+}
+.wh-c-st span,
+.wh-c-ns span,
+.wh-c-a span {
+  display: block;
+  white-space: nowrap;
+}
+.wh-c-ct {
+  min-width: 7.5rem;
+  max-width: 16rem;
+}
+.wh-c-rar {
+  min-width: 8rem;
+  max-width: 9.5rem;
+}
+/* the longest header may take two lines rather than push the table past 1280 px */
+.wh-tb th.wh-c-rar {
+  white-space: normal;
+}
+.wh-tb th.wh-c-rar button {
+  text-align: left;
+}
+.wh-c-src {
+  min-width: 8rem;
+  max-width: 11rem;
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+}
+.wh-c-src .tag {
+  margin-top: 4px;
+}
+.wh-sub,
+.wh-ace {
+  display: block;
+  font-size: var(--fs-xs);
+}
+.wh-ignored {
+  margin: var(--s1) 0 0;
+  padding-left: 1.1rem;
+}
+.wh-contact__none {
+  font-size: var(--fs-sm);
+}
