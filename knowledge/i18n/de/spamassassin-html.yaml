@@ -315,3 +315,10 @@ sa.uri_img_wp_redir:
     - "Verwenden Sie die direkte Adresse des Bildes auf Ihrer Website (https://{domain}/wp-content/uploads/...)."
   fix_by_provider:
     wordpress: "Deaktivieren Sie den Bildbeschleuniger (Site Accelerator) von Jetpack oder kopieren Sie die Originaladresse des Bildes aus der Mediathek."
+sa.href_empty:
+  title: 'Ein leerer Link (href="") in einer Nachricht, die von einem Webserver gesendet wurde'
+  why: 'Das HTML enthält mindestens einen Link ohne Ziel (href=""). Von einem Webserver gesendet (PHPMailer, cPanel), ist das ein Muster gekaperter Formulare und gehackter Websites. SpamAssassin zählt eine Regel pro vorhandenem Versandmerkmal: Ein einziger leerer Link kann daher mehrere Punkte kosten.'
+  fix:
+    - 'Finden Sie den leeren Link (sein Text steht im Beleg) und geben Sie ihm eine https-Adresse oder entfernen Sie das a-Tag um den Text.'
+    - 'Suchen Sie in einer E-Mail-Vorlage nach href-Attributen, die mit einer Variablen gefüllt werden, die bei manchen Inhalten leer bleibt: Bei WooCommerce kann ein Produkt ohne öffentliche Seite (ausgeblendet, gelöscht oder als Platzhalter in einem Testversand) mit einem leeren Link ausgegeben werden.'
+    - 'Senden Sie einen Test erneut: Die HREF_EMPTY-Regeln verschwinden alle gemeinsam.'

@@ -10,7 +10,9 @@
 //   advice    worth improving, no notable effect on the delivery of this message: low and info
 //             findings, and every finding that costs no point.
 // A situation can set `impact:` or `axis:` in the base when the default is wrong.
+import { t } from '../../i18n.js';
 import { knowledge, type Axis, type Finding, type Impact } from '../../knowledge/engine.js';
+import { orgDomain } from '../received.js';
 
 const SENDER_FAMILIES = new Set([
   'spf', 'dkim', 'dmarc', 'arc', 'bimi', 'alignment', 'rdns', 'helo', 'blacklist', 'tls', 'mta-sts',
@@ -141,9 +143,14 @@ const MARKUP_FINDINGS = new Set(['html.no_doctype', 'html.lang_missing']);
  * writes (user, 2026-11-12: "Le nom de serveur mail-ed1-f46.google.com n'a pas de SPF" was listed as
  * an improvement of a Gmail message). Only advice is marked: a real problem stays in front.
  */
-export function markOutOfReach(findings: Finding[], facts: { helo?: string; ptr?: string; headers: { key: string; value: string }[] }) {
+export function markOutOfReach(findings: Finding[], facts: { helo?: string; ptr?: string; fromDomain?: string; headers: { key: string; value: string }[] }) {
   const host = [facts.helo, facts.ptr].filter((h): h is string => !!h).map((h) => h.toLowerCase().replace(/\.$/, ''));
-  const service = PROVIDER_HOSTS.find(([re]) => host.some((h) => re.test(h)))?.[1];
+  // A server named outside the sender's domain (a shared host, a provider not listed above) is run by
+  // someone else: its HELO and reverse DNS are theirs to fix (2026-11-13, "Publiez sur
+  // <shared host name> l'enregistrement TXT v=spf1 a -all" was advised to its customers).
+  const own = orgDomain(facts.fromDomain);
+  const foreign = host.length > 0 && !!own && host.every((h) => orgDomain(h) !== own);
+  const service = PROVIDER_HOSTS.find(([re]) => host.some((h) => re.test(h)))?.[1] ?? (foreign ? t('votre hébergeur') : undefined);
   const mid = facts.headers.find((h) => h.key === 'message-id')?.value ?? '';
   const composer = COMPOSERS.find(([re]) => re.test(mid))?.[1];
   for (const f of findings) {

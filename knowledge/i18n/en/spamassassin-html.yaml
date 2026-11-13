@@ -315,3 +315,10 @@ sa.uri_img_wp_redir:
     - "Use the direct address of the image on your site (https://{domain}/wp-content/uploads/...)."
   fix_by_provider:
     wordpress: Turn off the Jetpack image accelerator (Site Accelerator), or copy the original address of the image from the media library.
+sa.href_empty:
+  title: 'An empty link (href="") in a message sent from a web server'
+  why: 'The HTML contains at least one link with no destination (href=""). Sent from a web server (PHPMailer, cPanel), it is a pattern seen in hijacked forms and hacked sites. SpamAssassin counts one rule per sending trace present: a single empty link can therefore cost several points.'
+  fix:
+    - 'Find the empty link (its text is given in the evidence), then give it an https address or remove the a tag around the text.'
+    - 'In an email template, look for href attributes filled by a variable that stays empty for some content: with WooCommerce, a product with no public page (hidden, deleted, or a dummy in a test send) can come out with an empty link.'
+    - 'Send a test again: the HREF_EMPTY rules all disappear together.'

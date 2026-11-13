@@ -265,10 +265,10 @@ describe('Signal report helpers', () => {
   it('writes the headline from what blocks, then what risks the spam folder', () => {
     const g = (title: string, penalty: number, impact: 'blocking' | 'spam' | 'advice') => ({ title, penalty, impact });
     const ind = (verdict: 'blocking' | 'spam' | 'ok') => ({ verdict, sender: { lost: 0, blocking: 0, spam: 0, advice: 0, status: 'ok' as const }, message: { lost: 0, blocking: 0, spam: 0, advice: 0, status: 'ok' as const } });
-    expect(headlineOf([g('Trop d’image', 1, 'spam')], ind('spam'))).toMatchObject({ tone: 'watch', main: 'Rien ne bloque la livraison.', rest: 'Un seul point peut le faire classer en indésirables\u00a0: trop d’image.' });
+    expect(headlineOf([g('Trop d’image', 1, 'spam')], ind('spam'))).toMatchObject({ tone: 'watch', main: 'Rien ne bloque la livraison.', rest: 'Un seul élément peut le faire classer en indésirables\u00a0: trop d’image.' });
     const b = headlineOf([g('DKIM absent', 1.5, 'blocking'), g('SPF absent', 1.5, 'blocking'), g('Lien cassé', 0.5, 'spam')], ind('blocking'));
     // the first letter is lowered only when the second is lowercase: an acronym stays as written
-    expect(b).toMatchObject({ tone: 'bad', main: '2 points bloquent la livraison, d’abord\u00a0: DKIM absent.' });
+    expect(b).toMatchObject({ tone: 'bad', main: '2 éléments bloquent la livraison, d’abord\u00a0: DKIM absent.' });
     expect(b.rest).toBe('Un autre peut le faire classer en indésirables.');
     // the verdict names the most useful thing the sender can do; what only the service can do is left out
     const adv = (title: string, worth: number, outOfReach?: string) => ({ title, penalty: 0, impact: 'advice' as const, advicePenalty: worth, outOfReach });

@@ -117,7 +117,7 @@ Facts taken from each service's own site on 2026-11-12.
 
 | | TestAndFix | dnschecker.org | whatsmydns.net |
 |---|---|---|---|
-| Resolvers | 325 qualified in 114 countries on a fresh install, re-qualified daily, each one listed | "a comprehensive list of 100+ global DNS servers" ([home](https://dnschecker.org/)) | "DNS servers located in many countries" ([home](https://www.whatsmydns.net/)) |
+| Resolvers | 363 qualified in 120 countries on a fresh install (measured 2026-11-13), re-qualified daily, each one listed | "a comprehensive list of 100+ global DNS servers" ([home](https://dnschecker.org/)) | "DNS servers located in many countries" ([home](https://www.whatsmydns.net/)) |
 | Reference | The authoritative servers, queried live | Not stated | Not stated |
 | Self-hosted, open source | Yes, MIT | Not stated | Not stated |
 

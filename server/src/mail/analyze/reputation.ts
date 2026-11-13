@@ -134,6 +134,15 @@ function saPoints(score: number): string {
   return tPlural(score, '{n} point', '{n} points');
 }
 
+/**
+ * Our points for a SpamAssassin score: half of it, at most 3, as research/scripts/sa_build.py gives
+ * every rule that has its own entry. Until 2026-11-13 a rule without an entry cost its full score:
+ * the same 1-point rule then cost 1 or 0.5 depending on whether it had been written up.
+ */
+export function saPenalty(score: number): number {
+  return Math.max(0, Math.min(3, Math.round(score * 5) / 10));
+}
+
 function saSeverity(score: number): Severity {
   if (score >= 2.5) return 'high';
   if (score >= 1) return 'medium';
@@ -157,6 +166,14 @@ export async function runSpamassassin(sc: StepContext) {
     return;
   }
   sc.data.spamassassin = { available: true, score: r.score, threshold: r.threshold, isSpam: r.isSpam, rules: r.rules, ms: r.ms };
+  // Rules explained by one entry share one cause (four HREF_EMPTY_* rules for one empty link): one
+  // finding, which costs what its rules cost together (2026-11-13: a WooCommerce order email listed the
+  // same empty link three times, as three raw rule names).
+  const together = new Map<string, number>();
+  for (const rule of r.rules) {
+    const s = rule.score >= T.minSaScore ? situationForSaRule(rule.name) : undefined;
+    if (s && (s.sa_rules?.length ?? 0) > 1) together.set(s.id, (together.get(s.id) ?? 0) + saPenalty(rule.score));
+  }
   for (const rule of r.rules) {
     if (rule.score < 0) {
       c.pass(`sa.${rule.name.toLowerCase()}`, 'spamassassin', `${rule.name} (${rule.score})`, rule.description, 'spamassassin');
@@ -170,8 +187,8 @@ export async function runSpamassassin(sc: StepContext) {
     c.add(id, {
       vars: { rule: rule.name, rule_score: rule.score },
       evidence: `SpamAssassin ${rule.name} (${saPoints(rule.score)}) : ${rule.description}`,
-      // a rule without its own entry costs what SpamAssassin gives it
-      penalty: s ? undefined : Math.round(rule.score * 10) / 10,
+      // a rule without its own entry costs half its SpamAssassin score, like the ones with an entry
+      penalty: s ? (together.has(s.id) ? Math.min(3, Math.round(together.get(s.id)! * 10) / 10) : undefined) : saPenalty(rule.score),
       severity: s ? undefined : saSeverity(rule.score),
       section: s ? undefined : 'spamassassin',
       fallback: {
@@ -180,7 +197,7 @@ export async function runSpamassassin(sc: StepContext) {
         fix: [],
         family: 'spamassassin',
         severity: saSeverity(rule.score),
-        penalty: rule.score,
+        penalty: saPenalty(rule.score),
       },
     });
   }

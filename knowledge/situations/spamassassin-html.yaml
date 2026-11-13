@@ -1034,3 +1034,32 @@
       de l'image depuis la médiathèque.
   references:
   - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.href_empty
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(HREF_EMPTY_PHPMAIL)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : rawbody /href=""/ combiné
+      à un signe d''envoi par script ou par hébergement mutualisé : X-Mailer PHPMailer ou X-PHP-Originating-Script
+      (HREF_EMPTY_PHPMAIL), en-tête X-AntiAbuse de cPanel (HREF_EMPTY_XANTIABUSE), X-Authenticated-Sender
+      (HREF_EMPTY_XAUTHED), IP sans reverse DNS (HREF_EMPTY_NORDNS). Une règle par signe présent : leurs
+      points s''additionnent.'
+  sa_rules:
+  - HREF_EMPTY_PHPMAIL
+  - HREF_EMPTY_XANTIABUSE
+  - HREF_EMPTY_XAUTHED
+  - HREF_EMPTY_NORDNS
+  title: Un lien vide (href="") dans un message envoyé depuis un serveur web
+  why: 'Le HTML contient au moins un lien sans destination (href=""). Envoyé depuis un serveur web (PHPMailer,
+    cPanel), c''est un motif des formulaires détournés et des sites piratés. SpamAssassin compte une règle
+    par signe d''envoi présent : un seul lien vide peut donc coûter plusieurs points.'
+  fix:
+  - Trouvez le lien vide (son texte est donné dans la preuve), puis donnez-lui une adresse https ou retirez
+    la balise a autour du texte.
+  - 'Dans un modèle d''e-mail, cherchez les href remplis par une variable qui reste vide pour certains
+    contenus : avec WooCommerce, un produit sans page publique (masqué, supprimé, ou fictif dans un envoi
+    de test) peut sortir avec un lien vide.'
+  - 'Renvoyez un test : les règles HREF_EMPTY disparaissent toutes ensemble.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf

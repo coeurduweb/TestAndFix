@@ -721,7 +721,7 @@ export function headlineOf(findings: Pick<Finding, 'title' | 'penalty' | 'impact
     return {
       tone: 'bad',
       mood: t('Livraison compromise'),
-      main: tn(blocking.length, 'Un point bloque la livraison\u00a0: {top}.', '{n} points bloquent la livraison, d’abord\u00a0: {top}.', { top }),
+      main: tn(blocking.length, 'Un élément bloque la livraison\u00a0: {top}.', '{n} éléments bloquent la livraison, d’abord\u00a0: {top}.', { top }),
       rest: spam.length ? tn(spam.length, 'Un autre peut le faire classer en indésirables.', '{n} autres peuvent le faire classer en indésirables.') : undefined,
     };
   }
@@ -731,7 +731,7 @@ export function headlineOf(findings: Pick<Finding, 'title' | 'penalty' | 'impact
       tone: 'watch',
       mood: t('Arrivera, avec un risque d’indésirables'),
       main: t('Rien ne bloque la livraison.'),
-      rest: tn(spam.length, 'Un seul point peut le faire classer en indésirables\u00a0: {top}.', '{n} points peuvent le faire classer en indésirables, d’abord\u00a0: {top}.', { top }),
+      rest: tn(spam.length, 'Un seul élément peut le faire classer en indésirables\u00a0: {top}.', '{n} éléments peuvent le faire classer en indésirables, d’abord\u00a0: {top}.', { top }),
     };
   }
   return {

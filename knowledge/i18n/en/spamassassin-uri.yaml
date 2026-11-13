@@ -192,3 +192,10 @@ sa.shortener_short_img:
   fix:
     - Replace the short link with the full address, and add text to the message.
     - "Warning: youtu.be, amzn.to, wp.me and eepurl.com count as shorteners. Use the long addresses."
+sa.uri_wp_hacked_2:
+  title: 'An address in the message points to wp-content/plugins, wp-content/themes or wp-includes'
+  why: 'An address in the message, a link or an image, points into a technical WordPress folder. Hacked sites hide malicious pages and files there, hence the rule. A legitimate image can lead there too: a logo served by the theme, or a replacement image from a plugin. The address concerned is given in the evidence.'
+  fix:
+    - 'Serve the images of the message from the media library (/wp-content/uploads/), not from the folder of a theme or a plugin.'
+    - 'With WooCommerce, the placeholder.webp image of the plugin replaces the photo of a product that has none: give the product an image, or run the test with a product that has one.'
+    - 'If the address matches nothing you have set up, check the site: it may be compromised.'

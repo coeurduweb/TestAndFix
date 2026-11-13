@@ -288,6 +288,31 @@
   - 'Authentifiez le message (SPF ou DKIM) : la règle ne s''applique pas aux messages authentifiés.'
   references:
   - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
+- id: sa.uri_wp_hacked_2
+  family: spamassassin
+  severity: medium
+  penalty: 0.5
+  detect:
+    signal: spamassassin.hit(URI_WP_HACKED_2)
+    notes: 'score SA 4.0.x : 1 (sa-update r1939780, jeu réseau + Bayes). Teste : meta : uri __PS_TEST_LOC_WP
+      (chemins /wp-content/plugins, /wp-content/themes, /wp-includes et quelques chemins de modules souvent
+      piratés), hors URI_WP_HACKED, List-Id, fil de discussion et VERP. Les adresses d''images comptent
+      aussi.'
+  sa_rules:
+  - URI_WP_HACKED_2
+  title: Une adresse du message pointe dans wp-content/plugins, wp-content/themes ou wp-includes
+  why: 'Une adresse du message, lien ou image, pointe dans un dossier technique de WordPress. Les sites
+    piratés y cachent des pages et des fichiers malveillants, d''où la règle. Une image légitime peut
+    y mener aussi : logo servi par le thème, image de remplacement d''une extension. L''adresse en cause
+    est donnée dans la preuve.'
+  fix:
+  - Servez les images du message depuis la médiathèque (/wp-content/uploads/), pas depuis le dossier d'un
+    thème ou d'une extension.
+  - 'Avec WooCommerce, l''image placeholder.webp de l''extension remplace la photo d''un produit qui n''en
+    a pas : donnez une image au produit, ou faites le test avec un produit qui en a une.'
+  - 'Si l''adresse ne correspond à rien que vous ayez mis en place, vérifiez le site : il peut être compromis.'
+  references:
+  - https://github.com/apache/spamassassin/blob/trunk/rulesrc/sandbox/jhardin/20_misc_testing.cf
 - id: sa.uri_php_redir
   family: spamassassin
   severity: medium

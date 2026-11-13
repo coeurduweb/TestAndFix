@@ -147,6 +147,9 @@ export function runContent(sc: StepContext) {
   const placeholder = /lorem ipsum|dolor sit amet|votre texte ici|your text here|insert text/i.exec(visible);
   if (placeholder) c.add('content.placeholder_text', { vars: { value: placeholder[0] }, fallback: { title: t('Texte de remplissage oublié'), family: 'content', severity: 'low', penalty: 0.3 } });
 
+  // the measure goes into the evidence too, as the title of the entry does not quote it (2026-11-13)
+  const imageRatio = () =>
+    t('{images} pour {words}', { images: tPlural(contentImgs.length, '{n} image', '{n} images'), words: tPlural(visibleWords, '{n} mot', '{n} mots') });
   if (contentImgs.length && visibleWords < T.minBodyWords)
     c.add('content.image_only', {
       vars: {
@@ -157,7 +160,7 @@ export function runContent(sc: StepContext) {
         }),
       }, fallback: { title: t('Message composé d’images presque sans texte'), family: 'content', severity: 'high', penalty: 1.5 } });
   else if (contentImgs.length && visibleWords / contentImgs.length < T.minWordsPerImage)
-    c.add('images.image_heavy', { vars: { value: t('{images} images pour {words} mots', { images: contentImgs.length, words: visibleWords }) }, fallback: { title: t('Beaucoup d’images pour peu de texte'), family: 'images', severity: 'medium', penalty: 0.5 } });
+    c.add('images.image_heavy', { vars: { value: imageRatio() }, evidence: imageRatio(), fallback: { title: t('Beaucoup d’images pour peu de texte'), family: 'images', severity: 'medium', penalty: 0.5 } });
 
   if (facts.html && facts.html.decoded.length > T.gmailClipBytes)
     c.add('content.html_clipped_gmail', { vars: { value: t('{n} Ko', { n: Math.round(facts.html.decoded.length / 1024) }) }, fallback: { title: t('HTML de plus de 102 Ko : Gmail le coupera'), family: 'content', severity: 'medium', penalty: 0.7 } });

@@ -742,24 +742,24 @@
   - 'Retirez la chaîne GTUBE : elle ne sert qu''à vérifier qu''un filtre fonctionne.'
   references:
   - https://github.com/apache/spamassassin/blob/trunk/rules/20_body_tests.cf
-
 - id: spamassassin.over_threshold
   family: spamassassin
   severity: critical
   impact: blocking
-  # The points are carried by the rules themselves: this entry only states the consequence.
   penalty: 0
   detect:
     signal: spamassassin.score >= spamassassin.threshold
-    notes: "required_score vaut 5.0 par défaut dans SpamAssassin (Mail::SpamAssassin::Conf)."
+    notes: 'required_score vaut 5.0 par défaut dans SpamAssassin (Mail::SpamAssassin::Conf). Pénalité
+      0 : les points sont portés par les règles elles-mêmes, cette entrée n''énonce que la conséquence.'
   sa_rules: []
-  title: "SpamAssassin classe ce message en spam ({value} points, seuil {rule_score})"
-  why: >
-    Au-delà de ce seuil, un serveur qui filtre avec SpamAssassin et son réglage par défaut range le
-    message en indésirables ou le refuse. Les points viennent des règles listées dans « Risque
-    d'indésirables ».
+  title: SpamAssassin classe ce message en spam ({value} points, seuil {rule_score})
+  why: 'Au-delà de ce seuil, un serveur qui filtre avec SpamAssassin et son réglage par défaut range le
+    message en indésirables ou le refuse. Les points viennent des règles listées dans « Risque d''indésirables
+    ».
+
+    '
   fix:
-    - "Corrigez d'abord les règles SpamAssassin qui coûtent le plus de points."
-    - "Renvoyez ensuite un message de test : il doit passer sous {rule_score} points."
+  - Corrigez d'abord les règles SpamAssassin qui coûtent le plus de points.
+  - 'Renvoyez ensuite un message de test : il doit passer sous {rule_score} points.'
   references:
-    - https://spamassassin.apache.org/full/4.0.x/doc/Mail_SpamAssassin_Conf.html
+  - https://spamassassin.apache.org/full/4.0.x/doc/Mail_SpamAssassin_Conf.html

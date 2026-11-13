@@ -301,14 +301,14 @@
 - id: sa.dkim_signed
   family: spamassassin
   severity: info
-  # 0 since 2026-11-11: a signature is not a defect. When it verifies, DKIM_VALID cancels the rule and
-  # the analyzer ignores it; when it does not, the dkim family carries the points. Was 0.1.
-  penalty: 0
+  penalty: 0.0
   detect:
     signal: spamassassin.hit(DKIM_SIGNED)
     notes: 'score SA 4.0.x : 0.1 (sa-update r1939780, jeu réseau + Bayes). Teste : check_dkim_signed()
       : présence d''au moins une signature DKIM, valide ou non. Score légèrement positif, compensé par
-      DKIM_VALID.'
+      DKIM_VALID. Pénalité 0 depuis le 2026-11-11 (valait 0,1) : une signature n''est pas un défaut. Quand
+      elle est valide, DKIM_VALID annule la règle et l''analyse l''ignore ; quand elle ne l''est pas,
+      la famille dkim porte les points.'
   sa_rules:
   - DKIM_SIGNED
   title: Le message porte une signature DKIM

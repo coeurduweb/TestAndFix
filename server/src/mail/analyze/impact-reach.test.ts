@@ -22,3 +22,15 @@ describe('decision precision (2026-11-12)', () => {
     expect([helo.outOfReach, doctype.outOfReach, dkim.outOfReach, blocking.outOfReach]).toEqual(['Google', 'Gmail', undefined, undefined]);
   });
 });
+
+describe('one cause, one card (2026-11-13)', () => {
+  it('a server named outside the sender domain is the host’s to fix, a server of the sender is not', () => {
+    const helo = () => ({ ...f('spf.helo_none', 'spf', 'low', 0.1), impact: 'advice' as const });
+    const shared = helo();
+    markOutOfReach([shared], { helo: 'web42.shared-host.example', fromDomain: 'winery.example', headers: [] });
+    expect(shared.outOfReach).toBe('votre hébergeur');
+    const ownServer = helo();
+    markOutOfReach([ownServer], { helo: 'mail.agency.example', fromDomain: 'agency.example', headers: [] });
+    expect(ownServer.outOfReach).toBeUndefined();
+  });
+});

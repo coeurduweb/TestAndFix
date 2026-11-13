@@ -192,3 +192,10 @@ sa.shortener_short_img:
   fix:
     - "Ersetzen Sie den verkürzten Link durch die vollständige Adresse und ergänzen Sie Text zur Nachricht."
     - "Achtung: youtu.be, amzn.to, wp.me und eepurl.com zählen als Kürzungsdienste; verwenden Sie die langen Adressen."
+sa.uri_wp_hacked_2:
+  title: 'Eine Adresse der Nachricht zeigt auf wp-content/plugins, wp-content/themes oder wp-includes'
+  why: 'Eine Adresse der Nachricht, Link oder Bild, zeigt in einen technischen Ordner von WordPress. Gehackte Websites verstecken dort schädliche Seiten und Dateien, daher die Regel. Auch ein legitimes Bild kann dorthin führen: ein vom Theme ausgeliefertes Logo oder ein Ersatzbild eines Plugins. Die betroffene Adresse steht im Beleg.'
+  fix:
+    - 'Stellen Sie die Bilder der Nachricht aus der Mediathek (/wp-content/uploads/) bereit, nicht aus dem Ordner eines Themes oder Plugins.'
+    - 'Mit WooCommerce ersetzt das Bild placeholder.webp des Plugins das Foto eines Produkts, das keines hat: Geben Sie dem Produkt ein Bild oder testen Sie mit einem Produkt, das eines hat.'
+    - 'Wenn die Adresse zu nichts passt, was Sie eingerichtet haben, prüfen Sie die Website: Sie könnte kompromittiert sein.'

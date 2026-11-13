@@ -89,6 +89,8 @@ describe('provider detection', () => {
   it('recognises providers by DKIM, headers, reverse DNS', () => {
     expect(detectProvider({ dkimDomains: ['atelier-exemple.fr', 'sendinblue.com'] })?.key).toBe('brevo');
     expect(detectProvider({ headers: { 'x-ses-outgoing': '2026.11.10-54.240.1.1' } })?.key).toBe('amazon_ses');
+    // an SPF include alone does not beat what the message itself shows (2026-11-13)
+    expect(detectProvider({ spfRecord: 'v=spf1 include:_spf.google.com ~all', headers: { 'x-antiabuse': 'cPanel' } })?.key).toBe('cpanel');
     expect(detectProvider({ ptr: ['mail-am6eur05on2101.outbound.protection.outlook.com'] })?.key).toBe('microsoft_365');
     expect(detectProvider({ ptr: ['mail.o2switch.net'] })?.key).toBe('o2switch');
     expect(detectProvider({ spfRecord: 'v=spf1 include:mx.ovh.com ~all' })?.key).toBe('ovh');

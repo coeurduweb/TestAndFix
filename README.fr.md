@@ -126,7 +126,7 @@ Faits relevés sur le site de chaque service le 12/11/2026 (citations d'origine,
 
 | | TestAndFix | dnschecker.org | whatsmydns.net |
 |---|---|---|---|
-| Résolveurs | 325 qualifiés dans 114 pays sur une installation neuve, requalifiés chaque jour, chacun listé | « a comprehensive list of 100+ global DNS servers » ([accueil](https://dnschecker.org/)) | « DNS servers located in many countries » ([accueil](https://www.whatsmydns.net/)) |
+| Résolveurs | 363 qualifiés dans 120 pays sur une installation neuve (mesuré le 2026-11-13), requalifiés chaque jour, chacun listé | « a comprehensive list of 100+ global DNS servers » ([accueil](https://dnschecker.org/)) | « DNS servers located in many countries » ([accueil](https://www.whatsmydns.net/)) |
 | Référence | Les serveurs qui font autorité, interrogés en direct | Non indiqué | Non indiqué |
 | Auto-hébergé, open source | Oui, MIT | Non indiqué | Non indiqué |
 

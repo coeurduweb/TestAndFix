@@ -192,3 +192,10 @@ sa.shortener_short_img:
   fix:
     - "Substitua o link encurtado pelo endereço completo e adicione texto à mensagem."
     - "Atenção: youtu.be, amzn.to, wp.me e eepurl.com contam como encurtadores; use os endereços longos."
+sa.uri_wp_hacked_2:
+  title: 'Um endereço da mensagem aponta para wp-content/plugins, wp-content/themes ou wp-includes'
+  why: 'Um endereço da mensagem, link ou imagem, aponta para uma pasta técnica do WordPress. Sites invadidos escondem ali páginas e arquivos maliciosos, por isso a regra. Uma imagem legítima também pode levar até lá: um logo servido pelo tema ou uma imagem de substituição de um plugin. O endereço em causa aparece na prova.'
+  fix:
+    - 'Sirva as imagens da mensagem pela biblioteca de mídia (/wp-content/uploads/), não pela pasta de um tema ou de um plugin.'
+    - 'Com o WooCommerce, a imagem placeholder.webp do plugin substitui a foto de um produto que não tem nenhuma: dê uma imagem ao produto, ou faça o teste com um produto que tenha.'
+    - 'Se o endereço não corresponder a nada que você tenha configurado, verifique o site: ele pode estar comprometido.'

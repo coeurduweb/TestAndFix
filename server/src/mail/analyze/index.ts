@@ -13,6 +13,7 @@ import { domainOf, firstAddress, runHeaders } from './headers.js';
 import { runInfra } from './infra.js';
 import { runLinks } from './links.js';
 import { runBlacklists, runSpamassassin } from './reputation.js';
+import { mergeSameCause } from './same-cause.js';
 import { BULK_ESP } from './thresholds.js';
 import { isPublicIp } from '../../lib/net.js';
 import { runCompliance, runUnsubscribe } from './unsubscribe.js';
@@ -324,6 +325,7 @@ export async function analyzeMessage(input: AnalyzeInput, deps: AnalyzeDeps): Pr
     heavy.penalty = 0;
     heavy.evidence = [heavy.evidence, t('Déjà compté par SpamAssassin ({rule}) : pas de seconde pénalité.', { rule: imageRule.name })].filter(Boolean).join('\n');
   }
+  mergeSameCause(c, sc.data);
   const sa = sc.data.spamassassin as { available?: boolean; score?: number; threshold?: number; isSpam?: boolean } | undefined;
   if (sa?.available && sa.isSpam)
     c.add('spamassassin.over_threshold', {
@@ -334,7 +336,12 @@ export async function analyzeMessage(input: AnalyzeInput, deps: AnalyzeDeps): Pr
   const compliance = sc.data.compliance as { isBulk?: boolean; requirements?: { id: string; ok: boolean | null; scope: string }[] } | undefined;
   const failingRequirements = (compliance?.requirements ?? []).filter((r) => r.ok === false && (r.scope === 'all' || compliance?.isBulk)).map((r) => r.id);
   const saRules = (sc.data.spamassassin as { rules?: { name: string; score: number }[] } | undefined)?.rules ?? [];
-  const ruleScore = new Map(saRules.map((r) => [situationForSaRule(r.name)?.id ?? `sa.${r.name.toLowerCase()}`, r.score]));
+  // several rules can share one entry (HREF_EMPTY_*): their scores add up, as SpamAssassin adds them
+  const ruleScore = new Map<string, number>();
+  for (const r of saRules) {
+    const id = situationForSaRule(r.name)?.id ?? `sa.${r.name.toLowerCase()}`;
+    ruleScore.set(id, (ruleScore.get(id) ?? 0) + r.score);
+  }
   classifyFindings(c.findings, {
     failingRequirements,
     saOverThreshold: !!sa?.isSpam,

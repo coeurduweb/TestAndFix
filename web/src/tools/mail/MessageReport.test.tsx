@@ -66,7 +66,7 @@ describe('MessageReport', () => {
       </MemoryRouter>,
     );
     expect(document.querySelector('.verdict')!.className).toContain('verdict--bad');
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/^\d+ points bloquent la livraison, d’abord\u00a0: /);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/^\d+ éléments bloquent la livraison, d’abord\u00a0: /);
     const sender = screen.getByRole('button', { name: /^Expéditeur/ });
     const all = document.querySelectorAll('.todo__item').length;
     fireEvent.click(sender);

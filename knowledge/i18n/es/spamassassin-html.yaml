@@ -315,3 +315,10 @@ sa.uri_img_wp_redir:
     - "Usa la dirección directa de la imagen en tu sitio (https://{domain}/wp-content/uploads/...)."
   fix_by_provider:
     wordpress: "Desactiva el acelerador de imágenes (Site Accelerator) de Jetpack, o copia la dirección de origen de la imagen desde la biblioteca de medios."
+sa.href_empty:
+  title: 'Un enlace vacío (href="") en un mensaje enviado desde un servidor web'
+  why: 'El HTML contiene al menos un enlace sin destino (href=""). Enviado desde un servidor web (PHPMailer, cPanel), es un patrón de los formularios secuestrados y de los sitios pirateados. SpamAssassin cuenta una regla por cada indicio de envío presente: un único enlace vacío puede costar, por tanto, varios puntos.'
+  fix:
+    - 'Localiza el enlace vacío (su texto aparece en la prueba) y dale una dirección https, o quita la etiqueta a que rodea el texto.'
+    - 'En una plantilla de correo, busca los href rellenados con una variable que queda vacía en algunos contenidos: con WooCommerce, un producto sin página pública (oculto, eliminado o ficticio en un envío de prueba) puede salir con un enlace vacío.'
+    - 'Vuelve a enviar una prueba: las reglas HREF_EMPTY desaparecen todas a la vez.'

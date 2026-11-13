@@ -327,7 +327,11 @@ export function detectProviders(s: ProviderSignals): DetectedProvider[] {
     }
   }
   const generic = new Set(['cpanel', 'plesk', 'wordpress']);
-  return out.sort((a, b) => Number(generic.has(a.key)) - Number(generic.has(b.key)) || b.confidence - a.confidence);
+  // An SPF include says the domain MAY send through a service, not that this message did: a candidate
+  // seen only there comes after any seen in the message itself (2026-11-13: a message sent by a cPanel
+  // server was labelled "Google Workspace (probable)" from include:_spf.google.com alone).
+  const spfOnly = (d: DetectedProvider) => d.evidence.every((e) => e.startsWith('SPF : '));
+  return out.sort((a, b) => Number(spfOnly(a)) - Number(spfOnly(b)) || Number(generic.has(a.key)) - Number(generic.has(b.key)) || b.confidence - a.confidence);
 }
 
 /** The most likely provider, or undefined when no signal matched. */
