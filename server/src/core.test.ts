@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { openDb, purgeOld, saveResult, newId } from './db.js';
-import { checkToken, hashPassword, makeToken, verifyPassword } from './auth.js';
+import { checkToken, hashPassword, makeToken, revokeSessions, verifyPassword } from './auth.js';
 import { fill, scoreOf, sortFindings, type Finding } from './knowledge/engine.js';
 import { dnsblName, isPublicIp, reverseName } from './lib/net.js';
 import { days } from './lib/time.js';
@@ -42,6 +42,14 @@ describe('auth', () => {
     expect(checkToken(tok, days(31))).toBe(false);
     expect(checkToken(tok.replace(/.$/, 'A'), 1000)).toBe(false);
     expect(checkToken('garbage')).toBe(false);
+  });
+  it('revokes every open session on logout', () => {
+    process.env.CHECK_SESSION_SECRET = 'x';
+    const tok = makeToken(0);
+    expect(checkToken(tok, days(29))).toBe(true);
+    revokeSessions();
+    expect(checkToken(tok, 1000)).toBe(false);
+    expect(checkToken(makeToken(0), 1000)).toBe(true);
   });
 });
 

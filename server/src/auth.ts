@@ -37,19 +37,34 @@ function sign(payload: string) {
   return createHmac('sha256', secret()).update(payload).digest('base64url');
 }
 
+/**
+ * Session generation, stored in the database and carried by every token. Logging out bumps it, which
+ * revokes every open session on every browser: a stateless cookie alone could not be revoked, and a
+ * copied cookie stayed valid until it expired (owner's decision of 2026-11-15: sessions last 30 days,
+ * and logging out must end them for real, not only remove the cookie from one browser).
+ */
+function generation(): number {
+  return getSetting<number>('session_generation', 0);
+}
+
 export function makeToken(at = now()): string {
-  const exp = String(at + days(config.sessionDays));
-  return `${exp}.${sign(exp)}`;
+  const payload = `${at + days(config.sessionDays)}.${generation()}`;
+  return `${payload}.${sign(payload)}`;
 }
 
 export function checkToken(token: string | undefined, at = now()): boolean {
   if (!token) return false;
-  const [exp, sig] = token.split('.');
-  if (!exp || !sig || !/^\d+$/.test(exp)) return false;
-  const expected = sign(exp);
+  const [exp, gen, sig] = token.split('.');
+  if (!exp || !gen || !sig || !/^\d+$/.test(exp) || !/^\d+$/.test(gen)) return false;
+  const expected = sign(`${exp}.${gen}`);
   if (expected.length !== sig.length) return false;
   if (!timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) return false;
-  return Number(exp) > at;
+  return Number(exp) > at && Number(gen) === generation();
+}
+
+/** Ends every open session (all browsers). */
+export function revokeSessions() {
+  setSetting('session_generation', generation() + 1);
 }
 
 export function passwordConfigured(): boolean {
@@ -131,7 +146,9 @@ export function registerAuth(app: FastifyInstance, db: DB = getDb()) {
   });
 
   // the device cookie stays: logging in again on this browser reopens the same notebook
-  app.post('/api/auth/logout', async (_req, reply) => {
+  // only a valid session may revoke: the route is public, and anyone could otherwise log the owner out
+  app.post('/api/auth/logout', async (req, reply) => {
+    if (isAuthenticated(req)) revokeSessions();
     reply.clearCookie(COOKIE, { path: '/' });
     return { authenticated: false };
   });
