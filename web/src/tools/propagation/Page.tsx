@@ -35,6 +35,7 @@ import {
 } from './model';
 import { FilterBar, type StatusFilter } from './FilterPanel';
 import { continentChips, countryOptions, fold, regionOptions } from './places';
+import { needsPeek, Peek, Records, usePeek } from './Peek';
 import { Popover } from './Popover';
 import { ResolverGroup } from './ResolverList';
 import { facets as facetsOf, fallbackDefaults, hasPlaces, ipv6Available, readSelection, regionNamesOf, selectResolvers, serverDefaults, streamQuery, writeSelection, type Selection } from './selection';
@@ -295,6 +296,48 @@ function CopyLink() {
 }
 
 /* ---------- technical views ---------- */
+/** The expected value of the headline when it does not fit: its first record or how many, all of them on demand. */
+function RefTruth({ values, ttl, expected }: { values: string[]; ttl: number | null; expected: boolean }) {
+  const peek = usePeek();
+  const btn = useRef<HTMLButtonElement>(null);
+  const many = values.length > 1;
+  return (
+    <>
+      <button
+        ref={btn}
+        type="button"
+        className={`pp-truth pp-truth--peek ${many ? '' : 'mono'}`}
+        aria-expanded={peek.open}
+        aria-controls={peek.open ? 'peek-ref' : undefined}
+        onClick={peek.toggle}
+        onMouseEnter={() => peek.show()}
+        onMouseLeave={peek.hide}
+        onFocus={() => peek.show(0)}
+        onBlur={(e) => !document.getElementById('peek-ref')?.contains(e.relatedTarget as Node) && peek.hide()}
+      >
+        {many ? tn(values.length, 'la valeur attendue', 'les {n} valeurs attendues') : values[0].length > 40 ? `${values[0].slice(0, 36)}…` : values[0]}
+      </button>
+      <Peek
+        id="peek-ref"
+        anchor={btn}
+        state={peek}
+        label={expected ? t('Votre valeur attendue') : t('Valeur attendue')}
+        head={
+          <>
+            <b>{expected ? t('Votre valeur attendue') : t('Valeur des serveurs autoritaires')}</b>
+            <span>
+              {tn(values.length, '{n} enregistrement', '{n} enregistrements')}
+              {ttl !== null && <> · TTL {fmtTtl(ttl)}</>}
+            </span>
+          </>
+        }
+      >
+        <Records values={values} />
+      </Peek>
+    </>
+  );
+}
+
 function ServersTable({ a }: { a: AuthorityEvent }) {
   return (
     <div className="table-wrap">
@@ -608,16 +651,9 @@ export default function PropagationPage() {
   const mood = failed ? t('Mesure impossible') : running ? t('Mesure en cours') : !counts.answered ? t('Aucune réponse') : late.length > 0 ? t('Propagation en cours') : t('Propagation terminée');
   const upToDate = counts.fresh + counts.regional;
   const certain = counts.answered - counts.uncertain;
-  // several values (MX, a rotating pool): the first and how many others, the whole list on hover
+  // several values or a long one (TXT, DKIM, MX): a button that opens all of them in full (Peek.tsx)
   const refValues = authority && ref!.kind !== 'cname' && (authority.authority.exists || ref!.source === 'expected') ? sortValues(ref!.values) : [];
-  const value =
-    refValues.length > 1 ? (
-      <span className="mono pp-truth" title={refValues.join('\n')}>
-        {refValues[0]} <span className="pp-truth__more">{tn(refValues.length - 1, 'et {n} autre', 'et {n} autres')}</span>
-      </span>
-    ) : (
-      <span className="mono pp-truth">{refText}</span>
-    );
+  const value = refValues.length && needsPeek(refValues.join('\n')) ? <RefTruth values={refValues} ttl={ref!.ttl} expected={ref!.source === 'expected'} /> : <span className="mono pp-truth">{refText}</span>;
   const vtag = { v: () => value };
   const lateVars = { up: fmtCount(upToDate), certain: fmtCount(certain), n: fmtCount(late.length), time: freshBy ? fmtClock(freshBy) : '' };
   const line: ReactNode = failed

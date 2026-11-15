@@ -1246,6 +1246,7 @@
   "registre injoignable": "レジストリに接続できません",
   "Registre non joint : {detail}": "レジストリに接続できません：{detail}",
   "Règle SpamAssassin {rule} ({points})": "SpamAssassinルール {rule}（{points}）",
+  "relais interne {relay} sans XFORWARD, {reason}": "XFORWARD なしの内部リレー {relay}、{reason}",
   "Relancez la vérification avec cette adresse publique.": "この公開アドレスで確認をやり直してください。",
   "renouvelé automatiquement par le registre à l’échéance ; si vous ne voulez pas le garder, voyez vite votre bureau d’enregistrement": "期限時にレジストリが自動で更新します。このドメインを手放す場合は、早めにレジストラに確認してください",
   "Renouvelez {domain} chez votre registrar immédiatement.": "レジストラで {domain} を今すぐ更新してください。",

@@ -207,3 +207,40 @@ describe('List-Unsubscribe parsing', () => {
     expect(parseListUnsubscribe('https://a.fr/u').valid).toBe(false);
   });
 });
+
+describe('behind a relay of our network that sends no XFORWARD', () => {
+  // 2026-11-14: a Google Workspace message relayed by the front VM was reported "sent in clear text" by 10.20.0.1
+  it('analyses the sender named by the relay, not the relay', async () => {
+    const signed = await sign(fixture('clean.eml'), 'atelier-exemple.fr', 's1', key.privateKey);
+    const relayHop =
+      `Received: from mail.atelier-exemple.fr (mail.atelier-exemple.fr [${SENDER_IP}])\r\n` +
+      `\tby relais.check.localhost (Postfix) with ESMTPS id 325BC3EDA6\r\n` +
+      `\tfor <t-abcd2345@check.localhost>; Tue, 10 Nov 2026 15:58:03 +0100\r\n`;
+    const raw = Buffer.concat([Buffer.from(relayHop, 'latin1'), signed]);
+    const d = deps(fakeResolver(goodZone(key.record)));
+    const trusting = { ...d, config: { ...d.config, mail: { ...d.config.mail, trustedRelays: ['10.20.0.1/32'] } } };
+    const r = await analyzeMessage(smtpInput(raw, { clientIp: '10.20.0.1', helo: 'relais.check.localhost', tls: null }), trusting);
+    const env = r.data.envelope as { clientIp?: string; ipSource?: string; ipReason?: string };
+    expect(env).toMatchObject({ clientIp: SENDER_IP, ipSource: 'received' });
+    expect(env.ipReason).toContain('10.20.0.1');
+    expect(ids(r)).not.toContain('tls.inbound_plaintext');
+    expect(r.passed.map((p) => p.id)).toEqual(expect.arrayContaining(['spf.pass', 'tls.inbound']));
+  });
+
+  it('believes no Received from a peer that is not a trusted relay', async () => {
+    const signed = await sign(fixture('clean.eml'), 'atelier-exemple.fr', 's1', key.privateKey);
+    const forged = `Received: from mail.atelier-exemple.fr (mail.atelier-exemple.fr [${SENDER_IP}])\r\n\tby relais.check.localhost (Postfix) with ESMTPS id 1\r\n\tfor <t-abcd2345@check.localhost>; Tue, 10 Nov 2026 15:58:03 +0100\r\n`;
+    const raw = Buffer.concat([Buffer.from(forged, 'latin1'), signed]);
+    const r = await analyzeMessage(smtpInput(raw, { clientIp: '172.17.0.1', tls: null }), deps(fakeResolver(goodZone(key.record))));
+    expect(r.data.envelope).toMatchObject({ clientIp: '172.17.0.1', ipSource: 'smtp' });
+  });
+
+  it('keeps the connection itself when the relay names no public sender', async () => {
+    const raw = await sign(fixture('clean.eml'), 'atelier-exemple.fr', 's1', key.privateKey);
+    const d = deps(fakeResolver(goodZone(key.record)));
+    const trusting = { ...d, config: { ...d.config, mail: { ...d.config.mail, trustedRelays: ['127.0.0.1/32'] } } };
+    const r = await analyzeMessage(smtpInput(raw, { clientIp: '127.0.0.1', tls: null }), trusting);
+    expect((r.data.envelope as { ipSource?: string }).ipSource).toBe('smtp');
+    expect(ids(r)).toContain('tls.inbound_plaintext');
+  });
+});

@@ -84,6 +84,26 @@ export function classifyFindings<F extends Finding>(findings: F[], ctx: ImpactCo
   return findings;
 }
 
+/**
+ * One cause, one card (user, 2026-11-14: « 2 problèmes mais un seul motif »). An unmet Gmail / Yahoo /
+ * Microsoft requirement whose cause already has its own blocking card is folded into that card (the
+ * requirement becomes a line of what was measured); its own card stays only when nothing else names
+ * the cause. Returns the ids of the requirement cards to remove.
+ */
+export function foldRequirements(findings: Finding[], requirements: { id: string; situation?: string }[]): string[] {
+  const folded: string[] = [];
+  for (const r of requirements) {
+    const card = findings.find((f) => f.id === r.situation && f.family === 'bulk-sender');
+    const isCause = REQUIREMENT_CAUSES[r.id];
+    if (!card || !isCause || folded.includes(card.id)) continue;
+    const cause = findings.filter((f) => f.family !== 'bulk-sender' && f.impact === 'blocking' && isCause(f)).sort((a, b) => b.penalty - a.penalty)[0];
+    if (!cause) continue;
+    cause.evidence = [cause.evidence, card.evidence].filter(Boolean).join('\n');
+    folded.push(card.id);
+  }
+  return folded;
+}
+
 export interface AxisSummary {
   /** points lost by the findings of this axis */
   lost: number;

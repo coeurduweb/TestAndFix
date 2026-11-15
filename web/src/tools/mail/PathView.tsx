@@ -1,6 +1,6 @@
 // The path of the message: the relays of the Received chain, oldest first, with the encryption
 // and the delay of each hand-off. The only drawing of the report.
-import { Lock, LockOpen, CircleHelp } from 'lucide-react';
+import { Lock, LockOpen, CircleHelp, Network } from 'lucide-react';
 import { CodeBlock } from '../../components/ui';
 import { fmtDateTime, plural } from '../../lib/format';
 import { locale, t, tn } from '../../lib/i18n';
@@ -11,9 +11,9 @@ import type { Hop } from './types';
 const SLOW_SEC = 300;
 
 function Leg({ leg, n }: { leg: PathLeg; n: number }) {
-  const state = leg.tls === true ? 'tls' : leg.tls === false ? 'clear' : 'unknown';
-  const Icon = state === 'tls' ? Lock : state === 'clear' ? LockOpen : CircleHelp;
-  const proto = state === 'tls' ? (leg.protocol ?? 'TLS') : state === 'clear' ? t('en clair') : t('non indiqué');
+  const state = leg.tls === true ? 'tls' : leg.internal ? 'internal' : leg.tls === false ? 'clear' : 'unknown';
+  const Icon = state === 'tls' ? Lock : state === 'clear' ? LockOpen : state === 'internal' ? Network : CircleHelp;
+  const proto = state === 'tls' ? (leg.protocol ?? 'TLS') : state === 'internal' ? t('réseau interne') : state === 'clear' ? t('en clair') : t('non indiqué');
   const slow = leg.delaySec !== null && leg.delaySec >= SLOW_SEC;
   return (
     <div className="mail-path__leg" data-state={state}>
@@ -150,8 +150,8 @@ export function PathCard({ hops, date, receivedAt }: { hops: Hop[]; date?: strin
               <b>
                 {node.name}
                 {leg && (
-                  <em data-state={leg.tls === true ? 'tls' : leg.tls === false ? 'clear' : 'unknown'}>
-                    {leg.tls === true ? (leg.protocol ?? 'TLS') : leg.tls === false ? t('en clair') : t('chiffrement non indiqué')}
+                  <em data-state={leg.tls === true ? 'tls' : leg.internal ? 'internal' : leg.tls === false ? 'clear' : 'unknown'}>
+                    {leg.tls === true ? (leg.protocol ?? 'TLS') : leg.internal ? t('réseau interne') : leg.tls === false ? t('en clair') : t('chiffrement non indiqué')}
                     {leg.delaySec !== null && leg.delaySec > 0 ? ` · +${fmtDelay(leg.delaySec)}` : ''}
                   </em>
                 )}

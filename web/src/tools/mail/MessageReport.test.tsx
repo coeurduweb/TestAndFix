@@ -67,14 +67,22 @@ describe('MessageReport', () => {
     );
     expect(document.querySelector('.verdict')!.className).toContain('verdict--bad');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/^\d+ éléments bloquent la livraison, d’abord\u00a0: /);
-    const sender = screen.getByRole('button', { name: /^Expéditeur/ });
+    // the card is an on/off filter; the bar above the list shows the same state (2026-11-14)
+    const sender = document.querySelector<HTMLButtonElement>('.mr-axis--sender')!;
+    const bar = (name: RegExp) => within(document.querySelector('.mr-listbar') as HTMLElement).getByRole('button', { name });
     const all = document.querySelectorAll('.todo__item').length;
+    expect(bar(/^Tous les points/).getAttribute('aria-pressed')).toBe('true');
+    expect(sender.textContent).toContain('Filtre inactif');
     fireEvent.click(sender);
     expect(sender.getAttribute('aria-pressed')).toBe('true');
+    expect(sender.textContent).toContain('Filtre actif');
+    expect(bar(/^Expéditeur/).getAttribute('aria-pressed')).toBe('true');
     const rows = document.querySelectorAll('.todo__item');
     expect(rows.length).toBeLessThan(all);
+    expect(bar(/^Expéditeur/).textContent).toContain(String(rows.length));
     for (const row of rows) expect(within(row as HTMLElement).getByText('Expéditeur')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Tout afficher' }));
+    fireEvent.click(bar(/^Tous les points/));
+    expect(sender.getAttribute('aria-pressed')).toBe('false');
     expect(document.querySelectorAll('.todo__item').length).toBe(all);
   });
 });

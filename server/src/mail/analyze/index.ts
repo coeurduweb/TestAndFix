@@ -16,8 +16,9 @@ import { runBlacklists, runSpamassassin } from './reputation.js';
 import { mergeSameCause } from './same-cause.js';
 import { BULK_ESP } from './thresholds.js';
 import { isPublicIp } from '../../lib/net.js';
+import { inCidrs } from '../smtp.js';
 import { runCompliance, runUnsubscribe } from './unsubscribe.js';
-import { classifyFindings, indicatorsOf, markOutOfReach, type Indicators } from './impact.js';
+import { classifyFindings, foldRequirements, indicatorsOf, markOutOfReach, type Indicators } from './impact.js';
 import type { AnalyzeDeps, AnalyzeInput, MessageFacts, StepContext } from './types.js';
 import { locale, msg, t } from '../../i18n.js';
 
@@ -97,7 +98,7 @@ function addressOf(a: AddressObject | AddressObject[] | undefined): { address?: 
   return { address: flat[0]?.address?.toLowerCase(), name: flat[0]?.name, count: flat.length };
 }
 
-async function buildFacts(input: AnalyzeInput, now: Date): Promise<MessageFacts> {
+async function buildFacts(input: AnalyzeInput, now: Date, trustedRelays: string[] = []): Promise<MessageFacts> {
   const parsed = parseRaw(input.raw);
   const H = parsed.headers;
   const mp = await simpleParser(input.raw, { skipHtmlToText: true, skipTextToHtml: true, skipImageLinks: true, skipTextLinks: true });
@@ -111,7 +112,14 @@ async function buildFacts(input: AnalyzeInput, now: Date): Promise<MessageFacts>
   let ipSource: MessageFacts['ipSource'] = 'none';
   let tls: MessageFacts['tls'];
   let ipReason: string | undefined;
-  if (input.via === 'smtp' && input.clientIp) {
+  // Behind a trusted relay that does not send XFORWARD, the peer is that relay, not the sender
+  // (2026-11-14: a Google Workspace message relayed by the front VM was reported "sent in clear text"
+  // from 10.20.0.1, without SPF nor reverse DNS). The relay's Received names the sender. Only a relay
+  // of CHECK_SMTP_TRUSTED_RELAYS: any other peer is the client, whatever Received it writes.
+  const relayedWithoutXforward =
+    input.via === 'smtp' && !!input.clientIp && !isPublicIp(input.clientIp) && inCidrs(input.clientIp, trustedRelays) && input.tls?.ipSource !== 'xforward';
+  const relayOrigin = relayedWithoutXforward ? findOrigin(hops, input.receiverDomains) : undefined;
+  if (input.via === 'smtp' && input.clientIp && !relayOrigin) {
     ip = input.clientIp;
     helo = input.helo;
     // behind a trusted relay (XFORWARD) the client and its TLS are those of the original connection
@@ -123,12 +131,12 @@ async function buildFacts(input: AnalyzeInput, now: Date): Promise<MessageFacts>
       source: input.tls?.source === 'relay' ? 'relay' : 'smtp',
     };
   } else {
-    const origin = findOrigin(hops, input.receiverDomains);
+    const origin = relayOrigin ?? findOrigin(hops, input.receiverDomains);
     if (origin) {
       ip = origin.ip;
       helo = origin.helo;
       ipSource = 'received';
-      ipReason = origin.reason;
+      ipReason = relayOrigin ? t('relais interne {relay} sans XFORWARD, {reason}', { relay: input.clientIp!, reason: origin.reason }) : origin.reason;
       const proto = /\b(TLSv?1(?:\.[0-3])?|SSLv3)\b/i.exec(origin.hop.tlsDetail ?? '')?.[1];
       tls = {
         used: origin.hop.tls,
@@ -226,7 +234,7 @@ export async function analyzeMessage(input: AnalyzeInput, deps: AnalyzeDeps): Pr
 
   const c = new Collector();
   progress('parse', stepLabel('parse'), 'start');
-  const facts = await buildFacts(input, now);
+  const facts = await buildFacts(input, now, deps.config.mail?.trustedRelays);
   progress('parse', stepLabel('parse'), 'done');
   const sc: StepContext = { facts, deps, c, data: {} };
   c.vars = {
@@ -347,6 +355,7 @@ export async function analyzeMessage(input: AnalyzeInput, deps: AnalyzeDeps): Pr
     saOverThreshold: !!sa?.isSpam,
     sa: sa?.available && typeof sa.score === 'number' && typeof sa.threshold === 'number' ? { total: sa.score, threshold: sa.threshold, ruleScore } : undefined,
   });
+  for (const id of foldRequirements(c.findings, (compliance?.requirements ?? []) as { id: string; situation?: string }[])) c.remove(id);
   // A list that could not be queried is a limit of the measurement, not something to improve.
   const blocked = c.findings.find((x) => x.id === 'blacklist.query_blocked');
   if (blocked) {

@@ -1246,6 +1246,7 @@
   "registre injoignable": "registro inaccesible",
   "Registre non joint : {detail}": "Registro no accesible: {detail}",
   "Règle SpamAssassin {rule} ({points})": "Regla SpamAssassin {rule} ({points})",
+  "relais interne {relay} sans XFORWARD, {reason}": "relé interno {relay} sin XFORWARD, {reason}",
   "Relancez la vérification avec cette adresse publique.": "Vuelve a lanzar la comprobación con esta dirección pública.",
   "renouvelé automatiquement par le registre à l’échéance ; si vous ne voulez pas le garder, voyez vite votre bureau d’enregistrement": "renovado automáticamente por el registro al vencer; si no quieres conservarlo, consulta cuanto antes con tu registrador",
   "Renouvelez {domain} chez votre registrar immédiatement.": "Renueva {domain} en tu registrador de inmediato.",

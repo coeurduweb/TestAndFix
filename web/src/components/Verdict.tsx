@@ -185,14 +185,16 @@ export function Verdict({
 const AXIS_LABEL = { sender: msg('Expéditeur'), message: msg('Message') } as const;
 
 /** One finding as a row; opens in place on the cause, the fix, what was measured and the sources. */
-export function IssueCard({ f, extra, defaultOpen = false }: { f: Finding; extra?: ReactNode; index?: number; defaultOpen?: boolean }) {
+export function IssueCard({ f, extra, defaultOpen = false, grouped = false }: { f: Finding; extra?: ReactNode; index?: number; defaultOpen?: boolean; grouped?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   const k = kindOf(f, Boolean(f.impact));
   const bodyId = `issue-${f.id}-body`;
   return (
     <li className="todo__item" id={`issue-${f.id}`}>
       <button type="button" className="todo__row" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
-        {k === 'lost' ? <span aria-hidden /> : <span className={`dot dot--${k}`} aria-hidden />}
+        {/* under a group heading the heading carries the colour: every row starts at the same indent
+            (user, 2026-11-14: the blocking and spam rows stood out of their group, the advice rows did not) */}
+        {k === 'lost' || grouped ? <span aria-hidden /> : <span className={`dot dot--${k}`} aria-hidden />}
         <span className="todo__t">{f.title}</span>
         {f.outOfReach ? (
           <span className="axis-tag">{t('chez {service}', { service: f.outOfReach })}</span>
@@ -331,7 +333,7 @@ export function IssueList({
             {g.items.map((f, i) => {
               const open = first && g.tone !== 'n';
               if (open) first = false;
-              return <IssueCard key={f.id + i} f={f} extra={extra?.(f)} defaultOpen={open} />;
+              return <IssueCard key={f.id + i} f={f} extra={extra?.(f)} defaultOpen={open} grouped />;
             })}
           </ul>
         </div>
@@ -346,7 +348,7 @@ export function IssueList({
           {remarksOpen && (
             <ul className="todo__list" role="list" style={{ margin: 0, padding: 0, listStyle: 'none', borderTop: '1px solid var(--rule)' }}>
               {remarks.map((f, i) => (
-                <IssueCard key={f.id + i} f={f} extra={extra?.(f)} />
+                <IssueCard key={f.id + i} f={f} extra={extra?.(f)} grouped />
               ))}
             </ul>
           )}

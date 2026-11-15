@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Finding } from '../../knowledge/engine.js';
-import { axisOf, classifyFindings, impactOf, indicatorsOf } from './impact.js';
+import { axisOf, classifyFindings, foldRequirements, impactOf, indicatorsOf } from './impact.js';
 
 const f = (id: string, family: string, severity: Finding['severity'], penalty: number): Finding => ({ id, family, severity, penalty, title: id, why: '', fix: [], references: [] });
 const none = { failingRequirements: [], saOverThreshold: false };
@@ -69,5 +69,21 @@ describe('impact on delivery', () => {
   it('never calls a finding that costs no point a risk', () => {
     expect(impactOf(f('spf.helo_none', 'spf', 'info', 0), none)).toBe('advice');
     expect(impactOf(f('links.empty_href', 'links', 'low', 0.1), none)).toBe('advice');
+  });
+});
+
+describe('one cause, one card for an unmet requirement', () => {
+  // report of 2026-11-14: « Le message a été transmis sans chiffrement TLS » twice, −1 then 0
+  it('folds the requirement into the card that carries the points', () => {
+    const tls = { ...f('tls.inbound_plaintext', 'tls', 'high', 1), evidence: 'en clair' };
+    const req = { ...f('bulk-sender.tls_required', 'bulk-sender', 'high', 0), evidence: 'Gmail et Yahoo : TLS : non' };
+    const list = classifyFindings([tls, req], { failingRequirements: ['tls'], saOverThreshold: false });
+    expect(foldRequirements(list, [{ id: 'tls', situation: 'bulk-sender.tls_required' }])).toEqual(['bulk-sender.tls_required']);
+    expect(tls.evidence).toBe('en clair\nGmail et Yahoo : TLS : non');
+  });
+  it('keeps the requirement card when nothing else names the cause', () => {
+    const req = f('bulk-sender.one_click_required', 'bulk-sender', 'high', 0);
+    const list = classifyFindings([req], { failingRequirements: ['one_click'], saOverThreshold: false });
+    expect(foldRequirements(list, [{ id: 'one_click', situation: 'bulk-sender.one_click_required' }])).toEqual([]);
   });
 });

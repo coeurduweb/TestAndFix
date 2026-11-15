@@ -627,6 +627,14 @@ export function MessageReport({
     }
   };
   const listed = axis ? findings.filter((f) => f.axis === axis) : findings;
+  const counts = {
+    sender: findings.filter((f) => f.axis === "sender").length,
+    message: findings.filter((f) => f.axis === "message").length,
+  };
+  const theirs = {
+    sender: findings.filter((f) => f.axis === "sender" && f.impact === "advice" && f.outOfReach).length,
+    message: findings.filter((f) => f.axis === "message" && f.impact === "advice" && f.outOfReach).length,
+  };
 
   return (
     <div className="mail-report">
@@ -692,27 +700,39 @@ export function MessageReport({
               picked={axis}
               onPick={pick}
               listId="mr-list"
+              counts={counts}
+              theirs={theirs}
             />
           )}
           <div className="mr-work">
             <div className="mr-work__main" id="mr-list">
-              {axis && (
-                <div className="mr-filter" role="status">
-                  <span className={`axis-tag axis-tag--${axis}`}>
-                    {axis === "sender" ? t("Expéditeur") : t("Message")}
+              {ind && findings.length > 0 && (
+                // the filter of the list, always in sight above it (user, 2026-11-14): the selected
+                // choice is filled in blue, the counts are those of the rows below
+                <div className="mr-listbar">
+                  <span className="mr-listbar__t" id="mr-listbar-t">
+                    {t("Afficher")}
                   </span>
-                  <span>
-                    {listed.length
-                      ? tn(listed.length, "{n} point sur {total}", "{n} points sur {total}", { total: findings.length })
-                      : t("Aucun point sur cet axe")}
+                  <div className="segmented segmented--lab" role="group" aria-labelledby="mr-listbar-t">
+                    {([null, "sender", "message"] as const).map((a) => (
+                      <button
+                        key={a ?? "all"}
+                        type="button"
+                        aria-pressed={axis === a}
+                        aria-controls="mr-list"
+                        onClick={() => setAxis(a)}
+                      >
+                        {a && <span className={`mr-listbar__dot mr-listbar__dot--${a}`} aria-hidden />}
+                        {a === null ? t("Tous les points") : a === "sender" ? t("Expéditeur") : t("Message")}
+                        <span className="mr-listbar__n">{a === null ? findings.length : counts[a]}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <span className="visually-hidden" role="status">
+                    {axis
+                      ? tn(listed.length, "Liste filtrée : {n} point sur {total}", "Liste filtrée : {n} points sur {total}", { total: findings.length })
+                      : ""}
                   </span>
-                  <button
-                    type="button"
-                    className="btn btn--sm btn--ghost"
-                    onClick={() => setAxis(null)}
-                  >
-                    {t("Tout afficher")}
-                  </button>
                 </div>
               )}
               <IssueList

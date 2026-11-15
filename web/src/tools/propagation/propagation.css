@@ -229,7 +229,8 @@
 /* ---------- map and list ---------- */
 .pp-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 440px;
+  /* 2026-11-15: wider list, narrower map, so values read in the rows (user: « augmenter la largeur du tableau au détriment de la carte ») */
+  grid-template-columns: minmax(0, 1fr) 520px;
   gap: 14px;
   flex: 1;
   min-height: 0;
@@ -326,9 +327,120 @@
   vertical-align: bottom;
   color: var(--ink);
 }
-.pp-truth__more {
-  font-family: var(--font-ui);
+.pp-truth--peek {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--lab);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pp-truth--peek.mono {
+  font-family: var(--font-mono);
+}
+.pp-truth--peek:hover,
+.pp-truth--peek[aria-expanded='true'] {
+  text-decoration-style: solid;
+}
+
+/* ---------- full records of an answer (Peek.tsx) ---------- */
+.pk {
+  display: grid;
+  gap: 10px;
+  max-height: calc(100dvh - 32px);
+  padding: 14px 14px 10px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.pk__head {
+  display: grid;
+  gap: 2px;
+}
+.pk__head b {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.pk__head > span {
+  font-size: 12px;
   color: var(--ink-3);
+}
+.pk-sum {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.pk-sum svg {
+  width: 14px;
+  height: 14px;
+}
+.pk-sum--ok {
+  color: var(--in);
+}
+.pk-sum--warn {
+  color: var(--warn-ink);
+}
+.pk-recs {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+.pk-rec {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.pk-rec code {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.pk-rec--missing code {
+  color: var(--ink-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--out);
+}
+.pk-rec__side {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pk-tag {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.pk-tag--warn {
+  background: var(--warn-pale);
+  color: var(--warn-ink);
+}
+.pk-tag--out {
+  background: var(--out-pale);
+  color: var(--out);
+}
+.pk-copy {
+  width: 28px;
+  height: 28px;
+  margin: -4px -4px -4px 0;
+}
+.pk-copy svg {
+  width: 14px;
+  height: 14px;
 }
 .pp-facts .live {
   display: inline-flex;
@@ -480,7 +592,9 @@
 }
 .pl-row {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto 16px;
+  /* the value takes what it needs up to 210px (an auto track gave it ~100px); past that the name and IP
+     of the resolver matter more, and the full value is in the card (Peek.tsx) */
+  grid-template-columns: 22px minmax(0, 1fr) fit-content(210px) 16px;
   align-items: center;
   gap: 4px 12px;
   padding: 9px 16px;
@@ -523,7 +637,7 @@
   display: grid;
   justify-items: end;
   min-width: 0;
-  max-width: 190px;
+  max-width: 210px;
   text-align: right;
 }
 .pl-v {
@@ -543,6 +657,33 @@
 }
 .pl-row--out .pl-val b {
   color: var(--ink-3);
+}
+.pl-v--peek {
+  align-items: baseline;
+  margin: -3px -6px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-family: var(--font-mono);
+  text-align: right;
+  cursor: pointer;
+}
+.pl-v--peek b {
+  text-decoration: underline dotted var(--ink-faint);
+  text-underline-offset: 3px;
+}
+.pl-v--peek:hover,
+.pl-v--peek[aria-expanded='true'] {
+  background: var(--lab-pale);
+}
+.pl-v--peek:hover .pl-more,
+.pl-v--peek[aria-expanded='true'] .pl-more {
+  color: var(--lab);
+}
+.pl-row--peek {
+  background: var(--surface-hover);
 }
 .pl-more {
   flex: none;

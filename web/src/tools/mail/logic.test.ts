@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   blockRemote, buildPath, complianceCell, complianceOrder, countRemoteImages, findPrevious, fmtDelay, initialStream,
   clientSection, decodeWords, humanError, humanReason, looksLikeMessage, lostPoints, measureOf, previewDocument, reduceStream, sectionOrder, takeByPrefix, tlsName, groupDeviation,
-  headlineOf, indicatorsFrom, isEmptyHref, keyChecks, markEmptyLinks, numberSends, timingOf,
+  headlineOf, indicatorsFrom, isEmptyHref, isPrivateAddress, keyChecks, markEmptyLinks, numberSends, timingOf,
 } from './logic';
 import type { Hop, MailReport, MessageSummary, Requirement } from './types';
 
@@ -53,7 +53,9 @@ describe('buildPath', () => {
     expect(p.legs.map((l) => l.tls)).toEqual([true, true, false]);
     expect(p.legs[1]).toMatchObject({ protocol: 'TLS 1.3', cipher: 'TLS_AES_256_GCM_SHA384', delaySec: 4 });
     expect(p.legs[0].delaySec).toBeNull();
-    expect(p.plaintextLegs).toBe(1);
+    // the last hand-off comes from 10.0.0.5, inside the mailbox host: not counted as clear text (2026-11-14)
+    expect(p.legs[2].internal).toBe(true);
+    expect(p.plaintextLegs).toBe(0);
     expect(p.totalSec).toBe(7);
     expect(p.sinceDate).toBe(1);
   });
@@ -310,5 +312,21 @@ describe('Signal report helpers', () => {
     expect(k.message.map((c) => `${c.key}=${c.value}:${c.lit}`)).toEqual([
       'SpamAssassin=non mesuré:n', 'Texte et images=21 mots, 1 image:warn', 'Liens=1 qui répond:ok', 'En-têtes=conformes:ok', 'Pièces jointes=aucune:n', 'Désinscription=sans objet:n',
     ]);
+  });
+});
+
+describe('a hand-off inside the receiving network', () => {
+  // 2026-11-14: the front VM relaying to check was drawn "en clair" in red under a message sent in TLS
+  it('is neither counted as clear text nor as unknown encryption', () => {
+    const p = buildPath([
+      { index: 0, from: 'mail-ej1-f46.google.com', ip: '209.85.218.46', by: 'mx.example.net', tls: true },
+      { index: 1, from: 'mx.example.net', ip: '10.20.0.1', by: 'check.example.net', tls: false },
+    ] as Hop[]);
+    expect(p.legs.map((l) => l.internal)).toEqual([undefined, true]);
+    expect(p.plaintextLegs).toBe(0);
+  });
+  it('recognises private and local addresses only', () => {
+    expect(['10.20.0.1', '172.20.0.1', '192.168.1.2', '127.0.0.1', '::1', 'fd12:3456::1'].every(isPrivateAddress)).toBe(true);
+    expect(['209.85.218.46', '172.32.0.1', '2a00:1450::1', undefined].some(isPrivateAddress)).toBe(false);
   });
 });

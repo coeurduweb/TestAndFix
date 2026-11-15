@@ -2,12 +2,13 @@
 // operator, place and IP, the value served with the TTL left and the latency, a status mark. A
 // resolver that is not up to date says why on its own line. Rows arrive live from skeletons.
 // Groups: the big anycast resolvers first, then one per continent, with a sticky head.
-import { memo, useSyncExternalStore } from 'react';
+import { memo, useRef, useSyncExternalStore } from 'react';
 import { Skel } from '../../components/ui';
-import { locale, t } from '../../lib/i18n';
+import { locale, t, tn } from '../../lib/i18n';
 import { countryName, fmtCount, fmtTtl } from '../dns/fmt';
 import { shortReason } from './explain';
 import { STATUS_LABEL } from './marks';
+import { needsPeek, Peek, Records, usePeek } from './Peek';
 import { cleanProvider, countRows, displayName, rowStatus, ttlLeft, valueText, type AuthorityEvent, type Row, type RowStatus } from './model';
 
 /** Colour family of a status: green up to date, amber a different answer, red no answer. */
@@ -93,11 +94,22 @@ const ResolverRow = memo(
     const reason = e ? shortReason(e, authority, sameAsUpToDate) : null;
     const value = e && !failed ? valueText(e) : '';
     const who = cleanProvider(i.provider) || displayName(i);
+    // a long or multiple answer: every record in a card, on hover of the row, focus or click (see Peek.tsx)
+    const peekable = !!e && !failed && needsPeek(value);
+    const peek = usePeek();
+    const anchor = useRef<HTMLLIElement>(null);
+    const ref = authority?.reference;
+    // compared with the expected value, except a regional answer (different by design) and an alias
+    const compareTo = ref && ref.kind === 'records' && (authority.authority.exists || ref.source === 'expected') && st !== 'regional' ? ref.values : null;
+    const peekId = `peek-${i.ip}`;
     return (
       <li
+        ref={anchor}
         id={`res-${i.ip}`}
-        className={`pl-row pl-row--${TONE[st]} ${row.remeasuring ? 'pl-row--again' : ''} ${highlight ? 'pl-row--hl' : ''}`}
+        className={`pl-row pl-row--${TONE[st]} ${row.remeasuring ? 'pl-row--again' : ''} ${highlight ? 'pl-row--hl' : ''} ${peek.open ? 'pl-row--peek' : ''}`}
         aria-busy={!e || row.remeasuring || undefined}
+        onMouseEnter={peekable ? () => peek.show() : undefined}
+        onMouseLeave={peekable ? peek.hide : undefined}
       >
         <Flag cc={i.country_code} label={i.anycast ? t('opérateur : {country}', { country: countryName(i.country_code) }) : countryName(i.country_code)} />
         <span className="pl-who">
@@ -107,10 +119,23 @@ const ResolverRow = memo(
           </span>
         </span>
         <span className="pl-val">
-          {e ? (
-            <span className="pl-v mono" title={value.includes('\n') ? value : undefined}>
-              <b>{failed ? (e.rcode && e.rcode !== 'NOERROR' ? e.rcode : t('sans réponse')) : value.split('\n')[0] || t('vide')}</b>
+          {e && peekable ? (
+            <button
+              type="button"
+              className="pl-v pl-v--peek mono"
+              aria-expanded={peek.open}
+              aria-controls={peek.open ? peekId : undefined}
+              aria-label={tn(value.split('\n').length, 'Voir la valeur servie par {who}', 'Voir les {n} valeurs servies par {who}', { who })}
+              onClick={peek.toggle}
+              onFocus={() => peek.show(0)}
+              onBlur={(ev) => !document.getElementById(peekId)?.contains(ev.relatedTarget as Node) && peek.hide()}
+            >
+              <b>{value.split('\n')[0]}</b>
               {value.includes('\n') && <span className="pl-more">+{value.split('\n').length - 1}</span>}
+            </button>
+          ) : e ? (
+            <span className="pl-v mono">
+              <b>{failed ? (e.rcode && e.rcode !== 'NOERROR' ? e.rcode : t('sans réponse')) : value || t('vide')}</b>
             </span>
           ) : (
             <Skel w="13ch" />
@@ -128,6 +153,26 @@ const ResolverRow = memo(
           <span className="pl-why">
             <span className={`pl-word pl-word--${TONE[st]}`}>{e?.uncertain && st === 'stale' ? t('incertain') : t(STATUS_LABEL[st])}</span> {reason}
           </span>
+        )}
+        {peekable && (
+          <Peek
+            id={peekId}
+            anchor={anchor}
+            state={peek}
+            beside
+            label={t('Valeurs servies par {who}', { who })}
+            head={
+              <>
+                <b>{who}</b>
+                <span>
+                  <span className="mono">{i.ip}</span> · {tn(e!.values.length, '{n} enregistrement', '{n} enregistrements')}
+                  {e!.ttl !== null && <> · TTL {fmtTtl(e!.ttl)}</>}
+                </span>
+              </>
+            }
+          >
+            <Records values={e!.values} cname={e!.cname} reference={compareTo} subset={ref?.match === 'subset'} />
+          </Peek>
         )}
       </li>
     );

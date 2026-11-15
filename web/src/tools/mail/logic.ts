@@ -66,6 +66,8 @@ export interface PathLeg {
   at?: string;
   /** seconds since the previous relay; null when one of the two times is missing */
   delaySec: number | null;
+  /** handed over from a private address: a hop inside the receiving network, not on the Internet */
+  internal?: boolean;
 }
 export interface MessagePath {
   nodes: PathNode[];
@@ -76,6 +78,18 @@ export interface MessagePath {
   totalSec: number | null;
   plaintextLegs: number;
   unknownTlsLegs: number;
+}
+
+/** 10/8, 172.16/12, 192.168/16, 127/8, 169.254/16, 100.64/10, ::1, fc00::/7, fe80::/10 */
+export function isPrivateAddress(ip: string | undefined): boolean {
+  if (!ip) return false;
+  const v = ip.replace(/^\[|\]$/g, '').toLowerCase().replace(/^::ffff:/, '');
+  const m = /^(\d+)\.(\d+)\.\d+\.\d+$/.exec(v);
+  if (m) {
+    const [a, b] = [Number(m[1]), Number(m[2])];
+    return a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254) || (a === 100 && b >= 64 && b <= 127);
+  }
+  return v === '::1' || /^f[cd][0-9a-f]{2}:/.test(v) || /^fe[89ab][0-9a-f]:/.test(v);
 }
 
 const clean = (s: string | undefined) => s?.trim().toLowerCase().replace(/\.$/, '').replace(/^\[|\]$/g, '') || undefined;
@@ -115,7 +129,10 @@ export function buildPath(hops: Hop[], dateHeader?: string): MessagePath {
       if (fn && fn !== clean(prev.name) && fn !== clean(prev.ip) && !prev.aliases.some((a) => clean(a) === fn)) prev.aliases.push(fromName);
     }
     const tl = splitTls(h.tlsDetail);
-    legs.push({ tls: h.tls, protocol: tl.protocol, cipher: tl.cipher, with: h.with, at: h.at, delaySec: i === 0 ? null : (h.delaySec ?? null) });
+    // a hand-off from a private address stays inside the receiving network (2026-11-14: the front VM
+    // relaying to check was drawn "en clair" in red under a message Google had sent in TLS)
+    const internal = isPrivateAddress(h.ip) || undefined;
+    legs.push({ tls: h.tls, protocol: tl.protocol, cipher: tl.cipher, with: h.with, at: h.at, delaySec: i === 0 ? null : (h.delaySec ?? null), internal });
     nodes.push({ name: h.by ?? t('serveur inconnu'), aliases: [] });
   });
   const first = sorted[0]?.at ? Date.parse(sorted[0].at) : NaN;
@@ -126,8 +143,8 @@ export function buildPath(hops: Hop[], dateHeader?: string): MessagePath {
     legs,
     sinceDate: Number.isFinite(first) && Number.isFinite(date) ? Math.round((first - date) / 1000) : null,
     totalSec: Number.isFinite(first) && Number.isFinite(last) && sorted.length > 1 ? Math.round((last - first) / 1000) : null,
-    plaintextLegs: legs.filter((l) => l.tls === false).length,
-    unknownTlsLegs: legs.filter((l) => l.tls === null).length,
+    plaintextLegs: legs.filter((l) => l.tls === false && !l.internal).length,
+    unknownTlsLegs: legs.filter((l) => l.tls === null && !l.internal).length,
   };
 }
 
@@ -743,13 +760,16 @@ export function headlineOf(findings: Pick<Finding, 'title' | 'penalty' | 'impact
 }
 
 /** Status line of one indicator: its counts by effect on delivery. */
-export function axisStatus(s: AxisSummary): { lit: Lit; text: string } {
+export function axisStatus(s: AxisSummary, theirs = 0): { lit: Lit; text: string } {
   const parts: string[] = [];
   if (s.blocking) parts.push(tn(s.blocking, '{n} point bloquant', '{n} points bloquants'));
   if (s.spam) parts.push(tn(s.spam, '{n} risque d’indésirables', '{n} risques d’indésirables'));
   const lead = parts.length ? parts.join(' · ') : t('Rien de bloquant ni de suspect');
   const adv = s.advice ? ` · ${plural(s.advice, 'amélioration', 'améliorations')}` : '';
-  return { lit: s.blocking ? 'out' : s.spam ? 'warn' : 'ok', text: lead + adv };
+  // every point of the axis is counted, so the card adds up to the list (user, 2026-11-14: the card
+  // said 1 improvement where the list showed 3 rows under the message)
+  const out = theirs ? ` · ${tn(theirs, '{n} pour votre service d’envoi', '{n} pour votre service d’envoi')}` : '';
+  return { lit: s.blocking ? 'out' : s.spam ? 'warn' : 'ok', text: lead + adv + out };
 }
 
 /* ---------- empty and invisible links in the preview ---------- */

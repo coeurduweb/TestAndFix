@@ -285,7 +285,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background var(--t) var(--ease-spring), box-shadow var(--t) var(--ease-spring);
+  transition: background var(--t) var(--ease-spring), box-shadow var(--t) var(--ease-spring), opacity var(--t) var(--ease-out);
 }
 .mr-axis--sender {
   --tone: var(--sender);
@@ -296,8 +296,16 @@
 .mr-axis:hover {
   background: var(--surface-hover);
 }
+/* selected: a 2 px blue ring (the blue of selection), the other card steps back (2026-11-14) */
 .mr-axis[aria-pressed='true'] {
-  box-shadow: inset 0 0 0 1px var(--lab), inset 0 1px 0 var(--hi);
+  box-shadow: inset 0 0 0 2px var(--lab), inset 0 1px 0 var(--hi);
+}
+.mr-axes:has(.mr-axis[aria-pressed='true']) .mr-axis[aria-pressed='false'] {
+  opacity: 0.6;
+}
+.mr-axes:has(.mr-axis[aria-pressed='true']) .mr-axis[aria-pressed='false']:hover,
+.mr-axes:has(.mr-axis[aria-pressed='true']) .mr-axis[aria-pressed='false']:focus-visible {
+  opacity: 1;
 }
 .mr-axis__head {
   display: grid;
@@ -427,10 +435,53 @@
 .mr-check[data-lit='out'] .mr-check__v {
   color: var(--out);
 }
-.mr-axis__go {
-  justify-self: end;
-  font-size: 12.5px;
+/* the filter: a box ticked when on, a fixed label, the state in words */
+.mr-axis__filter {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  font-size: 13px;
+}
+.mr-switch {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1.5px var(--rule-strong);
+  color: transparent;
+  transition: background var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
+}
+.mr-switch svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 3;
+}
+.mr-axis:hover .mr-switch {
+  box-shadow: inset 0 0 0 1.5px var(--lab);
+}
+.mr-axis[aria-pressed='true'] .mr-switch {
+  background: var(--lab);
+  box-shadow: none;
+  color: var(--paper);
+}
+.mr-axis__filter-t {
   font-weight: 650;
+  color: var(--ink-2);
+}
+.mr-axis[aria-pressed='true'] .mr-axis__filter-t {
+  color: var(--ink);
+}
+.mr-axis__state {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.mr-axis[aria-pressed='true'] .mr-axis__state {
   color: var(--lab);
 }
 
@@ -447,16 +498,40 @@
   min-width: 0;
   scroll-margin-top: 72px;
 }
-.mr-filter {
+/* the filter of the list, always in sight above it (2026-11-14) */
+.mr-listbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 12px;
+  gap: 8px 12px;
+}
+.mr-listbar__t {
   font-size: 13px;
+  font-weight: 600;
   color: var(--ink-3);
 }
-.mr-filter .btn {
-  margin-left: auto;
+.mr-listbar__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.mr-listbar__dot--sender {
+  background: var(--sender);
+}
+.mr-listbar__dot--message {
+  background: var(--message);
+}
+.mr-listbar__n {
+  font: 600 12px var(--font-mono);
+  color: var(--ink-faint);
+}
+.segmented--lab > [aria-pressed='true'] {
+  background: var(--lab-pale);
+  color: var(--lab);
+  box-shadow: inset 0 0 0 1px var(--lab);
+}
+.segmented--lab > [aria-pressed='true'] .mr-listbar__n {
+  color: var(--lab);
 }
 .mail-measure {
   padding-top: 0;

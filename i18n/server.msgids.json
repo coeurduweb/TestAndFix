@@ -1245,6 +1245,7 @@
   "registre injoignable",
   "Registre non joint : {detail}",
   "Règle SpamAssassin {rule} ({points})",
+  "relais interne {relay} sans XFORWARD, {reason}",
   "Relancez la vérification avec cette adresse publique.",
   "renouvelé automatiquement par le registre à l’échéance ; si vous ne voulez pas le garder, voyez vite votre bureau d’enregistrement",
   "Renouvelez {domain} chez votre registrar immédiatement.",
