@@ -660,10 +660,11 @@
 }
 .pl-v--peek {
   align-items: baseline;
-  margin: -3px -6px;
-  padding: 3px 6px;
+  /* no padding nor negative margin: they shrink what the value asks of the grid (it was cut at ~75px);
+     the hover background overflows with a shadow instead */
+  padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 3px;
   background: none;
   font: inherit;
   font-family: var(--font-mono);
@@ -677,6 +678,7 @@
 .pl-v--peek:hover,
 .pl-v--peek[aria-expanded='true'] {
   background: var(--lab-pale);
+  box-shadow: 0 0 0 4px var(--lab-pale);
 }
 .pl-v--peek:hover .pl-more,
 .pl-v--peek[aria-expanded='true'] .pl-more {
